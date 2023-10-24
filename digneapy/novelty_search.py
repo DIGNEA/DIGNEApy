@@ -11,6 +11,7 @@
 """
 
 import numpy as np
+from .domain import Instance
 from sklearn.neighbors import NearestNeighbors
 import reprlib
 import operator

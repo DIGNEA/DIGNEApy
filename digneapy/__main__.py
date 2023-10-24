@@ -4,6 +4,9 @@ from .novelty_search import Archive, NoveltySearch
 import numpy as np
 
 if __name__ == "__main__":
+    import doctest
+
+    doctest.testmod()
     descriptors = np.random.rand(30, 10)
     # archive = Archive(descriptors)
     # print(archive)

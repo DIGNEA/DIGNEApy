@@ -18,6 +18,10 @@ from functools import reduce
 
 
 class Archive:
+    """Class Archive
+    Stores a collection of diverse Instances
+    """
+
     _typecode = "d"
 
     def __init__(self, descriptors: list = None):
@@ -46,8 +50,14 @@ class Archive:
         return str(tuple(self))
 
     def __array__(self) -> np.ndarray:
-        """
-        Creates a ndarray with the descriptors
+        """Creates a ndarray with the descriptors
+
+        >>> import numpy as np
+        >>> descriptors = [list(range(d, d + 5)) for d in range(10)]
+        >>> archive = Archive(descriptors)
+        >>> np_archive = np.array(archive)
+        >>> assert len(np_archive) == len(archive)
+        >>> assert type(np_archive) == type(np.zeros(1))
         """
         return np.array(self._descriptors)
 
@@ -55,6 +65,17 @@ class Archive:
         return bytes([ord(self._typecode)]) + bytes(self._descriptors)
 
     def __eq__(self, other):
+        """Compares whether to Archives are equal
+
+        >>> import copy
+        >>> descriptors = [list(range(d, d + 5)) for d in range(10)]
+        >>> archive = Archive(descriptors)
+        >>> empty_archive = Archive()
+
+        >>> a1 = copy.copy(archive)
+        >>> assert a1 == archive
+        >>> assert empty_archive != archive
+        """
         return len(self) == len(other) and all(a == b for a, b in zip(self, other))
 
     def _descriptor_hash(self, d):
@@ -66,6 +87,15 @@ class Archive:
         return reduce(lambda a, b: a ^ b, hashes, 0)
 
     def __bool__(self):
+        """Returns True if len(self) > 1
+
+        >>> descriptors = [list(range(d, d + 5)) for d in range(10)]
+        >>> archive = Archive(descriptors)
+        >>> empty_archive = Archive()
+
+        >>> assert archive
+        >>> assert not empty_archive
+        """
         return len(self) != 0
 
     def __len__(self):

@@ -12,7 +12,7 @@
 
 
 import reprlib
-import math
+import operator
 from functools import reduce
 
 
@@ -38,7 +38,7 @@ class Instance:
     def p(self):
         return self._p
 
-    @property.setter
+    @p.setter
     def p(self, performance):
         if not float(performance):
             msg = f"The performance value {performance} is not a float in 'p' setter of class {self.__class__.__name__}"
@@ -49,7 +49,7 @@ class Instance:
     def s(self):
         return self._s
 
-    @property.setter
+    @s.setter
     def s(self, novelty):
         if not float(novelty):
             msg = f"The novelty value {novelty} is not a float in 's' setter of class {self.__class__.__name__}"
@@ -60,39 +60,66 @@ class Instance:
     def fitness(self):
         return self._fitness
 
-    @property.setter
+    @fitness.setter
     def fitness(self, f):
         if not float(f):
             msg = f"The fitness value {f} is not a float in fitness setter of class {self.__class__.__name__}"
             raise AttributeError(msg)
         self._fitness = f
 
+    @property
+    def features(self):
+        return self._features
+
+    @features.setter
+    def features(self, f):
+        self._features = f
+
+    @property
+    def performance(self):
+        return self._portfolio_m
+
+    @performance.setter
+    def performance(self, p):
+        self._portfolio_m = p
+
     def __repr__(self):
-        return f"Instance(f={self._fitness},p={self._p},s={self._s})"
+        return f"Instance(f={self._fitness},p={self._p},s={self._s},vars={len(self._variables)},features={len(self._features)},performance={len(self._portfolio_m)})"
 
     def __str__(self):
         features = reprlib.repr(self._features)
+        features = features[features.find("[") : features.find("]") + 1]
         performance = reprlib.repr(self._portfolio_m)
+        performance = performance[performance.find("[") : performance.find("]") + 1]
         return f"Instance(f={self._fitness},p={self._p},s={self._s},features={features},performance={performance})"
 
     def __iter__(self):
         return iter(self._variables)
 
+    def __len__(self):
+        return len(self._variables)
+
     def __eq__(self, other):
         return len(self) == len(other) and all(a == b for a, b in zip(self, other))
 
     def __hash__(self):
-        hashes = (hash(x) for x in self._variables)
-        return reduce(lambda a, b: a ^ b, hashes, 0)
-
-    def __abs__(self):
-        return math.hypot(*self)
+        hashes = (hash(x) for x in self)
+        return reduce(operator.or_, hashes, 0)
 
     def __bool__(self):
-        return bool(abs(self))
+        return bool(self._variables)
 
-    def feature_descriptor(self):
-        return self._features
+    def __format__(self, fmt_spec=""):
+        if fmt_spec.endswith("p"):
+            # We are showing only the performances
+            fmt_spec = fmt_spec[:-1]
+            components = self._portfolio_m
+        else:
+            fmt_spec = fmt_spec[:-1]
+            components = self._features
 
-    def performance_descriptor(self):
-        return self._portfolio_m
+        components = (format(c, fmt_spec) for c in components)
+        decriptor = "descriptor=({})".format(",".join(components))
+        msg = f"Instance(p={format(self._p, fmt_spec)}, s={format(self._s, fmt_spec)}, {decriptor})"
+
+        return msg

@@ -11,11 +11,13 @@
 """
 
 import numpy as np
-from .domain import Instance
-from sklearn.neighbors import NearestNeighbors
+from collections.abc import Iterable
 import reprlib
 import operator
+import itertools
 from functools import reduce
+from .domain import Instance
+from sklearn.neighbors import NearestNeighbors
 
 
 class Archive:
@@ -25,30 +27,30 @@ class Archive:
 
     _typecode = "d"
 
-    def __init__(self, descriptors: list = None):
-        if descriptors:
-            # self._descriptors = list(array(self.typecode, d) for d in descriptors)
-            self._descriptors = list(d for d in descriptors)
+    def __init__(self, instances: list[Instance] = None):
+        if instances:
+            # self._instances = list(array(self.typecode, d) for d in instances)
+            self._instances = list(i for i in instances)
         else:
-            self._descriptors = []
+            self._instances = []
 
     @property
-    def descriptors(self):
-        return self._descriptors
+    def instances(self):
+        return self._instances
 
     def __iter__(self):
-        return iter(self._descriptors)
+        return iter(self._instances)
 
     def __repr__(self):
         components = []
-        for d in self._descriptors:
+        for d in self._instances:
             comp = reprlib.repr(d)
             comp = comp[comp.find("[") : -1]
             components.append(comp)
         return f"Archive({components})"
 
     def __str__(self):
-        return str(tuple(self))
+        return f"Archive with {len(self)} instances -> {str(tuple(self))}"
 
     def __array__(self) -> np.ndarray:
         """Creates a ndarray with the descriptors
@@ -60,17 +62,18 @@ class Archive:
         >>> assert len(np_archive) == len(archive)
         >>> assert type(np_archive) == type(np.zeros(1))
         """
-        return np.array(self._descriptors)
+        return np.array(self._instances)
 
     def __bytes__(self):
-        return bytes([ord(self._typecode)]) + bytes(self._descriptors)
+        return bytes([ord(self._typecode)]) + bytes(self._instances)
 
     def __eq__(self, other):
         """Compares whether to Archives are equal
 
         >>> import copy
-        >>> descriptors = [list(range(d, d + 5)) for d in range(10)]
-        >>> archive = Archive(descriptors)
+        >>> variables = [list(range(d, d + 5)) for d in range(10)]
+        >>> instances = [Instance(variables=v) for v in variables]
+        >>> archive = Archive(instances)
         >>> empty_archive = Archive()
 
         >>> a1 = copy.copy(archive)
@@ -79,12 +82,8 @@ class Archive:
         """
         return len(self) == len(other) and all(a == b for a, b in zip(self, other))
 
-    def _descriptor_hash(self, d):
-        hashes = (hash(x) for x in d)
-        return reduce(lambda a, b: a ^ b, hashes, 0)
-
     def __hash__(self):
-        hashes = (self._descriptor_hash(d) for d in self._descriptors)
+        hashes = (hash(i) for i in self.instances)
         return reduce(lambda a, b: a ^ b, hashes, 0)
 
     def __bool__(self):
@@ -100,22 +99,26 @@ class Archive:
         return len(self) != 0
 
     def __len__(self):
-        return len(self._descriptors)
+        return len(self.instances)
 
     def __getitem__(self, key):
         if isinstance(key, slice):
             cls = type(self)  # To facilitate subclassing
-            return cls(self._descriptors[key])
+            return cls(self.instances[key])
         index = operator.index(key)
-        return self._descriptors[index]
+        return self.instances[index]
 
-    def append(self, d):
-        self._descriptors.append(list(d))
+    def append(self, i: Instance) -> None:
+        if isinstance(i, Instance):
+            self.instances.append(i)
+        else:
+            msg = f"Only objects of type {Instance.__class__.__name__} can be inserted into an archive"
+            raise AttributeError(msg)
 
-    def extend(self, iterable):
+    def extend(self, iterable: Iterable[Instance]) -> None:
         for i in iterable:
-            if type(i) == list:
-                self._descriptors.append(i)
+            if isinstance(i, Instance):
+                self.instances.append(i)
 
     def __format__(self, fmt_spec=""):
         coords = self
@@ -131,12 +134,26 @@ class Archive:
 
 
 class NoveltySearch:
-    def __init__(self, t_a: float = 0.001, t_ss: float = 0.001, k: int = 15):
+    __descriptors = ("features", "performance")
+
+    def __init__(
+        self,
+        t_a: float = 0.001,
+        t_ss: float = 0.001,
+        k: int = 15,
+        descriptor="features",
+    ):
         self._t_a = t_a
         self._t_ss = t_ss
         self._k = k
         self._archive = Archive()
         self._solution_set = Archive()
+        if descriptor not in self.__descriptors:
+            msg = f"describe_by {descriptor} not available in {self.__class__.__name__}.__init__. Set to features by default"
+            print(msg)
+            self._describe_by = "features"
+        else:
+            self._describe_by = descriptor
 
     @property
     def archive(self):
@@ -164,64 +181,100 @@ class NoveltySearch:
     def __repr__(self) -> str:
         return f"NS(t_a={self._t_a},t_ss={self._t_ss},k={self._k},len(a)={len(self._archive)},len(ss)={len(self._solution_set)})"
 
+    def __combined_archive_and_population(
+        self, current_pop: Archive, instances: list[Instance]
+    ) -> np.ndarray[float]:
+        components = []
+        match self._describe_by:
+            case "features":
+                components = [
+                    i.features
+                    for i in itertools.chain(
+                        (
+                            *instances,
+                            *current_pop,
+                        )
+                    )
+                ]
+            case "performance":
+                components = [
+                    i.performance
+                    for i in itertools.chain(
+                        (
+                            *instances,
+                            *current_pop,
+                        )
+                    )
+                ]
+        return np.vstack([components], dtype=float)
+
     def sparseness(
-        self, descriptors, include_desc: bool = False, verbose: bool = False
+        self,
+        instances: list[Instance],
+        include_desc: bool = True,
+        verbose: bool = False,
     ) -> list[float]:
-        if len(descriptors) == 0 or any(len(d) == 0 for d in descriptors):
-            msg = f"{self.__class__.__name__} tyring to calculate sparseness on an empty descriptor list"
+        if len(instances) == 0 or any(len(d) == 0 for d in instances):
+            msg = f"{self.__class__.__name__} tyring to calculate sparseness on an empty Instance list"
             raise AttributeError(msg)
 
-        if self._k >= len(descriptors):
-            msg = f"{self.__class__.__name__} tyring to calculate sparseness with k({self._k}) > len(descriptors)({len(descriptors)})"
+        if self._k >= len(instances):
+            msg = f"{self.__class__.__name__} tyring to calculate sparseness with k({self._k}) > len(instances)({len(instances)})"
             raise AttributeError(msg)
         # We need to concatentate the archive to the given descriptors
         # and to set k+1 because it predicts n[0] == self descriptor
-        _descriptors_arr = (
-            np.vstack([self._archive.descriptors, descriptors], dtype=float)
-            if len(self._archive)
-            else descriptors
+        _descriptors_arr = self.__combined_archive_and_population(
+            self.archive, instances
         )
-        # _descriptors_arr = np.array(
-        #     np.concatenate((self._archive.descriptors, descriptors), axis=0),
-        #     dtype=float,
-        # )
 
         neighbourhood = NearestNeighbors(n_neighbors=self._k + 1, algorithm="ball_tree")
         neighbourhood.fit(_descriptors_arr)
         sparseness = []
-        for descriptor in _descriptors_arr:
+        # We're only interesed in the instances given not the archive
+        for instance, descriptor in zip(
+            instances, _descriptors_arr[0 : len(instances)]
+        ):
             dist, ind = neighbourhood.kneighbors([descriptor])
             dist, ind = dist[0][1:], ind[0][1:]
             s = (1.0 / self._k) * sum(dist)
+            instance.s = s
             sparseness.append(s)
+            if verbose:
+                print("=" * 120)
+                print(f"{instance:.3f} |  s(i) > t_a? {(s>= self._t_a)!r:15} |")
             if include_desc and s >= self._t_a:
-                self._archive.append(descriptor)
+                self._archive.append(instance)
 
         return sparseness
 
-    def sparseness_solution_set(self, descriptors):
-        if len(descriptors) == 0 or any(len(d) == 0 for d in descriptors):
-            msg = f"{self.__class__.__name__} tyring to calculate sparseness_solution_set on an empty descriptor list"
+    def update_solution_set(
+        self, instances: list[Instance], verbose: bool = False
+    ) -> int:
+        if len(instances) == 0 or any(len(d) == 0 for d in instances):
+            msg = f"{self.__class__.__name__} tyring to calculate sparseness_solution_set on an empty instance list"
             raise AttributeError(msg)
 
-        if self._k >= len(descriptors):
-            msg = f"{self.__class__.__name__} tyring to calculate sparseness_solution_set with k({self._k}) > len(descriptors)({len(descriptors)})"
+        if self._k >= len(instances):
+            msg = f"{self.__class__.__name__} tyring to calculate sparseness_solution_set with k({self._k}) > len(instances)({len(instances)})"
             raise AttributeError(msg)
 
-        _descriptors_arr = (
-            np.vstack([self._solution_set.descriptors, descriptors], dtype=float)
-            if len(self._solution_set)
-            else descriptors
+        _descriptors_arr = self.__combined_archive_and_population(
+            self.solution_set, instances
         )
 
         neighbourhood = NearestNeighbors(n_neighbors=2, algorithm="ball_tree")
         neighbourhood.fit(_descriptors_arr)
-        sparseness = []
-        for descriptor in _descriptors_arr:
+        counter = 0
+        for instance, descriptor in zip(
+            instances, _descriptors_arr[0 : len(instances)]
+        ):
             dist, ind = neighbourhood.kneighbors([descriptor])
             dist, ind = dist[0][1:], ind[0][1:]
             s = (1.0 / self._k) * sum(dist)
-            sparseness.append(s)
+            if verbose:
+                print("=" * 120)
+                print(f"{instance:.3f} |  s = {s} > t_ss? {(s>= self._t_ss)!r:15} |")
             if s >= self._t_ss:
-                self._solution_set.append(descriptor)
-        return s
+                counter += 1
+                self._solution_set.append(instance)
+        return counter

@@ -13,7 +13,9 @@
 
 import reprlib
 import operator
+import random
 from functools import reduce
+from typing import TypeVar, Generic, Union, get_args, Iterable, Tuple
 
 
 class Instance:
@@ -33,6 +35,11 @@ class Instance:
         self._s = s
         self._portfolio_m = []
         self._features = []
+
+    def calculate_features(self):
+        """Calculates the features of the instance"""
+        msg = f"Method not implemented in class Instance. Must be re-defined in subclasses"
+        raise NotImplementedError(msg)
 
     @property
     def p(self):
@@ -123,3 +130,33 @@ class Instance:
         msg = f"Instance(p={format(self._p, fmt_spec)}, s={format(self._s, fmt_spec)}, {decriptor})"
 
         return msg
+
+
+T = TypeVar("T", bound=Union[int, float])
+
+
+class Domain:
+    def __init__(
+        self, name: str = "", size: int = 0, bounds: Iterable[Tuple] = None, dtype=int
+    ):
+        self._name = name
+        self._dimension = size
+        self._bounds = list(bounds)
+        self._dtype = dtype
+
+    @property
+    def bounds(self):
+        return self._bounds
+
+    def create_instance(self) -> Instance:
+        """Creates a new instances for the optimisation domain by means of
+        drawing random values in the range (l_i, u_i) for i in [0, size]
+        """
+
+        variables = [
+            self._dtype(random.uniform(l_i, u_i)) for (l_i, u_i) in self._bounds
+        ]
+        return Instance(variables)
+
+    def __repr__(self):
+        return f"Domain<name={self._name},size={self._dimension},bounds={self._bounds},dtype={self._dtype}>"

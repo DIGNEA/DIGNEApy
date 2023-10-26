@@ -12,6 +12,7 @@
 
 import numpy as np
 from collections.abc import Iterable
+from typing import Callable
 import reprlib
 import operator
 import itertools
@@ -133,6 +134,14 @@ class Archive:
         return cls(memv)
 
 
+def features_descriptor_strategy(iterable) -> list:
+    return [i.features for i in iterable]
+
+
+def performance_descriptor_strategy(iterable) -> list:
+    return [i.performance for i in iterable]
+
+
 class NoveltySearch:
     __descriptors = ("features", "performance")
 
@@ -152,8 +161,10 @@ class NoveltySearch:
             msg = f"describe_by {descriptor} not available in {self.__class__.__name__}.__init__. Set to features by default"
             print(msg)
             self._describe_by = "features"
+            self._descriptor_strategy = features_descriptor_strategy
         else:
             self._describe_by = descriptor
+            self._descriptor_strategy = performance_descriptor_strategy
 
     @property
     def archive(self):
@@ -184,28 +195,7 @@ class NoveltySearch:
     def __combined_archive_and_population(
         self, current_pop: Archive, instances: list[Instance]
     ) -> np.ndarray[float]:
-        components = []
-        match self._describe_by:
-            case "features":
-                components = [
-                    i.features
-                    for i in itertools.chain(
-                        (
-                            *instances,
-                            *current_pop,
-                        )
-                    )
-                ]
-            case "performance":
-                components = [
-                    i.performance
-                    for i in itertools.chain(
-                        (
-                            *instances,
-                            *current_pop,
-                        )
-                    )
-                ]
+        components = self._descriptor_strategy(itertools.chain(instances, current_pop))
         return np.vstack([components], dtype=float)
 
     def sparseness(

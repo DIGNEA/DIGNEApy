@@ -12,7 +12,7 @@
 
 import pytest
 import copy
-from digneapy.domain import Instance
+from digneapy.core import Instance
 
 
 @pytest.fixture

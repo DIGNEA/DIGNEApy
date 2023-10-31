@@ -12,12 +12,11 @@
 
 import numpy as np
 from collections.abc import Iterable
-from typing import Callable
 import reprlib
 import operator
 import itertools
 from functools import reduce
-from .domain import Instance
+from .core import Instance
 from sklearn.neighbors import NearestNeighbors
 
 
@@ -164,7 +163,11 @@ class NoveltySearch:
             self._descriptor_strategy = features_descriptor_strategy
         else:
             self._describe_by = descriptor
-            self._descriptor_strategy = performance_descriptor_strategy
+            self._descriptor_strategy = (
+                performance_descriptor_strategy
+                if descriptor == "performance"
+                else features_descriptor_strategy
+            )
 
     @property
     def archive(self):
@@ -201,7 +204,7 @@ class NoveltySearch:
     def sparseness(
         self,
         instances: list[Instance],
-        include_desc: bool = True,
+        include_desc: bool = False,
         verbose: bool = False,
     ) -> list[float]:
         if len(instances) == 0 or any(len(d) == 0 for d in instances):
@@ -216,7 +219,6 @@ class NoveltySearch:
         _descriptors_arr = self.__combined_archive_and_population(
             self.archive, instances
         )
-
         neighbourhood = NearestNeighbors(n_neighbors=self._k + 1, algorithm="ball_tree")
         neighbourhood.fit(_descriptors_arr)
         sparseness = []

@@ -6,7 +6,7 @@ import pytest
 import copy
 import numpy as np
 from digneapy.novelty_search import Archive
-from digneapy.domain import Instance
+from digneapy.core import Instance
 
 
 @pytest.fixture

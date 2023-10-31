@@ -2,7 +2,7 @@
 # -*-coding:utf-8 -*-
 """
 @File    :   domain.py
-@Time    :   2023/10/24 17:04:31
+@Time    :   2023/10/30 12:48:56
 @Author  :   Alejandro Marrero 
 @Version :   1.0
 @Contact :   amarrerd@ull.edu.es
@@ -13,9 +13,32 @@
 
 import reprlib
 import operator
-import random
 from functools import reduce
-from typing import TypeVar, Generic, Union, get_args, Iterable, Tuple
+from typing import Iterable, Tuple
+import copy
+
+
+class OptProblem:
+    def __init__(self, name: str = "DefaultOptProblem", *args, **kwargs):
+        self._name = name
+
+    def evaluate(self, individual: Iterable) -> Tuple[float]:
+        msg = f"evaluate method not implemented in OptProblem"
+        raise NotImplementedError(msg)
+
+
+class Solver:
+    def __init__(self, name: str = "default"):
+        self.name = name
+
+    def __repr__(self):
+        return self.name
+
+    def run(self, **kwargs):
+        """
+        A typical evaluation function takes one individual as argument and returns its fitness as a tuple.
+        """
+        raise NotImplementedError(f"evaluate method not implemented in class Solver")
 
 
 class Instance:
@@ -33,8 +56,8 @@ class Instance:
         self._fitness = fitness
         self._p = p
         self._s = s
-        self._portfolio_m = []
-        self._features = []
+        self._portfolio_m = list()
+        self._features = list()
 
     def calculate_features(self):
         """Calculates the features of the instance"""
@@ -83,21 +106,20 @@ class Instance:
         self._features = f
 
     @property
-    def performance(self):
+    def portfolio_scores(self):
         return self._portfolio_m
 
-    @performance.setter
-    def performance(self, p):
-        self._portfolio_m = p
+    @portfolio_scores.setter
+    def portfolio_scores(self, p):
+        self._portfolio_m = copy.deepcopy(p)
 
     def __repr__(self):
-        return f"Instance(f={self._fitness},p={self._p},s={self._s},vars={len(self._variables)},features={len(self._features)},performance={len(self._portfolio_m)})"
+        return f"Instance<f={self._fitness},p={self._p},s={self._s},vars={len(self._variables)},features={len(self._features)},performance={len(self._portfolio_m)}>"
 
     def __str__(self):
         features = reprlib.repr(self._features)
-        features = features[features.find("[") : features.find("]") + 1]
         performance = reprlib.repr(self._portfolio_m)
-        performance = performance[performance.find("[") : performance.find("]") + 1]
+        performance = performance[performance.find("[") : performance.rfind("]") + 1]
         return f"Instance(f={self._fitness},p={self._p},s={self._s},features={features},performance={performance})"
 
     def __iter__(self):
@@ -132,31 +154,43 @@ class Instance:
         return msg
 
 
-T = TypeVar("T", bound=Union[int, float])
-
-
 class Domain:
     def __init__(
-        self, name: str = "", size: int = 0, bounds: Iterable[Tuple] = None, dtype=int
+        self,
+        name: str = "Domain",
+        dimension: int = 0,
+        bounds: Iterable[Tuple] = None,
+        *args,
+        **kwargs,
     ):
-        self._name = name
-        self._dimension = size
-        self._bounds = list(bounds)
-        self._dtype = dtype
+        self.name = name
+        self.dimension = dimension
+        self.bounds = bounds if bounds else [(0.0, 0.0)]
 
-    @property
-    def bounds(self):
-        return self._bounds
+    def generate_instance(self) -> Instance:
+        msg = f"generate_instances is not implemented in Domain class."
+        raise NotImplementedError(msg)
 
-    def create_instance(self) -> Instance:
-        """Creates a new instances for the optimisation domain by means of
-        drawing random values in the range (l_i, u_i) for i in [0, size]
-        """
+    def extract_features(self, instance: Instance) -> Tuple[float]:
+        msg = f"extract_features is not implemented in Domain class."
+        raise NotImplementedError(msg)
 
-        variables = [
-            self._dtype(random.uniform(l_i, u_i)) for (l_i, u_i) in self._bounds
-        ]
-        return Instance(variables)
+    @classmethod
+    def from_instance(cls, instance: Instance) -> OptProblem:
+        msg = f"from_instance is not implemented in Domain class."
+        raise NotImplementedError(msg)
 
-    def __repr__(self):
-        return f"Domain<name={self._name},size={self._dimension},bounds={self._bounds},dtype={self._dtype}>"
+    def __len__(self):
+        return self.dimension
+
+    def lower_i(self, i):
+        if i < 0 or i > len(self.bounds):
+            msg = f"index {i} is out of bounds. Valid values are [0-{len(self.bounds)}]"
+            raise AttributeError(msg)
+        return self.bounds[i][0]
+
+    def upper_i(self, i):
+        if i < 0 or i > len(self.bounds):
+            msg = f"index {i} is out of bounds. Valid values are [0-{len(self.bounds)}]"
+            raise AttributeError(msg)
+        return self.bounds[i][1]

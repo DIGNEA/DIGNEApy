@@ -80,8 +80,8 @@ class EIG(NoveltySearch):
             off[cross_point:] = p_1[cross_point:]
         # Mutation uniform one
         mut_point = np.random.randint(low=0, high=len(off))
-        new_value = np.random.rand(
-            self.domain.lower_i(mut_point), self.domain.upper_i(mut_point)
+        new_value = np.random.uniform(
+            low=self.domain.lower_i(mut_point), high=self.domain.upper_i(mut_point)
         )
         off[mut_point] = new_value
         return off

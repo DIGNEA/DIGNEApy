@@ -239,7 +239,9 @@ class NoveltySearch:
 
     def update_archive(self, instances: List[Instance]):
         """Updates the Novelty Search Archive with all the instances that has a 's' greater than t_a"""
-        self._archive.append(*itertools.filter(lambda x: x.s >= self.t_a, instances))
+        self._archive.extend(
+            filter(lambda x: x.s >= self.t_a and x.p >= 0.0, instances)
+        )
 
     def update_solution_set(
         self, instances: List[Instance], verbose: bool = False
@@ -270,7 +272,7 @@ class NoveltySearch:
             if verbose:
                 print("=" * 120)
                 print(f"{instance:.3f} |  s = {s} > t_ss? {(s>= self._t_ss)!r:15} |")
-            if s >= self._t_ss:
+            if s >= self._t_ss and instance.p >= 0.0:
                 counter += 1
                 self._solution_set.append(instance)
 

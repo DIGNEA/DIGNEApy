@@ -24,7 +24,11 @@ if __name__ == "__main__":
     # ns.update_solution_set(instances, verbose=True)
     # print(f"NS algorithm final status: {ns}")
 
-    kp_domain = KPDomain(dimension=100)
+    kp_domain = KPDomain(
+        dimension=50,
+        capacity_approach="percentage",
+        capacity_ratio=0.85,
+    )
     # instance = kp_domain.generate_instance()
     # knapsack = KPDomain.from_instance(instance)
     # print(f"Instance: {instance!r}")
@@ -41,10 +45,14 @@ if __name__ == "__main__":
         1000,
         domain=kp_domain,
         portfolio=[default_kp, map_kp, miw_kp, mpw_kp],
-        t_a=1000,
+        t_a=200,
         t_ss=500,
-        repetitions=10,
+        repetitions=1,
     )
-    print(f"{eig!r}")
     print(eig)
     eig.run()
+
+    for i, instance in enumerate(eig.archive):
+        filename = f"instance_{i}.kp"
+        print(instance)
+        kp_domain.from_instance(instance).to_file(filename)

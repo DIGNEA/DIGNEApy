@@ -171,8 +171,7 @@ class Domain:
         msg = "extract_features is not implemented in Domain class."
         raise NotImplementedError(msg)
 
-    @classmethod
-    def from_instance(cls, instance: Instance) -> OptProblem:
+    def from_instance(self, instance: Instance) -> OptProblem:
         msg = "from_instance is not implemented in Domain class."
         raise NotImplementedError(msg)
 

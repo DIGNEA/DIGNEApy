@@ -129,9 +129,9 @@ def test_not_impl_extract(default_domain):
         default_domain.extract_features()
 
 
-def test_not_impl_from_instance():
+def test_not_impl_from_instance(default_domain):
     with pytest.raises(Exception):
-        Domain.from_instance(None)
+        default_domain.from_instance(None)
 
 
 def test_init_domain_attrs(initialised_domain):

@@ -11,100 +11,85 @@
 """
 
 
-from ..core import Solver
 from digneapy.domains.knapsack import Knapsack
+from typing import Tuple, List
 import numpy as np
 
 
-class DefaultKP(Solver):
-    def __init__(self):
-        super().__init__("Default_KP")
+def default_kp(problem: Knapsack = None) -> Tuple[float, List[int]]:
+    if problem is None:
+        msg = "No problem found in args of default_kp heuristic"
+        raise AttributeError(msg)
 
-    def run(self, problem: Knapsack = None, **kwargs):
-        if problem is None:
-            msg = f"No problem found in args of {self.__class__.__name__} run method"
-            raise AttributeError(msg)
-
-        inside = 0
-        profit = 0
-        chromosome = np.zeros(len(problem))
-        idx = 0
-        while idx < len(problem):
-            if problem.weights[idx] + inside <= problem.capacity:
-                inside += problem.weights[idx]
-                profit += problem.profits[idx]
-                chromosome[idx] = 1
-            idx += 1
-        return (profit, chromosome)
+    inside = 0
+    profit = 0
+    chromosome = np.zeros(len(problem))
+    idx = 0
+    while idx < len(problem):
+        if problem.weights[idx] + inside <= problem.capacity:
+            inside += problem.weights[idx]
+            profit += problem.profits[idx]
+            chromosome[idx] = 1
+        idx += 1
+    return (profit, chromosome)
 
 
-class MaP(Solver):
-    def __init__(self):
-        super().__init__("MaP")
+def map_kp(problem: Knapsack = None) -> Tuple[float, List[int]]:
+    if problem is None:
+        msg = "No problem found in args of map_kp heuristic"
+        raise AttributeError(msg)
 
-    def run(self, problem: Knapsack = None, **kwargs):
-        if problem is None:
-            msg = f"No problem found in args of {self.__class__.__name__} run method"
-            raise AttributeError(msg)
+    indices = np.argsort(problem.profits)[::-1]
 
-        indices = np.argsort(problem.profits)[::-1]
-
-        inside = 0
-        profit = 0
-        chromosome = np.zeros(len(problem))
-        for idx in indices:
-            if problem.weights[idx] + inside <= problem.capacity:
-                inside += problem.weights[idx]
-                profit += problem.profits[idx]
-                chromosome[idx] = 1
-        return (profit, chromosome)
+    inside = 0
+    profit = 0
+    chromosome = np.zeros(len(problem))
+    for idx in indices:
+        if problem.weights[idx] + inside <= problem.capacity:
+            inside += problem.weights[idx]
+            profit += problem.profits[idx]
+            chromosome[idx] = 1
+    return (profit, chromosome)
 
 
-class MiW(Solver):
-    def __init__(self):
-        super().__init__("MiW")
+def miw_kp(problem: Knapsack = None) -> Tuple[float, List[int]]:
+    if problem is None:
+        msg = "No problem found in args of miw_kp heuristic"
+        raise AttributeError(msg)
 
-    def run(self, problem: Knapsack = None, **kwargs):
-        if problem is None:
-            msg = f"No problem found in args of {self.__class__.__name__} run method"
-            raise AttributeError(msg)
+    indices = np.argsort(problem.weights)
 
-        indices = np.argsort(problem.weights)
+    inside = 0
+    profit = 0
+    chromosome = np.zeros(len(problem))
+    for idx in indices:
+        if problem.weights[idx] + inside <= problem.capacity:
+            inside += problem.weights[idx]
+            profit += problem.profits[idx]
+            chromosome[idx] = 1
+        else:
+            break
 
-        inside = 0
-        profit = 0
-        chromosome = np.zeros(len(problem))
-        for idx in indices:
-            if problem.weights[idx] + inside <= problem.capacity:
-                inside += problem.weights[idx]
-                profit += problem.profits[idx]
-                chromosome[idx] = 1
-            else:
-                break
-
-        return (profit, chromosome)
+    return (profit, chromosome)
 
 
-class MPW(Solver):
-    def __init__(self):
-        super().__init__("MPW")
+def mpw_kp(problem: Knapsack = None) -> Tuple[float, List[int]]:
+    if problem is None:
+        msg = "No problem found in args of mpw_kp heuristic"
+        raise AttributeError(msg)
 
-    def run(self, problem: Knapsack = None, **kwargs):
-        if problem is None:
-            msg = f"No problem found in args of {self.__class__.__name__} run method"
-            raise AttributeError(msg)
+    profits_per_weights = [(p / w) for p, w in zip(problem.profits, problem.weights)]
+    indices = np.argsort(profits_per_weights)[::-1]
 
-        indices = np.argsort(problem.weights)
+    inside = 0
+    profit = 0
+    chromosome = np.zeros(len(problem))
+    for idx in indices:
+        if problem.weights[idx] + inside <= problem.capacity:
+            inside += problem.weights[idx]
+            profit += problem.profits[idx]
+            chromosome[idx] = 1
+        else:
+            break
 
-        inside = 0
-        profit = 0
-        chromosome = np.zeros(len(problem))
-        for idx in indices:
-            if problem.weights[idx] + inside <= problem.capacity:
-                inside += problem.weights[idx]
-                profit += problem.profits[idx]
-                chromosome[idx] = 1
-            else:
-                break
-
-        return (profit, chromosome)
+    return (profit, chromosome)

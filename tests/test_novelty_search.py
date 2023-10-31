@@ -27,7 +27,7 @@ def test_empty_archive(empty_archive):
 def test_archive_to_array(default_archive):
     np_archive = np.array(default_archive)
     assert len(np_archive) == len(default_archive)
-    assert type(np_archive) == type(np.zeros(1))
+    assert isinstance(np_archive, np.ndarray)
 
 
 def test_iterable_default_archive(default_archive):

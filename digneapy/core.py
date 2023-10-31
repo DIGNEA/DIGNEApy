@@ -14,7 +14,7 @@
 import reprlib
 import operator
 from functools import reduce
-from typing import Iterable, Tuple
+from typing import Iterable, Tuple, Callable
 import copy
 
 
@@ -23,22 +23,11 @@ class OptProblem:
         self._name = name
 
     def evaluate(self, individual: Iterable) -> Tuple[float]:
-        msg = f"evaluate method not implemented in OptProblem"
+        msg = "evaluate method not implemented in OptProblem"
         raise NotImplementedError(msg)
 
 
-class Solver:
-    def __init__(self, name: str = "default"):
-        self.name = name
-
-    def __repr__(self):
-        return self.name
-
-    def run(self, **kwargs):
-        """
-        A typical evaluation function takes one individual as argument and returns its fitness as a tuple.
-        """
-        raise NotImplementedError(f"evaluate method not implemented in class Solver")
+Solver = Callable[[OptProblem], Tuple]
 
 
 class Instance:
@@ -61,7 +50,9 @@ class Instance:
 
     def calculate_features(self):
         """Calculates the features of the instance"""
-        msg = f"Method not implemented in class Instance. Must be re-defined in subclasses"
+        msg = (
+            "Method not implemented in class Instance. Must be re-defined in subclasses"
+        )
         raise NotImplementedError(msg)
 
     @property
@@ -168,16 +159,16 @@ class Domain:
         self.bounds = bounds if bounds else [(0.0, 0.0)]
 
     def generate_instance(self) -> Instance:
-        msg = f"generate_instances is not implemented in Domain class."
+        msg = "generate_instances is not implemented in Domain class."
         raise NotImplementedError(msg)
 
     def extract_features(self, instance: Instance) -> Tuple[float]:
-        msg = f"extract_features is not implemented in Domain class."
+        msg = "extract_features is not implemented in Domain class."
         raise NotImplementedError(msg)
 
     @classmethod
     def from_instance(cls, instance: Instance) -> OptProblem:
-        msg = f"from_instance is not implemented in Domain class."
+        msg = "from_instance is not implemented in Domain class."
         raise NotImplementedError(msg)
 
     def __len__(self):

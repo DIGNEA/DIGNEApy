@@ -66,7 +66,11 @@ class KPDomain(Domain):
         max_p: int = 1000,
         max_w: int = 1000,
     ):
-        super().__init__("KP", dimension=dimension, bounds=None)
+        super().__init__(
+            "KP",
+            dimension=dimension,
+            bounds=list((0, 1) for _ in range(2 * dimension + 1)),
+        )
         self.min_p = min_p
         self.min_w = min_w
         self.max_p = max_p
@@ -85,13 +89,13 @@ class KPDomain(Domain):
 
         return Instance(variables)
 
-    def extract_features(self, instance: Instance) -> Tuple[float]:
+    def extract_features(self, instance: Instance) -> List[float]:
         vars = instance._variables[1:]
+        capacity = instance._variables[0]
         weights = vars[0::2]
         profits = vars[1::2]
-        capacity = instance._variables[0]
         avg_eff = sum([p / w for p, w in zip(profits, weights)]) / len(vars)
-        return (
+        return [
             capacity,
             max(profits),
             max(weights),
@@ -100,7 +104,7 @@ class KPDomain(Domain):
             avg_eff,
             np.mean(vars),
             np.std(vars),
-        )
+        ]
 
     @classmethod
     def from_instance(cls, instance: Instance) -> Knapsack:

@@ -18,6 +18,7 @@ import itertools
 from functools import reduce
 from .core import Instance
 from sklearn.neighbors import NearestNeighbors
+from typing import List
 
 
 class Archive:
@@ -133,11 +134,11 @@ class Archive:
         return cls(memv)
 
 
-def features_descriptor_strategy(iterable) -> list:
+def _features_descriptor_strategy(iterable) -> List[float]:
     return [i.features for i in iterable]
 
 
-def performance_descriptor_strategy(iterable) -> list:
+def _performance_descriptor_strategy(iterable) -> List[float]:
     return [i.performance for i in iterable]
 
 
@@ -160,13 +161,13 @@ class NoveltySearch:
             msg = f"describe_by {descriptor} not available in {self.__class__.__name__}.__init__. Set to features by default"
             print(msg)
             self._describe_by = "features"
-            self._descriptor_strategy = features_descriptor_strategy
+            self._descriptor_strategy = _features_descriptor_strategy
         else:
             self._describe_by = descriptor
             self._descriptor_strategy = (
-                performance_descriptor_strategy
+                _performance_descriptor_strategy
                 if descriptor == "performance"
-                else features_descriptor_strategy
+                else _features_descriptor_strategy
             )
 
     @property
@@ -196,17 +197,16 @@ class NoveltySearch:
         return f"NS(t_a={self._t_a},t_ss={self._t_ss},k={self._k},len(a)={len(self._archive)},len(ss)={len(self._solution_set)})"
 
     def __combined_archive_and_population(
-        self, current_pop: Archive, instances: list[Instance]
+        self, current_pop: Archive, instances: List[Instance]
     ) -> np.ndarray[float]:
         components = self._descriptor_strategy(itertools.chain(instances, current_pop))
-        return np.vstack([components], dtype=float)
+        return np.vstack([components])
 
     def sparseness(
         self,
-        instances: list[Instance],
-        include_desc: bool = False,
+        instances: List[Instance],
         verbose: bool = False,
-    ) -> list[float]:
+    ) -> List[float]:
         if len(instances) == 0 or any(len(d) == 0 for d in instances):
             msg = f"{self.__class__.__name__} tyring to calculate sparseness on an empty Instance list"
             raise AttributeError(msg)
@@ -234,14 +234,18 @@ class NoveltySearch:
             if verbose:
                 print("=" * 120)
                 print(f"{instance:.3f} |  s(i) > t_a? {(s>= self._t_a)!r:15} |")
-            if include_desc and s >= self._t_a:
-                self._archive.append(instance)
 
         return sparseness
 
+    def update_archive(self, instances: List[Instance]):
+        """Updates the Novelty Search Archive with all the instances that has a 's' greater than t_a"""
+        self._archive.append(*itertools.filter(lambda x: x.s >= self.t_a, instances))
+
     def update_solution_set(
-        self, instances: list[Instance], verbose: bool = False
+        self, instances: List[Instance], verbose: bool = False
     ) -> int:
+        """Updates the Novelty Search Archive with all the instances that has a 's' greater than t_ss when K is set to 1"""
+
         if len(instances) == 0 or any(len(d) == 0 for d in instances):
             msg = f"{self.__class__.__name__} tyring to calculate sparseness_solution_set on an empty instance list"
             raise AttributeError(msg)
@@ -269,4 +273,5 @@ class NoveltySearch:
             if s >= self._t_ss:
                 counter += 1
                 self._solution_set.append(instance)
+
         return counter

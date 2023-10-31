@@ -27,6 +27,8 @@ class OptProblem:
         raise NotImplementedError(msg)
 
 
+"""Solver is any callable type that receives a OptProblem 
+as its argument and returns a tuple with the solution found"""
 Solver = Callable[[OptProblem], Tuple]
 
 
@@ -48,20 +50,13 @@ class Instance:
         self._portfolio_m = list()
         self._features = list()
 
-    def calculate_features(self):
-        """Calculates the features of the instance"""
-        msg = (
-            "Method not implemented in class Instance. Must be re-defined in subclasses"
-        )
-        raise NotImplementedError(msg)
-
     @property
     def p(self):
         return self._p
 
     @p.setter
     def p(self, performance):
-        if not float(performance):
+        if performance != 0.0 and not float(performance):
             msg = f"The performance value {performance} is not a float in 'p' setter of class {self.__class__.__name__}"
             raise AttributeError(msg)
         self._p = performance
@@ -119,6 +114,16 @@ class Instance:
     def __len__(self):
         return len(self._variables)
 
+    def __getitem__(self, key):
+        if isinstance(key, slice):
+            cls = type(self)  # To facilitate subclassing
+            return cls(self._variables[key])
+        index = operator.index(key)
+        return self._variables[index]
+
+    def __setitem__(self, key, value):
+        self._variables[key] = value
+
     def __eq__(self, other):
         return len(self) == len(other) and all(a == b for a, b in zip(self, other))
 
@@ -162,7 +167,7 @@ class Domain:
         msg = "generate_instances is not implemented in Domain class."
         raise NotImplementedError(msg)
 
-    def extract_features(self, instance: Instance) -> Tuple[float]:
+    def extract_features(self, instance: Instance) -> list[float]:
         msg = "extract_features is not implemented in Domain class."
         raise NotImplementedError(msg)
 

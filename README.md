@@ -2,7 +2,7 @@
   <h1>DIGNEApy</h1>
   <h4>Diverse Instance Generator with Novelty Search and Evolutionary Algorithms</h4>
   
-[![Test](https://github.com/DIGNEA/dignea/actions/workflows/cmake.yml/badge.svg)](https://github.com/DIGNEA/dignea/actions/workflows/cmake.yml/badge.svg)
+[![Test](https://github.com/DIGNEA/DIGNEApy/actions/workflows/python-app.yml/badge.svg)](https://github.com/DIGNEA/DIGNEApy/actions/workflows/python-app.yml)
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 </center>
 

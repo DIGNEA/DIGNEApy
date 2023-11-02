@@ -96,7 +96,6 @@ class EIG(NoveltySearch):
 
             individual.portfolio_scores = list(solvers_scores)
             individual.p = avg_p_solver[0] - max(avg_p_solver[1:])
-            print(individual)
 
     def _compute_fitness(self, population: List[Instance] = None):
         phi_r = 1.0 - self.phi

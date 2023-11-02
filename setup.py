@@ -21,7 +21,7 @@ test_requirements = [
 setup(
     author="Alejandro Marrero",
     author_email="amarrerd@ull.edu.es",
-    python_requires=">=3.6",
+    python_requires=">=3.10",
     classifiers=[
         "Development Status :: 2 - Pre-Alpha",
         "Intended Audience :: Developers",
@@ -43,7 +43,7 @@ setup(
     platforms=["any"],
     test_suite="tests",
     tests_require=test_requirements,
-    url="https://github.com/amarrerod/digneapy",
+    url="https://github.com/dignea/digneapy",
     version=digneapy.__version__,
     zip_safe=False,
 )

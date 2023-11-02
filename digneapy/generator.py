@@ -9,10 +9,12 @@
 @License :   (C)Copyright 2023, Alejandro Marrero
 @Desc    :   None
 """
-
+from sklearn.neighbors import NearestNeighbors
 from .novelty_search import NoveltySearch
 from .core import Instance, Domain, Solver
-from typing import List
+from typing import List, Tuple
+from operator import attrgetter
+import itertools
 import numpy as np
 import copy
 
@@ -27,20 +29,49 @@ class EIG(NoveltySearch):
         k: int = 15,
         descriptor="features",
         domain: Domain = None,
-        portfolio: List[Solver] = None,
+        portfolio: Tuple[Solver] = None,
         repetitions: int = 1,
         cxrate: float = 0.5,
         mutrate: float = 0.8,
+        phi: float = 0.85,
+        force_bias: bool = True,
     ):
+        """_summary_
+
+        Args:
+            pop_size (int, optional): Number of instances in the population to evolve. Defaults to 100.
+            evaluations (int, optional): Number of total evaluations to perform. Defaults to 10000.
+            t_a (float, optional): Archive threshold. Defaults to 0.001.
+            t_ss (float, optional): Solution set threshold. Defaults to 0.001.
+            k (int, optional): Number of neighbours to calculate the sparseness. Defaults to 15.
+            descriptor (str, optional): Descriptor used to calculate the diversity. The options are features or performance. Defaults to "features".
+            domain (Domain, optional): Domain for which the instances are generated for. Defaults to None.
+            portfolio (Tuple[Solver], optional): Tuple of callable objects that can evaluate a instance. Defaults to None.
+            repetitions (int, optional): Number times a solver in the portfolio must be run over the same instance. Defaults to 1.
+            cxrate (float, optional): Crossover rate. Defaults to 0.5.
+            mutrate (float, optional): Mutation rate. Defaults to 0.8.
+            phi (float, optional): Phi balance value for the weighted fitness function. Defaults to 0.85.
+            force_bias (bool, optional): Force that the instances are biased to the performance of the target solver.
+            The target solver is the first solver in the portfolio. Defaults to True.
+
+        Raises:
+            AttributeError: _description_
+        """
         super().__init__(t_a, t_ss, k, descriptor)
         self.pop_size = pop_size
         self.max_evaluations = evaluations
         self.domain = domain
-        self.portfolio = list(portfolio) if portfolio else []
+        self.portfolio = tuple(portfolio) if portfolio else ()
         self.population = []
         self.repetitions = repetitions
         self.cxrate = cxrate
         self.mutrate = mutrate
+
+        if phi < 0.0 or phi > 1.0:
+            msg = f"phi must be in range [0.0-1.0]. Got: {phi}."
+            raise AttributeError(msg)
+        self.phi = phi
+        self.force_bias = force_bias
 
     def __str__(self):
         port_names = [s.__name__ for s in self.portfolio]
@@ -55,7 +86,6 @@ class EIG(NoveltySearch):
 
     def evaluate_population(self, population: List[Instance]):
         for individual in population:
-            p = 0
             avg_p_solver = np.zeros(len(self.portfolio))
             solvers_scores = []
             problem = self.domain.from_instance(individual)
@@ -64,13 +94,14 @@ class EIG(NoveltySearch):
                 solvers_scores.append(scores)
                 avg_p_solver[i] = np.mean(scores)
 
-            p = avg_p_solver[0] - max(avg_p_solver[1:])
             individual.portfolio_scores = list(solvers_scores)
-            individual.p = p
+            individual.p = avg_p_solver[0] - max(avg_p_solver[1:])
+            print(individual)
 
-    def _compute_fitness(self, population: List[Instance]):
+    def _compute_fitness(self, population: List[Instance] = None):
+        phi_r = 1.0 - self.phi
         for individual in population:
-            individual.fitness = individual.p * 0.85 + individual.s * 0.15
+            individual.fitness = individual.p * self.phi + individual.s * phi_r
 
     def _reproduce(self, p_1: Instance, p_2: Instance) -> Instance:
         off = copy.copy(p_1)
@@ -85,6 +116,50 @@ class EIG(NoveltySearch):
         )
         off[mut_point] = new_value
         return off
+
+    def __replacement(
+        self, current_population: List[Instance], offspring: List[Instance]
+    ) -> List[Instance]:
+        all_individuals = list(itertools.chain(current_population, offspring))
+        best_f = sorted(
+            all_individuals,
+            key=attrgetter("fitness"),
+            reverse=True,
+        )
+        new_population = [best_f[0]] + offspring[1:]
+        return new_population
+
+    def _update_archive(self, instances: List[Instance]):
+        """Updates the Novelty Search Archive with all the instances that has a 's' greater than t_a"""
+        if not instances:
+            return
+        self._archive.extend(filter(lambda x: x.s >= self.t_a and x.p > 0.0, instances))
+
+    def _update_solution_set(self, instances: List[Instance], verbose: bool = False):
+        """Updates the Novelty Search Archive with all the instances that has a 's' greater than t_ss when K is set to 1"""
+
+        if len(instances) == 0 or any(len(d) == 0 for d in instances):
+            msg = f"{self.__class__.__name__} trying to update the solution set with an empty instance list"
+            raise AttributeError(msg)
+
+        if self._k >= len(instances):
+            msg = f"{self.__class__.__name__} trying to calculate sparseness_solution_set with k({self._k}) > len(instances)({len(instances)})"
+            raise AttributeError(msg)
+
+        _descriptors_arr = super()._combined_archive_and_population(
+            self.solution_set, instances
+        )
+
+        neighbourhood = NearestNeighbors(n_neighbors=2, algorithm="ball_tree")
+        neighbourhood.fit(_descriptors_arr)
+        for instance, descriptor in zip(
+            instances, _descriptors_arr[0 : len(instances)]
+        ):
+            dist, ind = neighbourhood.kneighbors([descriptor])
+            dist, ind = dist[0][1:], ind[0][1:]
+            s = (1.0 / self._k) * sum(dist)
+            if s >= self._t_ss and instance.p > 0.0:
+                self._solution_set.append(instance)
 
     def run(self):
         self.population = [
@@ -103,10 +178,27 @@ class EIG(NoveltySearch):
 
             self.evaluate_population(offspring)
             self.sparseness(offspring)
-            self._compute_fitness(offspring)
-            # Updates the archive and solution set
-            self.update_archive(offspring)
-            self.update_solution_set(offspring)
-            self.population = copy.copy(offspring)
+            self._compute_fitness(population=offspring)
+            self._update_archive(offspring)
+            self._update_solution_set(offspring)
 
+            self.population = copy.copy(offspring)
             performed_evals += self.pop_size
+
+            # if self.force_bias:
+            #     biased_offspring = list(filter(lambda x: x.p > 0.0, offspring))
+            #     # If we don't have any feasible offspring we can do two things
+            #     # In the first generation we just include the best offspring found yet
+            #     # In any other generation, we simply avoid this step
+            #     if not biased_offspring:
+            #         if performed_evals == 0:
+            #             best_offs_yet = sorted(
+            #                 offspring, key=attrgetter("fitness"), reverse=True
+            #             )
+            #         # Updates the archive and solution set
+            #         self.update_archive([best_offs_yet[0]])
+            #     else:
+            #         # Updates the archive and solution set
+            #         self.update_archive(biased_offspring)
+            #         self.update_solution_set(biased_offspring)
+            # else:

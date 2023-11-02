@@ -67,7 +67,7 @@ class Instance:
 
     @s.setter
     def s(self, novelty):
-        if not float(novelty):
+        if novelty != 0.0 and not float(novelty):
             msg = f"The novelty value {novelty} is not a float in 's' setter of class {self.__class__.__name__}"
             raise AttributeError(msg)
         self._s = novelty
@@ -78,7 +78,7 @@ class Instance:
 
     @fitness.setter
     def fitness(self, f):
-        if not float(f):
+        if f != 0.0 and not float(f):
             msg = f"The fitness value {f} is not a float in fitness setter of class {self.__class__.__name__}"
             raise AttributeError(msg)
         self._fitness = f
@@ -145,7 +145,7 @@ class Instance:
 
         components = (format(c, fmt_spec) for c in components)
         decriptor = "descriptor=({})".format(",".join(components))
-        msg = f"Instance(p={format(self._p, fmt_spec)}, s={format(self._s, fmt_spec)}, {decriptor})"
+        msg = f"Instance(f={self._fitness},p={format(self._p, fmt_spec)}, s={format(self._s, fmt_spec)}, {decriptor})"
 
         return msg
 

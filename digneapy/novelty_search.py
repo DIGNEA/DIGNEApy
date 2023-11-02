@@ -29,6 +29,11 @@ class Archive:
     _typecode = "d"
 
     def __init__(self, instances: list[Instance] = None):
+        """_summary_
+
+        Args:
+            instances (list[Instance], optional): Instances to initialise the archive. Defaults to None.
+        """
         if instances:
             # self._instances = list(array(self.typecode, d) for d in instances)
             self._instances = list(i for i in instances)
@@ -122,9 +127,9 @@ class Archive:
                 self.instances.append(i)
 
     def __format__(self, fmt_spec=""):
-        coords = self
+        variables = self
         outer_fmt = "({})"
-        components = (format(c, fmt_spec) for c in coords)
+        components = (format(c, fmt_spec) for c in variables)
         return outer_fmt.format(", ".join(components))
 
     @classmethod
@@ -139,7 +144,7 @@ def _features_descriptor_strategy(iterable) -> List[float]:
 
 
 def _performance_descriptor_strategy(iterable) -> List[float]:
-    return [i.performance for i in iterable]
+    return [np.mean(i.portfolio_scores, axis=0) for i in iterable]
 
 
 class NoveltySearch:
@@ -152,11 +157,20 @@ class NoveltySearch:
         k: int = 15,
         descriptor="features",
     ):
+        """_summary_
+
+        Args:
+            t_a (float, optional): Archive threshold. Defaults to 0.001.
+            t_ss (float, optional): Solution set threshold. Defaults to 0.001.
+            k (int, optional): Number of neighbours to calculate the sparseness. Defaults to 15.
+            descriptor (str, optional): Descriptor to calculate the diversity. The options are features and performance. Defaults to "features".
+        """
         self._t_a = t_a
         self._t_ss = t_ss
         self._k = k
         self._archive = Archive()
         self._solution_set = Archive()
+
         if descriptor not in self.__descriptors:
             msg = f"describe_by {descriptor} not available in {self.__class__.__name__}.__init__. Set to features by default"
             print(msg)
@@ -191,12 +205,12 @@ class NoveltySearch:
         return self._t_ss
 
     def __str__(self):
-        return f"NS(t_a={self._t_a},t_ss={self._t_ss},k={self._k},len(a)={len(self._archive)},len(ss)={len(self._solution_set)})"
+        return f"NS(desciptor={self._describe_by},t_a={self._t_a},t_ss={self._t_ss},k={self._k},len(a)={len(self._archive)},len(ss)={len(self._solution_set)})"
 
     def __repr__(self) -> str:
-        return f"NS(t_a={self._t_a},t_ss={self._t_ss},k={self._k},len(a)={len(self._archive)},len(ss)={len(self._solution_set)})"
+        return f"NS<desciptor={self._describe_by},t_a={self._t_a},t_ss={self._t_ss},k={self._k},len(a)={len(self._archive)},len(ss)={len(self._solution_set)}>"
 
-    def __combined_archive_and_population(
+    def _combined_archive_and_population(
         self, current_pop: Archive, instances: List[Instance]
     ) -> np.ndarray[float]:
         components = self._descriptor_strategy(itertools.chain(instances, current_pop))
@@ -208,15 +222,15 @@ class NoveltySearch:
         verbose: bool = False,
     ) -> List[float]:
         if len(instances) == 0 or any(len(d) == 0 for d in instances):
-            msg = f"{self.__class__.__name__} tyring to calculate sparseness on an empty Instance list"
+            msg = f"{self.__class__.__name__} trying to calculate sparseness on an empty Instance list"
             raise AttributeError(msg)
 
         if self._k >= len(instances):
-            msg = f"{self.__class__.__name__} tyring to calculate sparseness with k({self._k}) > len(instances)({len(instances)})"
+            msg = f"{self.__class__.__name__} trying to calculate sparseness with k({self._k}) > len(instances)({len(instances)})"
             raise AttributeError(msg)
         # We need to concatentate the archive to the given descriptors
         # and to set k+1 because it predicts n[0] == self descriptor
-        _descriptors_arr = self.__combined_archive_and_population(
+        _descriptors_arr = self._combined_archive_and_population(
             self.archive, instances
         )
         neighbourhood = NearestNeighbors(n_neighbors=self._k + 1, algorithm="ball_tree")
@@ -237,32 +251,29 @@ class NoveltySearch:
 
         return sparseness
 
-    def update_archive(self, instances: List[Instance]):
+    def _update_archive(self, instances: List[Instance]):
         """Updates the Novelty Search Archive with all the instances that has a 's' greater than t_a"""
-        self._archive.extend(
-            filter(lambda x: x.s >= self.t_a and x.p >= 0.0, instances)
-        )
+        if not instances:
+            return
+        self._archive.extend(filter(lambda x: x.s >= self.t_a, instances))
 
-    def update_solution_set(
-        self, instances: List[Instance], verbose: bool = False
-    ) -> int:
+    def _update_solution_set(self, instances: List[Instance], verbose: bool = False):
         """Updates the Novelty Search Archive with all the instances that has a 's' greater than t_ss when K is set to 1"""
 
         if len(instances) == 0 or any(len(d) == 0 for d in instances):
-            msg = f"{self.__class__.__name__} tyring to calculate sparseness_solution_set on an empty instance list"
+            msg = f"{self.__class__.__name__} trying to update the solution set with an empty instance list"
             raise AttributeError(msg)
 
         if self._k >= len(instances):
-            msg = f"{self.__class__.__name__} tyring to calculate sparseness_solution_set with k({self._k}) > len(instances)({len(instances)})"
+            msg = f"{self.__class__.__name__} trying to calculate sparseness_solution_set with k({self._k}) > len(instances)({len(instances)})"
             raise AttributeError(msg)
 
-        _descriptors_arr = self.__combined_archive_and_population(
+        _descriptors_arr = self._combined_archive_and_population(
             self.solution_set, instances
         )
 
         neighbourhood = NearestNeighbors(n_neighbors=2, algorithm="ball_tree")
         neighbourhood.fit(_descriptors_arr)
-        counter = 0
         for instance, descriptor in zip(
             instances, _descriptors_arr[0 : len(instances)]
         ):
@@ -271,9 +282,6 @@ class NoveltySearch:
             s = (1.0 / self._k) * sum(dist)
             if verbose:
                 print("=" * 120)
-                print(f"{instance:.3f} |  s = {s} > t_ss? {(s>= self._t_ss)!r:15} |")
-            if s >= self._t_ss and instance.p >= 0.0:
-                counter += 1
+                print(f"{instance} |  s = {s} > t_ss? {(s>= self._t_ss)!r:15} |")
+            if s >= self._t_ss:
                 self._solution_set.append(instance)
-
-        return counter

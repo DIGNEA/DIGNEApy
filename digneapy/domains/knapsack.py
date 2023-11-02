@@ -82,7 +82,7 @@ class KPDomain(Domain):
         self.max_p = max_p
         self.max_w = max_w
         self.max_capacity = max_capacity
-        if capacity_ratio < 0.0 or capacity_ratio > 0.0 or not float(capacity_ratio):
+        if capacity_ratio < 0.0 or capacity_ratio > 1.0 or not float(capacity_ratio):
             self.capacity_ratio = 0.8  # Default
             msg = f"The capacity ratio must be a float number in the range [0.0-1.0]. Set as 0.8 as default."
             print(msg)

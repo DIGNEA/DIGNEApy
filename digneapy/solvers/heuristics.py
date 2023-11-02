@@ -24,13 +24,11 @@ def default_kp(problem: Knapsack = None) -> Tuple[float, List[int]]:
     inside = 0
     profit = 0
     chromosome = np.zeros(len(problem))
-    idx = 0
-    while idx < len(problem):
+    for idx in range(len(problem)):
         if problem.weights[idx] + inside <= problem.capacity:
             inside += problem.weights[idx]
             profit += problem.profits[idx]
             chromosome[idx] = 1
-        idx += 1
     return (profit, chromosome)
 
 

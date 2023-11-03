@@ -12,11 +12,12 @@
 
 
 from digneapy.domains.knapsack import Knapsack
+from digneapy.core import Solution
 from typing import Tuple, List
 import numpy as np
 
 
-def default_kp(problem: Knapsack = None) -> Tuple[float, List[int]]:
+def default_kp(problem: Knapsack = None) -> List[Solution]:
     if problem is None:
         msg = "No problem found in args of default_kp heuristic"
         raise AttributeError(msg)
@@ -29,10 +30,10 @@ def default_kp(problem: Knapsack = None) -> Tuple[float, List[int]]:
             inside += problem.weights[idx]
             profit += problem.profits[idx]
             chromosome[idx] = 1
-    return (profit, chromosome)
+    return [Solution(chromosome=chromosome, objectives=(profit,), fitness=profit)]
 
 
-def map_kp(problem: Knapsack = None) -> Tuple[float, List[int]]:
+def map_kp(problem: Knapsack = None) -> List[Solution]:
     if problem is None:
         msg = "No problem found in args of map_kp heuristic"
         raise AttributeError(msg)
@@ -47,10 +48,10 @@ def map_kp(problem: Knapsack = None) -> Tuple[float, List[int]]:
             inside += problem.weights[idx]
             profit += problem.profits[idx]
             chromosome[idx] = 1
-    return (profit, chromosome)
+    return [Solution(chromosome=chromosome, objectives=(profit,), fitness=profit)]
 
 
-def miw_kp(problem: Knapsack = None) -> Tuple[float, List[int]]:
+def miw_kp(problem: Knapsack = None) -> List[Solution]:
     if problem is None:
         msg = "No problem found in args of miw_kp heuristic"
         raise AttributeError(msg)
@@ -68,10 +69,10 @@ def miw_kp(problem: Knapsack = None) -> Tuple[float, List[int]]:
         else:
             break
 
-    return (profit, chromosome)
+    return [Solution(chromosome=chromosome, objectives=(profit,), fitness=profit)]
 
 
-def mpw_kp(problem: Knapsack = None) -> Tuple[float, List[int]]:
+def mpw_kp(problem: Knapsack = None) -> List[Solution]:
     if problem is None:
         msg = "No problem found in args of mpw_kp heuristic"
         raise AttributeError(msg)
@@ -90,4 +91,4 @@ def mpw_kp(problem: Knapsack = None) -> Tuple[float, List[int]]:
         else:
             break
 
-    return (profit, chromosome)
+    return [Solution(chromosome=chromosome, objectives=(profit,), fitness=profit)]

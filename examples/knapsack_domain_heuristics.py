@@ -18,14 +18,14 @@ from digneapy.domains.knapsack import KPDomain
 
 def main():
     kp_domain = KPDomain(
-        dimension=50,
+        dimension=100,
         capacity_approach="evolved",
-        max_capacity=500,
+        max_capacity=1000,
     )
 
     eig = EIG(
         10,
-        1000,
+        10000,
         domain=kp_domain,
         portfolio=[default_kp, map_kp, miw_kp, mpw_kp],
         t_a=3,
@@ -38,9 +38,15 @@ def main():
     eig.run()
     print(eig)
 
+    print("=" * 80 + " Archive Solutions " + "=" * 80)
     for i, instance in enumerate(eig.archive):
         filename = f"instance_{i}.kp"
-        print(f"Archive instance: {instance:p}")
+        print(instance)
+        kp_domain.from_instance(instance).to_file(filename)
+    print("=" * 80 + " Solution Set Solutions " + "=" * 80)
+    for i, instance in enumerate(eig.solution_set):
+        filename = f"instance_{i}.kp"
+        print(instance)
         kp_domain.from_instance(instance).to_file(filename)
 
 

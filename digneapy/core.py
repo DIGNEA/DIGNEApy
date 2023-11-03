@@ -14,8 +14,34 @@
 import reprlib
 import operator
 from functools import reduce
-from typing import Iterable, Tuple, Callable
+from typing import Iterable, Tuple, Callable, List
 import copy
+
+
+class Solution:
+    def __init__(
+        self,
+        chromosome: List = None,
+        objectives: Tuple[float] = None,
+        constraints: Tuple[float] = None,
+        fitness: float = 0.0,
+    ):
+        if chromosome is not None:
+            self.chromosome = list(chromosome)
+        else:
+            self.chromosome = list()
+        self.objectives = tuple(objectives) if objectives else tuple()
+        self.constraints = tuple(constraints) if constraints else tuple()
+        self.fitness = fitness
+
+    def __str__(self):
+        return f"Solution(dimension={len(self.chromosome)},f={self.fitness},objs={self.objectives},constaints={self.constraints})"
+
+    def __len__(self):
+        return len(self.chromosome)
+
+    def __iter__(self):
+        return iter(self.chromosome)
 
 
 class OptProblem:
@@ -29,7 +55,7 @@ class OptProblem:
 
 """Solver is any callable type that receives a OptProblem 
 as its argument and returns a tuple with the solution found"""
-Solver = Callable[[OptProblem], Tuple]
+Solver = Callable[[OptProblem], List[Solution]]
 
 
 class Instance:

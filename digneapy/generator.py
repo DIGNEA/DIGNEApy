@@ -34,7 +34,6 @@ class EIG(NoveltySearch):
         cxrate: float = 0.5,
         mutrate: float = 0.8,
         phi: float = 0.85,
-        force_bias: bool = True,
     ):
         """_summary_
 
@@ -51,7 +50,6 @@ class EIG(NoveltySearch):
             cxrate (float, optional): Crossover rate. Defaults to 0.5.
             mutrate (float, optional): Mutation rate. Defaults to 0.8.
             phi (float, optional): Phi balance value for the weighted fitness function. Defaults to 0.85.
-            force_bias (bool, optional): Force that the instances are biased to the performance of the target solver.
             The target solver is the first solver in the portfolio. Defaults to True.
 
         Raises:
@@ -71,7 +69,6 @@ class EIG(NoveltySearch):
             msg = f"phi must be in range [0.0-1.0]. Got: {phi}."
             raise AttributeError(msg)
         self.phi = phi
-        self.force_bias = force_bias
 
     def __str__(self):
         port_names = [s.__name__ for s in self.portfolio]
@@ -90,7 +87,13 @@ class EIG(NoveltySearch):
             solvers_scores = []
             problem = self.domain.from_instance(individual)
             for i, solver in enumerate(self.portfolio):
-                scores = [solver(problem)[0] for _ in range(self.repetitions)]
+                scores = []
+                for _ in range(self.repetitions):
+                    solutions = solver(problem)
+                    solutions = sorted(
+                        solutions, key=attrgetter("fitness"), reverse=True
+                    )
+                    scores.append(solutions[0].fitness)
                 solvers_scores.append(scores)
                 avg_p_solver[i] = np.mean(scores)
 
@@ -183,21 +186,3 @@ class EIG(NoveltySearch):
 
             self.population = copy.copy(offspring)
             performed_evals += self.pop_size
-
-            # if self.force_bias:
-            #     biased_offspring = list(filter(lambda x: x.p > 0.0, offspring))
-            #     # If we don't have any feasible offspring we can do two things
-            #     # In the first generation we just include the best offspring found yet
-            #     # In any other generation, we simply avoid this step
-            #     if not biased_offspring:
-            #         if performed_evals == 0:
-            #             best_offs_yet = sorted(
-            #                 offspring, key=attrgetter("fitness"), reverse=True
-            #             )
-            #         # Updates the archive and solution set
-            #         self.update_archive([best_offs_yet[0]])
-            #     else:
-            #         # Updates the archive and solution set
-            #         self.update_archive(biased_offspring)
-            #         self.update_solution_set(biased_offspring)
-            # else:

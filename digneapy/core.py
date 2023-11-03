@@ -43,6 +43,35 @@ class Solution:
     def __iter__(self):
         return iter(self.chromosome)
 
+    def __bool__(self):
+        return len(self)
+
+    def __eq__(self, other):
+        if not hasattr(other, "fitness"):
+            msg = f"Other of type {other.__class__.__name__} does not have a fitness attribute to compare with {self.__class__.__name__}"
+            raise AttributeError(msg)
+        return (
+            len(self) == len(other)
+            and self.fitness == other.fitness
+            and all(a == b for a, b in zip(self, other))
+        )
+
+    def __gt__(self, other):
+        if not hasattr(other, "fitness"):
+            msg = f"Other of type {other.__class__.__name__} does not have a fitness attribute to compare with {self.__class__.__name__}"
+            raise AttributeError(msg)
+        return self.fitness > other.fitness
+
+    def __getitem__(self, key):
+        if isinstance(key, slice):
+            cls = type(self)  # To facilitate subclassing
+            return cls(self.chromosome[key])
+        index = operator.index(key)
+        return self.chromosome[index]
+
+    def __setitem__(self, key, value):
+        self.chromosome[key] = value
+
 
 class OptProblem:
     def __init__(self, name: str = "DefaultOptProblem", *args, **kwargs):
@@ -66,7 +95,7 @@ class Instance:
         p: float = 0.0,
         s: float = 0.0,
     ):
-        if variables:
+        if variables is not None:
             self._variables = list(variables)
         else:
             self._variables = []
@@ -152,6 +181,12 @@ class Instance:
 
     def __eq__(self, other):
         return len(self) == len(other) and all(a == b for a, b in zip(self, other))
+
+    def __gt__(self, other):
+        if not hasattr(other, "fitness"):
+            msg = f"Other of type {other.__class__.__name__} does not have a fitness attribute to compare with {self.__class__.__name__}"
+            raise AttributeError(msg)
+        return self.fitness > other.fitness
 
     def __hash__(self):
         hashes = (hash(x) for x in self)

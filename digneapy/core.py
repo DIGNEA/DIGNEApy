@@ -171,7 +171,7 @@ class Instance:
     def __str__(self):
         features = reprlib.repr(self._features)
         performance = reprlib.repr(self._portfolio_m)
-        performance = performance[performance.find("[") : performance.rfind("]") + 1]
+        performance = performance[performance.find("(") : performance.rfind(")") + 1]
         return f"Instance(f={self._fitness},p={self._p},s={self._s},features={features},performance={performance})"
 
     def __iter__(self):

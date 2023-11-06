@@ -69,7 +69,7 @@ def test_boolean(initialised_instance, default_instance):
 
 def test_str():
     instance = Instance(fitness=100, p=10.0, s=3.0)
-    expected = "Instance(f=100,p=10.0,s=3.0,features=[],performance=[])"
+    expected = "Instance(f=100,p=10.0,s=3.0,features=(),performance=())"
     assert str(instance) == expected
 
 

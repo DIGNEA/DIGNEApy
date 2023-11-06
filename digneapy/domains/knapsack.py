@@ -13,7 +13,7 @@
 
 from ..core import OptProblem
 from digneapy.core import Instance, Domain
-from typing import Iterable, Tuple, List
+from typing import Iterable, Tuple, Mapping
 import numpy as np
 import itertools
 
@@ -128,7 +128,7 @@ class KPDomain(Domain):
 
         return Instance(variables)
 
-    def extract_features(self, instance: Instance) -> List[float]:
+    def extract_features(self, instance: Instance) -> Tuple[float]:
         vars = instance._variables[1:]
         weights = vars[0::2]
         profits = vars[1::2]
@@ -143,7 +143,7 @@ class KPDomain(Domain):
             case "fixed":
                 capacity = self.max_capacity
 
-        return [
+        return (
             int(capacity),
             max(profits),
             max(weights),
@@ -152,7 +152,12 @@ class KPDomain(Domain):
             avg_eff,
             np.mean(vars),
             np.std(vars),
-        ]
+        )
+
+    def extract_features_as_dict(self, instance: Instance) -> Mapping[str, float]:
+        names = "capacity,max_p,max_w,min_p,min_w,avg_eff,mean,std"
+        features = self.extract_features(instance)
+        return {k: v for k, v in zip(names.split(","), features)}
 
     def from_instance(self, instance: Instance) -> Knapsack:
         variables = instance._variables

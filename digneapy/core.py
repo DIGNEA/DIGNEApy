@@ -14,7 +14,7 @@
 import reprlib
 import operator
 from functools import reduce
-from typing import Iterable, Tuple, Callable, List
+from typing import Iterable, Tuple, Callable, List, Mapping
 import copy
 
 
@@ -102,8 +102,8 @@ class Instance:
         self._fitness = fitness
         self._p = p
         self._s = s
-        self._portfolio_m = list()
-        self._features = list()
+        self._portfolio_m = tuple()
+        self._features = tuple()
 
     @property
     def p(self):
@@ -228,8 +228,12 @@ class Domain:
         msg = "generate_instances is not implemented in Domain class."
         raise NotImplementedError(msg)
 
-    def extract_features(self, instance: Instance) -> list[float]:
+    def extract_features(self, instance: Instance) -> Tuple[float]:
         msg = "extract_features is not implemented in Domain class."
+        raise NotImplementedError(msg)
+
+    def extract_features_as_dict(self, instance: Instance) -> Mapping[str, float]:
+        msg = "extract_features_as_dict is not implemented in Domain class."
         raise NotImplementedError(msg)
 
     def from_instance(self, instance: Instance) -> OptProblem:

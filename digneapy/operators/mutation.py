@@ -9,3 +9,30 @@
 @License :   (C)Copyright 2023, Alejandro Marrero
 @Desc    :   None
 """
+
+from typing import List, Tuple
+from ..core import Instance, Solution
+import numpy as np
+import copy
+from typing import Callable, List, Tuple
+
+Mutation = Callable[[Instance | Solution, List[Tuple]], Instance | Solution]
+
+
+def uniform_one_mutation(
+    ind: Instance | Solution, bounds: List[Tuple]
+) -> Instance | Solution:
+    if len(ind) != len(bounds):
+        msg = "The size of individual and bounds is different in uniform_one_mutation"
+        raise AttributeError(msg)
+    if not all(len(b) == 2 for b in bounds):
+        msg = "Error bounds in uniform_one_mutation. The bounds list must contain tuples where each tuple is (l_i, u_i)"
+        raise AttributeError(msg)
+
+    mutation_point = np.random.randint(low=0, high=len(ind))
+
+    new_value = np.random.uniform(
+        low=bounds[mutation_point][0], high=bounds[mutation_point][1]
+    )
+    ind[mutation_point] = new_value
+    return ind

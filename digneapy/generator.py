@@ -12,9 +12,10 @@
 from sklearn.neighbors import NearestNeighbors
 from .novelty_search import NoveltySearch
 from .core import Instance, Domain, Solver
+from .operators import crossover, mutation, selection, replacement
 from typing import List, Tuple
 from operator import attrgetter
-import itertools
+import functools
 import numpy as np
 import copy
 
@@ -33,9 +34,12 @@ class EIG(NoveltySearch):
         repetitions: int = 1,
         cxrate: float = 0.5,
         mutrate: float = 0.8,
+        crossover: crossover.Crossover = crossover.uniform_crossover,
+        mutation: mutation.Mutation = mutation.uniform_one_mutation,
+        selection: selection.Selection = selection.binary_tournament_selection,
         phi: float = 0.85,
     ):
-        """_summary_
+        """Creates a Evolutionary Instance Generator based on Novelty Search
 
         Args:
             pop_size (int, optional): Number of instances in the population to evolve. Defaults to 100.
@@ -53,7 +57,7 @@ class EIG(NoveltySearch):
             The target solver is the first solver in the portfolio. Defaults to True.
 
         Raises:
-            AttributeError: _description_
+            AttributeError: Raises error if phi is not in the range [0.0-1.0]
         """
         super().__init__(t_a, t_ss, k, descriptor)
         self.pop_size = pop_size
@@ -64,6 +68,10 @@ class EIG(NoveltySearch):
         self.repetitions = repetitions
         self.cxrate = cxrate
         self.mutrate = mutrate
+
+        self.crossover = functools.partial(crossover)
+        self.mutation = functools.partial(mutation)
+        self.selection = functools.partial(selection)
 
         if phi < 0.0 or phi > 1.0:
             msg = f"phi must be in range [0.0-1.0]. Got: {phi}."
@@ -107,29 +115,13 @@ class EIG(NoveltySearch):
 
     def _reproduce(self, p_1: Instance, p_2: Instance) -> Instance:
         off = copy.copy(p_1)
-        if np.random.rand() < self.cxrate:
-            cross_point = np.random.randint(low=0, high=len(off))
-            off[:cross_point] = p_2[:cross_point]
-            off[cross_point:] = p_1[cross_point:]
-        # Mutation uniform one
-        mut_point = np.random.randint(low=0, high=len(off))
-        new_value = np.random.uniform(
-            low=self.domain.lower_i(mut_point), high=self.domain.upper_i(mut_point)
-        )
-        off[mut_point] = new_value
-        return off
 
-    def __replacement(
-        self, current_population: List[Instance], offspring: List[Instance]
-    ) -> List[Instance]:
-        all_individuals = list(itertools.chain(current_population, offspring))
-        best_f = sorted(
-            all_individuals,
-            key=attrgetter("fitness"),
-            reverse=True,
-        )
-        new_population = [best_f[0]] + offspring[1:]
-        return new_population
+        if np.random.rand() < self.cxrate:
+            off = self.crossover(p_1, p_2)  # crossover.one_point_crossover(p_1, p_2)
+        # Mutation uniform one
+        # mutation.uniform_one_mutation(p_1, self.domain.bounds)
+        off = self.mutation(p_1, self.domain.bounds)
+        return off
 
     def _update_archive(self, instances: List[Instance]):
         """Updates the Novelty Search Archive with all the instances that has a 's' greater than t_a"""
@@ -172,8 +164,10 @@ class EIG(NoveltySearch):
         while performed_evals < self.max_evaluations:
             offspring = []
             for _ in range(self.pop_size):
-                p_1 = self.population[np.random.randint(0, self.pop_size)]
-                p_2 = self.population[np.random.randint(0, self.pop_size)]
+                # p_1 = selection.binary_tournament_selection(self.population)
+                # p_2 = selection.binary_tournament_selection(self.population)
+                p_1 = self.selection(self.population)
+                p_2 = self.selection(self.population)
                 off = self._reproduce(p_1, p_2)
                 off.features = self.domain.extract_features(off)
                 offspring.append(off)
@@ -183,6 +177,8 @@ class EIG(NoveltySearch):
             self._compute_fitness(population=offspring)
             self._update_archive(offspring)
             self._update_solution_set(offspring)
+            self.population = replacement.generational(self.population, offspring)
 
-            self.population = copy.copy(offspring)
             performed_evals += self.pop_size
+
+        return (self.archive, self.solution_set)

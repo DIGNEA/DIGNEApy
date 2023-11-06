@@ -35,14 +35,11 @@ def main():
         descriptor="features",
     )
     print(eig)
-    eig.run()
+    archive, solution_set = eig()
     print(eig)
 
-    print("=" * 80 + " Archive Solutions " + "=" * 80)
-    for i, instance in enumerate(eig.archive):
-        filename = f"instance_{i}.kp"
-        print(instance)
-        kp_domain.from_instance(instance).to_file(filename)
+    print(f"The archive contains {len(archive)} instances.")
+    print(f"The solution set contains {len(solution_set)} instances.")
     print("=" * 80 + " Solution Set Solutions " + "=" * 80)
     for i, instance in enumerate(eig.solution_set):
         filename = f"instance_{i}.kp"

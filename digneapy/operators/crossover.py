@@ -10,11 +10,17 @@
 @Desc    :   None
 """
 
+from ..core import Instance, Solution
 import numpy as np
 import copy
+from typing import Callable, List, Tuple
+
+Crossover = Callable[[Instance | Solution, Instance | Solution], Instance | Solution]
 
 
-def one_point_crossover(ind_1, ind_2):
+def one_point_crossover(
+    ind_1: Instance | Solution, ind_2: Instance | Solution
+) -> Instance | Solution:
     """One point crossover
 
     Args:
@@ -37,7 +43,9 @@ def one_point_crossover(ind_1, ind_2):
     return offspring
 
 
-def k_point_crossover(ind_1, ind_2, k: int = 2):
+def k_point_crossover(
+    ind_1: Instance | Solution, ind_2: Instance | Solution, k: int = 2
+) -> Instance | Solution:
     """K-Point crossover operator from Eiben Book
 
     Args:
@@ -70,7 +78,9 @@ def k_point_crossover(ind_1, ind_2, k: int = 2):
     return offspring
 
 
-def uniform_crossover(ind_1, ind_2, cxpb: float = 0.5):
+def uniform_crossover(
+    ind_1: Instance | Solution, ind_2: Instance | Solution, cxpb: float = 0.5
+) -> Instance | Solution:
     """Uniform Crossover Operator for Instances and Solutions
 
     Args:

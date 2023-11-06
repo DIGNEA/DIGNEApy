@@ -9,13 +9,17 @@
 @License :   (C)Copyright 2023, Alejandro Marrero
 @Desc    :   None
 """
-
-from typing import Iterable
+from ..core import Instance, Solution
 import numpy as np
 import copy
+from typing import Callable, List, Tuple
+
+Selection = Callable[[List[Instance] | List[Solution]], Instance | Solution]
 
 
-def binary_tournament_selection(population: Iterable):
+def binary_tournament_selection(
+    population: List[Instance] | List[Solution],
+) -> Instance | Solution:
     """Binary Tournament Selection Operator
 
     Args:

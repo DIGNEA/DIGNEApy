@@ -78,6 +78,17 @@ class OptProblem:
         self._name = name
 
     def evaluate(self, individual: Iterable) -> Tuple[float]:
+        """Evaluates the candidate individual with the information of the Knapsack
+
+        Args:
+            individual (Iterable): Individual to evaluate
+
+        Raises:
+            AttributeError: Raises an error if the len(individual) != len(instance) / 2
+
+        Returns:
+            Tuple[float]: Profit
+        """
         msg = "evaluate method not implemented in OptProblem"
         raise NotImplementedError(msg)
 
@@ -225,14 +236,37 @@ class Domain:
         self.bounds = bounds if bounds else [(0.0, 0.0)]
 
     def generate_instance(self) -> Instance:
+        """Generates a new instances for the domain
+
+        Returns:
+            Instance: New randomly generated instance
+        """
         msg = "generate_instances is not implemented in Domain class."
         raise NotImplementedError(msg)
 
     def extract_features(self, instance: Instance) -> Tuple[float]:
+        """Extract the features of the instance based on the domain
+
+        Args:
+            instance (Instance): Instance to extract the features from
+
+        Returns:
+            Tuple[float]: Values of each feature
+        """
         msg = "extract_features is not implemented in Domain class."
         raise NotImplementedError(msg)
 
     def extract_features_as_dict(self, instance: Instance) -> Mapping[str, float]:
+        """Creates a dictionary with the features of the instance.
+        The key are the names of each feature and the values are
+        the values extracted from instance.
+
+        Args:
+            instance (Instance): Instance to extract the features from
+
+        Returns:
+            Mapping[str, float]: Dictionary with the names/values of each feature
+        """
         msg = "extract_features_as_dict is not implemented in Domain class."
         raise NotImplementedError(msg)
 

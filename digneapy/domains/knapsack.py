@@ -33,7 +33,17 @@ class Knapsack(OptProblem):
         self.capacity = capacity
 
     def evaluate(self, individual: Iterable) -> Tuple[float]:
-        """Evaluates the candidate individual with the information of the Knapsack"""
+        """Evaluates the candidate individual with the information of the Knapsack
+
+        Args:
+            individual (Iterable): Individual to evaluate
+
+        Raises:
+            AttributeError: Raises an error if the len(individual) != len(instance) / 2
+
+        Returns:
+            Tuple[float]: Profit
+        """
         if len(individual) != len(self.instance) // 2:
             msg = f"Mismatch between individual variables and instance variables in {self.__class__.__name__}"
             raise AttributeError(msg)
@@ -107,6 +117,11 @@ class KPDomain(Domain):
         )
 
     def generate_instance(self) -> Instance:
+        """Generates a new instances for the domain
+
+        Returns:
+            Instance: New randomly generated instance
+        """
         weights = np.random.randint(
             low=self.min_w, high=self.max_w, size=self.dimension
         )
@@ -129,6 +144,14 @@ class KPDomain(Domain):
         return Instance(variables)
 
     def extract_features(self, instance: Instance) -> Tuple[float]:
+        """Extract the features of the instance based on the domain
+
+        Args:
+            instance (Instance): Instance to extract the features from
+
+        Returns:
+            Tuple[float]: Values of each feature
+        """
         vars = instance._variables[1:]
         weights = vars[0::2]
         profits = vars[1::2]
@@ -155,6 +178,16 @@ class KPDomain(Domain):
         )
 
     def extract_features_as_dict(self, instance: Instance) -> Mapping[str, float]:
+        """Creates a dictionary with the features of the instance.
+        The key are the names of each feature and the values are
+        the values extracted from instance.
+
+        Args:
+            instance (Instance): Instance to extract the features from
+
+        Returns:
+            Mapping[str, float]: Dictionary with the names/values of each feature
+        """
         names = "capacity,max_p,max_w,min_p,min_w,avg_eff,mean,std"
         features = self.extract_features(instance)
         return {k: v for k, v in zip(names.split(","), features)}

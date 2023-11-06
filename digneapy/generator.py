@@ -13,11 +13,29 @@ from sklearn.neighbors import NearestNeighbors
 from .novelty_search import NoveltySearch
 from .core import Instance, Domain, Solver
 from .operators import crossover, mutation, selection, replacement
-from typing import List, Tuple
+from typing import List, Tuple, Iterable, Callable
 from operator import attrgetter
 import functools
 import numpy as np
 import copy
+
+
+PerformanceFn = Callable[[Iterable[float]], float]
+
+
+def _default_performance_metric(scores: Iterable[float]) -> float:
+    """Default performace metric for the instances.
+    It tries to maximise the gap between the target solver
+    and the other solvers in the portfolio.
+
+    Args:
+        scores (Iterable[float]): Scores of each solver over an instance. It is expected
+        that the first value is the score of the target.
+
+    Returns:
+        float: Performance value for an instance. Instance.p attribute.
+    """
+    return scores[0] - max(scores[1:])
 
 
 class EIG(NoveltySearch):
@@ -37,6 +55,7 @@ class EIG(NoveltySearch):
         crossover: crossover.Crossover = crossover.uniform_crossover,
         mutation: mutation.Mutation = mutation.uniform_one_mutation,
         selection: selection.Selection = selection.binary_tournament_selection,
+        performance_function: PerformanceFn = _default_performance_metric,
         phi: float = 0.85,
     ):
         """Creates a Evolutionary Instance Generator based on Novelty Search
@@ -69,9 +88,10 @@ class EIG(NoveltySearch):
         self.cxrate = cxrate
         self.mutrate = mutrate
 
-        self.crossover = functools.partial(crossover)
-        self.mutation = functools.partial(mutation)
-        self.selection = functools.partial(selection)
+        self.crossover = crossover
+        self.mutation = mutation
+        self.selection = selection
+        self.performance_function = performance_function
 
         if phi < 0.0 or phi > 1.0:
             msg = f"phi must be in range [0.0-1.0]. Got: {phi}."
@@ -87,9 +107,14 @@ class EIG(NoveltySearch):
         return f"EIG<pop_size={self.pop_size},evaluations={self.max_evaluations},domain={self.domain.name},portfolio={port_names!r},{super().__repr__()}>"
 
     def __call__(self):
-        return self.run()
+        return self._run()
 
-    def evaluate_population(self, population: List[Instance]):
+    def _evaluate_population(self, population: Iterable[Instance]):
+        """Evaluates the population of instances using the portfolio of solvers.
+
+        Args:
+            population (Iterable[Instance]): Population to evaluate
+        """
         for individual in population:
             avg_p_solver = np.zeros(len(self.portfolio))
             solvers_scores = []
@@ -106,20 +131,32 @@ class EIG(NoveltySearch):
                 avg_p_solver[i] = np.mean(scores)
 
             individual.portfolio_scores = list(solvers_scores)
-            individual.p = avg_p_solver[0] - max(avg_p_solver[1:])
+            # avg_p_solver[0] - max(avg_p_solver[1:])
+            individual.p = self.performance_function(avg_p_solver)
 
-    def _compute_fitness(self, population: List[Instance] = None):
+    def _compute_fitness(self, population: Iterable[Instance] = None):
+        """Calculates the fitness of each instance in the population
+
+        Args:
+            population (Iterable[Instance], optional): Population of instances to set the fitness. Defaults to None.
+        """
         phi_r = 1.0 - self.phi
         for individual in population:
             individual.fitness = individual.p * self.phi + individual.s * phi_r
 
     def _reproduce(self, p_1: Instance, p_2: Instance) -> Instance:
-        off = copy.copy(p_1)
+        """Generates a new offspring instance from two parent instances
 
+        Args:
+            p_1 (Instance): First Parent
+            p_2 (Instance): Second Parent
+
+        Returns:
+            Instance: New offspring
+        """
+        off = copy.copy(p_1)
         if np.random.rand() < self.cxrate:
-            off = self.crossover(p_1, p_2)  # crossover.one_point_crossover(p_1, p_2)
-        # Mutation uniform one
-        # mutation.uniform_one_mutation(p_1, self.domain.bounds)
+            off = self.crossover(p_1, p_2)
         off = self.mutation(p_1, self.domain.bounds)
         return off
 
@@ -155,24 +192,22 @@ class EIG(NoveltySearch):
             if s >= self._t_ss and instance.p > 0.0:
                 self._solution_set.append(instance)
 
-    def run(self):
+    def _run(self):
         self.population = [
             self.domain.generate_instance() for _ in range(self.pop_size)
         ]
-        self.evaluate_population(self.population)
+        self._evaluate_population(self.population)
         performed_evals = 0
         while performed_evals < self.max_evaluations:
             offspring = []
             for _ in range(self.pop_size):
-                # p_1 = selection.binary_tournament_selection(self.population)
-                # p_2 = selection.binary_tournament_selection(self.population)
                 p_1 = self.selection(self.population)
                 p_2 = self.selection(self.population)
                 off = self._reproduce(p_1, p_2)
                 off.features = self.domain.extract_features(off)
                 offspring.append(off)
 
-            self.evaluate_population(offspring)
+            self._evaluate_population(offspring)
             self.sparseness(offspring)
             self._compute_fitness(population=offspring)
             self._update_archive(offspring)

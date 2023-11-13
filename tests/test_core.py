@@ -12,7 +12,39 @@
 
 import pytest
 import copy
-from digneapy.core import Instance, Domain
+import numpy as np
+from digneapy.core import Instance, Domain, Solution
+
+
+@pytest.fixture
+def default_solution():
+    return Solution(
+        chromosome=np.random.randint(low=0, high=100, size=100),
+        objectives=(
+            np.random.uniform(low=0, high=10),
+            np.random.uniform(low=0, high=10),
+        ),
+        constraints=(
+            np.random.uniform(low=0, high=10),
+            np.random.uniform(low=0, high=10),
+        ),
+        fitness=np.random.random(),
+    )
+
+
+def test_default_solution_attrs(default_solution):
+    assert default_solution
+    assert len(default_solution) == 100
+    assert all(0 <= i <= 100 for i in default_solution)
+    cloned = copy.deepcopy(default_solution)
+    assert cloned == default_solution
+    assert not cloned > default_solution
+    cloned.fitness = 10000
+    assert cloned > default_solution
+
+    chr_slice = default_solution[:15]
+    assert len(chr_slice) == 15
+    assert chr_slice == default_solution[:15]
 
 
 @pytest.fixture

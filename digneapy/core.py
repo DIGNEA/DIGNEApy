@@ -44,7 +44,7 @@ class Solution:
         return iter(self.chromosome)
 
     def __bool__(self):
-        return len(self)
+        return len(self) != 0
 
     def __eq__(self, other):
         if not hasattr(other, "fitness"):

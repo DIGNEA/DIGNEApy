@@ -140,10 +140,27 @@ class Archive:
 
 
 def _features_descriptor_strategy(iterable) -> List[float]:
+    """It generates the feature descriptor of an instance
+
+    Args:
+        iterable (List[Instance]): Instances to describe
+
+    Returns:
+        List[float]: List of the feature descriptors of each instance
+    """
     return [i.features for i in iterable]
 
 
 def _performance_descriptor_strategy(iterable) -> List[float]:
+    """It generates the performance descriptor of an instance
+    based on the scores of the solvers in the portfolio over such instance
+
+    Args:
+        iterable (List[Instance]): Instances to describe
+
+    Returns:
+        List[float]: List of performance descriptors of each instance
+    """
     return [np.mean(i.portfolio_scores, axis=0) for i in iterable]
 
 

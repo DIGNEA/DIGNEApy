@@ -11,8 +11,10 @@
 """
 
 import pytest
+import itertools
+from operator import attrgetter
 import copy
-from digneapy.operators import crossover, selection
+from digneapy.operators import crossover, selection, mutation, replacement
 from digneapy.core import Solution, Instance
 import numpy as np
 
@@ -95,6 +97,31 @@ def test_one_point_crossover_raises(initialised_instances):
         crossover.one_point_crossover(solution_1, None)
 
 
+def test_uniform_one_mutation_instances(initialised_instances):
+    bounds = [(0, 100) for _ in range(100)]
+    instance, _ = initialised_instances
+    original = copy.deepcopy(instance)
+
+    new_instance = mutation.uniform_one_mutation(instance, bounds)
+    assert new_instance != original
+    assert sum(1 for i, j in zip(original, new_instance) if i != j) == 1
+
+
+def test_uniform_one_mutation_solutions(initialised_solutions):
+    bounds = [(0, 100) for _ in range(100)]
+    solution, _ = initialised_solutions
+    original = copy.deepcopy(solution)
+
+    new_solution = mutation.uniform_one_mutation(solution, bounds)
+    assert new_solution != original
+    assert sum(1 for i, j in zip(original, new_solution) if i != j) == 1
+
+
+def test_uniform_one_mutation_raises(initialised_solutions):
+    with pytest.raises(Exception):
+        mutation.uniform_one_mutation(None)
+
+
 def test_binary_selection_solutions(initialised_solutions):
     sol_1, sol_2 = initialised_solutions
     sol_1.fitness = 100
@@ -110,3 +137,85 @@ def test_binary_selection_solutions(initialised_solutions):
 def test_binary_selection_solutions_raises_empty():
     with pytest.raises(Exception):
         selection.binary_tournament_selection(None)
+
+
+@pytest.fixture
+def population():
+    instances = [
+        Instance(
+            variables=np.random.randint(low=0, high=100, size=100),
+            fitness=np.random.randint(0, 100),
+        )
+        for _ in range(100)
+    ]
+    return instances
+
+
+def test_generational(population):
+    offspring = [
+        Instance(
+            variables=np.random.randint(low=0, high=100, size=100),
+            fitness=np.random.randint(0, 100),
+        )
+        for _ in range(100)
+    ]
+
+    assert population != offspring
+    assert all(i != j for i, j in zip(population, offspring))
+    new_pop = replacement.generational(population, offspring)
+    assert new_pop != population
+    assert new_pop == offspring
+    assert all(i == j for i, j in zip(offspring, new_pop))
+
+    with pytest.raises(Exception):
+        replacement.generational(population, [])
+
+
+def test_first_improve_replacement(population):
+    offspring = [
+        Instance(
+            variables=np.random.randint(low=0, high=100, size=100),
+            fitness=np.random.randint(0, 100),
+        )
+        for _ in range(100)
+    ]
+
+    expected = [
+        copy.copy(i) if i > j else copy.copy(j) for i, j in zip(population, offspring)
+    ]
+
+    assert population != offspring
+    assert all(i != j for i, j in zip(population, offspring))
+    new_pop = replacement.first_improve_replacement(population, offspring)
+    assert new_pop != population
+    assert new_pop != offspring
+    assert new_pop == expected
+
+    with pytest.raises(Exception):
+        replacement.generational(population, [])
+
+
+def test_elitist_replacement(population):
+    offspring = [
+        Instance(
+            variables=np.random.randint(low=0, high=100, size=100),
+            fitness=np.random.randint(0, 100),
+        )
+        for _ in range(100)
+    ]
+    new_best_f = (
+        max(itertools.chain(population, offspring), key=attrgetter("fitness")).fitness
+        + 10
+    )
+    population[0].fitness = new_best_f
+
+    assert population != offspring
+    assert all(i != j for i, j in zip(population, offspring))
+    new_pop = replacement.elitist_replacement(population, offspring)
+    assert new_pop != population
+    assert new_pop != offspring
+    assert max(new_pop, key=attrgetter("fitness")).fitness == new_best_f
+    assert new_pop[0].fitness == new_best_f
+
+    with pytest.raises(Exception):
+        replacement.elitist_replacement(population, [])

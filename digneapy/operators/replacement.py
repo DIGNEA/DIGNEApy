@@ -15,7 +15,7 @@ import numpy as np
 import copy
 import itertools
 from operator import attrgetter
-from typing import Callable, List, Tuple
+from typing import Callable, List
 
 Replacement = Callable[
     [List[Instance] | List[Solution], List[Instance] | List[Solution]],
@@ -97,7 +97,7 @@ def elitist_replacement(
         raise AttributeError(msg)
 
     combined_population = sorted(
-        *itertools.chain(current_population, offspring),
+        itertools.chain(current_population, offspring),
         key=attrgetter("fitness"),
         reverse=True,
     )

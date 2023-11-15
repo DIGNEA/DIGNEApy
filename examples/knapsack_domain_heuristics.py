@@ -14,25 +14,22 @@
 from digneapy.generator import EIG
 from digneapy.solvers.heuristics import default_kp, map_kp, miw_kp, mpw_kp
 from digneapy.domains.knapsack import KPDomain
+from digneapy.operators.replacement import first_improve_replacement
 
 
 def main():
-    kp_domain = KPDomain(
-        dimension=100,
-        capacity_approach="evolved",
-        max_capacity=1000,
-    )
-
+    kp_domain = KPDomain(dimension=100, capacity_approach="percentage")
     eig = EIG(
         10,
         10000,
         domain=kp_domain,
-        portfolio=[default_kp, map_kp, miw_kp, mpw_kp],
+        portfolio=[map_kp, default_kp, miw_kp, mpw_kp],
         t_a=3,
         t_ss=3,
         k=3,
         repetitions=1,
         descriptor="features",
+        replacement=first_improve_replacement,
     )
     print(eig)
     archive, solution_set = eig()

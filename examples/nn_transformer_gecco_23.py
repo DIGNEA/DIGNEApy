@@ -9,20 +9,58 @@
 @License :   (C)Copyright 2023, Alejandro Marrero
 @Desc    :   None
 """
+from collections import deque
+from digneapy.transformers import HyperCMA, NN
+from digneapy.generator import EIG
+from digneapy.solvers.heuristics import default_kp, map_kp, miw_kp, mpw_kp
+from digneapy.domains.knapsack import KPDomain
+from digneapy.operators.replacement import first_improve_replacement
 
-from digneapy.nn_novelty_search import HyperCMA
+import pandas as pd
+
+
+def ns_kp_domain_work(transformer: NN):
+    kp_domain = KPDomain(dimension=50, capacity_approach="percentage")
+    portfolio = deque([default_kp, map_kp, miw_kp, mpw_kp])
+    gen_instances = dict()
+    for i in range(len(portfolio)):
+        portfolio.rotate(i)
+        eig = EIG(
+            10,
+            10000,
+            domain=kp_domain,
+            portfolio=portfolio,
+            t_a=3,
+            t_ss=3,
+            k=3,
+            repetitions=1,
+            descriptor="features",
+            replacement=first_improve_replacement,
+            transformer=transformer,
+        )
+        _, solution_set = eig()
+        descriptors = [i.features for i in solution_set]
+        gen_instances[portfolio[0].__name__] = descriptors
+    # Combinar las instancias
+    # Calcular el cubrimiento con respecto al espacio de referencia
 
 
 def main():
-    dimension = 10
+    dimension = 204
+    nn = NN(
+        name="NN_transformer_kp_domain.keras",
+        shape=(11, 5, 2),
+        activations=("relu", "relu"),
+    )
     cma_es = HyperCMA(
         dimension=dimension,
-        lambda_=5 * dimension,
-        generations=100,
-        direction="minimise",
+        direction="maximise",
+        transformer=nn,
+        experiment_work=ns_kp_domain_work,
     )
-    r = cma_es()
-    print(r)
+    best_nn_weights = cma_es()
+    nn.update_weights(best_nn_weights)
+    nn.save()
 
 
 if __name__ == "__main__":

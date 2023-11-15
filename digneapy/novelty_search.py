@@ -18,7 +18,7 @@ import itertools
 from functools import reduce
 from .core import Instance
 from sklearn.neighbors import NearestNeighbors
-from typing import List
+from typing import List, Callable
 
 
 class Archive:
@@ -173,6 +173,7 @@ class NoveltySearch:
         t_ss: float = 0.001,
         k: int = 15,
         descriptor="features",
+        transformer: Callable = None,
     ):
         """_summary_
 
@@ -181,13 +182,14 @@ class NoveltySearch:
             t_ss (float, optional): Solution set threshold. Defaults to 0.001.
             k (int, optional): Number of neighbours to calculate the sparseness. Defaults to 15.
             descriptor (str, optional): Descriptor to calculate the diversity. The options are features and performance. Defaults to "features".
+            transformer (callable, optional): Define a strategy to transform the high-dimensional descriptors to low-dimensional.Defaults to None.
         """
         self._t_a = t_a
         self._t_ss = t_ss
         self._k = k
         self._archive = Archive()
         self._solution_set = Archive()
-
+        self._transformer = transformer
         if descriptor not in self.__descriptors:
             msg = f"describe_by {descriptor} not available in {self.__class__.__name__}.__init__. Set to features by default"
             print(msg)
@@ -250,6 +252,10 @@ class NoveltySearch:
         _descriptors_arr = self._combined_archive_and_population(
             self.archive, instances
         )
+        if self._transformer is not None:
+            # Transform the descriptors if necessary
+            _descriptors_arr = self._transformer(_descriptors_arr)
+
         neighbourhood = NearestNeighbors(n_neighbors=self._k + 1, algorithm="ball_tree")
         neighbourhood.fit(_descriptors_arr)
         sparseness = []
@@ -274,7 +280,7 @@ class NoveltySearch:
             return
         self._archive.extend(filter(lambda x: x.s >= self.t_a, instances))
 
-    def _update_solution_set(self, instances: List[Instance], verbose: bool = False):
+    def sparseness_solution_set(self, instances: List[Instance], verbose: bool = False):
         """Updates the Novelty Search Archive with all the instances that has a 's' greater than t_ss when K is set to 1"""
 
         if len(instances) == 0 or any(len(d) == 0 for d in instances):
@@ -288,6 +294,9 @@ class NoveltySearch:
         _descriptors_arr = self._combined_archive_and_population(
             self.solution_set, instances
         )
+        if self._transformer is not None:
+            # Transform the descriptors if necessary
+            _descriptors_arr = self._transformer(_descriptors_arr)
 
         neighbourhood = NearestNeighbors(n_neighbors=2, algorithm="ball_tree")
         neighbourhood.fit(_descriptors_arr)
@@ -297,8 +306,13 @@ class NoveltySearch:
             dist, ind = neighbourhood.kneighbors([descriptor])
             dist, ind = dist[0][1:], ind[0][1:]
             s = (1.0 / self._k) * sum(dist)
+            instance.s = s
             if verbose:
                 print("=" * 120)
                 print(f"{instance} |  s = {s} > t_ss? {(s>= self._t_ss)!r:15} |")
-            if s >= self._t_ss:
-                self._solution_set.append(instance)
+
+    def _update_solution_set(self, instances: List[Instance]):
+        """Updates the Novelty Search Solution Set with all the instances that has a 's' greater than t_ss"""
+        if not instances:
+            return
+        self.solution_set.extend(filter(lambda x: x.s >= self.t_ss, instances))

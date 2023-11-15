@@ -46,7 +46,8 @@ class EIG(NoveltySearch):
         t_a: float = 0.001,
         t_ss: float = 0.001,
         k: int = 15,
-        descriptor="features",
+        descriptor: str = "features",
+        transformer: Callable = None,
         domain: Domain = None,
         portfolio: Tuple[Solver] = None,
         repetitions: int = 1,
@@ -55,6 +56,7 @@ class EIG(NoveltySearch):
         crossover: crossover.Crossover = crossover.uniform_crossover,
         mutation: mutation.Mutation = mutation.uniform_one_mutation,
         selection: selection.Selection = selection.binary_tournament_selection,
+        replacement: replacement.Replacement = replacement.generational,
         performance_function: PerformanceFn = _default_performance_metric,
         phi: float = 0.85,
     ):
@@ -67,6 +69,7 @@ class EIG(NoveltySearch):
             t_ss (float, optional): Solution set threshold. Defaults to 0.001.
             k (int, optional): Number of neighbours to calculate the sparseness. Defaults to 15.
             descriptor (str, optional): Descriptor used to calculate the diversity. The options are features or performance. Defaults to "features".
+            transformer (callable, optional): Define a strategy to transform the high-dimensional descriptors to low-dimensional.Defaults to None.
             domain (Domain, optional): Domain for which the instances are generated for. Defaults to None.
             portfolio (Tuple[Solver], optional): Tuple of callable objects that can evaluate a instance. Defaults to None.
             repetitions (int, optional): Number times a solver in the portfolio must be run over the same instance. Defaults to 1.
@@ -78,7 +81,7 @@ class EIG(NoveltySearch):
         Raises:
             AttributeError: Raises error if phi is not in the range [0.0-1.0]
         """
-        super().__init__(t_a, t_ss, k, descriptor)
+        super().__init__(t_a, t_ss, k, descriptor, transformer)
         self.pop_size = pop_size
         self.max_evaluations = evaluations
         self.domain = domain
@@ -91,6 +94,7 @@ class EIG(NoveltySearch):
         self.crossover = crossover
         self.mutation = mutation
         self.selection = selection
+        self.replacement = replacement
         self.performance_function = performance_function
 
         if phi < 0.0 or phi > 1.0:
@@ -161,36 +165,18 @@ class EIG(NoveltySearch):
         return off
 
     def _update_archive(self, instances: List[Instance]):
-        """Updates the Novelty Search Archive with all the instances that has a 's' greater than t_a"""
+        """Updates the Novelty Search Archive with all the instances that has a 's' greater than t_a and 'p' > 0"""
         if not instances:
             return
         self._archive.extend(filter(lambda x: x.s >= self.t_a and x.p > 0.0, instances))
 
-    def _update_solution_set(self, instances: List[Instance], verbose: bool = False):
-        """Updates the Novelty Search Archive with all the instances that has a 's' greater than t_ss when K is set to 1"""
-
-        if len(instances) == 0 or any(len(d) == 0 for d in instances):
-            msg = f"{self.__class__.__name__} trying to update the solution set with an empty instance list"
-            raise AttributeError(msg)
-
-        if self._k >= len(instances):
-            msg = f"{self.__class__.__name__} trying to calculate sparseness_solution_set with k({self._k}) > len(instances)({len(instances)})"
-            raise AttributeError(msg)
-
-        _descriptors_arr = super()._combined_archive_and_population(
-            self.solution_set, instances
+    def _update_solution_set(self, instances: List[Instance]):
+        """Updates the Novelty Search Solution set with all the instances that has a 's' greater than t_ss and 'p' > 0"""
+        if not instances:
+            return
+        self.solution_set.extend(
+            filter(lambda x: x.s >= self.t_ss and x.p > 0.0, instances)
         )
-
-        neighbourhood = NearestNeighbors(n_neighbors=2, algorithm="ball_tree")
-        neighbourhood.fit(_descriptors_arr)
-        for instance, descriptor in zip(
-            instances, _descriptors_arr[0 : len(instances)]
-        ):
-            dist, ind = neighbourhood.kneighbors([descriptor])
-            dist, ind = dist[0][1:], ind[0][1:]
-            s = (1.0 / self._k) * sum(dist)
-            if s >= self._t_ss and instance.p > 0.0:
-                self._solution_set.append(instance)
 
     def _run(self):
         self.population = [
@@ -211,8 +197,9 @@ class EIG(NoveltySearch):
             self.sparseness(offspring)
             self._compute_fitness(population=offspring)
             self._update_archive(offspring)
+            self.sparseness_solution_set(offspring)
             self._update_solution_set(offspring)
-            self.population = replacement.generational(self.population, offspring)
+            self.population = self.replacement(self.population, offspring)
 
             performed_evals += self.pop_size
 

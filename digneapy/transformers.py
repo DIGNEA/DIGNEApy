@@ -101,7 +101,7 @@ class NN(Transformer):
         return True
 
     def predict(self, X: List):
-        if not X:
+        if len(X) == 0:
             msg = "X cannot be None in NN predict"
             raise RuntimeError(msg)
 

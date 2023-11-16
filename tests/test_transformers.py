@@ -29,6 +29,11 @@ def test_NN_transformer_bpp():
         weights = np.random.random_sample(size=1000)
         transformer.update_weights(weights)
 
+    x = np.array([np.random.sample(size=11) for _ in range(100)])
+    predicted = transformer.predict(x)
+    assert len(predicted) == 100
+    assert all(len(x_i) == 2 for x_i in predicted)
+
     transformer.save()
     assert os.path.exists(os.path.join(os.path.curdir, expected_filename))
     os.remove(os.path.join(os.path.curdir, expected_filename))
@@ -37,7 +42,8 @@ def test_NN_transformer_bpp():
 def test_NN_transformer_kp():
     shapes = (8, 4, 2)
     activations = ("relu", "relu")
-    transformer = NN("nn_transformer_kp.keras", shape=shapes, activations=activations)
+    expected_filename = "nn_transformer_kp.keras"
+    transformer = NN(expected_filename, shape=shapes, activations=activations)
 
     weights = np.random.random_sample(size=118)
     assert transformer is not None
@@ -45,3 +51,12 @@ def test_NN_transformer_kp():
     with pytest.raises(Exception):
         weights = np.random.random_sample(size=1000)
         transformer.update_weights(weights)
+
+    x = np.array([np.random.sample(size=8) for _ in range(100)])
+    predicted = transformer.predict(x)
+    assert len(predicted) == 100
+    assert all(len(x_i) == 2 for x_i in predicted)
+
+    transformer.save()
+    assert os.path.exists(os.path.join(os.path.curdir, expected_filename))
+    os.remove(os.path.join(os.path.curdir, expected_filename))

@@ -14,10 +14,11 @@ from typing import Any, List, Tuple, Callable
 import numpy as np
 import pandas as pd
 import keras
-from keras import layers, activations, models
+from keras import layers, models
 from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import train_test_split
-from deap import algorithms, base, benchmarks, cma, creator, tools
+from deap import algorithms, base, cma, creator, tools
+import keras.backend as K
 
 
 class Transformer:
@@ -36,41 +37,46 @@ class Transformer:
 
 class NN(Transformer):
     def __init__(self, name: str, shape: Tuple[int], activations: Tuple[str]):
-        super.__init__(name)
         if len(activations) != len(shape) - 1:
             msg = f"Expected {len(shape) - 1} activation functions but only got {len(activations)}"
             raise AttributeError(msg)
+        if not name.endswith(".keras"):
+            name = name + ".keras"
+
+        super().__init__(name)
         self._shape = shape
         self._activations = activations
-
         model_layers = []
-        for i, dim, act_fn in enumerate(zip(self._shape, self._activations)):
+        for i, (dim, act_fn) in enumerate(zip(self._shape, self._activations)):
             if i == 0:
                 layer = layers.Dense(
                     dim,
                     input_dim=dim,
                     activation=act_fn,
                 )
-
-            elif i == len(self._shape) - 1:
-                layer = layers.Dense(
-                    dim,
-                )
-
             else:
-                layer = layers.Dense(
-                    dim,
-                )
+                layer = layers.Dense(dim, activation=act_fn)
 
             model_layers.append(layer)
 
+        model_layers.append(
+            layers.Dense(
+                self._shape[-1],
+            )
+        )
+        assert len(model_layers) == len(shape)
         self._model = models.Sequential(model_layers)
-        lr_scheduler = keras.optimizers.schedules.ExponentialDecay(
-            initial_learning_rate=0.1, decay_steps=10000, decay_rate=1e-4
-        )
         self._model.compile(
-            loss="mse", optimizer=keras.optimizers.SGD(learning_rate=lr_scheduler)
+            loss="mse", optimizer=keras.optimizers.SGD(learning_rate=0.001)
         )
+
+    def __str__(self):
+        tokens = []
+        self._model.summary(print_fn=lambda x: tokens.append(x))
+        return "\n".join(tokens)
+
+    def __repr__(self):
+        return self.__str__()
 
     def save(self):
         self._model.save(self._name)
@@ -79,15 +85,20 @@ class NN(Transformer):
         pass
 
     def update_weights(self, weights: List[float]):
-        # TODO: Update to make generic --> Now only works for BPP
-        w_0 = np.reshape(weights[:121], (11, 11))
-        w_1 = np.reshape(weights[121:132], (11,))
-        w_2 = np.reshape(weights[132:187], (11, 5))
-        w_3 = np.reshape(weights[187:192], (5,))
-        w_4 = np.reshape(weights[192:202], (5, 2))
-        w_5 = np.reshape(weights[202:], (2,))
-        reshaped_weights = np.array([w_0, w_1, w_2, w_3, w_4, w_5], dtype=object)
+        expected = np.sum([np.prod(v.shape) for v in self._model.trainable_variables])
+        if len(weights) != expected:
+            msg = f"Error in the amount of weights in NN.update_weigths. Expected {expected} and got {len(weights)}"
+            raise AttributeError(msg)
+        start = 0
+        new_weights = []
+        for v in self._model.trainable_variables:
+            stop = start + np.prod(v.shape)
+            new_weights.append(np.reshape(weights[start:stop], v.shape))
+            start = stop
+
+        reshaped_weights = np.array(new_weights, dtype=object)
         self._model.set_weights(reshaped_weights)
+        return True
 
     def predict(self, X: List):
         if not X:
@@ -174,7 +185,7 @@ class HyperCMA:
         return (fitness,)
 
     def __call__(self):
-        algorithms.eaGenerateUpdate(
+        population, logbook = algorithms.eaGenerateUpdate(
             self.toolbox, ngen=self.generations, stats=self.stats, halloffame=self.hof
         )
-        return (self.hof[0], self.hof[0].fitness.values[0])
+        return (self.hof[0], population, logbook)

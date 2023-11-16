@@ -15,7 +15,7 @@ from digneapy.generator import EIG
 from digneapy.solvers.heuristics import default_kp, map_kp, miw_kp, mpw_kp
 from digneapy.domains.knapsack import KPDomain
 from digneapy.operators.replacement import first_improve_replacement
-
+import numpy as np
 import pandas as pd
 
 
@@ -46,21 +46,28 @@ def ns_kp_domain_work(transformer: NN):
 
 
 def main():
-    dimension = 204
-    nn = NN(
-        name="NN_transformer_kp_domain.keras",
-        shape=(11, 5, 2),
-        activations=("relu", "relu"),
-    )
-    cma_es = HyperCMA(
-        dimension=dimension,
-        direction="maximise",
-        transformer=nn,
-        experiment_work=ns_kp_domain_work,
-    )
-    best_nn_weights = cma_es()
-    nn.update_weights(best_nn_weights)
-    nn.save()
+    shapes = (11, 5, 2)
+    activations = ("relu", "relu")
+    transformer = NN("nn_transformer_bpp.keras", shape=shapes, activations=activations)
+
+    weights = np.random.random_sample(size=204)
+    transformer.update_weights(weights)
+
+    # dimension = 204
+    # nn = NN(
+    #     name="NN_transformer_kp_domain.keras",
+    #     shape=(11, 5, 2),
+    #     activations=("relu", "relu"),
+    # )
+    # cma_es = HyperCMA(
+    #     dimension=dimension,
+    #     direction="maximise",
+    #     transformer=nn,
+    #     experiment_work=ns_kp_domain_work,
+    # )
+    # best_nn_weights, population, logbook = cma_es()
+    # nn.update_weights(best_nn_weights)
+    # nn.save()
 
 
 if __name__ == "__main__":

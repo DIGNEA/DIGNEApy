@@ -187,7 +187,7 @@ class HyperCMA:
             float: Space coverage of the space create from the NN transformer
         """
         self.transformer.update_weights(individual)
-        fitness = self.experiment_work(Transformer)
+        fitness = self.experiment_work(self.transformer)
         return (fitness,)
 
     def __call__(self):

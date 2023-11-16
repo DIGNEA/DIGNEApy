@@ -17,6 +17,7 @@ from digneapy.domains.knapsack import KPDomain
 from digneapy.operators.replacement import first_improve_replacement
 import numpy as np
 import pandas as pd
+from sklearn.metrics import mean_squared_error
 
 
 def ns_kp_domain_work(transformer: NN):
@@ -53,21 +54,21 @@ def main():
     weights = np.random.random_sample(size=204)
     transformer.update_weights(weights)
 
-    # dimension = 204
-    # nn = NN(
-    #     name="NN_transformer_kp_domain.keras",
-    #     shape=(11, 5, 2),
-    #     activations=("relu", "relu"),
-    # )
-    # cma_es = HyperCMA(
-    #     dimension=dimension,
-    #     direction="maximise",
-    #     transformer=nn,
-    #     experiment_work=ns_kp_domain_work,
-    # )
-    # best_nn_weights, population, logbook = cma_es()
-    # nn.update_weights(best_nn_weights)
-    # nn.save()
+    dimension = 204
+    nn = NN(
+        name="NN_transformer_kp_domain.keras",
+        shape=(11, 5, 2),
+        activations=("relu", "relu"),
+    )
+    cma_es = HyperCMA(
+        dimension=dimension,
+        direction="maximise",
+        transformer=nn,
+        experiment_work=ns_kp_domain_work,
+    )
+    best_nn_weights, population, logbook = cma_es()
+    nn.update_weights(best_nn_weights)
+    nn.save()
 
 
 if __name__ == "__main__":

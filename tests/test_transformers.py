@@ -9,11 +9,33 @@
 @License :   (C)Copyright 2023, Alejandro Marrero
 @Desc    :   None
 """
+from __future__ import unicode_literals
 
 import os
 import pytest
 import numpy as np
-from digneapy.transformers import Transformer, NN
+import pandas as pd
+from digneapy.transformers import NN, HyperCMA
+from sklearn.metrics import mean_squared_error
+
+dir, _ = os.path.split(__file__)
+
+filename = "eig_bpp_instances_only_features.csv"
+features = [
+    "capacity",
+    "huge",
+    "large",
+    "max",
+    "mean",
+    "median",
+    "medium",
+    "min",
+    "small",
+    "std",
+    "tiny",
+]
+X = pd.read_csv(os.path.join(dir, "data/eig_bpp_instances_only_features.csv"))
+X = X[features]
 
 
 def test_NN_transformer_bpp():
@@ -60,3 +82,42 @@ def test_NN_transformer_kp():
     transformer.save()
     assert os.path.exists(os.path.join(os.path.curdir, expected_filename))
     os.remove(os.path.join(os.path.curdir, expected_filename))
+
+
+def test_NN_autoencoder_bpp():
+    shapes = (11, 5, 2, 2, 5, 11)
+    activations = ("relu", "relu", None, "relu", "relu", None)
+    expected_filename = "nn_autoencoder_bpp.keras"
+    transformer = NN(expected_filename, shape=shapes, activations=activations)
+
+    weights = np.random.random_sample(size=291)
+    assert transformer is not None
+    assert transformer.update_weights(weights) == True
+    with pytest.raises(Exception):
+        weights = np.random.random_sample(size=1000)
+        transformer.update_weights(weights)
+
+
+def experimental_work_test(transformer: NN):
+    predicted = transformer.predict(X)
+    loss = mean_squared_error(X, predicted)
+    return loss
+
+
+def test_hyper_cmaes_bpp():
+    dimension = 291
+    shapes = (11, 5, 2, 2, 5, 11)
+    activations = ("relu", "relu", None, "relu", "relu", None)
+    expected_filename = "nn_autoencoder_bpp.keras"
+    transformer = NN(expected_filename, shape=shapes, activations=activations)
+    cma_es = HyperCMA(
+        dimension=dimension,
+        direction="maximise",
+        transformer=transformer,
+        generations=5,
+        experiment_work=experimental_work_test,
+    )
+    best_nn_weights, population, logbook = cma_es()
+    assert len(best_nn_weights) == dimension
+    assert len(population) == cma_es._lambda
+    assert len(logbook) == 5

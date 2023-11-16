@@ -47,7 +47,7 @@ def ns_kp_domain_work(transformer: NN):
 
 def main():
     shapes = (11, 5, 2)
-    activations = ("relu", "relu")
+    activations = ("relu", "relu", None)
     transformer = NN("nn_transformer_bpp.keras", shape=shapes, activations=activations)
 
     weights = np.random.random_sample(size=204)

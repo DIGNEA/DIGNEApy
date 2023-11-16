@@ -36,9 +36,26 @@ class Transformer:
 
 
 class NN(Transformer):
-    def __init__(self, name: str, shape: Tuple[int], activations: Tuple[str]):
-        if len(activations) != len(shape) - 1:
-            msg = f"Expected {len(shape) - 1} activation functions but only got {len(activations)}"
+    def __init__(
+        self,
+        name: str,
+        shape: Tuple[int],
+        activations: Tuple[str],
+        scale: bool = True,
+    ):
+        """Neural Network used to transform a space into another.
+
+        Args:
+            name (str): Name of the model to be saved with. Expected a .keras extension.
+            shape (Tuple[int]): Tuple with the number of cells per layer.
+            activations (Tuple[str]): Activation functions for each layer.
+            scale (bool, optional): Includes scaler step before prediction. Defaults to True.
+
+        Raises:
+            AttributeError: Raises if any attribute is not valid.
+        """
+        if len(activations) != len(shape):
+            msg = f"Expected {len(shape)} activation functions but only got {len(activations)}"
             raise AttributeError(msg)
         if not name.endswith(".keras"):
             name = name + ".keras"
@@ -46,24 +63,12 @@ class NN(Transformer):
         super().__init__(name)
         self._shape = shape
         self._activations = activations
-        model_layers = []
-        for i, (dim, act_fn) in enumerate(zip(self._shape, self._activations)):
-            if i == 0:
-                layer = layers.Dense(
-                    dim,
-                    input_dim=dim,
-                    activation=act_fn,
-                )
-            else:
-                layer = layers.Dense(dim, activation=act_fn)
+        self._scaler = StandardScaler() if scale else None
+        model_layers = [
+            layers.Dense(dim, input_dim=dim, activation=act_fn)
+            for (dim, act_fn) in zip(self._shape, self._activations)
+        ]
 
-            model_layers.append(layer)
-
-        model_layers.append(
-            layers.Dense(
-                self._shape[-1],
-            )
-        )
         assert len(model_layers) == len(shape)
         self._model = models.Sequential(model_layers)
         self._model.compile(
@@ -104,7 +109,8 @@ class NN(Transformer):
         if len(X) == 0:
             msg = "X cannot be None in NN predict"
             raise RuntimeError(msg)
-
+        if self._scaler is not None:
+            X = self._scaler.fit_transform(X)
         return self._model.predict(X, verbose=0)
 
     def __call__(self, X: List):

@@ -18,7 +18,7 @@ from digneapy.transformers import Transformer, NN
 
 def test_NN_transformer_bpp():
     shapes = (11, 5, 2)
-    activations = ("relu", "relu")
+    activations = ("relu", "relu", None)
     expected_filename = "nn_transformer_bpp.keras"
     transformer = NN(expected_filename, shape=shapes, activations=activations)
 
@@ -41,7 +41,7 @@ def test_NN_transformer_bpp():
 
 def test_NN_transformer_kp():
     shapes = (8, 4, 2)
-    activations = ("relu", "relu")
+    activations = ("relu", "relu", None)
     expected_filename = "nn_transformer_kp.keras"
     transformer = NN(expected_filename, shape=shapes, activations=activations)
 

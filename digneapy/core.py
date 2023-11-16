@@ -47,14 +47,7 @@ class Solution:
         return len(self) != 0
 
     def __eq__(self, other):
-        if not hasattr(other, "fitness"):
-            msg = f"Other of type {other.__class__.__name__} does not have a fitness attribute to compare with {self.__class__.__name__}"
-            raise AttributeError(msg)
-        return (
-            len(self) == len(other)
-            and self.fitness == other.fitness
-            and all(a == b for a, b in zip(self, other))
-        )
+        return len(self) == len(other) and all(a == b for a, b in zip(self, other))
 
     def __gt__(self, other):
         if not hasattr(other, "fitness"):

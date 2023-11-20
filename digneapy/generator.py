@@ -135,7 +135,6 @@ class EIG(NoveltySearch):
                 avg_p_solver[i] = np.mean(scores)
 
             individual.portfolio_scores = list(solvers_scores)
-            # avg_p_solver[0] - max(avg_p_solver[1:])
             individual.p = self.performance_function(avg_p_solver)
 
     def _compute_fitness(self, population: Iterable[Instance] = None):

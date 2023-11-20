@@ -115,7 +115,7 @@ def test_hyper_cmaes_bpp():
         direction="maximise",
         transformer=transformer,
         generations=5,
-        experiment_work=experimental_work_test,
+        eval_fn=experimental_work_test,
     )
     best_nn_weights, population, logbook = cma_es()
     assert len(best_nn_weights) == dimension

@@ -129,17 +129,17 @@ class HyperCMA:
         generations: int = 250,
         direction: str = "maximise",
         transformer: Transformer = None,
-        experiment_work: Callable = None,
+        eval_fn: Callable = None,
         seed: int = 42,
     ):
         if transformer is None or not isinstance(transformer, NN):
             raise AttributeError("transformer must be a NN object to run HyperCMA")
-        if experiment_work is None:
+        if eval_fn is None:
             raise AttributeError(
                 "experiment_work must be a callable object to run HyperCMA"
             )
         self.transformer = transformer
-        self.experiment_work = experiment_work
+        self.eval_fn = eval_fn
 
         self.dimension = dimension
         self.centroid = centroid if centroid is not None else [0.0] * self.dimension
@@ -187,7 +187,7 @@ class HyperCMA:
             float: Space coverage of the space create from the NN transformer
         """
         self.transformer.update_weights(individual)
-        fitness = self.experiment_work(self.transformer)
+        fitness = self.eval_fn(self.transformer)
         return (fitness,)
 
     def __call__(self):

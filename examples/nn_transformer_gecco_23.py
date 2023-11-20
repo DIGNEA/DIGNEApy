@@ -9,6 +9,7 @@
 @License :   (C)Copyright 2023, Alejandro Marrero
 @Desc    :   None
 """
+from typing import List, Dict
 from collections import deque
 from digneapy.transformers import HyperCMA, NN
 from digneapy.generator import EIG
@@ -17,54 +18,74 @@ from digneapy.domains.knapsack import KPDomain
 from digneapy.operators.replacement import first_improve_replacement
 import numpy as np
 import pandas as pd
-from sklearn.metrics import mean_squared_error
 
 
-def ns_kp_domain_work(transformer: NN):
-    kp_domain = KPDomain(dimension=50, capacity_approach="percentage")
-    portfolio = deque([default_kp, map_kp, miw_kp, mpw_kp])
-    gen_instances = dict()
-    for i in range(len(portfolio)):
-        portfolio.rotate(i)
-        eig = EIG(
-            10,
-            10000,
-            domain=kp_domain,
-            portfolio=portfolio,
-            t_a=3,
-            t_ss=3,
-            k=3,
-            repetitions=1,
-            descriptor="features",
-            replacement=first_improve_replacement,
-            transformer=transformer,
-        )
-        _, solution_set = eig()
-        descriptors = [i.features for i in solution_set]
-        gen_instances[portfolio[0].__name__] = descriptors
-    # Combinar las instancias
-    # Calcular el cubrimiento con respecto al espacio de referencia
+class NSEval:
+    def __init__(self, features_info: Dict, resolution: int = 20):
+        self.resolution = resolution
+        self.features_info = features_info
+        self.hypercube = [
+            np.linspace(start, stop, self.resolution) for start, stop in features_info
+        ]
+        self.kp_domain = KPDomain(dimension=50, capacity_approach="percentage")
+        self.portfolio = deque([default_kp, map_kp, miw_kp, mpw_kp])
+
+    def __call__(self, transformer: NN):
+        gen_instances = []
+        for i in range(len(self.portfolio)):
+            self.portfolio.rotate(i)
+            eig = EIG(
+                10,
+                1000,
+                domain=self.kp_domain,
+                portfolio=self.portfolio,
+                t_a=3,
+                t_ss=3,
+                k=3,
+                repetitions=1,
+                descriptor="features",
+                replacement=first_improve_replacement,
+                transformer=transformer,
+            )
+            _, solution_set = eig()
+            descriptors = [list(i.features) for i in solution_set]
+            gen_instances.extend(descriptors)
+
+        # Combinar las instancias
+        # Calcular el cubrimiento con respecto al espacio de referencia
+        coverage = {k: set() for k in range(8)}
+        for descriptor in gen_instances:
+            for i, f in enumerate(descriptor):
+                coverage[i].add(np.digitize(f, self.hypercube[i]))
+
+        f = sum(len(s) for s in coverage.values())
+        return f
 
 
 def main():
-    shapes = (11, 5, 2)
-    activations = ("relu", "relu", None)
-    transformer = NN("nn_transformer_bpp.keras", shape=shapes, activations=activations)
-
-    weights = np.random.random_sample(size=204)
-    transformer.update_weights(weights)
-
-    dimension = 204
+    R = 20
+    dimension = 118
     nn = NN(
         name="NN_transformer_kp_domain.keras",
-        shape=(11, 5, 2),
-        activations=("relu", "relu"),
+        shape=(8, 4, 2),
+        activations=("relu", "relu", None),
     )
+    features_info = [
+        (711, 30000),
+        (890, 1000),
+        (860, 1000.0),
+        (1.0, 200),
+        (1.0, 230.0),
+        (0.10, 12.0),
+        (400, 610),
+        (240, 330),
+    ]
+    ns_eval = NSEval(features_info, resolution=R)
     cma_es = HyperCMA(
         dimension=dimension,
         direction="maximise",
         transformer=nn,
-        experiment_work=ns_kp_domain_work,
+        eval_fn=ns_eval,
     )
     best_nn_weights, population, logbook = cma_es()
     nn.update_weights(best_nn_weights)

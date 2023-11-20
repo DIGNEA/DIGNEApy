@@ -32,21 +32,21 @@ class NSEval:
 
     def __call__(self, transformer: NN):
         gen_instances = []
+        eig = EIG(
+            10,
+            10000,
+            domain=self.kp_domain,
+            portfolio=self.portfolio,
+            t_a=3,
+            t_ss=3,
+            k=3,
+            repetitions=1,
+            descriptor="features",
+            replacement=first_improve_replacement,
+            transformer=transformer,
+        )
         for i in range(len(self.portfolio)):
             self.portfolio.rotate(i)
-            eig = EIG(
-                10,
-                1000,
-                domain=self.kp_domain,
-                portfolio=self.portfolio,
-                t_a=3,
-                t_ss=3,
-                k=3,
-                repetitions=1,
-                descriptor="features",
-                replacement=first_improve_replacement,
-                transformer=transformer,
-            )
             _, solution_set = eig()
             descriptors = [list(i.features) for i in solution_set]
             gen_instances.extend(descriptors)

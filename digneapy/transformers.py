@@ -19,6 +19,7 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import train_test_split
 from deap import algorithms, base, cma, creator, tools
 import keras.backend as K
+from multiprocessing.pool import ThreadPool as Pool
 
 
 class Transformer:
@@ -130,6 +131,7 @@ class HyperCMA:
         direction: str = "maximise",
         transformer: Transformer = None,
         eval_fn: Callable = None,
+        n_jobs: int = 1,
         seed: int = 42,
     ):
         if transformer is None or not isinstance(transformer, NN):
@@ -160,7 +162,6 @@ class HyperCMA:
             creator.create("Fitness", base.Fitness, weights=(-1.0,))
 
         creator.create("Individual", list, fitness=creator.Fitness)
-
         self.toolbox = base.Toolbox()
         self.toolbox.register("evaluate", self.evaluation)
         self.strategy = cma.Strategy(
@@ -168,6 +169,13 @@ class HyperCMA:
         )
         self.toolbox.register("generate", self.strategy.generate, creator.Individual)
         self.toolbox.register("update", self.strategy.update)
+        if n_jobs < 1:
+            msg = "The number of jobs must be at least 1."
+            raise AttributeError(msg)
+        elif n_jobs > 1:
+            self.n_processors = n_jobs
+            self.pool = Pool(processes=self.n_processors)
+            self.toolbox.register("map", self.pool.map)
 
         self.hof = tools.HallOfFame(1)
         self.stats = tools.Statistics(lambda ind: ind.fitness.values)

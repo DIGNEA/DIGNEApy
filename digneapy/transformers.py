@@ -10,15 +10,12 @@
 @Desc    :   None
 """
 
-from typing import Any, List, Tuple, Callable
+from typing import List, Tuple, Callable
 import numpy as np
-import pandas as pd
 import keras
 from keras import layers, models
 from sklearn.preprocessing import StandardScaler
-from sklearn.model_selection import train_test_split
 from deap import algorithms, base, cma, creator, tools
-import keras.backend as K
 from multiprocessing.pool import ThreadPool as Pool
 
 

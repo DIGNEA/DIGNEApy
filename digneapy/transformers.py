@@ -81,8 +81,11 @@ class NN(Transformer):
     def __repr__(self):
         return self.__str__()
 
-    def save(self):
-        self._model.save(self._name)
+    def save(self, filename: str = None):
+        if filename is not None:
+            self._model.save(filename)
+        else:
+            self._model.save(self._name)
 
     def train(self):
         pass
@@ -145,6 +148,8 @@ class HyperCMA:
         self.sigma = sigma
         self._lambda = lambda_ if lambda_ != 0 else 50
         self.generations = generations
+        self.__performed_gens = 0  # These vars are used to save the data in CSV files
+        self.__evaluated_inds = 0
         self.seed = seed
         np.random.seed(self.seed)
 
@@ -192,7 +197,13 @@ class HyperCMA:
             float: Space coverage of the space create from the NN transformer
         """
         self.transformer.update_weights(individual)
-        fitness = self.eval_fn(self.transformer)
+        filename = f"dataset_generation_{self.__performed_gens}_individual_{self.__evaluated_inds}.csv"
+        self.__evaluated_inds += 1
+        if self.__evaluated_inds == self._lambda:
+            self.__performed_gens += 1
+            self.__evaluated_inds = 0
+
+        fitness = self.eval_fn(self.transformer, filename)
         return (fitness,)
 
     def __call__(self):

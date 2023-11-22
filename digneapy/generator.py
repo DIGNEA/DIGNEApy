@@ -167,14 +167,16 @@ class EIG(NoveltySearch):
         """Updates the Novelty Search Archive with all the instances that has a 's' greater than t_a and 'p' > 0"""
         if not instances:
             return
-        self._archive.extend(filter(lambda x: x.s >= self.t_a and x.p > 0.0, instances))
+        self._archive.extend(
+            filter(lambda x: x.s >= self.t_a and x.p >= 0.0, instances)
+        )
 
     def _update_solution_set(self, instances: List[Instance]):
         """Updates the Novelty Search Solution set with all the instances that has a 's' greater than t_ss and 'p' > 0"""
         if not instances:
             return
         self.solution_set.extend(
-            filter(lambda x: x.s >= self.t_ss and x.p > 0.0, instances)
+            filter(lambda x: x.s >= self.t_ss and x.p >= 0.0, instances)
         )
 
     def _run(self):
@@ -193,7 +195,7 @@ class EIG(NoveltySearch):
                 offspring.append(off)
 
             self._evaluate_population(offspring)
-            self.sparseness(offspring)
+            _ = self.sparseness(offspring)
             self._compute_fitness(population=offspring)
             self._update_archive(offspring)
             self.sparseness_solution_set(offspring)

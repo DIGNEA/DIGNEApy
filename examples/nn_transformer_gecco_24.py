@@ -112,8 +112,8 @@ def main():
     cma_es = HyperCMA(
         dimension=dimension,
         direction="maximise",
-        lambda_=10,
-        generations=50,
+        lambda_=50,
+        generations=150,
         transformer=nn,
         eval_fn=ns_eval,
     )

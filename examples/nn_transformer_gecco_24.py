@@ -9,9 +9,6 @@
 @License :   (C)Copyright 2023, Alejandro Marrero
 @Desc    :   None
 """
-import tensorflow as tf
-
-tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
 
 from typing import List, Dict
 from collections import deque

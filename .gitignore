@@ -104,3 +104,4 @@ ENV/
 # IDE settings
 .vscode/
 .idea/
+gecco_env/bin gecco_env/include gecco_env/lib gecco_env/lib64 gecco_env/pyvenv.cfg

@@ -98,7 +98,7 @@ def test_NN_autoencoder_bpp():
         transformer.update_weights(weights)
 
 
-def experimental_work_test(transformer: NN):
+def experimental_work_test(transformer: NN, *args):
     predicted = transformer.predict(X)
     loss = mean_squared_error(X, predicted)
     return loss

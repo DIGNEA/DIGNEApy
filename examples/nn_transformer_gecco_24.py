@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*-coding:utf-8 -*-
 """
-@File    :   nn_transformer_gecco_23.py
+@File    :   nn_transformer_gecco_24.py
 @Time    :   2023/11/10 14:09:41
 @Author  :   Alejandro Marrero 
 @Version :   1.0
@@ -10,13 +10,13 @@
 @Desc    :   None
 """
 
-from typing import List, Dict
+from typing import Dict
 from collections import deque
 from digneapy.transformers import HyperCMA, NN
 from digneapy.generator import EIG
 from digneapy.solvers.heuristics import default_kp, map_kp, miw_kp, mpw_kp
 from digneapy.domains.knapsack import KPDomain
-from digneapy.operators.replacement import generational, first_improve_replacement
+from digneapy.operators.replacement import first_improve_replacement
 import numpy as np
 import pandas as pd
 

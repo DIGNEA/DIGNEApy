@@ -12,8 +12,8 @@
 
 from typing import List, Tuple, Callable
 import numpy as np
+import tensorflow as tf
 import keras
-from keras import layers, models
 from sklearn.preprocessing import StandardScaler
 from deap import algorithms, base, cma, creator, tools
 from multiprocessing.pool import ThreadPool as Pool
@@ -63,12 +63,12 @@ class NN(Transformer):
         self._activations = activations
         self._scaler = StandardScaler() if scale else None
         model_layers = [
-            layers.Dense(dim, input_dim=dim, activation=act_fn)
+            keras.layers.Dense(dim, input_dim=dim, activation=act_fn)
             for (dim, act_fn) in zip(self._shape, self._activations)
         ]
 
         assert len(model_layers) == len(shape)
-        self._model = models.Sequential(model_layers)
+        self._model = keras.models.Sequential(model_layers)
         self._model.compile(
             loss="mse", optimizer=keras.optimizers.SGD(learning_rate=0.001)
         )

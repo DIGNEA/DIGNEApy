@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*-coding:utf-8 -*-
 """
-@File    :   nn_transformer_gecco_24.py
+@File    :   nn_transformer_gecco_23.py
 @Time    :   2023/11/10 14:09:41
 @Author  :   Alejandro Marrero 
 @Version :   1.0
@@ -9,6 +9,9 @@
 @License :   (C)Copyright 2023, Alejandro Marrero
 @Desc    :   None
 """
+import os
+
+os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
 
 from typing import Dict
 from collections import deque
@@ -16,9 +19,11 @@ from digneapy.transformers import HyperCMA, NN
 from digneapy.generator import EIG
 from digneapy.solvers.heuristics import default_kp, map_kp, miw_kp, mpw_kp
 from digneapy.domains.knapsack import KPDomain
-from digneapy.operators.replacement import first_improve_replacement
+from digneapy.operators.replacement import generational, first_improve_replacement
 import numpy as np
 import pandas as pd
+import tensorflow as tf
+from multiprocessing import Pool
 
 
 def save_instances(filename, generated_instances):
@@ -53,7 +58,6 @@ class NSEval:
 
     def __call__(self, transformer: NN, filename: str = None):
         gen_instances = {s.__name__: [] for s in self.portfolio}
-
         for i in range(len(self.portfolio)):
             self.portfolio.rotate(i)
             eig = EIG(
@@ -80,7 +84,6 @@ class NSEval:
         for solver, descriptors in gen_instances.items():  # For each set of instances
             for desc in descriptors:  # For each descriptor in the set
                 for i, f in enumerate(desc):  # Location of the ith feature
-                    digits = np.digitize(f, self.hypercube[i])
                     coverage[i].add(np.digitize(f, self.hypercube[i]))
 
         f = sum(len(s) for s in coverage.values())
@@ -88,6 +91,12 @@ class NSEval:
 
 
 def main():
+    physical_devices = tf.config.list_physical_devices("GPU")
+    try:
+        tf.config.experimental.set_memory_growth(physical_devices[0], True)
+    except:
+        # Invalid device or cannot modify virtual devices once initialized.
+        pass
     R = 20
     dimension = 118
     nn = NN(

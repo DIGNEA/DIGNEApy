@@ -12,6 +12,7 @@
 
 from typing import List, Tuple, Callable
 import numpy as np
+
 import tensorflow as tf
 import keras
 from sklearn.preprocessing import StandardScaler
@@ -37,6 +38,7 @@ class NN(Transformer):
     def __init__(
         self,
         name: str,
+        input_shape: Tuple[int],
         shape: Tuple[int],
         activations: Tuple[str],
         scale: bool = True,
@@ -59,19 +61,24 @@ class NN(Transformer):
             name = name + ".keras"
 
         super().__init__(name)
+        self.input_shape = input_shape
         self._shape = shape
         self._activations = activations
         self._scaler = StandardScaler() if scale else None
-        model_layers = [
-            keras.layers.Dense(dim, input_dim=dim, activation=act_fn)
-            for (dim, act_fn) in zip(self._shape, self._activations)
-        ]
 
-        assert len(model_layers) == len(shape)
-        self._model = keras.models.Sequential(model_layers)
-        self._model.compile(
+        self._model = self.__build_model(input_shape, shape, activations)
+       
+
+    def __build_model(self, input_shape, shape, activations):
+        model = keras.models.Sequential()
+        model.add(keras.layers.InputLayer(input_shape=input_shape))
+        for d, act in zip(shape, activations):
+            model.add(keras.layers.Dense(d, activation=act))
+        model.compile(
             loss="mse", optimizer=keras.optimizers.SGD(learning_rate=0.001)
         )
+        return model
+
 
     def __str__(self):
         tokens = []

@@ -9,45 +9,39 @@
 @License :   (C)Copyright 2023, Alejandro Marrero
 @Desc    :   None
 """
-import os
 
-os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
-
-from typing import Dict
 from collections import deque
 from digneapy.transformers import HyperCMA, NN
 from digneapy.generator import EIG
 from digneapy.solvers.heuristics import default_kp, map_kp, miw_kp, mpw_kp
 from digneapy.domains.knapsack import KPDomain
-from digneapy.operators.replacement import generational, first_improve_replacement
+from digneapy.operators.replacement import first_improve_replacement
 import numpy as np
 import pandas as pd
-import tensorflow as tf
-from multiprocessing import Pool
 
 
-def save_instances(filename, generated_instances):
-    features = [
-        "target",
-        "capacity",
-        "max_p",
-        "max_w",
-        "min_p",
-        "min_w",
-        "avg_eff",
-        "mean",
-        "std",
-    ]
-    with open(filename, "w") as file:
-        file.write(",".join(features) + "\n")
-        for solver, descriptors in generated_instances.items():
-            for desc in descriptors:
-                content = solver + "," + ",".join(str(f) for f in desc) + "\n"
-                file.write(content)
+def save_best_nn_results(filename, best_nn):
+    """Writes the fitness and weights of the best NN found by CMA-ES
+
+    Args:
+        filename (str): Filename to sotre the informatio
+        best_nn (NN): Best NN found by CMA-ES
+    """
+    with open(filename, "w") as f:
+        chromosome = ",".join((str(w) for w in best_nn))
+        fitness = best_nn.fitness.values[0]
+        f.write(f"{fitness}\n")
+        f.write(f"{chromosome}")
 
 
 class NSEval:
-    def __init__(self, features_info: Dict, resolution: int = 20):
+    """Experiment Code for the Novelty Search with NN transformed space paper for GECCO 2024.
+    It receives a iterable of features tuples with the minimum and maximum values for each, an a
+    resolution value R to define how many bins per feature we'll be creating.
+    This must be called for each transformed at every generation of the CMA-ES algorithm.
+    """
+
+    def __init__(self, features_info, resolution: int = 20):
         self.resolution = resolution
         self.features_info = features_info
         self.hypercube = [
@@ -56,10 +50,47 @@ class NSEval:
         self.kp_domain = KPDomain(dimension=50, capacity_approach="percentage")
         self.portfolio = deque([default_kp, map_kp, miw_kp, mpw_kp])
 
+    def __save_instances(self, filename, generated_instances):
+        """Writes the generated instances into a CSV file
+
+        Args:
+            filename (str): Filename
+            generated_instances (iterable): Iterable of instances
+        """
+        features = [
+            "target",
+            "capacity",
+            "max_p",
+            "max_w",
+            "min_p",
+            "min_w",
+            "avg_eff",
+            "mean",
+            "std",
+        ]
+        with open(filename, "w") as file:
+            file.write(",".join(features) + "\n")
+            for solver, descriptors in generated_instances.items():
+                for desc in descriptors:
+                    content = solver + "," + ",".join(str(f) for f in desc) + "\n"
+                    file.write(content)
+
     def __call__(self, transformer: NN, filename: str = None):
+        """This method runs the Novelty Search using a NN as a transformer
+        for searching novelty. It generates KP instances for each of the solvers in
+        the portfolio [Default, MaP, MiW, MPW] and calculates how many bins of the
+        8D-feature hypercube are occupied.
+
+        Args:
+            transformer (NN): Transformer to reduce a 8D feature vector into a 2D vector.
+            filename (str, optional): Filename to store the instances. Defaults to None.
+
+        Returns:
+            int: Number of bins occupied. The maximum value if 8 x R.
+        """
         gen_instances = {s.__name__: [] for s in self.portfolio}
         for i in range(len(self.portfolio)):
-            self.portfolio.rotate(i)
+            self.portfolio.rotate(i)  # This allow us to change the target on the fly
             eig = EIG(
                 10,
                 1000,
@@ -77,9 +108,9 @@ class NSEval:
             descriptors = [list(i.features) for i in solution_set]
             gen_instances[self.portfolio[0].__name__].extend(descriptors)
         if any(len(l) != 0 for l in gen_instances.values()):
-            save_instances(filename, gen_instances)
-        # Combinar las instancias
-        # Calcular el cubrimiento con respecto al espacio de referencia
+            self.__save_instances(filename, gen_instances)
+
+        # Here we gather all the instances together to calculate the metric
         coverage = {k: set() for k in range(8)}
         for solver, descriptors in gen_instances.items():  # For each set of instances
             for desc in descriptors:  # For each descriptor in the set
@@ -91,19 +122,15 @@ class NSEval:
 
 
 def main():
-    physical_devices = tf.config.list_physical_devices("GPU")
-    try:
-        tf.config.experimental.set_memory_growth(physical_devices[0], True)
-    except:
-        # Invalid device or cannot modify virtual devices once initialized.
-        pass
-    R = 20
-    dimension = 118
+    R = 20  # Resolution/Number of bins for each of the 8 features
+    dimension = 118  # Number of weights of the NN for KP
     nn = NN(
         name="NN_transformer_kp_domain.keras",
+        input_shape=[8],
         shape=(8, 4, 2),
         activations=("relu", "relu", None),
     )
+    # KP Features information extracted from previously generated instances
     features_info = [
         (711, 30000),
         (890, 1000),
@@ -114,17 +141,22 @@ def main():
         (400, 610),
         (240, 330),
     ]
+    # NSEval is the evaluation/fitness function used to measure the NNs in CMA-Es
     ns_eval = NSEval(features_info, resolution=R)
+    # Custom CMA-ES derived from DEAP to evolve NNs weights
     cma_es = HyperCMA(
         dimension=dimension,
         direction="maximise",
-        lambda_=50,
-        generations=150,
+        lambda_=64,
+        generations=250,
         transformer=nn,
         eval_fn=ns_eval,
     )
-    best_nn_weights, population, logbook = cma_es()
-    nn.update_weights(best_nn_weights)
+    best_nn, population, logbook = cma_es()
+    # Save the scores and the weights
+    save_best_nn_results("NN_best_score_and_weights.csv", best_nn)
+    # Save the model itself
+    nn.update_weights(best_nn)
     nn.save("NN_best_transformer_found_kp_domain.keras")
     for i, ind in enumerate(population):
         nn.update_weights(ind)

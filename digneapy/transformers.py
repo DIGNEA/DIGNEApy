@@ -67,18 +67,14 @@ class NN(Transformer):
         self._scaler = StandardScaler() if scale else None
 
         self._model = self.__build_model(input_shape, shape, activations)
-       
 
     def __build_model(self, input_shape, shape, activations):
         model = keras.models.Sequential()
         model.add(keras.layers.InputLayer(input_shape=input_shape))
         for d, act in zip(shape, activations):
             model.add(keras.layers.Dense(d, activation=act))
-        model.compile(
-            loss="mse", optimizer=keras.optimizers.SGD(learning_rate=0.001)
-        )
+        model.compile(loss="mse", optimizer=keras.optimizers.SGD(learning_rate=0.001))
         return model
-
 
     def __str__(self):
         tokens = []
@@ -139,7 +135,6 @@ class HyperCMA:
         transformer: Transformer = None,
         eval_fn: Callable = None,
         n_jobs: int = 1,
-        seed: int = 42,
     ):
         if transformer is None or not isinstance(transformer, NN):
             raise AttributeError("transformer must be a NN object to run HyperCMA")
@@ -157,8 +152,6 @@ class HyperCMA:
         self.generations = generations
         self.__performed_gens = 0  # These vars are used to save the data in CSV files
         self.__evaluated_inds = 0
-        self.seed = seed
-        np.random.seed(self.seed)
 
         if direction not in self.__directions:
             msg = f"Direction: {direction} not available. Please choose between {self.__directions}"

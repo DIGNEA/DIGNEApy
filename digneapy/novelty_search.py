@@ -18,7 +18,7 @@ import itertools
 from functools import reduce
 from .core import Instance
 from sklearn.neighbors import NearestNeighbors
-from typing import List, Callable
+from typing import Iterable, List, Callable
 
 
 class Archive:
@@ -28,7 +28,7 @@ class Archive:
 
     _typecode = "d"
 
-    def __init__(self, instances: list[Instance] = None):
+    def __init__(self, instances: Iterable[Instance] = None):
         """_summary_
 
         Args:

@@ -9,7 +9,6 @@
 @License :   (C)Copyright 2023, Alejandro Marrero
 @Desc    :   None
 """
-from sklearn.neighbors import NearestNeighbors
 from .novelty_search import NoveltySearch
 from .core import Instance, Domain, Solver
 from .operators import crossover, mutation, selection, replacement
@@ -195,7 +194,7 @@ class EIG(NoveltySearch):
                 offspring.append(off)
 
             self._evaluate_population(offspring)
-            _ = self.sparseness(offspring)
+            self.sparseness(offspring)
             self._compute_fitness(population=offspring)
             self._update_archive(offspring)
             self.sparseness_solution_set(offspring)

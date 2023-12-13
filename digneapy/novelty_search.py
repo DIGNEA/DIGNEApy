@@ -232,14 +232,76 @@ class NoveltySearch:
     def _combined_archive_and_population(
         self, current_pop: Archive, instances: List[Instance]
     ) -> np.ndarray[float]:
+        """Combines the archive and the given population before computing the sparseness
+
+        Args:
+            current_pop (Archive): Current archive of solution.
+            instances (List[Instance]): List of instances to evaluate.
+
+        Returns:
+            np.ndarray[float]: Returns an ndarray of descriptors.
+        """
         components = self._descriptor_strategy(itertools.chain(instances, current_pop))
         return np.vstack([components])
+
+    def __compute_sparseness(
+        self, instances: List[Instance], current_archive: Archive, neighbours: int
+    ) -> List[float]:
+        """This method does the calculation of sparseness either for the archive or the solution set.
+        It gets called by 'sparssenes' and 'sparseness_solution_set'. Note that this method update the `s`
+        attribute of each instances with the result of the computation. It also returns a list with all the
+        values for further used if necessary.
+
+        Args:
+            instances (List[Instance]): Instances to evaluate.
+            current_archive (Archive): Current archive/solutio set of instances.
+            neighbours (int): Number of neighbours to calculate the KNN (K + 1 or 2). Always have to add 1.
+
+        Returns:
+            List[float]: Sparseness values of each instance.
+        """
+        # We need to concatentate the archive to the given descriptors
+        # and to set k+1 because it predicts n[0] == self descriptor
+        # The _desc_arr is a ndarray which contains the descriptor of the instances
+        # from the archive and the new list of instances. The order is [instances, current_archive]
+        # so we can easily calculate and update `s`
+        _desc_arr = self._combined_archive_and_population(current_archive, instances)
+        if self._transformer is not None:
+            # Transform the descriptors if necessary
+            _desc_arr = self._transformer(_desc_arr)
+
+        neighbourhood = NearestNeighbors(n_neighbors=neighbours, algorithm="ball_tree")
+        neighbourhood.fit(_desc_arr)
+        sparseness = []
+        # We're only interesed in the instances given not the archive
+        frac = 1.0 / neighbours
+        for instance, descriptor in zip(instances, _desc_arr[: len(instances)]):
+            dist, ind = neighbourhood.kneighbors([descriptor])
+            dist, ind = dist[0][1:], ind[0][1:]
+            s = frac * sum(dist)
+            instance.s = s
+            sparseness.append(s)
+
+        return sparseness
 
     def sparseness(
         self,
         instances: List[Instance],
-        verbose: bool = False,
     ) -> List[float]:
+        """Calculates the sparseness of the given instances against the individuals
+        in the Archive.
+
+        Args:
+            instances (List[Instance]): Instances to calculate their sparseness
+            verbose (bool, optional): Flag to show the progress. Defaults to False.
+
+        Raises:
+            AttributeError: If len(d) where d is the descriptor of each instance i differs from another
+            AttributeError: If NoveltySearch.k >= len(instances)
+
+        Returns:
+            List[float]: List of sparseness values, one for each instance
+        """
         if len(instances) == 0 or any(len(d) == 0 for d in instances):
             msg = f"{self.__class__.__name__} trying to calculate sparseness on an empty Instance list"
             raise AttributeError(msg)
@@ -247,69 +309,41 @@ class NoveltySearch:
         if self._k >= len(instances):
             msg = f"{self.__class__.__name__} trying to calculate sparseness with k({self._k}) > len(instances)({len(instances)})"
             raise AttributeError(msg)
-        # We need to concatentate the archive to the given descriptors
-        # and to set k+1 because it predicts n[0] == self descriptor
-        _descriptors_arr = self._combined_archive_and_population(
-            self.archive, instances
+
+        return self.__compute_sparseness(
+            instances, self.archive, neighbours=self._k + 1
         )
-        if self._transformer is not None:
-            # Transform the descriptors if necessary
-            _descriptors_arr = self._transformer(_descriptors_arr)
 
-        neighbourhood = NearestNeighbors(n_neighbors=self._k + 1, algorithm="ball_tree")
-        neighbourhood.fit(_descriptors_arr)
-        sparseness = []
-        # We're only interesed in the instances given not the archive
-        for instance, descriptor in zip(
-            instances, _descriptors_arr[0 : len(instances)]
-        ):
-            dist, ind = neighbourhood.kneighbors([descriptor])
-            dist, ind = dist[0][1:], ind[0][1:]
-            s = (1.0 / self._k) * sum(dist)
-            instance.s = s
-            sparseness.append(s)
-            if verbose:
-                print("=" * 120)
-                print(f"{instance:.3f} |  s(i) > t_a? {(s>= self._t_a)!r:15} |")
+    def sparseness_solution_set(self, instances: List[Instance]) -> List[float]:
+        """Calculates the sparseness of the given instances against the individuals
+        in the Solution Set.
 
-        return sparseness
+        Args:
+            instances (List[Instance]): Instances to calculate their sparseness
+
+        Raises:
+            AttributeError: If len(d) where d is the descriptor of each instance i differs from another
+            AttributeError: If 2 >= len(instances)
+
+        Returns:
+            List[float]: List of sparseness values, one for each instance
+        """
+
+        if len(instances) == 0 or any(len(d) == 0 for d in instances):
+            msg = f"{self.__class__.__name__} trying to update the solution set with an empty instance list"
+            raise AttributeError(msg)
+
+        if len(instances) <= 2:
+            msg = f"{self.__class__.__name__} trying to calculate sparseness_solution_set with k(2) >= len(instances)({len(instances)})"
+            raise AttributeError(msg)
+
+        return self.__compute_sparseness(instances, self.solution_set, neighbours=2)
 
     def _update_archive(self, instances: List[Instance]):
         """Updates the Novelty Search Archive with all the instances that has a 's' greater than t_a"""
         if not instances:
             return
         self._archive.extend(filter(lambda x: x.s >= self.t_a, instances))
-
-    def sparseness_solution_set(self, instances: List[Instance], verbose: bool = False):
-        """Updates the Novelty Search Archive with all the instances that has a 's' greater than t_ss when K is set to 1"""
-
-        if len(instances) == 0 or any(len(d) == 0 for d in instances):
-            msg = f"{self.__class__.__name__} trying to update the solution set with an empty instance list"
-            raise AttributeError(msg)
-
-        if self._k >= len(instances):
-            msg = f"{self.__class__.__name__} trying to calculate sparseness_solution_set with k({self._k}) > len(instances)({len(instances)})"
-            raise AttributeError(msg)
-
-        _descriptors_arr = self._combined_archive_and_population(
-            self.solution_set, instances
-        )
-        if self._transformer is not None:
-            # Transform the descriptors if necessary
-            _descriptors_arr = self._transformer(_descriptors_arr)
-
-        neighbourhood = NearestNeighbors(n_neighbors=2, algorithm="ball_tree")
-        neighbourhood.fit(_descriptors_arr)
-        for instance, descriptor in zip(
-            instances, _descriptors_arr[0 : len(instances)]
-        ):
-            dist, ind = neighbourhood.kneighbors([descriptor])
-            dist, ind = dist[0][1:], ind[0][1:]
-            s = (1.0 / self._k) * sum(dist)
-            instance.s = s
-            if verbose:
-                print("=" * 120)
-                print(f"{instance} |  s = {s} > t_ss? {(s>= self._t_ss)!r:15} |")
 
     def _update_solution_set(self, instances: List[Instance]):
         """Updates the Novelty Search Solution Set with all the instances that has a 's' greater than t_ss"""

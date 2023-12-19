@@ -47,12 +47,19 @@ class Solution:
         return len(self) != 0
 
     def __eq__(self, other):
-        return len(self) == len(other) and all(a == b for a, b in zip(self, other))
+        if isinstance(other, Solution):
+            try:
+                return all(a == b for a, b in zip(self, other, strict=True))
+            except ValueError:
+                return False
+        else:
+            return NotImplemented
 
     def __gt__(self, other):
-        if not hasattr(other, "fitness"):
-            msg = f"Other of type {other.__class__.__name__} does not have a fitness attribute to compare with {self.__class__.__name__}"
-            raise AttributeError(msg)
+        if not isinstance(other, Solution):
+            msg = f"Other of type {other.__class__.__name__} can not be compared with with {self.__class__.__name__}"
+            print(msg)
+            return NotImplemented
         return self.fitness > other.fitness
 
     def __getitem__(self, key):
@@ -184,13 +191,27 @@ class Instance:
         self._variables[key] = value
 
     def __eq__(self, other):
-        return len(self) == len(other) and all(a == b for a, b in zip(self, other))
+        if isinstance(other, Instance):
+            try:
+                return all(a == b for a, b in zip(self, other, strict=True))
+            except ValueError:
+                return False
+        else:
+            return NotImplemented
 
     def __gt__(self, other):
-        if not hasattr(other, "fitness"):
-            msg = f"Other of type {other.__class__.__name__} does not have a fitness attribute to compare with {self.__class__.__name__}"
-            raise AttributeError(msg)
+        if not isinstance(other, Instance):
+            msg = f"Other of type {other.__class__.__name__} can not be compared with with {self.__class__.__name__}"
+            print(msg)
+            return NotImplemented
         return self.fitness > other.fitness
+
+    def __ge__(self, other):
+        if not isinstance(other, Instance):
+            msg = f"Other of type {other.__class__.__name__} can not be compared with with {self.__class__.__name__}"
+            print(msg)
+            return NotImplemented
+        return self.fitness >= other.fitness
 
     def __hash__(self):
         hashes = (hash(x) for x in self)

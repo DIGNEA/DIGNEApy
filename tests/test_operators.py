@@ -123,15 +123,15 @@ def test_uniform_one_mutation_raises(initialised_solutions):
 
 
 def test_binary_selection_solutions(initialised_solutions):
-    sol_1, sol_2 = initialised_solutions
-    sol_1.fitness = 100
-    sol_2.fitness = 50
-    population = [sol_1, sol_2]
+    population = list(initialised_solutions)
+    population[0].fitness = 100
+    population[1].fitness = 50
     parent = selection.binary_tournament_selection(population)
-    assert sol_1 > sol_2
-    assert len(parent) == len(sol_1)
-    assert parent == sol_1
-    assert parent != sol_2
+    assert population[0] > population[1]
+    assert len(parent) == len(population[0])
+    assert parent == population[0]
+    assert id(parent) != id(population[0])
+    assert parent != population[1]
 
 
 def test_binary_selection_solutions_raises_empty():

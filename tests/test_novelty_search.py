@@ -31,8 +31,10 @@ def test_archive_to_array(default_archive):
 
 
 def test_iterable_default_archive(default_archive):
-    descriptors = [list(range(d, d + 5)) for d in range(10)]
+    descriptors = [Instance(range(d, d + 5)) for d in range(10)]
+    assert len(descriptors) == len(default_archive)
     assert all(a == b for a, b in zip(descriptors, default_archive))
+    assert all(a == b for a, b in zip(iter(descriptors), iter(default_archive)))
 
 
 def test_not_equal_archives(default_archive, empty_archive):

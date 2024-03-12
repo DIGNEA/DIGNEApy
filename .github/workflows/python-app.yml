@@ -30,7 +30,7 @@ jobs:
                   allow-prereleases: false
             - name: Install dependencies
               run: |
-                  python3 -m pip install --upgrade pip
+                  python3 -m pip install --upgrade pip setuptools
                   pip install flake8 pytest
                   pip install -r requirements.txt
             - name: Lint with flake8

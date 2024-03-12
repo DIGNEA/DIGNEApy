@@ -132,7 +132,7 @@ class HyperCMA:
         lambda_: int = 50,
         generations: int = 250,
         direction: str = "maximise",
-        transformer: Transformer = None,
+        transformer: NN = None,
         eval_fn: Callable = None,
         n_jobs: int = 1,
     ):

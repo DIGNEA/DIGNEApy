@@ -14,7 +14,6 @@ from .core import Instance, Domain, Solver
 from .operators import crossover, mutation, selection, replacement
 from typing import List, Tuple, Iterable, Callable
 from operator import attrgetter
-import functools
 import numpy as np
 import copy
 
@@ -67,7 +66,7 @@ class EIG(NoveltySearch):
             t_a (float, optional): Archive threshold. Defaults to 0.001.
             t_ss (float, optional): Solution set threshold. Defaults to 0.001.
             k (int, optional): Number of neighbours to calculate the sparseness. Defaults to 15.
-            descriptor (str, optional): Descriptor used to calculate the diversity. The options are features or performance. Defaults to "features".
+            descriptor (str, optional): Descriptor used to calculate the diversity. The options are features, performance or instance. Defaults to "features".
             transformer (callable, optional): Define a strategy to transform the high-dimensional descriptors to low-dimensional.Defaults to None.
             domain (Domain, optional): Domain for which the instances are generated for. Defaults to None.
             portfolio (Tuple[Solver], optional): Tuple of callable objects that can evaluate a instance. Defaults to None.

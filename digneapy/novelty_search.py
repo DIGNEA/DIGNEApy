@@ -18,7 +18,7 @@ import itertools
 from functools import reduce
 from .core import Instance
 from sklearn.neighbors import NearestNeighbors
-from typing import Iterable, List, Callable
+from typing import List, Callable
 
 
 class Archive:
@@ -164,8 +164,20 @@ def _performance_descriptor_strategy(iterable) -> List[float]:
     return [np.mean(i.portfolio_scores, axis=0) for i in iterable]
 
 
+def _instance_descriptor_strategy(iterable) -> List[float]:
+    """It returns the instance information as its descriptor
+
+    Args:
+        iterable (List[Instance]): Instances to describe
+
+    Returns:
+        List[float]: List of descriptor instance
+    """
+    return [*iterable]
+
+
 class NoveltySearch:
-    __descriptors = ("features", "performance")
+    __descriptors = ("features", "performance", "instance")
 
     def __init__(
         self,
@@ -181,7 +193,7 @@ class NoveltySearch:
             t_a (float, optional): Archive threshold. Defaults to 0.001.
             t_ss (float, optional): Solution set threshold. Defaults to 0.001.
             k (int, optional): Number of neighbours to calculate the sparseness. Defaults to 15.
-            descriptor (str, optional): Descriptor to calculate the diversity. The options are features and performance. Defaults to "features".
+            descriptor (str, optional): Descriptor to calculate the diversity. The options are features, performance or instance. Defaults to "features".
             transformer (callable, optional): Define a strategy to transform the high-dimensional descriptors to low-dimensional.Defaults to None.
         """
         self._t_a = t_a
@@ -196,12 +208,21 @@ class NoveltySearch:
             self._describe_by = "features"
             self._descriptor_strategy = _features_descriptor_strategy
         else:
+            # TODO: Improve this by adding support for different modes without code smell
             self._describe_by = descriptor
-            self._descriptor_strategy = (
+            match self._describe_by:
+                case "features":
+                    self._descriptor_strategy = _features_descriptor_strategy
+                case "performance":
+                    self._descriptor_strategy = _performance_descriptor_strategy
+                case "instance":
+                    self._descriptor_strategy = _instance_descriptor_strategy
+
+            """ self._descriptor_strategy = (
                 _performance_descriptor_strategy
                 if descriptor == "performance"
                 else _features_descriptor_strategy
-            )
+            ) """
 
     @property
     def archive(self):

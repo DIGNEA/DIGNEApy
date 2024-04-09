@@ -5,7 +5,11 @@
 import pytest
 import copy
 import numpy as np
-from digneapy.novelty_search import Archive, NoveltySearch
+from digneapy.novelty_search import (
+    Archive,
+    NoveltySearch,
+    _instance_descriptor_strategy,
+)
 from digneapy.core import Instance
 
 
@@ -83,6 +87,11 @@ def nsp():
     return NoveltySearch(k=3, descriptor="performance")
 
 
+@pytest.fixture
+def nsi():
+    return NoveltySearch(k=3, descriptor="instance")
+
+
 def test_default_nsf(nsf):
     assert nsf.t_a == 0.001
     assert nsf.t_ss == 0.001
@@ -117,7 +126,7 @@ def test_default_nsp(nsp):
     )
 
 
-def test_default_nsf():
+def test_default_nsf_by_features():
     ns = NoveltySearch(descriptor="a_brand_new_descriptor")
     assert ns._describe_by == "features"
 
@@ -183,3 +192,15 @@ def test_run_nsp(nsp, random_population):
     # If len(pop) < k it should raise
     with pytest.raises(Exception):
         nsp.sparseness(random_population[:3])
+
+
+def test_run_ns_instance(nsi, random_population):
+    assert nsi._describe_by == "instance"
+    assert all(len(instance.features) != 0 for instance in random_population)
+    assert all(len(instance.portfolio_scores) != 0 for instance in random_population)
+    assert all(len(instance) != 0 for instance in random_population)
+
+
+def test_describe_by_instance(nsi, random_population):
+    instance = random_population[0]
+    assert _instance_descriptor_strategy(instance) == [*instance]

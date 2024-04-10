@@ -16,23 +16,47 @@ from digneapy.solvers.heuristics import default_kp, map_kp, miw_kp, mpw_kp
 from digneapy.domains.knapsack import KPDomain
 from digneapy.operators.replacement import first_improve_replacement
 from collections import deque
+import configparser
+import argparse
 
 
-def main():
+def main(default_args):
+    if default_args:
+        dimension = 50
+        capacity_approach = "percentage"
+        population_size = 10
+        generations = 1000
+        t_a, t_ss, k = 3, 3, 3
+        descriptor = "features"
+    else:
+        config = configparser.ConfigParser()
+        config.read("knapsack_experiment.ini")
+        # Reading the parameters
+        dimension = int(config["domain"]["dimension"])
+        capacity_approach = config["domain"]["capacity"]
+
+        population_size = int(config["generator"]["population_size"])
+        generations = int(config["generator"]["generations"])
+        t_a = float(config["generator"]["t_a"])
+        t_ss = float(config["generator"]["t_ss"])
+        k = int(config["generator"]["k"])
+        descriptor = config["generator"]["descriptor"]
+
     portfolio = deque([default_kp, map_kp, miw_kp, mpw_kp])
-    kp_domain = KPDomain(dimension=50, capacity_approach="percentage")
+    kp_domain = KPDomain(dimension=dimension, capacity_approach=capacity_approach)
+
     for i in range(len(portfolio)):
         portfolio.rotate(i)
         eig = EIG(
-            10,
-            1000,
+            population_size,
+            generations,
             domain=kp_domain,
             portfolio=portfolio,
-            t_a=3,
-            t_ss=3,
-            k=3,
+            t_a=t_a,
+            t_ss=t_ss,
+            k=k,
             repetitions=1,
-            descriptor="features",
+            descriptor=descriptor,
             replacement=first_improve_replacement,
         )
         print(eig)
@@ -47,4 +71,14 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser(
+        prog="Instance Generation for Knapsack Domain",
+    )
+    parser.add_argument(
+        "-d",
+        "--default",
+        action="store_true",
+        help="Using the default parameters for the experiment. Otherwise it uses the .ini file",
+    )
+    args = parser.parse_args()
+    main(args.default)

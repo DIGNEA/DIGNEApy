@@ -177,7 +177,15 @@ def _instance_descriptor_strategy(iterable) -> List[float]:
 
 
 class NoveltySearch:
-    __descriptors = ("features", "performance", "instance")
+    """Descriptor strategies for the Novelty Search algorithm.
+    The current version supports Features, Performance and Instance variations.
+    """
+
+    __descriptor_strategies = {
+        "features": _features_descriptor_strategy,
+        "performance": _performance_descriptor_strategy,
+        "instance": _instance_descriptor_strategy,
+    }
 
     def __init__(
         self,
@@ -202,27 +210,14 @@ class NoveltySearch:
         self._archive = Archive()
         self._solution_set = Archive()
         self._transformer = transformer
-        if descriptor not in self.__descriptors:
+        if descriptor not in self.__descriptor_strategies:
             msg = f"describe_by {descriptor} not available in {self.__class__.__name__}.__init__. Set to features by default"
             print(msg)
             self._describe_by = "features"
             self._descriptor_strategy = _features_descriptor_strategy
         else:
-            # TODO: Improve this by adding support for different modes without code smell
             self._describe_by = descriptor
-            match self._describe_by:
-                case "features":
-                    self._descriptor_strategy = _features_descriptor_strategy
-                case "performance":
-                    self._descriptor_strategy = _performance_descriptor_strategy
-                case "instance":
-                    self._descriptor_strategy = _instance_descriptor_strategy
-
-            """ self._descriptor_strategy = (
-                _performance_descriptor_strategy
-                if descriptor == "performance"
-                else _features_descriptor_strategy
-            ) """
+            self._descriptor_strategy = self.__descriptor_strategies[descriptor]
 
     @property
     def archive(self):

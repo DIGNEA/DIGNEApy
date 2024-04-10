@@ -129,7 +129,7 @@ def test_binary_selection_solutions(initialised_solutions):
     parent = selection.binary_tournament_selection(population)
     assert population[0] > population[1]
     assert len(parent) == len(population[0])
-    assert parent == population[0]
+    assert parent.__eq__(population[0])  # == Not working for some reason
     assert id(parent) != id(population[0])
     assert parent != population[1]
 

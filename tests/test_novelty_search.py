@@ -126,6 +126,23 @@ def test_default_nsp(nsp):
     )
 
 
+def test_default_nsi(nsi):
+    assert nsi.t_a == 0.001
+    assert nsi.t_ss == 0.001
+    assert nsi.k == 3
+    assert nsi._describe_by == "instance"
+    assert len(nsi.archive) == 0
+    assert len(nsi.solution_set) == 0
+    assert (
+        nsi.__str__()
+        == "NS(desciptor=instance,t_a=0.001,t_ss=0.001,k=3,len(a)=0,len(ss)=0)"
+    )
+    assert (
+        nsi.__repr__()
+        == "NS<desciptor=instance,t_a=0.001,t_ss=0.001,k=3,len(a)=0,len(ss)=0>"
+    )
+
+
 def test_default_nsf_by_features():
     ns = NoveltySearch(descriptor="a_brand_new_descriptor")
     assert ns._describe_by == "features"
@@ -200,7 +217,19 @@ def test_run_ns_instance(nsi, random_population):
     assert all(len(instance.portfolio_scores) != 0 for instance in random_population)
     assert all(len(instance) != 0 for instance in random_population)
 
-
-def test_describe_by_instance(nsi, random_population):
-    instance = random_population[0]
-    assert _instance_descriptor_strategy(instance) == [*instance]
+    # Sparseness is calculated with the instance
+    sparseness = nsi.sparseness(random_population)
+    assert len(sparseness) == len(random_population)
+    # Here we check that the NS includes the novel_ta amount of
+    # instances that are supposed to has a s >= t_a
+    novel_ta = sum(1 for i in sparseness if i >= nsi.t_a)
+    nsi._update_archive(random_population)
+    assert len(nsi.archive) == novel_ta
+    nsi._update_solution_set(random_population)
+    assert len(nsi.solution_set) != 0
+    # If empty population it should raise
+    with pytest.raises(Exception):
+        nsi.sparseness([])
+    # If len(pop) < k it should raise
+    with pytest.raises(Exception):
+        nsi.sparseness(random_population[:3])

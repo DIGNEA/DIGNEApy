@@ -39,7 +39,7 @@ def test_default_solution_attrs(default_solution):
     cloned = copy.deepcopy(default_solution)
     assert cloned == default_solution
     assert not cloned > default_solution
-    cloned.fitness = 10000
+    cloned._fitness = 10000
     assert cloned > default_solution
 
     chr_slice = default_solution[:15]
@@ -61,7 +61,7 @@ def initialised_instance():
 def test_default_instance_attrs(default_instance):
     assert default_instance.p == 0.0
     assert default_instance.s == 0.0
-    assert default_instance.fitness == 0.0
+    assert default_instance._fitness == 0.0
     assert not default_instance._variables
     assert not default_instance.features
     assert not default_instance.portfolio_scores
@@ -70,7 +70,7 @@ def test_default_instance_attrs(default_instance):
 def test_init_instance(initialised_instance):
     assert initialised_instance.p == 0.0
     assert initialised_instance.s == 0.0
-    assert initialised_instance.fitness == 0.0
+    assert initialised_instance._fitness == 0.0
     assert initialised_instance._variables == list(range(100))
     assert not initialised_instance.features
     assert not initialised_instance.portfolio_scores

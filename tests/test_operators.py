@@ -129,9 +129,27 @@ def test_binary_selection_solutions(initialised_solutions):
     parent = selection.binary_tournament_selection(population)
     assert population[0] > population[1]
     assert len(parent) == len(population[0])
-    assert parent.__eq__(population[0])  # == Not working for some reason
     assert id(parent) != id(population[0])
-    assert parent != population[1]
+    assert id(parent) != id(population[1])
+    # We dont know for sure which individual will
+    # be returned so we can only check that
+    # the parent is in the population
+    assert parent in population
+
+
+def test_binary_selection_solutions(initialised_instances):
+    population = list(initialised_instances)
+    population[0].fitness = 100
+    population[1].fitness = 50
+    parent = selection.binary_tournament_selection(population)
+    assert population[0] > population[1]
+    assert len(parent) == len(population[0])
+    assert id(parent) != id(population[0])
+    assert id(parent) != id(population[1])
+    # We dont know for sure which individual will
+    # be returned so we can only check that
+    # the parent is in the population
+    assert parent in population
 
 
 def test_binary_selection_solutions_raises_empty():

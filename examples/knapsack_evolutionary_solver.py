@@ -22,7 +22,6 @@ def main():
     q = np.random.randint(0, high=250)
     kp = knapsack.Knapsack(profits=p, weights=w, capacity=q)
     print(f"Instance to solve: {kp}")
-    input()
     population, log, hof = evolutionary_mu_comma_lambda(
         "Max",
         N,

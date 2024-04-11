@@ -23,7 +23,7 @@ def gen_dignea_ind(icls, size: int, min_value, max_value):
     the Solution class of digneapy
     """
     chromosome = list(np.random.randint(low=min_value, high=max_value, size=size))
-    return icls(chromosome=chromosome)
+    return icls(chromosome=chromosome, fitness=creator.Fitness)
 
 
 def evolutionary_mu_comma_lambda(

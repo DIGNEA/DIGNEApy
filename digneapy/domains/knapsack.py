@@ -39,12 +39,12 @@ class Knapsack(OptProblem):
             individual (Iterable): Individual to evaluate
 
         Raises:
-            AttributeError: Raises an error if the len(individual) != len(instance) / 2
+            AttributeError: Raises an error if the len(individual) != len(profits or weights)
 
         Returns:
             Tuple[float]: Profit
         """
-        if len(individual) != len(self.instance) // 2:
+        if len(individual) != len(self.profits):
             msg = f"Mismatch between individual variables and instance variables in {self.__class__.__name__}"
             raise AttributeError(msg)
 

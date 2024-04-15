@@ -26,12 +26,12 @@ def gen_dignea_ind(icls, size: int, min_value, max_value):
     return icls(chromosome=chromosome, fitness=creator.Fitness)
 
 
-def evolutionary_mu_comma_lambda(
+def ea_mu_comma_lambda(
     dir: str,
     dim: int,
     min_g: int | float,
     max_g: int | float,
-    eval_fn: Callable = None,
+    problem: Callable = None,
     cx=tools.cxOnePoint,
     mut=tools.mutUniformInt,
     pop_size: int = 10,
@@ -47,7 +47,7 @@ def evolutionary_mu_comma_lambda(
         dim (int): Number of variables of the problem to solve.
         min_g (int | float): Minimum value of the genome of the solutions.
         max_g (int | float): Maximum value of the genome of the solutions.
-        eval_fn (Callable): Evaluation function used to calculate the fitness of the individuals.
+        problem (Callable): Evaluation function used to calculate the fitness of the individuals.
         pop_size (int, optional): Population size of the evolutionary algorithm. Defaults to 10.
         lambd (int, optional): Number of offspring produced at each generation of the algorithm. Defaults to 100.
         cxpb (float, optional): Crossover probability. Defaults to 0.6.
@@ -59,12 +59,14 @@ def evolutionary_mu_comma_lambda(
         Logbook (Logbook): Logbook of the DEAP algorithm
         Hof: Hall Of Fame of DEAP. Best solution found.
     """
-    if not eval_fn:
-        print(f"A evaluation function must be specified")
-        raise RuntimeError
+    if problem is None:
+        msg = "No problem found in args of evolutionary_mu_comma_lambda"
+        raise AttributeError(msg)
 
     if dir not in direction:
         print(f"Direction not valid. It must be {direction}")
+        raise AttributeError(msg)
+
     else:
         mult = 1.0
         if dir == "Min":
@@ -81,7 +83,7 @@ def evolutionary_mu_comma_lambda(
         toolbox.register("mate", cx)
         toolbox.register("mutate", mut, low=min_g, up=max_g, indpb=(1.0 / dim))
         toolbox.register("select", tools.selTournament, tournsize=2)
-        toolbox.register("evaluate", eval_fn)
+        toolbox.register("evaluate", problem)
 
         pop = toolbox.population(n=pop_size)
         hof = tools.HallOfFame(1)
@@ -102,5 +104,15 @@ def evolutionary_mu_comma_lambda(
             stats=stats,
             halloffame=hof,
         )
-
-        return pop, logbook, hof
+        # Convert to Solution class
+        cast_pop = [
+            Solution(chromosome=i, objectives=(i.fitness,), fitness=i.fitness.values[0])
+            for i in pop
+        ]
+        best = Solution(
+            chromosome=hof[0],
+            objectives=(hof[0].fitness,),
+            fitness=hof[0].fitness.values[0],
+        )
+        print(best.chromosome)
+        return cast_pop, logbook, best

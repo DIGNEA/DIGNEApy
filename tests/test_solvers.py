@@ -11,11 +11,12 @@
 """
 
 import pytest
-import copy
 import numpy as np
 from digneapy.domains import knapsack
 from digneapy.solvers import heuristics
+from digneapy.solvers.evolutionary import ea_mu_comma_lambda
 from digneapy.core import Solution
+from deap import benchmarks
 
 
 @pytest.fixture
@@ -87,3 +88,87 @@ def test_mpw_kp_heuristic(default_instance):
 
     with pytest.raises(Exception):
         heuristics.mpw_kp(None)
+
+
+def test_ea_with_def_kp(default_instance):
+    generations = 100
+    pop_size = 10
+    result = ea_mu_comma_lambda(
+        dir="Max",
+        dim=len(default_instance),
+        min_g=0,
+        max_g=1,
+        problem=default_instance.evaluate,
+        generations=generations,
+        pop_size=pop_size,
+    )
+    assert len(result) == 3
+    pop, log, best = result
+    assert len(log) == generations + 1
+    assert len(best) == len(default_instance)
+    assert len(pop) == pop_size
+
+    assert all(type(i) == Solution for i in pop)
+    assert type(best) == Solution
+    assert best._fitness == 50
+    # There are multiple options to reach the maximum fitness
+    # So we dont compare the chromosomes
+
+
+def test_ea_solves_sphere():
+    generations = 100
+    pop_size = 10
+    result = ea_mu_comma_lambda(
+        dir="Min",
+        dim=30,
+        min_g=0,
+        max_g=1,
+        problem=benchmarks.sphere,
+        generations=generations,
+        pop_size=pop_size,
+    )
+    assert len(result) == 3
+    pop, log, best = result
+    assert len(log) == generations + 1
+    assert len(best) == 30
+    assert len(pop) == pop_size
+
+    assert all(type(i) == Solution for i in pop)
+    assert type(best) == Solution
+
+
+def test_ea_raises_problem():
+    """
+    Raises an exception because we did not
+    set any problem to evaluate
+    """
+    with pytest.raises(Exception):
+        generations = 100
+        pop_size = 10
+        _ = ea_mu_comma_lambda(
+            dir="Max",
+            dim=100,
+            min_g=0,
+            max_g=1,
+            problem=None,
+            generations=generations,
+            pop_size=pop_size,
+        )
+
+
+def test_ea_raises_direction(default_instance):
+    """
+    Raises an exception because the direction is not allowed
+    """
+    with pytest.raises(Exception):
+        generations = 100
+        pop_size = 10
+        _ = ea_mu_comma_lambda(
+            dir="ANY",
+            dim=len(default_instance),
+            min_g=0,
+            max_g=1,
+            problem=default_instance.evaluate,
+            generations=generations,
+            pop_size=pop_size,
+        )

@@ -230,4 +230,4 @@ class KPDomain(Domain):
             case "fixed":
                 capacity = self.max_capacity
 
-        return Knapsack(profits, weights, int(capacity))
+        return Knapsack(profits=profits, weights=weights, capacity=int(capacity))

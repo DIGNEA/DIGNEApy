@@ -92,6 +92,7 @@ class KPDomain(Domain):
         self.max_p = max_p
         self.max_w = max_w
         self.max_capacity = max_capacity
+
         if capacity_ratio < 0.0 or capacity_ratio > 1.0 or not float(capacity_ratio):
             self.capacity_ratio = 0.8  # Default
             msg = f"The capacity ratio must be a float number in the range [0.0-1.0]. Set as 0.8 as default."
@@ -102,9 +103,9 @@ class KPDomain(Domain):
         if capacity_approach not in self.__capacity_approaches:
             msg = f"The capacity approach {capacity_approach} is not available. Please choose between {self.__capacity_approaches}. Evolved approach set as default."
             print(msg)
-            self.capacity_approach = "evolved"
+            self._capacity_approach = "evolved"
         else:
-            self.capacity_approach = capacity_approach
+            self._capacity_approach = capacity_approach
 
         bounds = [(0.0, self.max_capacity)] + [
             (min_w, max_w) if i % 2 == 0 else (min_p, max_p)
@@ -115,6 +116,25 @@ class KPDomain(Domain):
             dimension=dimension,
             bounds=bounds,
         )
+
+    @property
+    def capacity_approach(self):
+        return self._capacity_approach
+
+    @capacity_approach.setter
+    def capacity_approach(self, app):
+        """Setter for the Maximum capacity generator approach.
+        It forces to update the variable to one of the specify values
+
+        Args:
+            app (str): Approach for setting the capacity. It should be fixed, evolved or percentage.
+        """
+        if app not in self.__capacity_approaches:
+            msg = f"The capacity approach {app} is not available. Please choose between {self.__capacity_approaches}. Evolved approach set as default."
+            print(msg)
+            self._capacity_approach = "evolved"
+        else:
+            self._capacity_approach = app
 
     def generate_instance(self) -> Instance:
         """Generates a new instances for the domain

@@ -79,7 +79,6 @@ def mpw_kp(problem: Knapsack = None) -> List[Solution]:
 
     profits_per_weights = [(p / w) for p, w in zip(problem.profits, problem.weights)]
     indices = np.argsort(profits_per_weights)[::-1]
-
     inside = 0
     profit = 0
     chromosome = np.zeros(len(problem))
@@ -88,7 +87,5 @@ def mpw_kp(problem: Knapsack = None) -> List[Solution]:
             inside += problem.weights[idx]
             profit += problem.profits[idx]
             chromosome[idx] = 1
-        else:
-            break
 
     return [Solution(chromosome=chromosome, objectives=(profit,), fitness=profit)]

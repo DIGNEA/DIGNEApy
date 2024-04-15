@@ -35,7 +35,7 @@ def binary_tournament_selection(
         msg = "Trying to selection individuals in an empty population."
         raise RuntimeError(msg)
     if len(population) == 1:
-        return copy.deepcopy(population[0])
+        return copy.deepcopy(population)
     else:
         idx1, idx2 = np.random.randint(low=0, high=len(population), size=2)
         ind_1 = population[idx1]

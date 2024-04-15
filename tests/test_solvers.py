@@ -37,6 +37,9 @@ def test_default_kp_heuristic(default_instance):
     assert solution._fitness == expected_p
     assert solution.chromosome == expected_chromosome
 
+    with pytest.raises(Exception):
+        heuristics.default_kp(None)
+
 
 def test_map_kp_heuristic(default_instance):
     assert default_instance.capacity == 50
@@ -48,6 +51,9 @@ def test_map_kp_heuristic(default_instance):
     assert solution.objectives[0] == expected_p
     assert solution._fitness == expected_p
     assert solution.chromosome == expected_chromosome
+
+    with pytest.raises(Exception):
+        heuristics.map_kp(None)
 
 
 def test_miw_kp_heuristic(default_instance):
@@ -64,6 +70,9 @@ def test_miw_kp_heuristic(default_instance):
     assert solution._fitness == expected_p
     assert solution.chromosome == expected_chromosome
 
+    with pytest.raises(Exception):
+        heuristics.miw_kp(None)
+
 
 def test_mpw_kp_heuristic(default_instance):
     assert default_instance.capacity == 50
@@ -75,3 +84,6 @@ def test_mpw_kp_heuristic(default_instance):
     assert solution.objectives[0] == expected_p
     assert solution._fitness == expected_p
     assert solution.chromosome == expected_chromosome
+
+    with pytest.raises(Exception):
+        heuristics.mpw_kp(None)

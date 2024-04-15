@@ -85,16 +85,26 @@ def test_one_point_crossover_instances(initialised_instances):
     assert len(offspring) == 100
 
 
-def test_uniform_crossover_raises(initialised_instances):
-    solution_1, _ = initialised_instances
+def test_uniform_crossover_raises():
+    N = 100
+    chr_1 = np.random.randint(low=0, high=100, size=N)
+    chr_2 = np.random.randint(low=0, high=100, size=N * 2)
+    instance_1 = Instance(chr_1)
+    instance_2 = Instance(chr_2)
+
     with pytest.raises(Exception):
-        crossover.uniform_crossover(solution_1, None)
+        crossover.uniform_crossover(instance_1, instance_2)
 
 
-def test_one_point_crossover_raises(initialised_instances):
-    solution_1, _ = initialised_instances
+def test_one_point_crossover_raises():
+    N = 100
+    chr_1 = np.random.randint(low=0, high=100, size=N)
+    chr_2 = np.random.randint(low=0, high=100, size=N * 2)
+    instance_1 = Instance(chr_1)
+    instance_2 = Instance(chr_2)
+
     with pytest.raises(Exception):
-        crossover.one_point_crossover(solution_1, None)
+        crossover.one_point_crossover(instance_1, instance_2)
 
 
 def test_uniform_one_mutation_instances(initialised_instances):
@@ -117,9 +127,16 @@ def test_uniform_one_mutation_solutions(initialised_solutions):
     assert sum(1 for i, j in zip(original, new_solution) if i != j) == 1
 
 
-def test_uniform_one_mutation_raises(initialised_solutions):
+def test_uniform_one_mutation_raises():
+    bounds = [(0, 100) for _ in range(100)]
     with pytest.raises(Exception):
-        mutation.uniform_one_mutation(None)
+        mutation.uniform_one_mutation(list(), bounds)
+
+
+def test_uniform_one_mutation_raises_bounds():
+    bounds = [(0, 1, 2) for _ in range(100)]
+    with pytest.raises(Exception):
+        mutation.uniform_one_mutation(list(range(100)), bounds)
 
 
 def test_binary_selection_solutions(initialised_solutions):
@@ -155,6 +172,14 @@ def test_binary_selection_solutions(initialised_instances):
 def test_binary_selection_solutions_raises_empty():
     with pytest.raises(Exception):
         selection.binary_tournament_selection(None)
+
+
+def test_binary_selection_one_ind(initialised_solutions):
+    population = [initialised_solutions[0]]
+    parent = selection.binary_tournament_selection(population)
+    assert type(parent) == type(population)
+    assert parent == population
+    assert id(parent) != id(population)
 
 
 @pytest.fixture
@@ -210,7 +235,7 @@ def test_first_improve_replacement(population):
     assert new_pop == expected
 
     with pytest.raises(Exception):
-        replacement.generational(population, [])
+        replacement.first_improve_replacement(population, [])
 
 
 def test_elitist_replacement(population):

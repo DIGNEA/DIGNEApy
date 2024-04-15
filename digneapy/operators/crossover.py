@@ -43,41 +43,6 @@ def one_point_crossover(
     return offspring
 
 
-def k_point_crossover(
-    ind_1: Instance | Solution, ind_2: Instance | Solution, k: int = 2
-) -> Instance | Solution:
-    """K-Point crossover operator from Eiben Book
-
-    Args:
-        ind_1 Instance or Solution: First individual to apply crossover
-        ind_2 Instance or Solution: Second individual to apply crossover
-        k (int, optional): Number of crossover points to generate. Defaults to 2.
-
-    Raises:
-        AttributeError: When the len(ind_1) != len(ind_2)
-
-    Returns:
-        Instance or Solution: New individual
-    """
-    if len(ind_1) != len(ind_2):
-        msg = f"Individual of different length in uniform_crossover. len(ind_1) = {len(ind_1)} != len(ind_2) = {len(ind_2)}"
-        raise AttributeError(msg)
-
-    cross_points = np.sort(np.random.randint(low=0, high=len(ind_1), size=k))[::-1]
-    offspring = copy.deepcopy(ind_1)
-    take_from_first = True
-    start_point = 0
-    for cx_point in cross_points:
-        offspring[start_point:cx_point] = (
-            ind_1[start_point:cx_point]
-            if take_from_first
-            else ind_2[start_point:cx_point]
-        )
-        start_point = cx_point + 1
-        take_from_first = not take_from_first
-    return offspring
-
-
 def uniform_crossover(
     ind_1: Instance | Solution, ind_2: Instance | Solution, cxpb: float = 0.5
 ) -> Instance | Solution:

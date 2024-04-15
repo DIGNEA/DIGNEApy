@@ -76,6 +76,18 @@ def test_default_kp_domain():
     ]
 
 
+def test_default_kp_domain_wrong_args():
+    dimension = 100
+    domain = knapsack.KPDomain(
+        dimension, capacity_approach="random", capacity_ratio=-1.0
+    )
+    assert domain.capacity_approach == "evolved"
+    assert domain.capacity_ratio == 0.8
+
+    domain.capacity_approach = "random"
+    assert domain.capacity_approach == "evolved"
+
+
 def test_kp_domain_to_instance():
     dimension = 100
     domain = knapsack.KPDomain(dimension, capacity_approach="fixed")
@@ -83,12 +95,22 @@ def test_kp_domain_to_instance():
     assert len(instance) == 201  # Twice profits plus Q
     assert instance._variables[0] == 1e4
 
+    domain.capacity_approach = "evolved"
+    instance = domain.generate_instance()
+    assert instance._variables[0] != 1e4
+    assert instance._variables[0] in range(1, 1e4)
+
+    domain.capacity_approach = "percentage"
+    instance = domain.generate_instance()
+    assert instance._variables[0] != 1e4
+
 
 def test_kp_domain_to_features():
     dimension = 100
     domain = knapsack.KPDomain(dimension, capacity_approach="fixed")
     instance = domain.generate_instance()
     features = domain.extract_features(instance)
+
     assert type(features) == tuple
     assert features[0] == 1e4
     assert features[1] <= 1000
@@ -98,6 +120,15 @@ def test_kp_domain_to_features():
     assert features[-3] != 0.0
     assert features[-2] == np.mean(instance._variables[1:])
     assert features[-1] == np.std(instance._variables[1:])
+
+    domain.capacity_approach = "evolved"
+    features = domain.extract_features(instance)
+    features[0] == instance[0]
+
+    domain.capacity_approach = "percentage"
+    features = domain.extract_features(instance)
+    expected_q = int(np.sum(instance._variables[1::2]) * 0.8)
+    assert features[0] == expected_q
 
 
 def test_kp_domain_to_features_dict():

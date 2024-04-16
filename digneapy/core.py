@@ -35,7 +35,7 @@ class Solution:
         self._fitness = fitness
 
     def __str__(self):
-        return f"Solution(dimension={len(self.chromosome)},f={self._fitness},objs={self.objectives},constaints={self.constraints})"
+        return f"Solution(dim={len(self.chromosome)},f={self._fitness},objs={self.objectives},const={self.constraints})"
 
     def __len__(self):
         return len(self.chromosome)
@@ -110,6 +110,14 @@ class Instance:
             self._variables = list(variables)
         else:
             self._variables = []
+        try:
+            fitness = float(fitness)
+            p = float(p)
+            s = float(s)
+        except ValueError:
+            raise AttributeError(
+                "The fitness, p and s parameters must be convertible to float"
+            )
         self._fitness = fitness
         self._p = p
         self._s = s
@@ -122,7 +130,10 @@ class Instance:
 
     @p.setter
     def p(self, performance):
-        if performance != 0.0 and not float(performance):
+        try:
+            performance = float(performance)
+        except ValueError:
+            # if performance != 0.0 and not float(performance):
             msg = f"The performance value {performance} is not a float in 'p' setter of class {self.__class__.__name__}"
             raise AttributeError(msg)
         self._p = performance
@@ -133,7 +144,10 @@ class Instance:
 
     @s.setter
     def s(self, novelty):
-        if novelty != 0.0 and not float(novelty):
+        try:
+            novelty = float(novelty)
+        except ValueError:
+            # if novelty != 0.0 and not float(novelty):
             msg = f"The novelty value {novelty} is not a float in 's' setter of class {self.__class__.__name__}"
             raise AttributeError(msg)
         self._s = novelty
@@ -144,10 +158,14 @@ class Instance:
 
     @fitness.setter
     def fitness(self, f):
-        if f != 0.0 and not float(f):
+        try:
+            f = float(f)
+        except ValueError:
+            # if f != 0.0 and not float(f):
             msg = f"The fitness value {f} is not a float in fitness setter of class {self.__class__.__name__}"
             raise AttributeError(msg)
-        self._fitness = f
+
+        self._fitness = float(f)
 
     @property
     def features(self):

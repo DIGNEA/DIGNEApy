@@ -77,6 +77,15 @@ def test_bool_on_default_archive(default_archive):
     assert default_archive
 
 
+def test_archive_magic(default_archive):
+    assert (
+        default_archive.__str__()
+        == f"Archive with 10 instances -> {str(tuple(default_archive))}"
+    )
+    duplicated = copy.deepcopy(default_archive)
+    assert hash(duplicated) == hash(default_archive)
+
+
 @pytest.fixture
 def nsf():
     return NoveltySearch(k=3, descriptor="features")
@@ -188,6 +197,20 @@ def test_run_nsf(nsf, random_population):
     # If len(pop) < k it should raise
     with pytest.raises(Exception):
         nsf.sparseness(random_population[:3])
+
+    # Here we check the sparseness calculation on the solution set
+    spars_ss = nsf.sparseness_solution_set(random_population)
+    assert len(spars_ss) == len(spars_ss)
+    # Raises because the list is empty
+    with pytest.raises(AttributeError):
+        nsf.sparseness_solution_set(list())
+    # Raises because the one element of the list is empty
+    with pytest.raises(AttributeError):
+        new_pop = random_population + [[]]
+        nsf.sparseness_solution_set(new_pop)
+    # Raises because we need at least to elements to calculate the sparseness
+    with pytest.raises(AttributeError):
+        nsf.sparseness_solution_set(random_population[:1])
 
 
 def test_run_nsp(nsp, random_population):

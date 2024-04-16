@@ -13,7 +13,7 @@
 import pytest
 import copy
 import numpy as np
-from digneapy.core import Instance, Domain, Solution
+from digneapy.core import Instance, Domain, Solution, OptProblem
 
 
 @pytest.fixture
@@ -46,6 +46,31 @@ def test_default_solution_attrs(default_solution):
     assert len(chr_slice) == 15
     assert chr_slice == default_solution[:15]
 
+    other_solution = Solution(
+        chromosome=list(range(200)),
+        objectives=(1.0, 1.0),
+        fitness=100.0,
+        constraints=(0.0, 0.0),
+    )
+    assert len(other_solution) == 200
+    assert len(other_solution.chromosome) == 200
+    # Str comparison
+    assert (
+        other_solution.__str__()
+        == "Solution(dim=200,f=100.0,objs=(1.0, 1.0),const=(0.0, 0.0))"
+    )
+    # Equal comparison
+    assert default_solution.__eq__(list()) == NotImplemented
+    assert default_solution.__gt__(list()) == NotImplemented
+    empty_s = Solution()
+    assert len(empty_s) == 0
+
+
+def test_opt_problem():
+    problem = OptProblem()
+    with pytest.raises(NotImplementedError):
+        problem.evaluate(list())
+
 
 @pytest.fixture
 def default_instance():
@@ -65,6 +90,38 @@ def test_default_instance_attrs(default_instance):
     assert not default_instance._variables
     assert not default_instance.features
     assert not default_instance.portfolio_scores
+    assert (
+        default_instance.__repr__()
+        == f"Instance<f=0.0,p=0.0,s=0.0,vars=0,features=0,performance=0>"
+    )
+
+
+def test_default_instance_raises(default_instance):
+    # Setters work when using proper data types
+    default_instance.p = 100.0
+    default_instance.s = 50.0
+    default_instance.fitness = 500.0
+    assert default_instance.p == 100.0
+    assert default_instance.s == 50.0
+    assert default_instance.fitness == 500.0
+
+    with pytest.raises(AttributeError):
+        default_instance.p = "hello world"
+
+    with pytest.raises(AttributeError):
+        default_instance.s = "hello world"
+
+    with pytest.raises(AttributeError):
+        default_instance.fitness = "hello world"
+
+    with pytest.raises(AttributeError):
+        s = Instance(variables=list(range(100)), fitness="hello", p=100.0, s=100.0)
+
+    with pytest.raises(AttributeError):
+        s = Instance(variables=list(range(100)), fitness=100.0, p="hello", s=100.0)
+
+    with pytest.raises(AttributeError):
+        s = Instance(variables=list(range(100)), fitness=100.0, p=100.0, s="hello")
 
 
 def test_init_instance(initialised_instance):
@@ -92,6 +149,11 @@ def test_equal_instances(initialised_instance, default_instance):
     assert not initialised_instance == default_instance
     instance_2 = copy.copy(initialised_instance)
     assert initialised_instance == instance_2
+    assert default_instance.__eq__(list()) == NotImplemented
+    assert default_instance.__gt__(list()) == NotImplemented
+    assert default_instance.__ge__(list()) == NotImplemented
+    instance_2.fitness = default_instance.fitness + 100.0
+    assert instance_2 >= default_instance
 
 
 def test_boolean(initialised_instance, default_instance):
@@ -101,7 +163,7 @@ def test_boolean(initialised_instance, default_instance):
 
 def test_str():
     instance = Instance(fitness=100, p=10.0, s=3.0)
-    expected = "Instance(f=100,p=10.0,s=3.0,features=(),performance=())"
+    expected = "Instance(f=100.0,p=10.0,s=3.0,features=(),performance=())"
     assert str(instance) == expected
 
 
@@ -133,6 +195,14 @@ def test_default_domain_attrs(default_domain):
     assert default_domain.dimension == 0
     assert default_domain.bounds == [(0.0, 0.0)]
     assert len(default_domain) == default_domain.dimension
+
+
+def test_default_domina_not_impl_features(default_domain):
+    with pytest.raises(NotImplementedError):
+        default_domain.extract_features(list())
+
+    with pytest.raises(NotImplementedError):
+        default_domain.extract_features_as_dict(list())
 
 
 def test_lower_bounds(default_domain):

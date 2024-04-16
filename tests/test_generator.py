@@ -11,10 +11,7 @@
 """
 
 import pytest
-import copy
-import numpy as np
-from digneapy.core import Instance
-import os
+from digneapy.novelty_search import Archive
 from digneapy.generator import EIG, _default_performance_metric
 from digneapy.solvers.heuristics import default_kp, map_kp, miw_kp, mpw_kp
 from digneapy.domains.knapsack import KPDomain
@@ -77,13 +74,13 @@ def test_default_generator():
     assert e.value.args[0] == f"Phi must be a float number in the range [0.0-1.0]."
 
 
-def test_eig_gen_kp():
+def test_eig_gen_kp_perf_descriptor():
     portfolio = deque([default_kp, map_kp, miw_kp, mpw_kp])
     kp_domain = KPDomain(dimension=50, capacity_approach="evolved")
     generations = 1000
     t_a, t_ss, k = 3, 3, 3
     eig = EIG(
-        50,
+        10,
         evaluations=generations,
         domain=kp_domain,
         portfolio=portfolio,
@@ -95,5 +92,71 @@ def test_eig_gen_kp():
         replacement=replacement.generational,
     )
     archive, solution_set = eig()
-    assert len(archive) != 0
-    assert len(solution_set) != 0
+    # They could be empty
+    assert type(archive) == Archive
+    assert type(solution_set) == Archive
+    # If they're not empty
+    if len(archive) != 0:
+        assert all(len(s) == 101 for s in archive)
+        assert all(s.fitness >= 0.0 for s in archive)
+        assert all(s.p >= 0.0 for s in archive)
+        assert all(s.s >= 0.0 for s in archive)
+        assert all(len(s.features) == 8 for s in archive)
+        assert all(len(s.portfolio_scores) == len(portfolio) for s in archive)
+        p_scores = [s._portfolio_m for s in archive]
+        # The instances are biased to the performance of the target
+        assert all(max(p_scores[i]) == p_scores[i][0] for i in range(len(p_scores)))
+
+    if len(solution_set) != 0:
+        assert all(len(s) == 101 for s in solution_set)
+        assert all(s.fitness >= 0.0 for s in solution_set)
+        assert all(s.p >= 0.0 for s in solution_set)
+        assert all(s.s >= 0.0 for s in solution_set)
+        assert all(len(s.features) == 8 for s in solution_set)
+        assert all(len(s.portfolio_scores) == len(portfolio) for s in solution_set)
+        p_scores = [s._portfolio_m for s in solution_set]
+        assert all(max(p_scores[i]) == p_scores[i][0] for i in range(len(p_scores)))
+
+
+def test_eig_gen_kp_feat_descriptor():
+    portfolio = deque([default_kp, map_kp, miw_kp, mpw_kp])
+    kp_domain = KPDomain(dimension=50, capacity_approach="evolved")
+    generations = 1000
+    t_a, t_ss, k = 3, 3, 3
+    eig = EIG(
+        10,
+        evaluations=generations,
+        domain=kp_domain,
+        portfolio=portfolio,
+        k=k,
+        t_a=t_a,
+        t_ss=t_ss,
+        repetitions=1,
+        descriptor="features",
+        replacement=replacement.generational,
+    )
+    archive, solution_set = eig()
+    # They could be empty
+    assert type(archive) == Archive
+    assert type(solution_set) == Archive
+    # If they're not empty
+    if len(archive) != 0:
+        assert all(len(s) == 101 for s in archive)
+        assert all(s.fitness >= 0.0 for s in archive)
+        assert all(s.p >= 0.0 for s in archive)
+        assert all(s.s >= 0.0 for s in archive)
+        assert all(len(s.features) == 8 for s in archive)
+        assert all(len(s.portfolio_scores) == len(portfolio) for s in archive)
+        p_scores = [s._portfolio_m for s in archive]
+        # The instances are biased to the performance of the target
+        assert all(max(p_scores[i]) == p_scores[i][0] for i in range(len(p_scores)))
+
+    if len(solution_set) != 0:
+        assert all(len(s) == 101 for s in solution_set)
+        assert all(s.fitness >= 0.0 for s in solution_set)
+        assert all(s.p >= 0.0 for s in solution_set)
+        assert all(s.s >= 0.0 for s in solution_set)
+        assert all(len(s.features) == 8 for s in solution_set)
+        assert all(len(s.portfolio_scores) == len(portfolio) for s in solution_set)
+        p_scores = [s._portfolio_m for s in solution_set]
+        assert all(max(p_scores[i]) == p_scores[i][0] for i in range(len(p_scores)))

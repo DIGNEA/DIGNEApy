@@ -48,7 +48,7 @@ def test_default_solution_attrs(default_solution):
     cloned = copy.deepcopy(default_solution)
     assert cloned == default_solution
     assert not cloned > default_solution
-    cloned._fitness = 10000
+    cloned.fitness = 10000
     assert cloned > default_solution
 
     chr_slice = default_solution[:15]

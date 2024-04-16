@@ -32,10 +32,10 @@ class Solution:
             self.chromosome = list()
         self.objectives = tuple(objectives) if objectives else tuple()
         self.constraints = tuple(constraints) if constraints else tuple()
-        self._fitness = fitness
+        self.fitness = fitness
 
     def __str__(self):
-        return f"Solution(dim={len(self.chromosome)},f={self._fitness},objs={self.objectives},const={self.constraints})"
+        return f"Solution(dim={len(self.chromosome)},f={self.fitness},objs={self.objectives},const={self.constraints})"
 
     def __len__(self):
         return len(self.chromosome)
@@ -60,7 +60,7 @@ class Solution:
             msg = f"Other of type {other.__class__.__name__} can not be compared with with {self.__class__.__name__}"
             print(msg)
             return NotImplemented
-        return self._fitness > other._fitness
+        return self.fitness > other.fitness
 
     def __getitem__(self, key):
         if isinstance(key, slice):

@@ -22,8 +22,8 @@ def gen_dignea_ind(icls, size: int, min_value, max_value):
     """Auxiliar function to generate individual based on
     the Solution class of digneapy
     """
-    chromosome = list(np.random.randint(low=min_value, high=max_value, size=size))
-    return icls(chromosome=chromosome, fitness=creator.Fitness)
+    chromosome = icls(np.random.randint(low=min_value, high=max_value, size=size))
+    return chromosome
 
 
 def ea_mu_comma_lambda(
@@ -73,7 +73,7 @@ def ea_mu_comma_lambda(
             mult = -1.0
 
         creator.create("Fitness", base.Fitness, weights=(mult,))
-        creator.create("Individual", Solution, fitness=creator.Fitness)
+        creator.create("Individual", list, fitness=creator.Fitness)
         toolbox = base.Toolbox()
         toolbox.register(
             "individual", gen_dignea_ind, creator.Individual, dim, min_g, max_g
@@ -106,12 +106,16 @@ def ea_mu_comma_lambda(
         )
         # Convert to Solution class
         cast_pop = [
-            Solution(chromosome=i, objectives=(i.fitness,), fitness=i.fitness.values[0])
+            Solution(
+                chromosome=i,
+                objectives=(i.fitness.values[0],),
+                fitness=i.fitness.values[0],
+            )
             for i in pop
         ]
         best = Solution(
             chromosome=hof[0],
-            objectives=(hof[0].fitness,),
+            objectives=(hof[0].fitness.values[0],),
             fitness=hof[0].fitness.values[0],
         )
         return cast_pop, logbook, best

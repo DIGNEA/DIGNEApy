@@ -35,7 +35,7 @@ def test_default_kp_heuristic(default_instance):
     expected_chromosome = [1.0] * 9 + [0.0] * 91
     assert len(solution) == len(default_instance)
     assert solution.objectives[0] == expected_p
-    assert solution._fitness == expected_p
+    assert solution.fitness == expected_p
     assert solution.chromosome == expected_chromosome
 
     with pytest.raises(Exception):
@@ -50,7 +50,7 @@ def test_map_kp_heuristic(default_instance):
     expected_chromosome = [0] * 49 + [1] + [0] * 50
     assert len(solution) == len(default_instance)
     assert solution.objectives[0] == expected_p
-    assert solution._fitness == expected_p
+    assert solution.fitness == expected_p
     assert solution.chromosome == expected_chromosome
 
     with pytest.raises(Exception):
@@ -68,7 +68,7 @@ def test_miw_kp_heuristic(default_instance):
     expected_chromosome = [1.0] * 9 + [0.0] * 91
     assert len(solution) == len(default_instance)
     assert solution.objectives[0] == expected_p
-    assert solution._fitness == expected_p
+    assert solution.fitness == expected_p
     assert solution.chromosome == expected_chromosome
 
     with pytest.raises(Exception):
@@ -83,7 +83,7 @@ def test_mpw_kp_heuristic(default_instance):
     expected_chromosome = [1.0] * 4 + [0.0] * 32 + [1.0] + [0.0] * 63
     assert len(solution) == len(default_instance)
     assert solution.objectives[0] == expected_p
-    assert solution._fitness == expected_p
+    assert solution.fitness == expected_p
     assert solution.chromosome == expected_chromosome
 
     with pytest.raises(Exception):
@@ -110,7 +110,7 @@ def test_ea_with_def_kp(default_instance):
 
     assert all(type(i) == Solution for i in pop)
     assert type(best) == Solution
-    assert best._fitness == 50
+    assert best.fitness == 50
     # There are multiple options to reach the maximum fitness
     # So we dont compare the chromosomes
 

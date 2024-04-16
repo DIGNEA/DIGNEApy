@@ -13,6 +13,87 @@
 import pytest
 import copy
 import numpy as np
-from digneapy.domains import knapsack
 from digneapy.core import Instance
 import os
+from digneapy.generator import EIG, _default_performance_metric
+from digneapy.solvers.heuristics import default_kp, map_kp, miw_kp, mpw_kp
+from digneapy.domains.knapsack import KPDomain
+from digneapy.operators import crossover, selection, mutation, replacement
+from collections import deque
+
+
+def test_default_generator():
+    eig = EIG()
+    assert eig.pop_size == 100
+    assert eig.max_evaluations == 10000
+    assert eig.t_a == 0.001
+    assert eig.t_ss == 0.001
+    assert eig.k == 15
+    assert eig._describe_by == "features"
+    assert eig._transformer is None
+    assert eig.domain is None
+    assert eig.portfolio == tuple()
+    assert eig.repetitions == 1
+    assert eig.cxrate == 0.5
+    assert eig.mutrate == 0.8
+    assert eig.crossover == crossover.uniform_crossover
+    assert eig.mutation == mutation.uniform_one_mutation
+    assert eig.selection == selection.binary_tournament_selection
+    assert eig.replacement == replacement.generational
+    assert eig.phi == 0.85
+    assert eig.performance_function is not None
+    assert eig.performance_function == _default_performance_metric
+
+    assert (
+        eig.__str__()
+        == f"EIG(pop_size=100,evaluations=10000,domain=None,portfolio=[],NS(desciptor=features,t_a=0.001,t_ss=0.001,k=15,len(a)=0,len(ss)=0))"
+    )
+
+    assert (
+        eig.__repr__()
+        == f"EIG<pop_size=100,evaluations=10000,domain=None,portfolio=[],NS<desciptor=features,t_a=0.001,t_ss=0.001,k=15,len(a)=0,len(ss)=0>>"
+    )
+
+    with pytest.raises(AttributeError) as e:
+        eig()
+    assert e.value.args[0] == "You must specify a domain to run the generator."
+
+    eig.domain = KPDomain()
+    with pytest.raises(AttributeError) as e:
+        eig()
+    assert (
+        e.value.args[0]
+        == "The portfolio is empty. To run the generator you must provide a valid portfolio of solvers"
+    )
+
+    with pytest.raises(AttributeError) as e:
+        eig = EIG(phi=-1.0)
+    assert (
+        e.value.args[0]
+        == f"Phi must be a float number in the range [0.0-1.0]. Got: -1.0."
+    )
+    with pytest.raises(AttributeError) as e:
+        eig = EIG(phi="hello")
+    assert e.value.args[0] == f"Phi must be a float number in the range [0.0-1.0]."
+
+
+def test_eig_gen_kp():
+    portfolio = deque([default_kp, map_kp, miw_kp, mpw_kp])
+    kp_domain = KPDomain(dimension=50, capacity_approach="evolved")
+    generations = 1000
+    t_a, t_ss, k = 3, 3, 3
+    eig = EIG(
+        50,
+        evaluations=generations,
+        domain=kp_domain,
+        portfolio=portfolio,
+        k=k,
+        t_a=t_a,
+        t_ss=t_ss,
+        repetitions=1,
+        descriptor="performance",
+        replacement=replacement.generational,
+    )
+    archive, solution_set = eig()
+    assert len(archive) != 0
+    assert len(solution_set) != 0

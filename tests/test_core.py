@@ -14,6 +14,15 @@ import pytest
 import copy
 import numpy as np
 from digneapy.core import Instance, Domain, Solution, OptProblem
+from deap import base, creator, tools
+
+
+def gen_dignea_ind(icls, size: int, min_value, max_value):
+    """Auxiliar function to generate individual based on
+    the Solution class of digneapy
+    """
+    chromosome = list(np.random.randint(low=min_value, high=max_value, size=size))
+    return icls(chromosome=chromosome, fitness=creator.Fitness)
 
 
 @pytest.fixture
@@ -66,6 +75,22 @@ def test_default_solution_attrs(default_solution):
     assert len(empty_s) == 0
 
 
+# def test_solution_with_deap_f():
+#     creator.create("Fitness", base.Fitness, weights=(1.0,))
+#     creator.create("Individual", Solution, fitness=creator.Fitness)
+
+#     toolbox = base.Toolbox()
+#     toolbox.register("ind", gen_dignea_ind, creator.Individual, 100, 0, 1)
+#     toolbox.register("population", tools.initRepeat, list, toolbox.ind)
+#     pop = toolbox.population(n=10)
+#     # Convert to Solution class
+#     cast_pop = [
+#         Solution(chromosome=i, objectives=(i._fitness,), fitness=i._fitness)
+#         for i in pop
+#     ]
+#     assert all(type(i._fitness) == float for i in cast_pop)
+
+
 def test_opt_problem():
     problem = OptProblem()
     with pytest.raises(NotImplementedError):
@@ -86,7 +111,7 @@ def initialised_instance():
 def test_default_instance_attrs(default_instance):
     assert default_instance.p == 0.0
     assert default_instance.s == 0.0
-    assert default_instance._fitness == 0.0
+    assert default_instance.fitness == 0.0
     assert not default_instance._variables
     assert not default_instance.features
     assert not default_instance.portfolio_scores
@@ -127,7 +152,7 @@ def test_default_instance_raises(default_instance):
 def test_init_instance(initialised_instance):
     assert initialised_instance.p == 0.0
     assert initialised_instance.s == 0.0
-    assert initialised_instance._fitness == 0.0
+    assert initialised_instance.fitness == 0.0
     assert initialised_instance._variables == list(range(100))
     assert not initialised_instance.features
     assert not initialised_instance.portfolio_scores

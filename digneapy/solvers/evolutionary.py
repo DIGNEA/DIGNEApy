@@ -114,5 +114,4 @@ def ea_mu_comma_lambda(
             objectives=(hof[0].fitness,),
             fitness=hof[0].fitness.values[0],
         )
-        print(best.chromosome)
         return cast_pop, logbook, best

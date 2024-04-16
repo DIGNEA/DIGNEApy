@@ -27,7 +27,7 @@ def main():
         N,
         0,
         1,
-        eval_fn=kp.evaluate,
+        problem=kp.evaluate,
         pop_size=32,
         lambd=128,
         cxpb=0.8,

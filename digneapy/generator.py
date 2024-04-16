@@ -95,18 +95,25 @@ class EIG(NoveltySearch):
         self.replacement = replacement
         self.performance_function = performance_function
 
+        try:
+            phi = float(phi)
+        except ValueError:
+            raise AttributeError(f"Phi must be a float number in the range [0.0-1.0].")
+
         if phi < 0.0 or phi > 1.0:
-            msg = f"phi must be in range [0.0-1.0]. Got: {phi}."
+            msg = f"Phi must be a float number in the range [0.0-1.0]. Got: {phi}."
             raise AttributeError(msg)
         self.phi = phi
 
     def __str__(self):
         port_names = [s.__name__ for s in self.portfolio]
-        return f"EIG(pop_size={self.pop_size},evaluations={self.max_evaluations},domain={self.domain.name},portfolio={port_names!r},{super().__str__()})"
+        domain_name = self.domain.name if self.domain is not None else "None"
+        return f"EIG(pop_size={self.pop_size},evaluations={self.max_evaluations},domain={domain_name},portfolio={port_names!r},{super().__str__()})"
 
     def __repr__(self) -> str:
         port_names = [s.__name__ for s in self.portfolio]
-        return f"EIG<pop_size={self.pop_size},evaluations={self.max_evaluations},domain={self.domain.name},portfolio={port_names!r},{super().__repr__()}>"
+        domain_name = self.domain.name if self.domain is not None else "None"
+        return f"EIG<pop_size={self.pop_size},evaluations={self.max_evaluations},domain={domain_name},portfolio={port_names!r},{super().__repr__()}>"
 
     def __call__(self):
         return self._run()
@@ -178,6 +185,12 @@ class EIG(NoveltySearch):
         )
 
     def _run(self):
+        if self.domain is None:
+            raise AttributeError("You must specify a domain to run the generator.")
+        if len(self.portfolio) == 0:
+            raise AttributeError(
+                "The portfolio is empty. To run the generator you must provide a valid portfolio of solvers"
+            )
         self.population = [
             self.domain.generate_instance() for _ in range(self.pop_size)
         ]

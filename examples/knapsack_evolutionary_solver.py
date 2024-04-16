@@ -10,7 +10,7 @@
 @Desc    :   None
 """
 
-from digneapy.solvers.evolutionary import evolutionary_mu_comma_lambda
+from digneapy.solvers.evolutionary import ea_mu_comma_lambda
 import numpy as np
 from digneapy.domains import knapsack
 
@@ -22,7 +22,7 @@ def main():
     q = np.random.randint(0, high=250)
     kp = knapsack.Knapsack(profits=p, weights=w, capacity=q)
     print(f"Instance to solve: {kp}")
-    population, log, hof = evolutionary_mu_comma_lambda(
+    population, log, hof = ea_mu_comma_lambda(
         "Max",
         N,
         0,

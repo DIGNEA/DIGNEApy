@@ -50,10 +50,17 @@ def test_default_solution_attrs(default_solution):
     assert not cloned > default_solution
     cloned.fitness = 10000
     assert cloned > default_solution
+    # ValueError
+    cloned.chromosome[0] = 100.0
+    assert cloned != default_solution
 
     chr_slice = default_solution[:15]
     assert len(chr_slice) == 15
     assert chr_slice == default_solution[:15]
+    # Check access is correct
+    cloned.chromosome = list(range(100))
+    for i in range(len(cloned)):
+        assert cloned[i] == i
 
     other_solution = Solution(
         chromosome=list(range(200)),
@@ -119,6 +126,10 @@ def test_default_instance_attrs(default_instance):
         default_instance.__repr__()
         == f"Instance<f=0.0,p=0.0,s=0.0,vars=0,features=0,performance=0>"
     )
+    assert (
+        format(default_instance, "p") == f"Instance(f=0.0,p=0.0, s=0.0, descriptor=())"
+    )
+    assert format(default_instance) == f"Instance(f=0.0,p=0.0, s=0.0, descriptor=())"
 
 
 def test_default_instance_raises(default_instance):

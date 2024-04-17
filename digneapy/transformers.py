@@ -30,6 +30,9 @@ class Transformer:
     def predict(self, X: List[float]):
         raise NotImplemented("predict method not implemented in Transformer")
 
+    def __call__(self, X: List[float]):
+        raise NotImplemented("__call__ method not implemented in Transformer")
+
     def save(self):
         raise NotImplemented("save method not implemented in Transformer")
 

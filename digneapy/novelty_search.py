@@ -70,9 +70,6 @@ class Archive:
         """
         return np.array(self._instances)
 
-    def __bytes__(self):
-        return bytes([ord(self._typecode)]) + bytes(self._instances)
-
     def __eq__(self, other):
         """Compares whether to Archives are equal
 
@@ -131,12 +128,6 @@ class Archive:
         outer_fmt = "({})"
         components = (format(c, fmt_spec) for c in variables)
         return outer_fmt.format(", ".join(components))
-
-    @classmethod
-    def frombytes(cls, octets):
-        typecode = chr(octets[0])
-        memv = memoryview(octets[1:]).cast(typecode)
-        return cls(memv)
 
 
 def _features_descriptor_strategy(iterable) -> List[float]:

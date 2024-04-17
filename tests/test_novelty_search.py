@@ -13,6 +13,13 @@ from digneapy.novelty_search import (
 from digneapy.core import Instance
 
 
+def transformer(l):
+    """
+    Dummy transformer that takes a List and returns a list of list with two random numbers each
+    """
+    return [[np.random.rand(), np.random.rand()] for _ in range(len(l))]
+
+
 @pytest.fixture
 def default_archive():
     instances = [Instance(variables=list(range(d, d + 5))) for d in range(10)]
@@ -86,17 +93,28 @@ def test_archive_magic(default_archive):
     assert hash(duplicated) == hash(default_archive)
 
 
-def test_archive_from_and_to_bytes(default_archive):
-    archive_bytes = bytes(default_archive)
-    archive_from_bytes = Archive.frombytes(archive_bytes)
-    assert archive_from_bytes == archive_bytes
-
 def test_archive_access(default_archive):
     assert len(default_archive) == 10
     assert type(default_archive[0]) == Instance
-    assert len(default_archive[:2]) == 3
+    assert len(default_archive[:2]) == 2
     with pytest.raises(IndexError):
         default_archive[100]
+
+
+def test_archive_format(default_archive):
+    assert (
+        "(Instance(f=0.0,p=0.0, s=0.0, descriptor=()), Instance(f=0.0,p=0.0, s=0.0, descriptor=()), Instance(f=0.0,p=0.0, s=0.0, descriptor=()), Instance(f=0.0,p=0.0, s=0.0, descriptor=()), Instance(f=0.0,p=0.0, s=0.0, descriptor=()), Instance(f=0.0,p=0.0, s=0.0, descriptor=()), Instance(f=0.0,p=0.0, s=0.0, descriptor=()), Instance(f=0.0,p=0.0, s=0.0, descriptor=()), Instance(f=0.0,p=0.0, s=0.0, descriptor=()), Instance(f=0.0,p=0.0, s=0.0, descriptor=()))"
+        == format(
+            default_archive,
+        )
+    )
+
+
+def test_archive_repr(default_archive):
+    assert "Archive(['', '', '', '', '', '', '', '', '', ''])" == format(
+        repr(default_archive),
+    )
+
 
 @pytest.fixture
 def nsf():
@@ -111,7 +129,6 @@ def nsp():
 @pytest.fixture
 def nsi():
     return NoveltySearch(k=3, descriptor="instance")
-
 
 
 def test_default_nsf(nsf):
@@ -129,7 +146,7 @@ def test_default_nsf(nsf):
         nsf.__repr__()
         == "NS<desciptor=features,t_a=0.001,t_ss=0.001,k=3,len(a)=0,len(ss)=0>"
     )
-    
+
 
 def test_default_nsp(nsp):
     assert nsp.t_a == 0.001
@@ -163,7 +180,8 @@ def test_default_nsi(nsi):
         nsi.__repr__()
         == "NS<desciptor=instance,t_a=0.001,t_ss=0.001,k=3,len(a)=0,len(ss)=0>"
     )
-   
+
+
 def test_default_nsf_by_features():
     ns = NoveltySearch(descriptor="a_brand_new_descriptor")
     assert ns._describe_by == "features"
@@ -206,7 +224,7 @@ def test_run_nsf(nsf, random_population):
     current_len = len(nsf.archive)
     nsf._update_archive(list())
     assert current_len == len(nsf.archive)
-    
+
     current_len = len(nsf.solution_set)
     nsf._update_solution_set(list())
     assert current_len == len(nsf.solution_set)
@@ -233,6 +251,13 @@ def test_run_nsf(nsf, random_population):
         nsf.sparseness_solution_set(random_population[:1])
 
 
+def test_run_nsf_with_transformer(random_population):
+    nsft = NoveltySearch(k=3, descriptor="features", transformer=transformer)
+    assert all(len(instance.features) != 0 for instance in random_population)
+    sparseness = nsft.sparseness(random_population)
+    assert len(sparseness) == len(random_population)
+
+
 def test_run_nsp(nsp, random_population):
     assert nsp._describe_by == "performance"
     assert all(len(instance.portfolio_scores) != 0 for instance in random_population)
@@ -254,13 +279,19 @@ def test_run_nsp(nsp, random_population):
     nsp._update_solution_set(list())
     assert current_len == len(nsp.solution_set)
 
-
     # If empty population it should raise
     with pytest.raises(Exception):
         nsp.sparseness([])
     # If len(pop) < k it should raise
     with pytest.raises(Exception):
         nsp.sparseness(random_population[:3])
+
+
+def test_run_nsf_with_transformer(random_population):
+    nspt = NoveltySearch(k=3, descriptor="features", transformer=transformer)
+    assert all(len(instance.features) != 0 for instance in random_population)
+    sparseness = nspt.sparseness(random_population)
+    assert len(sparseness) == len(random_population)
 
 
 def test_run_ns_instance(nsi, random_population):
@@ -294,3 +325,10 @@ def test_run_ns_instance(nsi, random_population):
     # If len(pop) < k it should raise
     with pytest.raises(Exception):
         nsi.sparseness(random_population[:3])
+
+
+def test_run_nsf_with_transformer(random_population):
+    nsit = NoveltySearch(k=3, descriptor="features", transformer=transformer)
+    assert all(len(instance.features) != 0 for instance in random_population)
+    sparseness = nsit.sparseness(random_population)
+    assert len(sparseness) == len(random_population)

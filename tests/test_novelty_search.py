@@ -86,6 +86,18 @@ def test_archive_magic(default_archive):
     assert hash(duplicated) == hash(default_archive)
 
 
+def test_archive_from_and_to_bytes(default_archive):
+    archive_bytes = bytes(default_archive)
+    archive_from_bytes = Archive.frombytes(archive_bytes)
+    assert archive_from_bytes == archive_bytes
+
+def test_archive_access(default_archive):
+    assert len(default_archive) == 10
+    assert type(default_archive[0]) == Instance
+    assert len(default_archive[:2]) == 3
+    with pytest.raises(IndexError):
+        default_archive[100]
+
 @pytest.fixture
 def nsf():
     return NoveltySearch(k=3, descriptor="features")
@@ -99,6 +111,7 @@ def nsp():
 @pytest.fixture
 def nsi():
     return NoveltySearch(k=3, descriptor="instance")
+
 
 
 def test_default_nsf(nsf):
@@ -116,7 +129,7 @@ def test_default_nsf(nsf):
         nsf.__repr__()
         == "NS<desciptor=features,t_a=0.001,t_ss=0.001,k=3,len(a)=0,len(ss)=0>"
     )
-
+    
 
 def test_default_nsp(nsp):
     assert nsp.t_a == 0.001
@@ -150,8 +163,7 @@ def test_default_nsi(nsi):
         nsi.__repr__()
         == "NS<desciptor=instance,t_a=0.001,t_ss=0.001,k=3,len(a)=0,len(ss)=0>"
     )
-
-
+   
 def test_default_nsf_by_features():
     ns = NoveltySearch(descriptor="a_brand_new_descriptor")
     assert ns._describe_by == "features"
@@ -191,6 +203,14 @@ def test_run_nsf(nsf, random_population):
     nsf._update_solution_set(random_population)
     assert len(nsf.solution_set) != 0
 
+    current_len = len(nsf.archive)
+    nsf._update_archive(list())
+    assert current_len == len(nsf.archive)
+    
+    current_len = len(nsf.solution_set)
+    nsf._update_solution_set(list())
+    assert current_len == len(nsf.solution_set)
+
     # If empty population it should raise
     with pytest.raises(Exception):
         nsf.sparseness([])
@@ -226,6 +246,15 @@ def test_run_nsp(nsp, random_population):
     assert len(nsp.archive) == novel_ta
     nsp._update_solution_set(random_population)
     assert len(nsp.solution_set) != 0
+
+    current_len = len(nsp.archive)
+    nsp._update_archive(list())
+    assert current_len == len(nsp.archive)
+    current_len = len(nsp.solution_set)
+    nsp._update_solution_set(list())
+    assert current_len == len(nsp.solution_set)
+
+
     # If empty population it should raise
     with pytest.raises(Exception):
         nsp.sparseness([])
@@ -250,6 +279,15 @@ def test_run_ns_instance(nsi, random_population):
     assert len(nsi.archive) == novel_ta
     nsi._update_solution_set(random_population)
     assert len(nsi.solution_set) != 0
+
+    current_len = len(nsi.archive)
+    nsi._update_archive(list())
+    assert current_len == len(nsi.archive)
+
+    current_len = len(nsi.solution_set)
+    nsi._update_solution_set(list())
+    assert current_len == len(nsi.solution_set)
+
     # If empty population it should raise
     with pytest.raises(Exception):
         nsi.sparseness([])

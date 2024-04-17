@@ -51,6 +51,9 @@ def test_default_transformer():
     with pytest.raises(Exception):
         t.save()
 
+    with pytest.raises(Exception):
+        t(list())
+
 
 def test_NN_transformer_raises():
     shapes = (11, 5, 2)

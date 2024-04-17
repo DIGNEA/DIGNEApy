@@ -117,6 +117,15 @@ def test_eig_gen_kp_perf_descriptor():
         p_scores = [s._portfolio_m for s in solution_set]
         assert all(max(p_scores[i]) == p_scores[i][0] for i in range(len(p_scores)))
 
+    # Check it does not insert any when list is empty
+    current_len = len(eig.archive)
+    eig._update_archive(list())
+    assert current_len == len(eig.archive)
+
+    current_len = len(eig.solution_set)
+    eig._update_solution_set(list())
+    assert current_len == len(eig.solution_set)
+
 
 def test_eig_gen_kp_feat_descriptor():
     portfolio = deque([default_kp, map_kp, miw_kp, mpw_kp])
@@ -160,3 +169,12 @@ def test_eig_gen_kp_feat_descriptor():
         assert all(len(s.portfolio_scores) == len(portfolio) for s in solution_set)
         p_scores = [s._portfolio_m for s in solution_set]
         assert all(max(p_scores[i]) == p_scores[i][0] for i in range(len(p_scores)))
+
+    # Check it does not insert any when list is empty
+    current_len = len(eig.archive)
+    eig._update_archive(list())
+    assert current_len == len(eig.archive)
+
+    current_len = len(eig.solution_set)
+    eig._update_solution_set(list())
+    assert current_len == len(eig.solution_set)

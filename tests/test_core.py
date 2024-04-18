@@ -82,22 +82,6 @@ def test_default_solution_attrs(default_solution):
     assert len(empty_s) == 0
 
 
-# def test_solution_with_deap_f():
-#     creator.create("Fitness", base.Fitness, weights=(1.0,))
-#     creator.create("Individual", Solution, fitness=creator.Fitness)
-
-#     toolbox = base.Toolbox()
-#     toolbox.register("ind", gen_dignea_ind, creator.Individual, 100, 0, 1)
-#     toolbox.register("population", tools.initRepeat, list, toolbox.ind)
-#     pop = toolbox.population(n=10)
-#     # Convert to Solution class
-#     cast_pop = [
-#         Solution(chromosome=i, objectives=(i._fitness,), fitness=i._fitness)
-#         for i in pop
-#     ]
-#     assert all(type(i._fitness) == float for i in cast_pop)
-
-
 def test_opt_problem():
     problem = OptProblem()
     with pytest.raises(NotImplementedError):

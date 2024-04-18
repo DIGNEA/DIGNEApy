@@ -122,14 +122,24 @@ def test_default_instance_attrs(default_instance):
     assert not default_instance._variables
     assert not default_instance.features
     assert not default_instance.portfolio_scores
+
+    default_instance.features = list(range(3))
+    default_instance.portfolio_scores = [float(i) for i in range(3)]
+    default_instance.fitness = 100.0
+    default_instance.s = 10.0
+    default_instance.p = 5.0
     assert (
         default_instance.__repr__()
-        == f"Instance<f=0.0,p=0.0,s=0.0,vars=0,features=0,performance=0>"
+        == f"Instance<f=100.0,p=5.0,s=10.0,vars=0,features=3,performance=3>"
     )
     assert (
-        format(default_instance, "p") == f"Instance(f=0.0,p=0.0, s=0.0, descriptor=())"
+        format(default_instance, "p")
+        == f"Instance(f=100.0,p=5.0, s=10.0, descriptor=(0.0,1.0,2.0))"
     )
-    assert format(default_instance) == f"Instance(f=0.0,p=0.0, s=0.0, descriptor=())"
+    assert (
+        format(default_instance)
+        == f"Instance(f=100.0,p=5.0, s=10.0, descriptor=(0,1,2))"
+    )
 
 
 def test_default_instance_raises(default_instance):

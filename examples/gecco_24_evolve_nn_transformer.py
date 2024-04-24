@@ -11,7 +11,8 @@
 """
 
 from collections import deque
-from digneapy.transformers import HyperCMA, NN
+from digneapy.transformers import KerasNN
+from digneapy.meta_ea import MetaEA
 from digneapy.generator import EIG
 from digneapy.solvers.heuristics import default_kp, map_kp, miw_kp, mpw_kp
 from digneapy.domains.knapsack import KPDomain
@@ -75,14 +76,14 @@ class NSEval:
                     content = solver + "," + ",".join(str(f) for f in desc) + "\n"
                     file.write(content)
 
-    def __call__(self, transformer: NN, filename: str = None):
-        """This method runs the Novelty Search using a NN as a transformer
+    def __call__(self, transformer: KerasNN, filename: str = None):
+        """This method runs the Novelty Search using a KerasNN as a transformer
         for searching novelty. It generates KP instances for each of the solvers in
         the portfolio [Default, MaP, MiW, MPW] and calculates how many bins of the
         8D-feature hypercube are occupied.
 
         Args:
-            transformer (NN): Transformer to reduce a 8D feature vector into a 2D vector.
+            transformer (KerasNN): Transformer to reduce a 8D feature vector into a 2D vector.
             filename (str, optional): Filename to store the instances. Defaults to None.
 
         Returns:
@@ -124,7 +125,7 @@ class NSEval:
 def main():
     R = 20  # Resolution/Number of bins for each of the 8 features
     dimension = 118  # Number of weights of the NN for KP
-    nn = NN(
+    nn = KerasNN(
         name="NN_transformer_kp_domain.keras",
         input_shape=[8],
         shape=(8, 4, 2),
@@ -144,7 +145,7 @@ def main():
     # NSEval is the evaluation/fitness function used to measure the NNs in CMA-Es
     ns_eval = NSEval(features_info, resolution=R)
     # Custom CMA-ES derived from DEAP to evolve NNs weights
-    cma_es = HyperCMA(
+    cma_es = MetaEA(
         dimension=dimension,
         direction="maximise",
         lambda_=64,

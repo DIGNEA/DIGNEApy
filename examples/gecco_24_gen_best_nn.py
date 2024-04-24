@@ -11,7 +11,7 @@
 """
 from typing import Dict
 from collections import deque
-from digneapy.transformers import NN
+from digneapy.transformers import KerasNN
 from digneapy.generator import EIG
 from digneapy.solvers.heuristics import default_kp, map_kp, miw_kp, mpw_kp
 from digneapy.domains.knapsack import KPDomain
@@ -60,14 +60,14 @@ class NSEval:
                     )
                     file.write(content)
 
-    def __call__(self, transformer: NN, filename: str = None):
+    def __call__(self, transformer: KerasNN, filename: str = None):
         """This method runs the Novelty Search using a NN as a transformer
         for searching novelty. It generates KP instances for each of the solvers in
         the portfolio [Default, MaP, MiW, MPW] and calculates how many bins of the
         8D-feature hypercube are occupied.
 
         Args:
-            transformer (NN): Transformer to reduce a 8D feature vector into a 2D vector.
+            transformer (KerasNN): Transformer to reduce a 8D feature vector into a 2D vector.
             filename (str, optional): Filename to store the instances. Defaults to None.
 
         Returns:
@@ -104,7 +104,7 @@ class NSEval:
 
 def main():
     R = 20  # Resolution/Number of bins for each of the 8 features
-    nn = NN(
+    nn = KerasNN(
         name="NN_transformer_kp_domain.keras",
         input_shape=[8],
         shape=(4, 2),

@@ -11,7 +11,8 @@
 """
 
 from collections import deque
-from digneapy.transformers import HyperCMA, TorchNN
+from digneapy.transformers import TorchNN
+from digneapy.meta_ea import MetaEA
 from digneapy.generator import EIG
 from digneapy.solvers.heuristics import default_kp, map_kp, miw_kp, mpw_kp
 from digneapy.domains.knapsack import KPDomain
@@ -145,7 +146,7 @@ def main():
     # NSEval is the evaluation/fitness function used to measure the NNs in CMA-Es
     ns_eval = NSEval(features_info, resolution=R)
     # Custom CMA-ES derived from DEAP to evolve NNs weights
-    cma_es = HyperCMA(
+    cma_es = MetaEA(
         dimension=dimension,
         direction="maximise",
         lambda_=64,

@@ -15,7 +15,7 @@ import os
 import pytest
 import numpy as np
 import pandas as pd
-from digneapy.meta_ea import HyperCMA
+from digneapy.meta_ea import MetaEA
 from digneapy.transformers import KerasNN
 from sklearn.metrics import mean_squared_error
 
@@ -53,7 +53,7 @@ def test_hyper_cmaes_bpp():
     transformer = KerasNN(
         expected_filename, input_shape=[11], shape=shapes, activations=activations
     )
-    cma_es = HyperCMA(
+    cma_es = MetaEA(
         dimension=dimension,
         direction="maximise",
         transformer=transformer,
@@ -75,7 +75,7 @@ def test_hyper_cmaes_bpp_maximises():
     transformer = KerasNN(
         expected_filename, input_shape=[11], shape=shapes, activations=activations
     )
-    cma_es = HyperCMA(
+    cma_es = MetaEA(
         dimension=dimension,
         direction="minimise",
         transformer=transformer,
@@ -100,7 +100,7 @@ def test_hyper_cmaes_raises():
 
     # Raises because we do not specify any valid direction
     with pytest.raises(AttributeError):
-        cma_es = HyperCMA(
+        cma_es = MetaEA(
             dimension=dimension,
             generations=5,
             eval_fn=experimental_work_test,
@@ -110,7 +110,7 @@ def test_hyper_cmaes_raises():
 
     # Raises because we do not specify any transformer
     with pytest.raises(AttributeError):
-        cma_es = HyperCMA(
+        cma_es = MetaEA(
             dimension=dimension,
             direction="maximise",
             generations=5,
@@ -119,7 +119,7 @@ def test_hyper_cmaes_raises():
 
     # Raises because we do not specify any eval_fn
     with pytest.raises(AttributeError):
-        cma_es = HyperCMA(
+        cma_es = MetaEA(
             dimension=dimension,
             direction="maximise",
             generations=5,
@@ -128,7 +128,7 @@ def test_hyper_cmaes_raises():
 
     # Raises because we n_jobs < 1
     with pytest.raises(AttributeError):
-        cma_es = HyperCMA(
+        cma_es = MetaEA(
             dimension=dimension,
             direction="maximise",
             generations=5,
@@ -137,7 +137,7 @@ def test_hyper_cmaes_raises():
             n_jobs=-1,
         )
 
-    cma_es = HyperCMA(
+    cma_es = MetaEA(
         dimension=dimension,
         direction="maximise",
         generations=5,

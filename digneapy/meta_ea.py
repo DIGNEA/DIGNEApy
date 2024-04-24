@@ -18,7 +18,7 @@ from typing import Callable, Iterable
 import numpy as np
 
 
-class HyperCMA:
+class MetaEA:
     __directions = ("minimise", "maximise")
 
     def __init__(
@@ -34,10 +34,10 @@ class HyperCMA:
         n_jobs: int = 1,
     ):
         if transformer is None or not issubclass(transformer.__class__, Transformer):
-            raise AttributeError("transformer must be a NN object to run HyperCMA")
+            raise AttributeError("transformer must be a NN object to run MetaEA")
         if eval_fn is None:
             raise AttributeError(
-                "experiment_work must be a callable object to run HyperCMA"
+                "experiment_work must be a callable object to run MetaEA"
             )
         self.transformer = transformer
         self.eval_fn = eval_fn

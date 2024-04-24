@@ -36,6 +36,7 @@ class Transformer:
 
 
 class TorchNN(Transformer, torch.nn.Module):
+
     def __init__(
         self,
         name: str,
@@ -44,14 +45,14 @@ class TorchNN(Transformer, torch.nn.Module):
         output_size: int,
         scale: bool = True,
     ):
-        """Neural Network used to transform a space into another.
+        """Neural Network used to transform a space into another. This class uses a PyTorch backend.
 
         Args:
-            name (str): Name of the model to be saved with. Expected a .keras extension.
+            name (str): Name of the model to be saved with. Expected a .torch extension.
+            input_size (int): Number of neurons in the input layer.
             shape (Tuple[int]): Tuple with the number of cells per layer.
-            activations (Tuple[str]): Activation functions for each layer.
+            output_size (int): Number of neurons in the output layer.
             scale (bool, optional): Includes scaler step before prediction. Defaults to True.
-
         Raises:
             AttributeError: Raises if any attribute is not valid.
         """
@@ -116,7 +117,7 @@ class TorchNN(Transformer, torch.nn.Module):
 
     def forward(self, X):
         if len(X) == 0:
-            msg = "X cannot be None in NN predict"
+            msg = "X cannot be None in TorchNN forward"
             raise RuntimeError(msg)
         if self._scaler is not None:
             X = self._scaler.fit_transform(X)
@@ -141,7 +142,7 @@ class KerasNN(Transformer):
         activations: Tuple[str],
         scale: bool = True,
     ):
-        """Neural Network used to transform a space into another.
+        """Neural Network used to transform a space into another. This class uses a Tensorflow and Keras backend.
 
         Args:
             name (str): Name of the model to be saved with. Expected a .keras extension.
@@ -209,7 +210,7 @@ class KerasNN(Transformer):
 
     def predict(self, X: List):
         if len(X) == 0:
-            msg = "X cannot be None in NN predict"
+            msg = "X cannot be None in KerasNN predict"
             raise RuntimeError(msg)
         if self._scaler is not None:
             X = self._scaler.fit_transform(X)

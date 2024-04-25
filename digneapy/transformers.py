@@ -36,7 +36,6 @@ class Transformer:
 
 
 class TorchNN(Transformer, torch.nn.Module):
-
     def __init__(
         self,
         name: str,
@@ -116,6 +115,18 @@ class TorchNN(Transformer, torch.nn.Module):
         return self.forward(X)
 
     def forward(self, X):
+        """This is a necessary method for the PyTorch module.
+        It works as a predict method in Keras
+
+        Args:
+            X (List): List of instances to evaluate and predict their descriptor
+
+        Raises:
+            RuntimeError: If List is empty
+
+        Returns:
+            Numpy.ndarray: Descriptor of the instances
+        """
         if len(X) == 0:
             msg = "X cannot be None in TorchNN forward"
             raise RuntimeError(msg)
@@ -165,15 +176,13 @@ class KerasNN(Transformer):
         self._activations = activations
         self._scaler = StandardScaler() if scale else None
 
-        self._model = self.__build_model(input_shape, shape, activations)
-
-    def __build_model(self, input_shape, shape, activations):
-        model = keras.models.Sequential()
-        model.add(keras.layers.InputLayer(input_shape=input_shape))
+        self._model = keras.models.Sequential()
+        self._model.add(keras.layers.InputLayer(input_shape=input_shape))
         for d, act in zip(shape, activations):
-            model.add(keras.layers.Dense(d, activation=act))
-        model.compile(loss="mse", optimizer=keras.optimizers.SGD(learning_rate=0.001))
-        return model
+            self._model.add(keras.layers.Dense(d, activation=act))
+        self._model.compile(
+            loss="mse", optimizer=keras.optimizers.SGD(learning_rate=0.001)
+        )
 
     def __str__(self):
         tokens = []

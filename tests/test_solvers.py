@@ -17,6 +17,7 @@ from digneapy.solvers import heuristics
 from digneapy.solvers.evolutionary import ea_mu_comma_lambda
 from digneapy.core import Solution
 from deap import benchmarks
+from digneapy import solvers
 
 
 @pytest.fixture
@@ -94,7 +95,7 @@ def test_ea_with_def_kp(default_instance):
     generations = 100
     pop_size = 10
     result = ea_mu_comma_lambda(
-        dir="Max",
+        dir=solvers.MAXIMISE,
         dim=len(default_instance),
         min_g=0,
         max_g=1,
@@ -119,7 +120,7 @@ def test_ea_solves_sphere():
     generations = 100
     pop_size = 10
     result = ea_mu_comma_lambda(
-        dir="Min",
+        dir=solvers.MINIMISE,
         dim=30,
         min_g=0,
         max_g=1,

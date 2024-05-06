@@ -14,8 +14,7 @@ from typing import Callable
 from digneapy.core import Solution
 import numpy as np
 from deap import creator, base, tools, algorithms
-
-direction = ("Min", "Max")
+from digneapy.solvers import DIRECTIONS
 
 
 def gen_dignea_ind(icls, size: int, min_value, max_value):
@@ -63,8 +62,8 @@ def ea_mu_comma_lambda(
         msg = "No problem found in args of evolutionary_mu_comma_lambda"
         raise AttributeError(msg)
 
-    if dir not in direction:
-        print(f"Direction not valid. It must be {direction}")
+    if dir not in DIRECTIONS:
+        msg = f"Direction not valid. It must be in {DIRECTIONS}"
         raise AttributeError(msg)
 
     else:

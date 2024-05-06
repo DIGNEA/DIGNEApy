@@ -16,10 +16,10 @@ from multiprocessing.pool import ThreadPool as Pool
 from digneapy.transformers import Transformer
 from typing import Callable, Iterable
 import numpy as np
+from digneapy.solvers import DIRECTIONS, MAXIMISE
 
 
 class MetaEA:
-    __directions = ("minimise", "maximise")
 
     def __init__(
         self,
@@ -28,7 +28,7 @@ class MetaEA:
         sigma: float = 1.0,
         lambda_: int = 50,
         generations: int = 250,
-        direction: str = "maximise",
+        direction: str = MAXIMISE,
         transformer: Transformer | Callable[[Iterable], Iterable] = None,
         eval_fn: Callable = None,
         n_jobs: int = 1,
@@ -50,8 +50,8 @@ class MetaEA:
         self.__performed_gens = 0  # These vars are used to save the data in CSV files
         self.__evaluated_inds = 0
 
-        if direction not in self.__directions:
-            msg = f"Direction: {direction} not available. Please choose between {self.__directions}"
+        if direction not in DIRECTIONS:
+            msg = f"Direction: {direction} not available. Please choose between {DIRECTIONS}"
             raise AttributeError(msg)
 
         self.direction = direction

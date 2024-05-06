@@ -9,3 +9,7 @@
 @License :   (C)Copyright 2023, Alejandro Marrero
 @Desc    :   None
 """
+
+MINIMISE = "minimise"
+MAXIMISE = "maximise"
+DIRECTIONS = (MINIMISE, MAXIMISE)

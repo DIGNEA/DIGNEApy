@@ -17,17 +17,17 @@ from digneapy.solvers.heuristics import default_kp, map_kp, miw_kp, mpw_kp
 from digneapy.domains.knapsack import KPDomain
 from digneapy.operators.replacement import first_improve_replacement
 import copy
+import itertools
 
 
-def save_instances(filename, generated_instances):
+def save_instances(filename, generated_instances, dimension):
     """Writes the generated instances into a CSV file
 
     Args:
         filename (str): Filename
         generated_instances (iterable): Iterable of instances
     """
-    features = [
-        "target",
+    old_features = [
         "capacity",
         "max_p",
         "max_w",
@@ -37,15 +37,26 @@ def save_instances(filename, generated_instances):
         "mean",
         "std",
     ]
+    header = ["target", "N"] + list(
+        itertools.chain.from_iterable([(f"w_{i}", f"p_{i}") for i in range(dimension)])
+    )
     with open(filename, "w") as file:
-        file.write(",".join(features) + "\n")
+        file.write(",".join(header) + "\n")
         for solver, instances in generated_instances.items():
-            for inst in instances:
-                content = solver + "," + ",".join(str(f) for f in inst.features) + "\n"
+            for instance in instances:
+                content = (
+                    solver
+                    + ","
+                    + str(dimension)
+                    + ","
+                    + ",".join(str(x) for x in instance)
+                    + "\n"
+                )
                 file.write(content)
 
 
-def main(dim: int = 500):
+def generate_instances(dim: int = 50):
+    print("=" * 40 + f" Generating KP instances of N = {dim} " + "=" * 40)
     kp_domain = KPDomain(dimension=dim, capacity_approach="percentage")
     portfolio = deque([default_kp, map_kp, miw_kp, mpw_kp])
     autoencoder = KPAE(encoding="Best")
@@ -66,11 +77,14 @@ def main(dim: int = 500):
             replacement=first_improve_replacement,
             transformer=autoencoder,
         )
-        print(eig)
-        _, solution_set = eig()
+        archive, solution_set = eig()
+        print(archive)
         print(solution_set)
         instances[portfolio[0].__name__] = copy.copy(solution_set)
 
+    save_instances(f"kp_ns_best_autoencoder_N_{dim}_fir.csv", instances, dimension=dim)
+
 
 if __name__ == "__main__":
-    main()
+    for dimension in range(50, 1050, 50):
+        generate_instances(dimension)

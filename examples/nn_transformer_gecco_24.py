@@ -88,7 +88,7 @@ class NSEval:
         Returns:
             int: Number of bins occupied. The maximum value if 8 x R.
         """
-        gen_instances = {s.__name__: [] for s in self.portfolio}
+        coverage = [set() for _ in range(8)]
         for i in range(len(self.portfolio)):
             self.portfolio.rotate(i)  # This allow us to change the target on the fly
             eig = EIG(
@@ -104,20 +104,12 @@ class NSEval:
                 replacement=first_improve_replacement,
                 transformer=transformer,
             )
-            archive, solution_set = eig()
-            descriptors = [list(i.features) for i in solution_set]
-            gen_instances[self.portfolio[0].__name__].extend(descriptors)
-        if any(len(l) != 0 for l in gen_instances.values()):
-            self.__save_instances(filename, gen_instances)
-
-        # Here we gather all the instances together to calculate the metric
-        coverage = {k: set() for k in range(8)}
-        for solver, descriptors in gen_instances.items():  # For each set of instances
-            for desc in descriptors:  # For each descriptor in the set
-                for i, f in enumerate(desc):  # Location of the ith feature
+            _, solution_set = eig()
+            for instance in solution_set:  # For each set of instances
+                for i, f in enumerate(instance.features):
                     coverage[i].add(np.digitize(f, self.hypercube[i]))
 
-        f = sum(len(s) for s in coverage.values())
+        f = sum(len(s) for s in coverage)
         return f
 
 
@@ -129,6 +121,7 @@ def main():
         input_shape=[8],
         shape=(8, 4, 2),
         activations=("relu", "relu", None),
+        scale=True,
     )
     # KP Features information extracted from previously generated instances
     features_info = [
@@ -147,8 +140,8 @@ def main():
     cma_es = HyperCMA(
         dimension=dimension,
         direction="maximise",
-        lambda_=64,
-        generations=250,
+        lambda_=16,
+        generations=1,
         transformer=nn,
         eval_fn=ns_eval,
     )

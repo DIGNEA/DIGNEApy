@@ -18,6 +18,8 @@ import keras
 from sklearn.preprocessing import StandardScaler
 from deap import algorithms, base, cma, creator, tools
 from multiprocessing.pool import ThreadPool as Pool
+import os
+
 
 
 class Transformer:
@@ -74,6 +76,7 @@ class NN(Transformer):
         for d, act in zip(shape, activations):
             model.add(keras.layers.Dense(d, activation=act))
         model.compile(loss="mse", optimizer=keras.optimizers.SGD(learning_rate=0.001))
+
         return model
 
     def __str__(self):
@@ -204,6 +207,7 @@ class HyperCMA:
             self.__evaluated_inds = 0
 
         fitness = self.eval_fn(self.transformer, filename)
+        keras.backend.clear_session()  # This line will free up the RAM
         return (fitness,)
 
     def __call__(self):

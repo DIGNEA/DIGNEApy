@@ -9,7 +9,7 @@ import digneapy
 import os
 import sys
 import pybind11
-import glob
+from glob import glob
 
 with open("README.md") as readme_file:
     readme = readme_file.read()
@@ -42,7 +42,7 @@ class get_pybind_include(object):
 ext_modules = [
     Extension(
         "pisinger",
-        glob.glob("digneapy/solvers/pisinger/src/*.cpp"),
+        sorted(glob("digneapy/solvers/pisinger/src/*.cpp")),
         include_dirs=[
             # Path to pybind11 headers
             get_pybind_include(),

@@ -2,9 +2,14 @@
 
 """The setup script."""
 
-from setuptools import setup, find_packages
-import digneapy
+from setuptools import setup, find_packages, Extension
+from setuptools.command.build_ext import build_ext
 
+import digneapy
+import os
+import sys
+import pybind11
+import glob
 
 with open("README.md") as readme_file:
     readme = readme_file.read()
@@ -17,6 +22,36 @@ requirements = []
 test_requirements = [
     "pytest>=3",
 ]
+
+
+class get_pybind_include(object):
+    """Helper class to determine the pybind11 include path
+    The purpose of this class is to postpone importing pybind11
+    until it is actually installed, so that the ``get_include()``
+    method can be invoked."""
+
+    def __init__(self, user=False):
+        self.user = user
+
+    def __str__(self):
+        import pybind11
+
+        return pybind11.get_include(self.user)
+
+
+ext_modules = [
+    Extension(
+        "pisinger",
+        glob.glob("digneapy/solvers/pisinger/src/*.cpp"),
+        include_dirs=[
+            # Path to pybind11 headers
+            get_pybind_include(),
+            get_pybind_include(user=True),
+        ],
+        language="c++",
+    ),
+]
+
 
 setup(
     author="Alejandro Marrero",
@@ -45,5 +80,7 @@ setup(
     tests_require=test_requirements,
     url="https://github.com/dignea/digneapy",
     version=digneapy.__version__,
+    ext_modules=ext_modules,
+    cmdclass={"build_ext": build_ext},
     zip_safe=False,
 )

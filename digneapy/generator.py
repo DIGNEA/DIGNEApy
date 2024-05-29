@@ -202,7 +202,8 @@ class EIG(NoveltySearch):
                 p_1 = self.selection(self.population)
                 p_2 = self.selection(self.population)
                 off = self._reproduce(p_1, p_2)
-                off.features = self.domain.extract_features(off)
+                if self._describe_by == "features":
+                    off.features = self.domain.extract_features(off)
                 offspring.append(off)
 
             self._evaluate_population(offspring)

@@ -41,7 +41,7 @@ class get_pybind_include(object):
 
 ext_modules = [
     Extension(
-        "pisinger",
+        "digneapy.solvers.pisinger",
         sorted(glob("digneapy/solvers/pisinger/src/*.cpp")),
         include_dirs=[
             # Path to pybind11 headers

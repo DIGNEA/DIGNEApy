@@ -10,7 +10,7 @@
 @Desc    :   None
 """
 
-from digneapy.solvers.pisinger.lib import pisinger
+import digneapy.solvers.pisinger as pisinger
 from digneapy.domains.knapsack import Knapsack
 from digneapy.core import Solution
 from typing import List

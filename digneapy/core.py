@@ -92,6 +92,10 @@ class OptProblem:
         msg = "evaluate method not implemented in OptProblem"
         raise NotImplementedError(msg)
 
+    def __call__(self, individual: Iterable) -> Tuple[float]:
+        msg = "__call__ method not implemented in OptProblem"
+        raise NotImplementedError(msg)
+
 
 """Solver is any callable type that receives a OptProblem 
 as its argument and returns a tuple with the solution found"""

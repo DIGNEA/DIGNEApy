@@ -86,11 +86,11 @@ def ea_mu_comma_lambda(
 
         pop = toolbox.population(n=pop_size)
         hof = tools.HallOfFame(1)
-        stats = tools.Statistics(lambda ind: ind.fitness.values)
-        stats.register("avg", np.mean)
-        stats.register("std", np.std)
-        stats.register("min", np.min)
-        stats.register("max", np.max)
+        # stats = tools.Statistics(lambda ind: ind.fitness.values)
+        # stats.register("avg", np.mean)
+        # stats.register("std", np.std)
+        # stats.register("min", np.min)
+        # stats.register("max", np.max)
 
         pop, logbook = algorithms.eaMuCommaLambda(
             pop,
@@ -100,8 +100,8 @@ def ea_mu_comma_lambda(
             cxpb=cxpb,
             mutpb=mutpb,
             ngen=generations,
-            stats=stats,
             halloffame=hof,
+            verbose=0,
         )
         # Convert to Solution class
         cast_pop = [
@@ -117,4 +117,4 @@ def ea_mu_comma_lambda(
             objectives=(hof[0].fitness.values[0],),
             fitness=hof[0].fitness.values[0],
         )
-        return cast_pop, logbook, best
+        return [best, *cast_pop]  # cast_pop, logbook, best

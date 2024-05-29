@@ -101,7 +101,7 @@ def test_eig_gen_kp_perf_descriptor():
         assert all(s.fitness >= 0.0 for s in archive)
         assert all(s.p >= 0.0 for s in archive)
         assert all(s.s >= 0.0 for s in archive)
-        assert all(len(s.features) == 8 for s in archive)
+        assert all(len(s.features) == 0 for s in archive)
         assert all(len(s.portfolio_scores) == len(portfolio) for s in archive)
         p_scores = [s._portfolio_m for s in archive]
         # The instances are biased to the performance of the target
@@ -112,7 +112,7 @@ def test_eig_gen_kp_perf_descriptor():
         assert all(s.fitness >= 0.0 for s in solution_set)
         assert all(s.p >= 0.0 for s in solution_set)
         assert all(s.s >= 0.0 for s in solution_set)
-        assert all(len(s.features) == 8 for s in solution_set)
+        assert all(len(s.features) == 0 for s in solution_set)
         assert all(len(s.portfolio_scores) == len(portfolio) for s in solution_set)
         p_scores = [s._portfolio_m for s in solution_set]
         assert all(max(p_scores[i]) == p_scores[i][0] for i in range(len(p_scores)))

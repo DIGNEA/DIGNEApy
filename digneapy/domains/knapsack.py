@@ -234,10 +234,3 @@ class KPDomain(Domain):
                 capacity = self.max_capacity
 
         return Knapsack(profits=profits, weights=weights, capacity=int(capacity))
-
-    def after_reproduce(self, instances: Iterable[Instance]) -> Iterable[Instance]:
-        if self.capacity_approach == "percentage":
-            for instance in instances:
-                c = int(sum(instance[1::2]) * self.capacity_ratio)
-                instance[0] = c
-        return instances

@@ -225,7 +225,6 @@ class EIG(NoveltySearch):
                     off.features = self.domain.extract_features(off)
                 offspring.append(off)
 
-            offspring = self.domain.after_reproduce(offspring)
             self._evaluate_population(offspring)
             self.sparseness(offspring)
             self._compute_fitness(population=offspring)

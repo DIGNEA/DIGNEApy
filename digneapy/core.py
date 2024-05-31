@@ -324,11 +324,3 @@ class Domain:
             msg = f"index {i} is out of bounds. Valid values are [0-{len(self.bounds)}]"
             raise AttributeError(msg)
         return self.bounds[i][1]
-
-    def before_reproduce(self, instances: Iterable[Instance]) -> Iterable[Instance]:
-        msg = "before_reproduce is not implemented in Domain class."
-        raise NotImplementedError(msg)
-
-    def after_reproduce(self, instances: Iterable[Instance]) -> Iterable[Instance]:
-        msg = "after_reproduce is not implemented in Domain class."
-        raise NotImplementedError(msg)

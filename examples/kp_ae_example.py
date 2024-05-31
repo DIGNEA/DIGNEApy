@@ -15,7 +15,7 @@ from collections import deque
 from digneapy.generator import EIG
 from digneapy.solvers.heuristics import default_kp, map_kp, miw_kp, mpw_kp
 from digneapy.domains.knapsack import KPDomain
-from digneapy.operators.replacement import first_improve_replacement
+from digneapy.operators.replacement import first_improve_replacement, generational
 import copy
 import itertools
 
@@ -70,19 +70,17 @@ def generate_instances(dim: int = 50):
             domain=kp_domain,
             portfolio=portfolio,
             t_a=1e-5,
-            t_ss=1e-4,
+            t_ss=1e-5,
             k=3,
             repetitions=1,
             descriptor="instance",
-            replacement=first_improve_replacement,
+            replacement=generational,
             transformer=autoencoder,
         )
-        archive, solution_set = eig()
-        print(archive)
-        print(solution_set)
+        _, solution_set = eig()
         instances[portfolio[0].__name__] = copy.copy(solution_set)
 
-    save_instances(f"kp_ns_best_autoencoder_N_{dim}_fir.csv", instances, dimension=dim)
+    save_instances(f"kp_ns_best_autoencoder_N_{dim}_gr.csv", instances, dimension=dim)
 
 
 if __name__ == "__main__":

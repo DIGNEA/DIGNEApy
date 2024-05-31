@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.16.3)
-project(pisinger_solvers LANGUAGES CXX VERSION 1.0.0 DESCRIPTION "Pisinger Solvers Wrapper for Python code")
+project(pisinger_cpp LANGUAGES CXX VERSION 1.0.0 DESCRIPTION "Pisinger Solvers Wrapper for Python code")
 
 set(CMAKE_CXX_STANDARD 20)
 enable_language(C)
@@ -24,4 +24,4 @@ find_package(pybind11 REQUIRED)
 # Always run with the optimisation flags
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++20 -isystem -fPIC -fpermissive -lstdc++fs -O3 -ffast-math -Wall -march=native -mtune=native")
 
-pybind11_add_module(pisinger src/pisinger.cpp src/minknap.cpp src/combo.cpp src/expknap.cpp)
+pybind11_add_module(pisinger_cpp src/pisinger.cpp src/minknap.cpp src/combo.cpp src/expknap.cpp)

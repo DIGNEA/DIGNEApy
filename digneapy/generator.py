@@ -36,6 +36,21 @@ def _default_performance_metric(scores: Iterable[float]) -> float:
     return scores[0] - max(scores[1:])
 
 
+def pisinger_performance_metric(scores: Iterable[float]) -> float:
+    """Pisinger Solvers performace metric for the instances.
+    It tries to maximise the gap between the runing time of the target solver
+    and the other solvers in the portfolio.
+
+    Args:
+        scores (Iterable[float]): Running time of each solver over an instance. It is expected
+        that the first value is the score of the target.
+
+    Returns:
+        float: Performance value for an instance. Instance.p attribute.
+    """
+    return min(scores[1:]) - scores[0]
+
+
 class EIG(NoveltySearch):
     def __init__(
         self,
@@ -132,6 +147,10 @@ class EIG(NoveltySearch):
                 scores = []
                 for _ in range(self.repetitions):
                     solutions = solver(problem)
+                    # There is no need to change anything in the evaluation code when using Pisinger solvers
+                    # because the algs. only return one solution per run (len(solutions) == 1)
+                    # The same happens with the simple KP heuristics. However, when using Pisinger solvers
+                    # the lower the running time the better they're considered to work an instance
                     solutions = sorted(
                         solutions, key=attrgetter("fitness"), reverse=True
                     )
@@ -206,6 +225,7 @@ class EIG(NoveltySearch):
                     off.features = self.domain.extract_features(off)
                 offspring.append(off)
 
+            offspring = self.domain.after_reproduce(offspring)
             self._evaluate_population(offspring)
             self.sparseness(offspring)
             self._compute_fitness(population=offspring)

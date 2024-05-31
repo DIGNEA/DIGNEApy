@@ -749,8 +749,7 @@ stype expknap(exitem *f, exitem *l, stype cap) {
     return z + psb;
 }
 
-std::tuple<double, double> expknap_solver(int n, int *p, int *w, int *x,
-                                          int c) {
+std::tuple<double, double> expknap_cpp(int n, int *p, int *w, int *x, int c) {
     exitem *a;
 
     /* allocate space for test example */
@@ -805,13 +804,13 @@ std::tuple<double, double> expknap_solver(int n, int *p, int *w, int *x,
 }  // namespace expknap
 
 void init_expknap(py::module_ &m) {
-    m.def("expknap", [](int n, py::array_t<int> p, py::array_t<int> w,
-                        py::array_t<int> x, int c) {
+    m.def("expknap_cpp", [](int n, py::array_t<int> p, py::array_t<int> w,
+                            py::array_t<int> x, int c) {
         py::buffer_info p_info = p.request();
         py::buffer_info w_info = w.request();
         py::buffer_info x_info = x.request();
-        return expknap::expknap_solver(n, static_cast<int *>(p_info.ptr),
-                                       static_cast<int *>(w_info.ptr),
-                                       static_cast<int *>(x_info.ptr), c);
+        return expknap::expknap_cpp(n, static_cast<int *>(p_info.ptr),
+                                    static_cast<int *>(w_info.ptr),
+                                    static_cast<int *>(x_info.ptr), c);
     });
 }

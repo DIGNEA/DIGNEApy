@@ -10,6 +10,6 @@
 @Desc    :   None
 """
 
-from .pisinger import *
+from .__main__ import *
 
 __all__ = ["combo", "expknap", "minknap"]

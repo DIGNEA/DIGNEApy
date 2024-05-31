@@ -6,9 +6,6 @@ from setuptools import setup, find_packages, Extension
 from setuptools.command.build_ext import build_ext
 
 import digneapy
-import os
-import sys
-import pybind11
 from glob import glob
 
 with open("README.md") as readme_file:
@@ -41,7 +38,7 @@ class get_pybind_include(object):
 
 ext_modules = [
     Extension(
-        "digneapy.solvers.pisinger",
+        "pisinger_cpp",
         sorted(glob("digneapy/solvers/pisinger/src/*.cpp")),
         include_dirs=[
             # Path to pybind11 headers

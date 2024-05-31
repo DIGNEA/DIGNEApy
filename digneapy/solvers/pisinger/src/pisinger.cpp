@@ -18,7 +18,7 @@ void init_combo(py::module_ &);
 void init_minknap(py::module_ &);
 void init_expknap(py::module_ &);
 
-PYBIND11_MODULE(pisinger, m) {
+PYBIND11_MODULE(pisinger_cpp, m) {
     m.doc() = "Pybinding for the Pisinger Solvers";
 
     init_minknap(m);

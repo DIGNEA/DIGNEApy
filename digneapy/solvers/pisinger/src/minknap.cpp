@@ -948,8 +948,8 @@ extern stype minknap(int n, int *p, int *w, int *x, int c) {
     return a.zstar;
 }
 
-extern std::tuple<double, double> minknap_solver(int n, int *p, int *w, int *x,
-                                                 int c) {
+extern std::tuple<double, double> minknap_cpp(int n, int *p, int *w, int *x,
+                                              int c) {
     int z;
     auto startTime = std::chrono::high_resolution_clock::now();
 
@@ -963,13 +963,13 @@ extern std::tuple<double, double> minknap_solver(int n, int *p, int *w, int *x,
 }  // namespace minknap
 
 void init_minknap(py::module_ &m) {
-    m.def("minknap", [](int n, py::array_t<int> p, py::array_t<int> w,
-                        py::array_t<int> x, int c) {
+    m.def("minknap_cpp", [](int n, py::array_t<int> p, py::array_t<int> w,
+                            py::array_t<int> x, int c) {
         py::buffer_info p_info = p.request();
         py::buffer_info w_info = w.request();
         py::buffer_info x_info = x.request();
-        return minknap::minknap_solver(n, static_cast<int *>(p_info.ptr),
-                                       static_cast<int *>(w_info.ptr),
-                                       static_cast<int *>(x_info.ptr), c);
+        return minknap::minknap_cpp(n, static_cast<int *>(p_info.ptr),
+                                    static_cast<int *>(w_info.ptr),
+                                    static_cast<int *>(x_info.ptr), c);
     });
 }

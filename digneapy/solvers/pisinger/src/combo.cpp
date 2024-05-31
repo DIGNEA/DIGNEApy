@@ -1625,8 +1625,8 @@ void testinstance(int *p, int *w, int *x, int c, item **f, item **l, int n,
     maketest(p, w, x, *f, *l, type, r, v);
 }
 
-extern std::tuple<double, double> combo_solver(int n, int *p, int *w, int *x,
-                                               int c) {
+extern std::tuple<double, double> combo_cpp(int n, int *p, int *w, int *x,
+                                            int c) {
     auto startTime = std::chrono::high_resolution_clock::now();
     // Pisinger Combo code
     item *f, *l;
@@ -1645,13 +1645,13 @@ extern std::tuple<double, double> combo_solver(int n, int *p, int *w, int *x,
 }  // namespace combo
 
 void init_combo(py::module_ &m) {
-    m.def("combo", [](int n, py::array_t<int> p, py::array_t<int> w,
-                      py::array_t<int> x, int c) {
+    m.def("combo_cpp", [](int n, py::array_t<int> p, py::array_t<int> w,
+                          py::array_t<int> x, int c) {
         py::buffer_info p_info = p.request();
         py::buffer_info w_info = w.request();
         py::buffer_info x_info = x.request();
-        return combo::combo_solver(n, static_cast<int *>(p_info.ptr),
-                                   static_cast<int *>(w_info.ptr),
-                                   static_cast<int *>(x_info.ptr), c);
+        return combo::combo_cpp(n, static_cast<int *>(p_info.ptr),
+                                static_cast<int *>(w_info.ptr),
+                                static_cast<int *>(x_info.ptr), c);
     });
 }

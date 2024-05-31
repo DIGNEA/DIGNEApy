@@ -22,12 +22,12 @@ def main():
     q = np.random.randint(0, high=250)
     kp = knapsack.Knapsack(profits=p, weights=w, capacity=q)
     print(f"Instance to solve: {kp}")
-    population, log, hof = ea_mu_comma_lambda(
-        "Max",
+    solutions = ea_mu_comma_lambda(
+        "maximise",
         N,
         0,
         1,
-        problem=kp.evaluate,
+        problem=kp,
         pop_size=32,
         lambd=128,
         cxpb=0.8,

@@ -60,6 +60,9 @@ class Knapsack(OptProblem):
         profit -= penalty if penalty > 0.0 else 0.0
         return (profit,)
 
+    def __call__(self, individual: Iterable) -> Tuple[float]:
+        return self.evaluate(individual)
+
     def __repr__(self):
         return f"KP<n={len(self.profits)},C={self.capacity}>"
 

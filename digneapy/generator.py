@@ -55,7 +55,7 @@ class EIG(NoveltySearch):
     def __init__(
         self,
         pop_size: int = 100,
-        evaluations: int = 10000,
+        generations: int = 1000,
         t_a: float = 0.001,
         t_ss: float = 0.001,
         k: int = 15,
@@ -96,7 +96,7 @@ class EIG(NoveltySearch):
         """
         super().__init__(t_a, t_ss, k, descriptor, transformer)
         self.pop_size = pop_size
-        self.max_evaluations = evaluations
+        self.generations = generations
         self.domain = domain
         self.portfolio = tuple(portfolio) if portfolio else ()
         self.population = []
@@ -123,15 +123,15 @@ class EIG(NoveltySearch):
     def __str__(self):
         port_names = [s.__name__ for s in self.portfolio]
         domain_name = self.domain.name if self.domain is not None else "None"
-        return f"EIG(pop_size={self.pop_size},evaluations={self.max_evaluations},domain={domain_name},portfolio={port_names!r},{super().__str__()})"
+        return f"EIG(pop_size={self.pop_size},gen={self.generations},domain={domain_name},portfolio={port_names!r},{super().__str__()})"
 
     def __repr__(self) -> str:
         port_names = [s.__name__ for s in self.portfolio]
         domain_name = self.domain.name if self.domain is not None else "None"
-        return f"EIG<pop_size={self.pop_size},evaluations={self.max_evaluations},domain={domain_name},portfolio={port_names!r},{super().__repr__()}>"
+        return f"EIG<pop_size={self.pop_size},gen={self.generations},domain={domain_name},portfolio={port_names!r},{super().__repr__()}>"
 
-    def __call__(self):
-        return self._run()
+    def __call__(self, verbose: bool = False):
+        return self._run(verbose)
 
     def _evaluate_population(self, population: Iterable[Instance]):
         """Evaluates the population of instances using the portfolio of solvers.
@@ -203,7 +203,7 @@ class EIG(NoveltySearch):
             filter(lambda x: x.s >= self.t_ss and x.p >= 0.0, instances)
         )
 
-    def _run(self):
+    def _run(self, verbose: bool = False):
         if self.domain is None:
             raise AttributeError("You must specify a domain to run the generator.")
         if len(self.portfolio) == 0:
@@ -214,8 +214,8 @@ class EIG(NoveltySearch):
             self.domain.generate_instance() for _ in range(self.pop_size)
         ]
         self._evaluate_population(self.population)
-        performed_evals = 0
-        while performed_evals < self.max_evaluations:
+        performed_gens = 0
+        while performed_gens < self.generations:
             offspring = []
             for _ in range(self.pop_size):
                 p_1 = self.selection(self.population)
@@ -233,6 +233,13 @@ class EIG(NoveltySearch):
             self._update_solution_set(offspring)
             self.population = self.replacement(self.population, offspring)
 
-            performed_evals += self.pop_size
+            performed_gens += 1
+            if verbose:
+                status = f'\rGeneration {performed_gens}/{self.generations} completed'
+                print(status, flush=True, end='')
+        if verbose:
+            # Clear the terminal
+            blank = ' ' * 80
+            print(f'\r{blank}\r', end='')
 
         return (self.archive, self.solution_set)

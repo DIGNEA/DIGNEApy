@@ -84,7 +84,7 @@ class EA(Solver):
         self._toolbox.register(
             "population", tools.initRepeat, list, self._toolbox.individual
         )
-        self._toolbox.register("mate", cx, indpb=self._mutpb)
+        self._toolbox.register("mate", cx, indpb=0.5)
         self._toolbox.register("mutate", mut, low=min_g, up=max_g, indpb=(1.0 / dim))
         self._toolbox.register("select", tools.selTournament, tournsize=2)
 
@@ -99,7 +99,7 @@ class EA(Solver):
         self._name = f"EA_PS_{self._pop_size}_CXPB_{self._cxpb}_MUTPB_{self._mutpb}"
         self.__name__ = self._name
         if self._n_cores > 1:
-            self._pool = multiprocessing.Pool()
+            self._pool = multiprocessing.Pool(processes=self._n_cores)
             self._toolbox.register("map", self._pool.map)
 
     def __call__(self, problem: OptProblem) -> List[Solution]:

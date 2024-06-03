@@ -100,7 +100,8 @@ class EA(Solver):
 
         self._logbook = None
         self._best_found = None
-
+        self._name = f"EA_PS_{self._pop_size}_OS_{self._off_size}_CXPB_{self._cxpb}_MUTPB_{self._mutpb}"
+        self.__name__ = self._name
         if self._n_cores > 1:
             self._pool = multiprocessing.Pool()
             self._toolbox.register("map", self._pool.map)

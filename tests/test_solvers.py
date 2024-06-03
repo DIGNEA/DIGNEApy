@@ -112,6 +112,8 @@ def test_ea_with_def_kp(default_instance):
     assert all(type(i) == Solution for i in population)
     assert type(ea._best_found) == Solution
     assert ea._best_found.fitness == 50
+    assert ea.__name__ == "EA_PS_10_OS_100_CXPB_0.6_MUTPB_0.3"
+    assert ea._name == "EA_PS_10_OS_100_CXPB_0.6_MUTPB_0.3"
     # There are multiple options to reach the maximum fitness
     # So we dont compare the chromosomes
 
@@ -138,6 +140,8 @@ def test_parallel_ea_with_def_kp(default_instance):
     assert all(type(i) == Solution for i in population)
     assert type(ea._best_found) == Solution
     assert ea._best_found.fitness == 50
+    assert ea.__name__ == "EA_PS_10_OS_100_CXPB_0.6_MUTPB_0.3"
+    assert ea._name == "EA_PS_10_OS_100_CXPB_0.6_MUTPB_0.3"
     # There are multiple options to reach the maximum fitness
     # So we dont compare the chromosomes
 

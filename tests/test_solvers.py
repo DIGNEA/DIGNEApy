@@ -14,7 +14,7 @@ import pytest
 import numpy as np
 from digneapy.domains import knapsack
 from digneapy.solvers import heuristics
-from digneapy.solvers.evolutionary import ea_mu_comma_lambda
+from digneapy.solvers.evolutionary import ea_mu_comma_lambda, EA
 from digneapy.core import Solution
 from deap import benchmarks
 from digneapy import solvers
@@ -94,24 +94,50 @@ def test_mpw_kp_heuristic(default_instance):
 def test_ea_with_def_kp(default_instance):
     generations = 100
     pop_size = 10
-    result = ea_mu_comma_lambda(
+
+    ea = EA(
         dir=solvers.MAXIMISE,
         dim=len(default_instance),
         min_g=0,
         max_g=1,
-        problem=default_instance.evaluate,
         generations=generations,
         pop_size=pop_size,
     )
-    assert len(result) >= 1
-    # pop, log, best = result
-    # assert len(log) == generations + 1
-    # assert len(best) == len(default_instance)
-    # assert len(pop) == pop_size
+    population = ea(default_instance)
+    assert len(population) == 11
+    assert len(ea._logbook) == generations + 1
+    assert len(ea._best_found) == len(default_instance)
+    assert len(ea._population) == pop_size
 
-    # assert all(type(i) == Solution for i in pop)
-    # assert type(best) == Solution
-    # assert best.fitness == 50
+    assert all(type(i) == Solution for i in population)
+    assert type(ea._best_found) == Solution
+    assert ea._best_found.fitness == 50
+    # There are multiple options to reach the maximum fitness
+    # So we dont compare the chromosomes
+
+
+def test_parallel_ea_with_def_kp(default_instance):
+    generations = 100
+    pop_size = 10
+
+    ea = EA(
+        dir=solvers.MAXIMISE,
+        dim=len(default_instance),
+        min_g=0,
+        max_g=1,
+        generations=generations,
+        pop_size=pop_size,
+        n_cores=2,
+    )
+    population = ea(default_instance)
+    assert len(population) == 11
+    assert len(ea._logbook) == generations + 1
+    assert len(ea._best_found) == len(default_instance)
+    assert len(ea._population) == pop_size
+
+    assert all(type(i) == Solution for i in population)
+    assert type(ea._best_found) == Solution
+    assert ea._best_found.fitness == 50
     # There are multiple options to reach the maximum fitness
     # So we dont compare the chromosomes
 
@@ -119,23 +145,22 @@ def test_ea_with_def_kp(default_instance):
 def test_ea_solves_sphere():
     generations = 100
     pop_size = 10
-    result = ea_mu_comma_lambda(
+
+    ea = EA(
         dir=solvers.MINIMISE,
         dim=30,
         min_g=0,
         max_g=1,
-        problem=benchmarks.sphere,
         generations=generations,
         pop_size=pop_size,
     )
-    assert len(result) >= 1
-    # pop, log, best = result
-    # assert len(log) == generations + 1
-    # assert len(best) == 30
-    # assert len(pop) == pop_size
-
-    # assert all(type(i) == Solution for i in pop)
-    # assert type(best) == Solution
+    population = ea(benchmarks.sphere)
+    assert len(population) == pop_size + 1
+    assert len(ea._logbook) == generations + 1
+    assert len(ea._best_found) == 30
+    assert len(ea._population) == pop_size
+    assert all(type(i) == Solution for i in ea._population)
+    assert type(ea._best_found) == Solution
 
 
 def test_ea_raises_problem():
@@ -146,15 +171,15 @@ def test_ea_raises_problem():
     with pytest.raises(Exception):
         generations = 100
         pop_size = 10
-        _ = ea_mu_comma_lambda(
-            dir="Max",
+        ea = EA(
+            dir=solvers.MAXIMISE,
             dim=100,
             min_g=0,
             max_g=1,
-            problem=None,
             generations=generations,
             pop_size=pop_size,
         )
+        ea(None)
 
 
 def test_ea_raises_direction(default_instance):
@@ -164,12 +189,11 @@ def test_ea_raises_direction(default_instance):
     with pytest.raises(Exception):
         generations = 100
         pop_size = 10
-        _ = ea_mu_comma_lambda(
+        ea = EA(
             dir="ANY",
             dim=len(default_instance),
             min_g=0,
             max_g=1,
-            problem=default_instance.evaluate,
             generations=generations,
             pop_size=pop_size,
         )

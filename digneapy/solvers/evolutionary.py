@@ -17,7 +17,6 @@ from deap import creator, base, tools, algorithms
 from digneapy.solvers import DIRECTIONS, MINIMISE, MAXIMISE
 import multiprocessing
 
-
 def gen_dignea_ind(icls, size: int, min_value, max_value):
     """Auxiliar function to generate individual based on
     the Solution class of digneapy
@@ -35,10 +34,9 @@ class EA(Solver):
         dim: int,
         min_g: int | float,
         max_g: int | float,
-        cx=tools.cxOnePoint,
+        cx=tools.cxUniform,
         mut=tools.mutUniformInt,
         pop_size: int = 10,
-        off_size: int = 100,
         cxpb: float = 0.6,
         mutpb: float = 0.3,
         generations: int = 500,
@@ -51,7 +49,6 @@ class EA(Solver):
             min_g (int | float): Minimum value of the genome of the solutions.
             max_g (int | float): Maximum value of the genome of the solutions.
             pop_size (int, optional): Population size of the evolutionary algorithm. Defaults to 10.
-            off_size (int, optional): Number of offspring produced at each generation of the algorithm. Defaults to 100.
             cxpb (float, optional): Crossover probability. Defaults to 0.6.
             mutpb (float, optional): Mutation probability. Defaults to 0.3.
             generations (int, optional): Number of generations to perform. Defaults to 500.
@@ -66,7 +63,6 @@ class EA(Solver):
         self._cx = cx
         self._mut = mut
         self._pop_size = pop_size
-        self._off_size = off_size
         self._cxpb = cxpb
         self._mutpb = mutpb
         self._generations = generations
@@ -75,8 +71,10 @@ class EA(Solver):
         mult = 1.0
         if dir == MINIMISE:
             mult = -1.0
+        
         creator.create("Fitness", base.Fitness, weights=(mult,))
         creator.create("Individual", list, fitness=creator.Fitness)
+
         self._toolbox = base.Toolbox()
         self._toolbox.register(
             "individual", gen_dignea_ind, creator.Individual, dim, min_g, max_g
@@ -85,7 +83,7 @@ class EA(Solver):
         self._toolbox.register(
             "population", tools.initRepeat, list, self._toolbox.individual
         )
-        self._toolbox.register("mate", cx)
+        self._toolbox.register("mate", cx, indpb=self._mutpb)
         self._toolbox.register("mutate", mut, low=min_g, up=max_g, indpb=(1.0 / dim))
         self._toolbox.register("select", tools.selTournament, tournsize=2)
 
@@ -100,7 +98,7 @@ class EA(Solver):
 
         self._logbook = None
         self._best_found = None
-        self._name = f"EA_PS_{self._pop_size}_OS_{self._off_size}_CXPB_{self._cxpb}_MUTPB_{self._mutpb}"
+        self._name = f"EA_PS_{self._pop_size}_CXPB_{self._cxpb}_MUTPB_{self._mutpb}"
         self.__name__ = self._name
         if self._n_cores > 1:
             self._pool = multiprocessing.Pool()
@@ -117,11 +115,9 @@ class EA(Solver):
             raise AttributeError(msg)
 
         self._toolbox.register("evaluate", problem)
-        self._population, self._logbook = algorithms.eaMuCommaLambda(
+        self._population, self._logbook = algorithms.eaSimple(
             self._population,
             self._toolbox,
-            mu=self._pop_size,
-            lambda_=self._off_size,
             cxpb=self._cxpb,
             mutpb=self._mutpb,
             ngen=self._generations,

@@ -16,7 +16,12 @@ from typing import List, Tuple, Iterable, Callable
 from operator import attrgetter
 import numpy as np
 import copy
+from deap import tools
+import matplotlib.pyplot as plt
+from matplotlib.lines import Line2D
 
+import seaborn as sns
+import pandas as pd
 
 PerformanceFn = Callable[[Iterable[float]], float]
 
@@ -49,6 +54,57 @@ def pisinger_performance_metric(scores: Iterable[float]) -> float:
         float: Performance value for an instance. Instance.p attribute.
     """
     return min(scores[1:]) - scores[0]
+
+
+def plot_generator_logbook(logbook=None, filename: str = None):
+    df = pd.DataFrame(logbook.chapters["s"].select("avg"), columns=[r"$s$"])
+    df[r"$p$"] = logbook.chapters["p"].select("avg")
+    df["Generations"] = logbook.select("gen")
+
+    # Plot configuration
+    plt.rcParams["font.family"] = "serif"
+    plt.rcParams["font.sans-serif"] = [
+        "Tahoma",
+        "DejaVu Sans",
+        "Lucida Grande",
+        "Verdana",
+    ]
+    plt.rcParams["font.size"] = 16
+    plt.figure(figsize=(12, 8))
+    ax = sns.lineplot(
+        data=df,
+        x="Generations",
+        y=r"$s$",
+        marker="o",
+        color="blue",
+        markersize=5,
+        legend=False,
+    )
+
+    ax2 = plt.twinx()
+    sns.lineplot(
+        data=df,
+        x="Generations",
+        y=r"$p$",
+        marker="X",
+        markersize=5,
+        color="red",
+        legend=False,
+        ax=ax2,
+    )
+    ax.legend(
+        handles=[
+            Line2D([], [], marker="o", color="blue", label=r"$s$"),
+            Line2D([], [], marker="X", color="red", label=r"$p$"),
+        ],
+        loc="center right",
+    )
+
+    plt.title(r"Evolution of $s$ and $p$")
+    if filename:
+        plt.savefig(filename)
+    else:
+        plt.show()
 
 
 class EIG(NoveltySearch):
@@ -109,6 +165,19 @@ class EIG(NoveltySearch):
         self.selection = selection
         self.replacement = replacement
         self.performance_function = performance_function
+
+        self._stats_s = tools.Statistics(key=lambda ind: ind.s)
+        self._stats_p = tools.Statistics(key=lambda ind: ind.p)
+        self._stats = tools.MultiStatistics(s=self._stats_s, p=self._stats_p)
+        self._stats.register("avg", np.mean)
+        self._stats.register("std", np.std)
+        self._stats.register("min", np.min)
+        self._stats.register("max", np.max)
+
+        self.logbook = tools.Logbook()
+        self.logbook.header = "gen", "s", "p"
+        self.logbook.chapters["s"].header = "min", "avg", "std", "max"
+        self.logbook.chapters["p"].header = "min", "avg", "std", "max"
 
         try:
             phi = float(phi)
@@ -233,13 +302,17 @@ class EIG(NoveltySearch):
             self._update_solution_set(offspring)
             self.population = self.replacement(self.population, offspring)
 
+            # Record the stats and update the performed gens
+            record = self._stats.compile(self.population)
+            self.logbook.record(gen=performed_gens, **record)
             performed_gens += 1
+
             if verbose:
-                status = f'\rGeneration {performed_gens}/{self.generations} completed'
-                print(status, flush=True, end='')
+                status = f"\rGeneration {performed_gens}/{self.generations} completed"
+                print(status, flush=True, end="")
         if verbose:
             # Clear the terminal
-            blank = ' ' * 80
-            print(f'\r{blank}\r', end='')
+            blank = " " * 80
+            print(f"\r{blank}\r", end="")
 
         return (self.archive, self.solution_set)

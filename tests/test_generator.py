@@ -22,7 +22,7 @@ from collections import deque
 def test_default_generator():
     eig = EIG()
     assert eig.pop_size == 100
-    assert eig.max_evaluations == 10000
+    assert eig.generations == 10000
     assert eig.t_a == 0.001
     assert eig.t_ss == 0.001
     assert eig.k == 15
@@ -43,12 +43,12 @@ def test_default_generator():
 
     assert (
         eig.__str__()
-        == f"EIG(pop_size=100,evaluations=10000,domain=None,portfolio=[],NS(desciptor=features,t_a=0.001,t_ss=0.001,k=15,len(a)=0,len(ss)=0))"
+        == f"EIG(pop_size=100,gen=10000,domain=None,portfolio=[],NS(desciptor=features,t_a=0.001,t_ss=0.001,k=15,len(a)=0,len(ss)=0))"
     )
 
     assert (
         eig.__repr__()
-        == f"EIG<pop_size=100,evaluations=10000,domain=None,portfolio=[],NS<desciptor=features,t_a=0.001,t_ss=0.001,k=15,len(a)=0,len(ss)=0>>"
+        == f"EIG<pop_size=100,gen=10000,domain=None,portfolio=[],NS<desciptor=features,t_a=0.001,t_ss=0.001,k=15,len(a)=0,len(ss)=0>>"
     )
 
     with pytest.raises(AttributeError) as e:
@@ -81,7 +81,7 @@ def test_eig_gen_kp_perf_descriptor():
     t_a, t_ss, k = 3, 3, 3
     eig = EIG(
         10,
-        evaluations=generations,
+        generations=generations,
         domain=kp_domain,
         portfolio=portfolio,
         k=k,
@@ -134,7 +134,7 @@ def test_eig_gen_kp_feat_descriptor():
     t_a, t_ss, k = 3, 3, 3
     eig = EIG(
         10,
-        evaluations=generations,
+        generations=generations,
         domain=kp_domain,
         portfolio=portfolio,
         k=k,

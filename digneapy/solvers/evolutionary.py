@@ -17,6 +17,7 @@ from deap import creator, base, tools, algorithms
 from digneapy.solvers import DIRECTIONS, MINIMISE, MAXIMISE
 import multiprocessing
 
+
 def gen_dignea_ind(icls, size: int, min_value, max_value):
     """Auxiliar function to generate individual based on
     the Solution class of digneapy
@@ -71,7 +72,7 @@ class EA(Solver):
         mult = 1.0
         if dir == MINIMISE:
             mult = -1.0
-        
+
         creator.create("Fitness", base.Fitness, weights=(mult,))
         creator.create("Individual", list, fitness=creator.Fitness)
 
@@ -86,9 +87,6 @@ class EA(Solver):
         self._toolbox.register("mate", cx, indpb=self._mutpb)
         self._toolbox.register("mutate", mut, low=min_g, up=max_g, indpb=(1.0 / dim))
         self._toolbox.register("select", tools.selTournament, tournsize=2)
-
-        self._population = self._toolbox.population(n=self._pop_size)
-        self._hof = tools.HallOfFame(1)
 
         self._stats = tools.Statistics(lambda ind: ind.fitness.values)
         self._stats.register("avg", np.mean)
@@ -115,6 +113,10 @@ class EA(Solver):
             raise AttributeError(msg)
 
         self._toolbox.register("evaluate", problem)
+        # Reset the algorithm
+        self._population = self._toolbox.population(n=self._pop_size)
+        self._hof = tools.HallOfFame(1)
+
         self._population, self._logbook = algorithms.eaSimple(
             self._population,
             self._toolbox,

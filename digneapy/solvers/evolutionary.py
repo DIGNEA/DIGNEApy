@@ -116,6 +116,8 @@ class EA(Solver):
         # Reset the algorithm
         self._population = self._toolbox.population(n=self._pop_size)
         self._hof = tools.HallOfFame(1)
+        self._logbook = None
+        self._stats = None
 
         self._population, self._logbook = algorithms.eaSimple(
             self._population,
@@ -124,25 +126,27 @@ class EA(Solver):
             mutpb=self._mutpb,
             ngen=self._generations,
             halloffame=self._hof,
-            verbose=0,
+            stats=self._stats,
+            verbose=False,
         )
 
         # Convert to Solution class
-        cast_pop = [
-            Solution(
-                chromosome=i,
-                objectives=(i.fitness.values[0],),
-                fitness=i.fitness.values[0],
-            )
-            for i in self._population
-        ]
-        self._population = cast_pop
+        # Todo: Include this when performance is not required
+        # cast_pop = [
+        #     Solution(
+        #         chromosome=i,
+        #         objectives=(i.fitness.values[0],),
+        #         fitness=i.fitness.values[0],
+        #     )
+        #     for i in self._population
+        # ]
+        #self._population = cast_pop
         self._best_found = Solution(
             chromosome=self._hof[0],
             objectives=(self._hof[0].fitness.values[0],),
             fitness=self._hof[0].fitness.values[0],
         )
-        return [self._best_found, *cast_pop]
+        return [self._best_found]
 
 
 def ea_mu_comma_lambda(

@@ -117,7 +117,6 @@ class EA(Solver):
         self._population = self._toolbox.population(n=self._pop_size)
         self._hof = tools.HallOfFame(1)
         self._logbook = None
-        self._stats = None
 
         self._population, self._logbook = algorithms.eaSimple(
             self._population,
@@ -131,114 +130,18 @@ class EA(Solver):
         )
 
         # Convert to Solution class
-        # Todo: Include this when performance is not required
-        # cast_pop = [
-        #     Solution(
-        #         chromosome=i,
-        #         objectives=(i.fitness.values[0],),
-        #         fitness=i.fitness.values[0],
-        #     )
-        #     for i in self._population
-        # ]
-        #self._population = cast_pop
-        self._best_found = Solution(
-            chromosome=self._hof[0],
-            objectives=(self._hof[0].fitness.values[0],),
-            fitness=self._hof[0].fitness.values[0],
-        )
-        return [self._best_found]
-
-
-def ea_mu_comma_lambda(
-    dir: str,
-    dim: int,
-    min_g: int | float,
-    max_g: int | float,
-    problem: Callable = None,
-    cx=tools.cxOnePoint,
-    mut=tools.mutUniformInt,
-    pop_size: int = 10,
-    lambd: int = 100,
-    cxpb: float = 0.6,
-    mutpb: float = 0.3,
-    generations: int = 500,
-):
-    """Evolutionary Algorithm from DEAP for digneapy
-
-    Args:
-        dir (str): Direction of the evolution process. Min (minimisation) or Max (maximisation).
-        dim (int): Number of variables of the problem to solve.
-        min_g (int | float): Minimum value of the genome of the solutions.
-        max_g (int | float): Maximum value of the genome of the solutions.
-        problem (Callable): Evaluation function used to calculate the fitness of the individuals.
-        pop_size (int, optional): Population size of the evolutionary algorithm. Defaults to 10.
-        lambd (int, optional): Number of offspring produced at each generation of the algorithm. Defaults to 100.
-        cxpb (float, optional): Crossover probability. Defaults to 0.6.
-        mutpb (float, optional): Mutation probability. Defaults to 0.3.
-        generations (int, optional): Number of generations to perform. Defaults to 500.
-
-    Returns:
-        Population (list): Final population of the algorithm
-        Logbook (Logbook): Logbook of the DEAP algorithm
-        Hof: Hall Of Fame of DEAP. Best solution found.
-    """
-    if problem is None:
-        msg = "No problem found in args of evolutionary_mu_comma_lambda"
-        raise AttributeError(msg)
-
-    if dir not in DIRECTIONS:
-        msg = f"Direction not valid. It must be in {DIRECTIONS}"
-        raise AttributeError(msg)
-
-    else:
-        mult = 1.0
-        if dir == "Min":
-            mult = -1.0
-
-        creator.create("Fitness", base.Fitness, weights=(mult,))
-        creator.create("Individual", list, fitness=creator.Fitness)
-        toolbox = base.Toolbox()
-        toolbox.register(
-            "individual", gen_dignea_ind, creator.Individual, dim, min_g, max_g
-        )
-
-        toolbox.register("population", tools.initRepeat, list, toolbox.individual)
-        toolbox.register("mate", cx)
-        toolbox.register("mutate", mut, low=min_g, up=max_g, indpb=(1.0 / dim))
-        toolbox.register("select", tools.selTournament, tournsize=2)
-        toolbox.register("evaluate", problem)
-
-        pop = toolbox.population(n=pop_size)
-        hof = tools.HallOfFame(1)
-        # stats = tools.Statistics(lambda ind: ind.fitness.values)
-        # stats.register("avg", np.mean)
-        # stats.register("std", np.std)
-        # stats.register("min", np.min)
-        # stats.register("max", np.max)
-
-        pop, logbook = algorithms.eaMuCommaLambda(
-            pop,
-            toolbox,
-            mu=pop_size,
-            lambda_=lambd,
-            cxpb=cxpb,
-            mutpb=mutpb,
-            ngen=generations,
-            halloffame=hof,
-            verbose=0,
-        )
-        # Convert to Solution class
         cast_pop = [
             Solution(
                 chromosome=i,
                 objectives=(i.fitness.values[0],),
                 fitness=i.fitness.values[0],
             )
-            for i in pop
+            for i in self._population
         ]
-        best = Solution(
-            chromosome=hof[0],
-            objectives=(hof[0].fitness.values[0],),
-            fitness=hof[0].fitness.values[0],
+        self._population = cast_pop
+        self._best_found = Solution(
+            chromosome=self._hof[0],
+            objectives=(self._hof[0].fitness.values[0],),
+            fitness=self._hof[0].fitness.values[0],
         )
-        return [best, *cast_pop]  # cast_pop, logbook, best
+        return [self._best_found]

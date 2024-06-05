@@ -12,8 +12,13 @@
 
 import pytest
 from digneapy.novelty_search import Archive
-from digneapy.generator import EIG, _default_performance_metric
+from digneapy.generator import (
+    EIG,
+    _default_performance_metric,
+    pisinger_performance_metric,
+)
 from digneapy.solvers.heuristics import default_kp, map_kp, miw_kp, mpw_kp
+from digneapy.solvers.pisinger import *
 from digneapy.domains.knapsack import KPDomain
 from digneapy.operators import crossover, selection, mutation, replacement
 from collections import deque
@@ -166,6 +171,113 @@ def test_eig_gen_kp_feat_descriptor():
         assert all(s.p >= 0.0 for s in solution_set)
         assert all(s.s >= 0.0 for s in solution_set)
         assert all(len(s.features) == 8 for s in solution_set)
+        assert all(len(s.portfolio_scores) == len(portfolio) for s in solution_set)
+        p_scores = [s._portfolio_m for s in solution_set]
+        assert all(max(p_scores[i]) == p_scores[i][0] for i in range(len(p_scores)))
+
+    # Check it does not insert any when list is empty
+    current_len = len(eig.archive)
+    eig._update_archive(list())
+    assert current_len == len(eig.archive)
+
+    current_len = len(eig.solution_set)
+    eig._update_solution_set(list())
+    assert current_len == len(eig.solution_set)
+
+
+def test_eig_gen_kp_inst_descriptor():
+    portfolio = deque([default_kp, map_kp, miw_kp, mpw_kp])
+    kp_domain = KPDomain(dimension=50, capacity_approach="evolved")
+    generations = 1000
+    t_a, t_ss, k = 3, 3, 3
+    eig = EIG(
+        10,
+        generations=generations,
+        domain=kp_domain,
+        portfolio=portfolio,
+        k=k,
+        t_a=t_a,
+        t_ss=t_ss,
+        repetitions=1,
+        descriptor="instance",
+        replacement=replacement.generational,
+    )
+    archive, solution_set = eig()
+    # They could be empty
+    assert type(archive) == Archive
+    assert type(solution_set) == Archive
+    # If they're not empty
+    if len(archive) != 0:
+        assert all(len(s) == 101 for s in archive)
+        assert all(s.fitness >= 0.0 for s in archive)
+        assert all(s.p >= 0.0 for s in archive)
+        assert all(s.s >= 0.0 for s in archive)
+        assert all(len(s.features) == 8 for s in archive)
+        assert all(len(s.portfolio_scores) == len(portfolio) for s in archive)
+        p_scores = [s._portfolio_m for s in archive]
+        # The instances are biased to the performance of the target
+        assert all(max(p_scores[i]) == p_scores[i][0] for i in range(len(p_scores)))
+
+    if len(solution_set) != 0:
+        assert all(len(s) == 101 for s in solution_set)
+        assert all(s.fitness >= 0.0 for s in solution_set)
+        assert all(s.p >= 0.0 for s in solution_set)
+        assert all(s.s >= 0.0 for s in solution_set)
+        assert all(len(s.features) == 8 for s in solution_set)
+        assert all(len(s.portfolio_scores) == len(portfolio) for s in solution_set)
+        p_scores = [s._portfolio_m for s in solution_set]
+        assert all(max(p_scores[i]) == p_scores[i][0] for i in range(len(p_scores)))
+
+    # Check it does not insert any when list is empty
+    current_len = len(eig.archive)
+    eig._update_archive(list())
+    assert current_len == len(eig.archive)
+
+    current_len = len(eig.solution_set)
+    eig._update_solution_set(list())
+    assert current_len == len(eig.solution_set)
+
+
+def test_eig_gen_kp_perf_descriptor_with_pisinger():
+    portfolio = deque([combo, minknap, expknap])
+    kp_domain = KPDomain(dimension=50, capacity_approach="evolved")
+    generations = 1000
+    t_a, t_ss, k = 1e-7, 1e-7, 3
+    eig = EIG(
+        10,
+        generations=generations,
+        domain=kp_domain,
+        portfolio=portfolio,
+        k=k,
+        t_a=t_a,
+        t_ss=t_ss,
+        repetitions=1,
+        descriptor="performance",
+        replacement=replacement.generational,
+        performance_function=pisinger_performance_metric,
+    )
+    archive, solution_set = eig()
+    # They could be empty
+    assert type(archive) == Archive
+    assert type(solution_set) == Archive
+    # If they're not empty
+    if len(archive) != 0:
+        assert all(len(s) == 101 for s in archive)
+        assert all(s.fitness >= 0.0 for s in archive)
+        assert all(s.p >= 0.0 for s in archive)
+        assert all(s.s >= 0.0 for s in archive)
+        assert all(len(s.features) == 0 for s in archive)
+        assert all(len(s.portfolio_scores) == len(portfolio) for s in archive)
+        p_scores = [s._portfolio_m for s in archive]
+        # The instances are biased to the performance of the target
+        assert all(max(p_scores[i]) == p_scores[i][0] for i in range(len(p_scores)))
+
+    if len(solution_set) != 0:
+        assert all(len(s) == 101 for s in solution_set)
+        assert all(s.fitness >= 0.0 for s in solution_set)
+        assert all(s.p >= 0.0 for s in solution_set)
+        assert all(s.s >= 0.0 for s in solution_set)
+        assert all(len(s.features) == 0 for s in solution_set)
         assert all(len(s.portfolio_scores) == len(portfolio) for s in solution_set)
         p_scores = [s._portfolio_m for s in solution_set]
         assert all(max(p_scores[i]) == p_scores[i][0] for i in range(len(p_scores)))

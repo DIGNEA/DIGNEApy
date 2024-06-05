@@ -250,7 +250,7 @@ class EIG(NoveltySearch):
         Returns:
             Instance: New offspring
         """
-        off = copy.copy(p_1)
+        off = copy.deepcopy(p_1)
         if np.random.rand() < self.cxrate:
             off = self.crossover(p_1, p_2)
         off = self.mutation(p_1, self.domain.bounds)

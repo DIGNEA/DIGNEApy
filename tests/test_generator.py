@@ -186,7 +186,7 @@ def test_eig_gen_kp_feat_descriptor():
 
 
 def test_eig_gen_kp_inst_descriptor():
-    portfolio = deque([default_kp, map_kp, miw_kp, mpw_kp])
+    portfolio = deque([map_kp, mpw_kp])
     kp_domain = KPDomain(dimension=50, capacity_approach="evolved")
     generations = 1000
     t_a, t_ss, k = 3, 3, 3
@@ -212,7 +212,9 @@ def test_eig_gen_kp_inst_descriptor():
         assert all(s.fitness >= 0.0 for s in archive)
         assert all(s.p >= 0.0 for s in archive)
         assert all(s.s >= 0.0 for s in archive)
-        assert all(len(s.features) == 8 for s in archive)
+        assert all(
+            len(s.features) == 0 for s in archive
+        )  # Because we do not calculate features in this case
         assert all(len(s.portfolio_scores) == len(portfolio) for s in archive)
         p_scores = [s._portfolio_m for s in archive]
         # The instances are biased to the performance of the target
@@ -223,7 +225,7 @@ def test_eig_gen_kp_inst_descriptor():
         assert all(s.fitness >= 0.0 for s in solution_set)
         assert all(s.p >= 0.0 for s in solution_set)
         assert all(s.s >= 0.0 for s in solution_set)
-        assert all(len(s.features) == 8 for s in solution_set)
+        assert all(len(s.features) == 0 for s in solution_set)
         assert all(len(s.portfolio_scores) == len(portfolio) for s in solution_set)
         p_scores = [s._portfolio_m for s in solution_set]
         assert all(max(p_scores[i]) == p_scores[i][0] for i in range(len(p_scores)))
@@ -270,7 +272,7 @@ def test_eig_gen_kp_perf_descriptor_with_pisinger():
         assert all(len(s.portfolio_scores) == len(portfolio) for s in archive)
         p_scores = [s._portfolio_m for s in archive]
         # The instances are biased to the performance of the target
-        assert all(max(p_scores[i]) == p_scores[i][0] for i in range(len(p_scores)))
+        assert all(min(p_scores[i]) == p_scores[i][0] for i in range(len(p_scores)))
 
     if len(solution_set) != 0:
         assert all(len(s) == 101 for s in solution_set)

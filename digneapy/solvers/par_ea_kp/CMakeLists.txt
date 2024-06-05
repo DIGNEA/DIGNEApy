@@ -30,5 +30,5 @@ endif()
 # Always run with the optimisation flags
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++20 -isystem -fPIC -fpermissive -lstdc++fs -O3 -ffast-math -Wall -march=native -mtune=native")
 
-pybind11_add_module(par_ea_kp src/par_ea_kp.cpp)
+pybind11_add_module(par_ea_kp src/par_ea_kp.cpp src/PseudoRandom.cpp src/RandomGenerator.cpp)
 target_link_libraries(par_ea_kp PUBLIC OpenMP::OpenMP_CXX)

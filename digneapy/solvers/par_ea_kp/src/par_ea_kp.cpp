@@ -19,21 +19,25 @@
 #include <algorithm>
 #include <cstdlib>
 #include <ctime>
-#include <experimental/random>
 #include <iostream>
 #include <iterator>
+#include <tuple>
 #include <vector>
 
+#include "PseudoRandom.h"
 #include "pybind11/numpy.h"
 namespace py = pybind11;
 using namespace std;
 
+/**
+ * @brief Individual structure for a solution of the KP
+ *
+ */
 struct Individual {
     float fitness;
     float constraint;
-    vector<int> x;
+    vector<char> x;
 };
-
 float evaluateConstraints(Individual &solution, const vector<int> &weights,
                           const int capacity) {
     int packed = 0.0;
@@ -47,8 +51,8 @@ float evaluateConstraints(Individual &solution, const vector<int> &weights,
     if (penalty < 0) {
         penalty = 0;
     }
-    solution.constraint = penalty;
-    return float(penalty);
+    solution.constraint = (float)penalty;
+    return (float)penalty;
 }
 
 double evaluateKnapsack(Individual &solution, const vector<int> &weights,
@@ -64,16 +68,29 @@ double evaluateKnapsack(Individual &solution, const vector<int> &weights,
     return fitness;
 }
 
+Individual createKPSolution(const int n) {
+    Individual solution{0.0, 0.0, {}};
+    vector<char> vars(n, false);
+    for (int i = 0; i < n; i++) {
+        if (PseudoRandom::randDouble() > 0.5) {
+            vars[i] = true;
+        }
+    }
+    solution.x = vars;
+    return solution;
+}
+
 class ParallelGeneticAlgorithm {
    public:
-    ParallelGeneticAlgorithm(int populationSize, int maxEvaluations,
+    ParallelGeneticAlgorithm(int populationSize, int generations,
                              double mutationRate, double crossRate,
                              int numberOfCores);
 
     virtual ~ParallelGeneticAlgorithm() = default;
 
-    double run(const int &n, const vector<int> &weights,
-               const vector<int> &profits, const int capacity);
+    std::tuple<vector<int>, float> run(const int &n, const vector<int> &weights,
+                                       const vector<int> &profits,
+                                       const int capacity);
 
    protected:
     void createInitialPopulation(const int &n, const vector<int> &weights,
@@ -84,7 +101,7 @@ class ParallelGeneticAlgorithm {
 
    protected:
     int populationSize;
-    int maxEvals;
+    int generations;
     double mutationRate;
     double crossRate;
     int numberOfCores; /*!< Number of cores to run in parallel */
@@ -93,19 +110,18 @@ class ParallelGeneticAlgorithm {
 };
 
 ParallelGeneticAlgorithm::ParallelGeneticAlgorithm(int populationSize,
-                                                   int maxEvaluations,
+                                                   int generations,
                                                    double mutationRate,
                                                    double crossRate,
                                                    int numberOfCores)
     : populationSize(populationSize),
-      maxEvals(maxEvaluations),
+      generations(generations),
       mutationRate(mutationRate),
       crossRate(crossRate),
       numberOfCores(numberOfCores) {
     this->individuals.resize(this->populationSize, {0.0, 0.0, {}});
     this->chunks = this->populationSize / this->numberOfCores;
     omp_set_num_threads(this->numberOfCores);
-    std::srand(std::time(nullptr));
 }
 
 void ParallelGeneticAlgorithm::createInitialPopulation(
@@ -115,25 +131,18 @@ void ParallelGeneticAlgorithm::createInitialPopulation(
     this->individuals.resize(popDim);
 #pragma omp parallel for num_threads(numberOfCores)
     for (int i = 0; i < popDim; i++) {
-        vector<int> x(n, 0);
-        for (int j = 0; j < n; j++) {
-            x.push_back(std::experimental::randint(0, 1));
-        }
-        this->individuals[i] = {0.0, 0.0, x};
+        this->individuals[i] = createKPSolution(n);
         evaluateKnapsack(individuals[i], weights, profits, capacity);
     }
 }
 
-double ParallelGeneticAlgorithm::run(const int &n, const vector<int> &weights,
-                                     const vector<int> &profits,
-                                     const int capacity) {
-    int performedEvaluations = 0;
+std::tuple<vector<int>, float> ParallelGeneticAlgorithm::run(
+    const int &n, const vector<int> &weights, const vector<int> &profits,
+    const int capacity) {
     createInitialPopulation(n, weights, profits, capacity);
     const float eps = 1e-9;
-    const int GENERATIONS = this->maxEvals / this->populationSize;
-    int performedGenerations = 0;
     const int popDim = this->populationSize - 1;
-    do {
+    for (int g = 0; g < this->generations; g++) {
         vector<Individual> offspring(this->populationSize);
 #pragma omp parallel for schedule(dynamic)
         for (int i = 0; i < this->populationSize; i++) {
@@ -141,10 +150,10 @@ double ParallelGeneticAlgorithm::run(const int &n, const vector<int> &weights,
             // Splits thepopulation in chunks to perform the selection
             // int init = omp_get_thread_num() * chunks;
             // int end = init + (chunks - 1);
-            int idx1 = min(std::experimental::randint(0, popDim),
-                           std::experimental::randint(0, popDim));
-            int idx2 = min(std::experimental::randint(0, popDim),
-                           std::experimental::randint(0, popDim));
+            int idx1 = min(PseudoRandom::randInt(0, popDim),
+                           PseudoRandom::randInt(0, popDim));
+            int idx2 = min(PseudoRandom::randInt(0, popDim),
+                           PseudoRandom::randInt(0, popDim));
             Individual child1 = individuals[idx1];
             Individual child2 = individuals[idx2];
             this->reproduction(child1, child2);
@@ -175,23 +184,41 @@ double ParallelGeneticAlgorithm::run(const int &n, const vector<int> &weights,
         for (int i = 0; i < this->populationSize; i++) {
             this->individuals[i] = offspring[i];
         }
-        // Updating the performed evaluations
-        performedGenerations++;
-    } while (performedGenerations < GENERATIONS);
+    }
+    vector<Individual> filteredPopulation;
+    std::copy_if(this->individuals.begin(), this->individuals.end(),
+                 std::back_inserter(filteredPopulation),
+                 [](const Individual &individual) {
+                     return individual.constraint == 0.0;
+                 });
+
+    auto comparison = [&](Individual &firstInd, Individual &secondInd) -> bool {
+        return firstInd.fitness > secondInd.fitness;
+    };
+    std::sort(filteredPopulation.begin(), filteredPopulation.end(), comparison);
+    if (!filteredPopulation.empty()) {
+        std::vector<int> chromosome;
+        chromosome.reserve(filteredPopulation[0].x.size());
+
+        std::transform(
+            filteredPopulation[0].x.begin(), filteredPopulation[0].x.end(),
+            std::back_inserter(chromosome), [](char c) { return (int)c; });
+
+        return std::make_tuple(chromosome, filteredPopulation[0].fitness);
+    } else {
+        return std::make_tuple(vector<int>(), -1.0);
+    }
 }
 
 void ParallelGeneticAlgorithm::reproduction(Individual &child1,
                                             Individual &child2) {
-    std::random_device rd;
-    std::mt19937 gen(rd());
-    std::uniform_real_distribution<> dis(0.0, 1.0);
-    if (dis(gen) < this->crossRate) {
+    if (PseudoRandom::randDouble() < this->crossRate) {
         // Usamos C++17 para no declarar el tipo del vector que obtenemos
-        vector<int> secondIndVars = child2.x;
-        vector<int> firstIndVars = child1.x;
+        vector<char> secondIndVars = child2.x;
+        vector<char> firstIndVars = child1.x;
 
         for (int i = 0; i < firstIndVars.size(); i++) {
-            if (dis(gen) < 0.5) {
+            if (PseudoRandom::randDouble() < 0.5) {
                 auto tmpVariable = secondIndVars[i];
                 auto copyVar = firstIndVars[i];
                 secondIndVars[i] = copyVar;
@@ -201,10 +228,9 @@ void ParallelGeneticAlgorithm::reproduction(Individual &child1,
         child1.x = firstIndVars;
         child2.x = secondIndVars;
     }
-    // this->mutation->run(child1, this->mutationRate, problem.get());
-    if (dis(gen) < this->mutationRate) {
-        int varIndex = std::experimental::randint(0, int(child1.x.size() - 1));
-        int varNewValue = std::experimental::randint(0, 1);
+    if (PseudoRandom::randDouble() < this->mutationRate) {
+        int varIndex = PseudoRandom::randInt(0, int(child1.x.size() - 1));
+        char varNewValue = PseudoRandom::randInt(0, 1);
         child1.x[varIndex] = varNewValue;
     }
 }
@@ -215,6 +241,10 @@ PYBIND11_MODULE(par_ea_kp, m) {
           "Returns max number of threads");
     m.def("set_num_threads", &omp_set_num_threads, "Set number of threads");
     py::class_<ParallelGeneticAlgorithm>(m, "ParEAKP")
-        .def(py::init<int, int, double, double, int>())
-        .def("run", &ParallelGeneticAlgorithm::run);
+        .def(py::init<int, int, double, double, int>(),
+             py::arg("populationSize"), py::arg("generations"),
+             py::arg("mutationRate"), py::arg("crossRate"),
+             py::arg("numberOfCores"))
+        .def("run", &ParallelGeneticAlgorithm::run, py::arg("n"),
+             py::arg("weights"), py::arg("profits"), py::arg("capacity"));
 }

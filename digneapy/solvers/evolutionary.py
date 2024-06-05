@@ -16,7 +16,8 @@ import numpy as np
 from deap import creator, base, tools, algorithms
 from digneapy.solvers import DIRECTIONS, MINIMISE, MAXIMISE
 import multiprocessing
-
+import par_ea_kp
+from digneapy.domains.knapsack import Knapsack
 
 def gen_dignea_ind(icls, size: int, min_value, max_value):
     """Auxiliar function to generate individual based on
@@ -145,3 +146,20 @@ class EA(Solver):
             fitness=self._hof[0].fitness.values[0],
         )
         return [self._best_found]
+
+class ParEAKP(par_ea_kp.ParEAKP):
+    def __init__(self, pop_size: int = 32, generations: int = 1000, mutpb: float = 0.2, cxpb: float = 0.7, cores: int = 1):
+        super().__init__(pop_size, generations, mutpb, cxpb, cores)
+        self._pop_size = pop_size
+        self._generations = generations
+        self._mutpb = mutpb
+        self._cxpb = cxpb
+        self._n_cores = cores
+        self.__name__ = f"ParEAKP_PS_{self._pop_size}_CXPB_{self._cxpb}_MUTPB_{self._mutpb}"
+
+    def __call__(self, kp: Knapsack = None):
+        if kp is None:
+            msg = "Knapsack Problem is None in ParEAKP.__call__()"
+            raise AttributeError(msg)
+        x, fitness = self.run(len(kp), kp.weights, kp.profits, kp.capacity)
+        return [Solution(chromosome=x, objectives=(fitness,), fitness=fitness)]

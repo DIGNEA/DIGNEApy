@@ -201,3 +201,17 @@ def test_ea_raises_direction(default_instance):
             generations=generations,
             pop_size=pop_size,
         )
+
+
+# Do not test Parallel EA --> Takes to much time on most computers
+# def test_parallel_cpp_ea(default_instance):
+#     max_cores = min(2, os.cpu_count() + 1)
+#     solver = ParEAKP(cores=max_cores, generations=100)
+#     solutions = solver(default_instance)
+#     assert len(solutions) == 1
+#     assert all(type(i) == Solution for i in solutions)
+#     assert solutions[0].fitness <= 50.0
+#     assert len(solutions[0]) == len(default_instance)
+#     assert len(solver._pop_size) == 32
+#     assert len(solver._generations) == 1000
+#     assert solver.__name__ == "ParEAKP_PS_32_CXPB_0.7_MUTPB_0.2"

@@ -10,7 +10,8 @@
 @Desc    :   None
 """
 
-from typing import List
+from collections.abc import Sequence
+from typing import Callable
 from sklearn.preprocessing import StandardScaler
 import tensorflow as tf
 import keras
@@ -44,7 +45,7 @@ class KPAE(Transformer):
     _8D_ENC = "8D_encoding/best_kp_ae_bayesian_8D_lr_one_cycle_training_encoder.keras"
     _8D_DEC = "8D_encoding/best_kp_ae_bayesian_8D_lr_one_cycle_training_decoder.keras"
 
-    def __init__(self, name: str = "KP_AE", encoding: str = None):
+    def __init__(self, name: str = "KP_AE", encoding: str = "Best"):
         super().__init__(name)
 
         if encoding not in ENCODINGS:
@@ -73,7 +74,7 @@ class KPAE(Transformer):
         self._encoder = keras.models.load_model(f"{model_path}/{self.enc_path}")
         self._decoder = keras.models.load_model(f"{model_path}/{self.dec_path}")
 
-    def _preprocess(self, X: List[float]):
+    def _preprocess(self, X: Sequence[float]) -> Sequence[float]:
         # Scale and pad the instances before using AE
         # We pad the data to maximum allowed length
         X_padded = pad_sequences(
@@ -82,14 +83,14 @@ class KPAE(Transformer):
         X_padded = self._scaler.transform(X_padded)
         return X_padded
 
-    def encode(self, X: List[float]):
+    def encode(self, X: Sequence[float]) -> Sequence[float]:
         # Gets an array of instances
         # Scale and pad the instances
         # Encode them
         X_padded = self._preprocess(X)
         return self._encoder.predict(X_padded, verbose=0)
 
-    def decode(self, X: List[float]):
+    def decode(self, X: Sequence[float]) -> Sequence[float]:
         # Gets an array of encoded instances
         # Decode them
         # Use scaler.inverse_transform() to get the instance back
@@ -97,5 +98,5 @@ class KPAE(Transformer):
         X_decoded = self._scaler.inverse_transform(X_decoded)
         return X_decoded
 
-    def __call__(self, X: List[float]):
+    def __call__(self, X: Sequence[float]) -> Sequence[float]:
         return self.encode(X)

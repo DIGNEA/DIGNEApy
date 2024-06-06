@@ -13,9 +13,11 @@
 from ..core import Instance, Solution
 import numpy as np
 import copy
-from typing import Callable, List, Tuple
+from typing import Callable, Union
 
-Crossover = Callable[[Instance | Solution, Instance | Solution], Instance | Solution]
+Crossover = Callable[
+    [Union[Instance | Solution], Union[Instance | Solution]], Union[Instance | Solution]
+]
 
 
 def one_point_crossover(

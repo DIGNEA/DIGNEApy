@@ -9,10 +9,11 @@
 @License :   (C)Copyright 2023, Alejandro Marrero
 @Desc    :   None
 """
+from collections.abc import Sequence
 from .novelty_search import NoveltySearch
 from .core import Instance, Domain, Solver
 from .operators import crossover, mutation, selection, replacement
-from typing import List, Tuple, Iterable, Callable
+from typing import List, Iterable, Callable, Optional
 from operator import attrgetter
 import numpy as np
 import copy
@@ -23,10 +24,10 @@ from matplotlib.lines import Line2D
 import seaborn as sns
 import pandas as pd
 
-PerformanceFn = Callable[[Iterable[float]], float]
+PerformanceFn = Callable[[Sequence[float]], float]
 
 
-def _default_performance_metric(scores: Iterable[float]) -> float:
+def _default_performance_metric(scores: Sequence[float]) -> float:
     """Default performace metric for the instances.
     It tries to maximise the gap between the target solver
     and the other solvers in the portfolio.
@@ -41,7 +42,7 @@ def _default_performance_metric(scores: Iterable[float]) -> float:
     return scores[0] - max(scores[1:])
 
 
-def pisinger_performance_metric(scores: Iterable[float]) -> float:
+def pisinger_performance_metric(scores: Sequence[float]) -> float:
     """Pisinger Solvers performace metric for the instances.
     It tries to maximise the gap between the runing time of the target solver
     and the other solvers in the portfolio.
@@ -56,7 +57,7 @@ def pisinger_performance_metric(scores: Iterable[float]) -> float:
     return min(scores[1:]) - scores[0]
 
 
-def plot_generator_logbook(logbook=None, filename: str = None):
+def plot_generator_logbook(logbook=None, filename: Optional[str] = ""):
     df = pd.DataFrame(logbook.chapters["s"].select("avg"), columns=[r"$s$"])
     df[r"$p$"] = logbook.chapters["p"].select("avg")
     df["Generations"] = logbook.select("gen")
@@ -110,15 +111,15 @@ def plot_generator_logbook(logbook=None, filename: str = None):
 class EIG(NoveltySearch):
     def __init__(
         self,
+        domain: Domain,
+        portfolio: Sequence[Solver],
         pop_size: int = 100,
         generations: int = 1000,
         t_a: float = 0.001,
         t_ss: float = 0.001,
         k: int = 15,
         descriptor: str = "features",
-        transformer: Callable = None,
-        domain: Domain = None,
-        portfolio: Tuple[Solver] = None,
+        transformer: Optional[Callable[[Sequence], Sequence]] = None,
         repetitions: int = 1,
         cxrate: float = 0.5,
         mutrate: float = 0.8,
@@ -155,7 +156,7 @@ class EIG(NoveltySearch):
         self.generations = generations
         self.domain = domain
         self.portfolio = tuple(portfolio) if portfolio else ()
-        self.population = []
+        self.population: List[Instance] = []
         self.repetitions = repetitions
         self.cxrate = cxrate
         self.mutrate = mutrate
@@ -230,7 +231,7 @@ class EIG(NoveltySearch):
             individual.portfolio_scores = list(solvers_scores)
             individual.p = self.performance_function(avg_p_solver)
 
-    def _compute_fitness(self, population: Iterable[Instance] = None):
+    def _compute_fitness(self, population: Iterable[Instance]):
         """Calculates the fitness of each instance in the population
 
         Args:

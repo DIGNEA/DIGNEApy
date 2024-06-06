@@ -10,7 +10,7 @@
 @Desc    :   None
 """
 
-
+from collections.abc import Sequence
 from deap import algorithms, base, cma, creator, tools
 from multiprocessing.pool import ThreadPool as Pool
 from digneapy.transformers import Transformer
@@ -23,14 +23,14 @@ class MetaEA:
 
     def __init__(
         self,
-        dimension: int = 0,
-        centroid: list = None,
+        transformer: Transformer | Callable[[Sequence], Sequence],
+        eval_fn: Callable,
+        dimension: int,
+        centroid: Sequence[float],
         sigma: float = 1.0,
         lambda_: int = 50,
         generations: int = 250,
         direction: str = MAXIMISE,
-        transformer: Transformer | Callable[[Iterable], Iterable] = None,
-        eval_fn: Callable = None,
         n_jobs: int = 1,
     ):
         if transformer is None or not issubclass(transformer.__class__, Transformer):

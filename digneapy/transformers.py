@@ -10,7 +10,8 @@
 @Desc    :   None
 """
 
-from typing import List, Tuple
+from collections.abc import Sequence
+from typing import Tuple, Optional
 import numpy as np
 import torch
 from sklearn.preprocessing import StandardScaler
@@ -22,17 +23,17 @@ class Transformer:
     def __init__(self, name: str):
         self._name = name
 
-    def train(self, X: List[float]):
-        raise NotImplemented("train method not implemented in Transformer")
+    def train(self, X: Sequence[float]):
+        raise NotImplementedError("train method not implemented in Transformer")
 
-    def predict(self, X: List[float]):
-        raise NotImplemented("predict method not implemented in Transformer")
+    def predict(self, X: Sequence[float]):
+        raise NotImplementedError("predict method not implemented in Transformer")
 
-    def __call__(self, X: List[float]):
-        raise NotImplemented("__call__ method not implemented in Transformer")
+    def __call__(self, X: Sequence[float]):
+        raise NotImplementedError("__call__ method not implemented in Transformer")
 
     def save(self):
-        raise NotImplemented("save method not implemented in Transformer")
+        raise NotImplementedError("save method not implemented in Transformer")
 
 
 class TorchNN(Transformer, torch.nn.Module):
@@ -76,14 +77,14 @@ class TorchNN(Transformer, torch.nn.Module):
     def __repr__(self):
         return self.__str__()
 
-    def save(self, filename: str = None):
+    def save(self, filename: Optional[str] = None):
         name = filename if filename is not None else self._name
         torch.save(self._model.state_dict(), name)
 
     def train(self):
         pass
 
-    def update_weights(self, parameters: List[float]):
+    def update_weights(self, parameters: Sequence[float]):
         expected = sum(p.numel() for p in self._model.parameters() if p.requires_grad)
         if len(parameters) != expected:
             msg = f"Error in the amount of weights in NN.update_weigths. Expected {expected} and got {len(parameters)}"
@@ -111,7 +112,7 @@ class TorchNN(Transformer, torch.nn.Module):
 
         return True
 
-    def predict(self, X: List):
+    def predict(self, X: Sequence):
         return self.forward(X)
 
     def forward(self, X):
@@ -119,10 +120,10 @@ class TorchNN(Transformer, torch.nn.Module):
         It works as a predict method in Keras
 
         Args:
-            X (List): List of instances to evaluate and predict their descriptor
+            X (Sequence): Sequence of instances to evaluate and predict their descriptor
 
         Raises:
-            RuntimeError: If List is empty
+            RuntimeError: If Sequence is empty
 
         Returns:
             Numpy.ndarray: Descriptor of the instances
@@ -192,7 +193,7 @@ class KerasNN(Transformer):
     def __repr__(self):
         return self.__str__()
 
-    def save(self, filename: str = None):
+    def save(self, filename: Optional[str] = None):
         if filename is not None:
             self._model.save(filename)
         else:
@@ -201,7 +202,7 @@ class KerasNN(Transformer):
     def train(self):
         pass
 
-    def update_weights(self, weights: List[float]):
+    def update_weights(self, weights: Sequence[float]):
         expected = np.sum([np.prod(v.shape) for v in self._model.trainable_variables])
         if len(weights) != expected:
             msg = f"Error in the amount of weights in NN.update_weigths. Expected {expected} and got {len(weights)}"
@@ -217,7 +218,7 @@ class KerasNN(Transformer):
         self._model.set_weights(reshaped_weights)
         return True
 
-    def predict(self, X: List):
+    def predict(self, X: Sequence):
         if len(X) == 0:
             msg = "X cannot be None in KerasNN predict"
             raise RuntimeError(msg)
@@ -225,5 +226,5 @@ class KerasNN(Transformer):
             X = self._scaler.fit_transform(X)
         return self._model.predict(X, verbose=0)
 
-    def __call__(self, X: List):
+    def __call__(self, X: Sequence):
         return self.predict(X)

@@ -10,20 +10,20 @@
 @Desc    :   None
 """
 
-
+from collections.abc import Sequence
 import reprlib
 import operator
 from functools import reduce
-from typing import Iterable, Tuple, Callable, List, Mapping
+from typing import Iterable, Tuple, Callable, Optional, Mapping
 import copy
 
 
 class Solution:
     def __init__(
         self,
-        chromosome: List = None,
-        objectives: Tuple[float] = None,
-        constraints: Tuple[float] = None,
+        chromosome: Optional[Sequence] = None,
+        objectives: Optional[Tuple[float]] = None,
+        constraints: Optional[Tuple[float]] = None,
         fitness: float = 0.0,
     ):
         if chromosome is not None:
@@ -99,13 +99,13 @@ class OptProblem:
 
 """Solver is any callable type that receives a OptProblem 
 as its argument and returns a tuple with the solution found"""
-Solver = Callable[[OptProblem], List[Solution]]
+Solver = Callable[..., Sequence[Solution]]
 
 
 class Instance:
     def __init__(
         self,
-        variables: list = None,
+        variables: Optional[Sequence] = None,
         fitness: float = 0.0,
         p: float = 0.0,
         s: float = 0.0,
@@ -263,7 +263,7 @@ class Domain:
         self,
         name: str = "Domain",
         dimension: int = 0,
-        bounds: Iterable[Tuple] = None,
+        bounds: Optional[Iterable[Tuple]] = None,
         *args,
         **kwargs,
     ):

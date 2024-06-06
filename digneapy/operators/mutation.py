@@ -10,17 +10,19 @@
 @Desc    :   None
 """
 
-from typing import List, Tuple
+from collections.abc import Sequence
 from ..core import Instance, Solution
 import numpy as np
 import copy
-from typing import Callable, List, Tuple
+from typing import Callable, Tuple, Union
 
-Mutation = Callable[[Instance | Solution, List[Tuple]], Instance | Solution]
+Mutation = Callable[
+    [Union[Instance | Solution], Sequence[Tuple]], Union[Instance | Solution]
+]
 
 
 def uniform_one_mutation(
-    ind: Instance | Solution, bounds: List[Tuple]
+    ind: Instance | Solution, bounds: Sequence[Tuple]
 ) -> Instance | Solution:
     if len(ind) != len(bounds):
         msg = "The size of individual and bounds is different in uniform_one_mutation"

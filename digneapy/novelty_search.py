@@ -10,15 +10,16 @@
 @Desc    :   None
 """
 
+from collections.abc import Sequence
 import numpy as np
-from collections.abc import Iterable
+from collections.abc import Sequence
 import reprlib
 import operator
 import itertools
 from functools import reduce
 from .core import Instance
 from sklearn.neighbors import NearestNeighbors
-from typing import List, Callable
+from typing import Callable, Optional
 
 
 class Archive:
@@ -28,11 +29,11 @@ class Archive:
 
     _typecode = "d"
 
-    def __init__(self, instances: Iterable[Instance] = None):
+    def __init__(self, instances: Optional[Sequence[Instance]] = None):
         """_summary_
 
         Args:
-            instances (list[Instance], optional): Instances to initialise the archive. Defaults to None.
+            instances (Sequence[Instance], optional): Instances to initialise the archive. Defaults to None.
         """
         if instances:
             # self._instances = list(array(self.typecode, d) for d in instances)
@@ -118,7 +119,7 @@ class Archive:
             msg = f"Only objects of type {Instance.__class__.__name__} can be inserted into an archive"
             raise AttributeError(msg)
 
-    def extend(self, iterable: Iterable[Instance]) -> None:
+    def extend(self, iterable: Sequence[Instance]):
         for i in iterable:
             if isinstance(i, Instance):
                 self.instances.append(i)
@@ -130,39 +131,39 @@ class Archive:
         return outer_fmt.format(", ".join(components))
 
 
-def _features_descriptor_strategy(iterable) -> List[float]:
+def _features_descriptor_strategy(iterable) -> Sequence[float]:
     """It generates the feature descriptor of an instance
 
     Args:
-        iterable (List[Instance]): Instances to describe
+        iterable (Sequence[Instance]): Instances to describe
 
     Returns:
-        List[float]: List of the feature descriptors of each instance
+        Sequence[float]: Sequence of the feature descriptors of each instance
     """
     return [i.features for i in iterable]
 
 
-def _performance_descriptor_strategy(iterable) -> List[float]:
+def _performance_descriptor_strategy(iterable) -> Sequence[float]:
     """It generates the performance descriptor of an instance
     based on the scores of the solvers in the portfolio over such instance
 
     Args:
-        iterable (List[Instance]): Instances to describe
+        iterable (Sequence[Instance]): Instances to describe
 
     Returns:
-        List[float]: List of performance descriptors of each instance
+        Sequence[float]: Sequence of performance descriptors of each instance
     """
     return [np.mean(i.portfolio_scores, axis=0) for i in iterable]
 
 
-def _instance_descriptor_strategy(iterable) -> List[float]:
+def _instance_descriptor_strategy(iterable) -> Sequence[float]:
     """It returns the instance information as its descriptor
 
     Args:
-        iterable (List[Instance]): Instances to describe
+        iterable (Sequence[Instance]): Instances to describe
 
     Returns:
-        List[float]: List of descriptor instance
+        Sequence[float]: Sequence of descriptor instance
     """
     return [*iterable]
 
@@ -184,7 +185,7 @@ class NoveltySearch:
         t_ss: float = 0.001,
         k: int = 15,
         descriptor="features",
-        transformer: Callable = None,
+        transformer: Optional[Callable[[Sequence], Sequence]] = None,
     ):
         """_summary_
 
@@ -237,13 +238,13 @@ class NoveltySearch:
         return f"NS<desciptor={self._describe_by},t_a={self._t_a},t_ss={self._t_ss},k={self._k},len(a)={len(self._archive)},len(ss)={len(self._solution_set)}>"
 
     def _combined_archive_and_population(
-        self, current_pop: Archive, instances: List[Instance]
+        self, current_pop: Archive, instances: Sequence[Instance]
     ) -> np.ndarray[float]:
         """Combines the archive and the given population before computing the sparseness
 
         Args:
             current_pop (Archive): Current archive of solution.
-            instances (List[Instance]): List of instances to evaluate.
+            instances (Sequence[Instance]): Sequence of instances to evaluate.
 
         Returns:
             np.ndarray[float]: Returns an ndarray of descriptors.
@@ -252,20 +253,20 @@ class NoveltySearch:
         return np.vstack([components])
 
     def __compute_sparseness(
-        self, instances: List[Instance], current_archive: Archive, neighbours: int
-    ) -> List[float]:
+        self, instances: Sequence[Instance], current_archive: Archive, neighbours: int
+    ) -> Sequence[float]:
         """This method does the calculation of sparseness either for the archive or the solution set.
         It gets called by 'sparssenes' and 'sparseness_solution_set'. Note that this method update the `s`
         attribute of each instances with the result of the computation. It also returns a list with all the
         values for further used if necessary.
 
         Args:
-            instances (List[Instance]): Instances to evaluate.
+            instances (Sequence[Instance]): Instances to evaluate.
             current_archive (Archive): Current archive/solutio set of instances.
             neighbours (int): Number of neighbours to calculate the KNN (K + 1 or 2). Always have to add 1.
 
         Returns:
-            List[float]: Sparseness values of each instance.
+            Sequence[float]: Sparseness values of each instance.
         """
         # We need to concatentate the archive to the given descriptors
         # and to set k+1 because it predicts n[0] == self descriptor
@@ -293,13 +294,13 @@ class NoveltySearch:
 
     def sparseness(
         self,
-        instances: List[Instance],
-    ) -> List[float]:
+        instances: Sequence[Instance],
+    ) -> Sequence[float]:
         """Calculates the sparseness of the given instances against the individuals
         in the Archive.
 
         Args:
-            instances (List[Instance]): Instances to calculate their sparseness
+            instances (Sequence[Instance]): Instances to calculate their sparseness
             verbose (bool, optional): Flag to show the progress. Defaults to False.
 
         Raises:
@@ -307,7 +308,7 @@ class NoveltySearch:
             AttributeError: If NoveltySearch.k >= len(instances)
 
         Returns:
-            List[float]: List of sparseness values, one for each instance
+            Sequence[float]: Sequence of sparseness values, one for each instance
         """
         if len(instances) == 0 or any(len(d) == 0 for d in instances):
             msg = f"{self.__class__.__name__} trying to calculate sparseness on an empty Instance list"
@@ -321,19 +322,19 @@ class NoveltySearch:
             instances, self.archive, neighbours=self._k + 1
         )
 
-    def sparseness_solution_set(self, instances: List[Instance]) -> List[float]:
+    def sparseness_solution_set(self, instances: Sequence[Instance]) -> Sequence[float]:
         """Calculates the sparseness of the given instances against the individuals
         in the Solution Set.
 
         Args:
-            instances (List[Instance]): Instances to calculate their sparseness
+            instances (Sequence[Instance]): Instances to calculate their sparseness
 
         Raises:
             AttributeError: If len(d) where d is the descriptor of each instance i differs from another
             AttributeError: If 2 >= len(instances)
 
         Returns:
-            List[float]: List of sparseness values, one for each instance
+            Sequence[float]: Sequence of sparseness values, one for each instance
         """
 
         if len(instances) == 0 or any(len(d) == 0 for d in instances):
@@ -346,13 +347,13 @@ class NoveltySearch:
 
         return self.__compute_sparseness(instances, self.solution_set, neighbours=2)
 
-    def _update_archive(self, instances: List[Instance]):
+    def _update_archive(self, instances: Sequence[Instance]):
         """Updates the Novelty Search Archive with all the instances that has a 's' greater than t_a"""
         if not instances:
             return
         self._archive.extend(filter(lambda x: x.s >= self.t_a, instances))
 
-    def _update_solution_set(self, instances: List[Instance]):
+    def _update_solution_set(self, instances: Sequence[Instance]):
         """Updates the Novelty Search Solution Set with all the instances that has a 's' greater than t_ss"""
         if not instances:
             return

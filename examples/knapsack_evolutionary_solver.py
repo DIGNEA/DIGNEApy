@@ -10,7 +10,7 @@
 @Desc    :   None
 """
 
-from digneapy.solvers.evolutionary import ea_mu_comma_lambda
+from digneapy.solvers.evolutionary import EA, MAXIMISE
 import numpy as np
 from digneapy.domains import knapsack
 
@@ -22,18 +22,16 @@ def main():
     q = np.random.randint(0, high=250)
     kp = knapsack.Knapsack(profits=p, weights=w, capacity=q)
     print(f"Instance to solve: {kp}")
-    solutions = ea_mu_comma_lambda(
-        "maximise",
-        N,
-        0,
-        1,
-        problem=kp,
+    solver = EA(
+        dir=MAXIMISE,
+        dim=N,
         pop_size=32,
-        lambd=128,
         cxpb=0.8,
         mutpb=(1.0 / 100.0),
         generations=1000,
     )
+    solutions = solver(kp)
+    print(solutions)
 
 
 if __name__ == "__main__":

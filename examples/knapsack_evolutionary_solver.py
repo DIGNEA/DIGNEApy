@@ -23,17 +23,16 @@ def main():
     kp = knapsack.Knapsack(profits=p, weights=w, capacity=q)
     print(f"Instance to solve: {kp}")
     solver = EA(
-                dir=MAXIMISE,
-                dim=N,
-                min_g=0,
-                max_g=1,
-                generations=3125,
-                pop_size=32,
-                cxpb=0.7,
-                mutpb=(1.0 / N),
-            )
-    best = solver(kp)
-    print(f'The best solution found was {best}')
+        dir=MAXIMISE,
+        dim=N,
+        pop_size=32,
+        cxpb=0.8,
+        mutpb=(1.0 / 100.0),
+        generations=1000,
+    )
+    solutions = solver(kp)
+    print(solutions)
+
 
 if __name__ == "__main__":
     main()

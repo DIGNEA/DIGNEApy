@@ -10,18 +10,18 @@
 @Desc    :   None
 """
 
-from collections.abc import Sequence
+from collections.abc import Sequence, Iterable
 import reprlib
 import operator
 from functools import reduce
-from typing import Iterable, Tuple, Callable, Optional, Mapping
+from typing import Tuple, Callable, Optional, Mapping, Union
 import copy
 
 
 class Solution:
     def __init__(
         self,
-        chromosome: Optional[Sequence] = None,
+        chromosome: Optional[Union[Sequence | Iterable]] = None,
         objectives: Optional[Tuple[float]] = None,
         constraints: Optional[Tuple[float]] = None,
         fitness: float = 0.0,
@@ -77,11 +77,11 @@ class OptProblem:
     def __init__(self, name: str = "DefaultOptProblem", *args, **kwargs):
         self._name = name
 
-    def evaluate(self, individual: Iterable) -> Tuple[float]:
+    def evaluate(self, individual: Sequence) -> Tuple[float]:
         """Evaluates the candidate individual with the information of the Knapsack
 
         Args:
-            individual (Iterable): Individual to evaluate
+            individual (Sequence): Individual to evaluate
 
         Raises:
             AttributeError: Raises an error if the len(individual) != len(instance) / 2
@@ -92,7 +92,7 @@ class OptProblem:
         msg = "evaluate method not implemented in OptProblem"
         raise NotImplementedError(msg)
 
-    def __call__(self, individual: Iterable) -> Tuple[float]:
+    def __call__(self, individual: Sequence) -> Tuple[float]:
         msg = "__call__ method not implemented in OptProblem"
         raise NotImplementedError(msg)
 
@@ -125,8 +125,8 @@ class Instance:
         self._fitness = fitness
         self._p = p
         self._s = s
-        self._portfolio_m = tuple()
-        self._features = tuple()
+        self._portfolio_m: Tuple = tuple()
+        self._features: Tuple = tuple()
 
     @property
     def p(self):
@@ -263,7 +263,7 @@ class Domain:
         self,
         name: str = "Domain",
         dimension: int = 0,
-        bounds: Optional[Iterable[Tuple]] = None,
+        bounds: Optional[Sequence[Tuple]] = None,
         *args,
         **kwargs,
     ):
@@ -280,14 +280,14 @@ class Domain:
         msg = "generate_instances is not implemented in Domain class."
         raise NotImplementedError(msg)
 
-    def extract_features(self, instance: Instance) -> Tuple[float]:
+    def extract_features(self, instance: Instance) -> Tuple:
         """Extract the features of the instance based on the domain
 
         Args:
             instance (Instance): Instance to extract the features from
 
         Returns:
-            Tuple[float]: Values of each feature
+            Tuple: Values of each feature
         """
         msg = "extract_features is not implemented in Domain class."
         raise NotImplementedError(msg)

@@ -111,6 +111,7 @@ def test_hyper_cmaes_raises():
     # Raises because we do not specify any transformer
     with pytest.raises(AttributeError):
         cma_es = MetaEA(
+            transformer=None,
             dimension=dimension,
             direction="maximise",
             generations=5,
@@ -124,6 +125,7 @@ def test_hyper_cmaes_raises():
             direction="maximise",
             generations=5,
             transformer=transformer,
+            eval_fn=None,
         )
 
     # Raises because we n_jobs < 1

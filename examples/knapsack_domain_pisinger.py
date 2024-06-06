@@ -32,8 +32,8 @@ def main():
     for i in range(len(portfolio) + 1):
         portfolio.rotate(i)
         eig = EIG(
-            population_size,
-            generations,
+            pop_size=population_size,
+            generations=generations,
             domain=kp_domain,
             portfolio=portfolio,
             t_a=t_a,

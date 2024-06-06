@@ -19,6 +19,7 @@ from digneapy.domains.knapsack import KPDomain
 from digneapy.operators.replacement import first_improve_replacement
 import numpy as np
 import pandas as pd
+from typing import Optional
 
 
 def save_best_nn_results(filename, best_nn):
@@ -76,7 +77,7 @@ class NSEval:
                     content = solver + "," + ",".join(str(f) for f in desc) + "\n"
                     file.write(content)
 
-    def __call__(self, transformer: TorchNN, filename: str = None):
+    def __call__(self, transformer: TorchNN, filename: Optional[str] = None):
         """This method runs the Novelty Search using a NN as a transformer
         for searching novelty. It generates KP instances for each of the solvers in
         the portfolio [Default, MaP, MiW, MPW] and calculates how many bins of the
@@ -93,8 +94,8 @@ class NSEval:
         for i in range(len(self.portfolio)):
             self.portfolio.rotate(i)  # This allow us to change the target on the fly
             eig = EIG(
-                10,
-                1000,
+                pop_size=10,
+                generations=1000,
                 domain=self.kp_domain,
                 portfolio=self.portfolio,
                 t_a=0.5,

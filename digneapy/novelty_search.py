@@ -10,9 +10,8 @@
 @Desc    :   None
 """
 
-from collections.abc import Sequence
+from collections.abc import Sequence, Iterable
 import numpy as np
-from collections.abc import Sequence
 import reprlib
 import operator
 import itertools
@@ -185,7 +184,9 @@ class NoveltySearch:
         t_ss: float = 0.001,
         k: int = 15,
         descriptor="features",
-        transformer: Optional[Callable[[Sequence], Sequence]] = None,
+        transformer: Optional[
+            Callable[[Sequence | Iterable], Sequence | Iterable]
+        ] = None,
     ):
         """_summary_
 

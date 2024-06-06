@@ -65,8 +65,8 @@ def generate_instances(dim: int = 50):
     for i in range(len(portfolio)):
         portfolio.rotate(i)  # This allow us to change the target on the fly
         eig = EIG(
-            10,
-            1000,
+            pop_size=10,
+            generations=1000,
             domain=kp_domain,
             portfolio=portfolio,
             t_a=1e-5,

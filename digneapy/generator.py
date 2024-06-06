@@ -24,10 +24,10 @@ from matplotlib.lines import Line2D
 import seaborn as sns
 import pandas as pd
 
-PerformanceFn = Callable[[Sequence[float]], float]
+PerformanceFn = Callable[[Sequence[float] | Iterable[float]], float]
 
 
-def _default_performance_metric(scores: Sequence[float]) -> float:
+def _default_performance_metric(scores: Sequence[float] | Iterable[float]) -> float:
     """Default performace metric for the instances.
     It tries to maximise the gap between the target solver
     and the other solvers in the portfolio.
@@ -42,7 +42,7 @@ def _default_performance_metric(scores: Sequence[float]) -> float:
     return scores[0] - max(scores[1:])
 
 
-def pisinger_performance_metric(scores: Sequence[float]) -> float:
+def pisinger_performance_metric(scores: Sequence[float] | Iterable[float]) -> float:
     """Pisinger Solvers performace metric for the instances.
     It tries to maximise the gap between the runing time of the target solver
     and the other solvers in the portfolio.
@@ -134,14 +134,14 @@ class EIG(NoveltySearch):
 
         Args:
             pop_size (int, optional): Number of instances in the population to evolve. Defaults to 100.
-            evaluations (int, optional): Number of total evaluations to perform. Defaults to 10000.
+            evaluations (int, optional): Number of total evaluations to perform. Defaults to 1000.
             t_a (float, optional): Archive threshold. Defaults to 0.001.
             t_ss (float, optional): Solution set threshold. Defaults to 0.001.
             k (int, optional): Number of neighbours to calculate the sparseness. Defaults to 15.
             descriptor (str, optional): Descriptor used to calculate the diversity. The options are features, performance or instance. Defaults to "features".
             transformer (callable, optional): Define a strategy to transform the high-dimensional descriptors to low-dimensional.Defaults to None.
-            domain (Domain, optional): Domain for which the instances are generated for. Defaults to None.
-            portfolio (Tuple[Solver], optional): Tuple of callable objects that can evaluate a instance. Defaults to None.
+            domain (Domain): Domain for which the instances are generated for.
+            portfolio (Tuple[Solver]): Tuple of callable objects that can evaluate a instance.
             repetitions (int, optional): Number times a solver in the portfolio must be run over the same instance. Defaults to 1.
             cxrate (float, optional): Crossover rate. Defaults to 0.5.
             mutrate (float, optional): Mutation rate. Defaults to 0.8.
@@ -257,7 +257,7 @@ class EIG(NoveltySearch):
         off = self.mutation(p_1, self.domain.bounds)
         return off
 
-    def _update_archive(self, instances: List[Instance]):
+    def _update_archive(self, instances: Sequence[Instance]):
         """Updates the Novelty Search Archive with all the instances that has a 's' greater than t_a and 'p' > 0"""
         if not instances:
             return
@@ -265,7 +265,7 @@ class EIG(NoveltySearch):
             filter(lambda x: x.s >= self.t_a and x.p >= 0.0, instances)
         )
 
-    def _update_solution_set(self, instances: List[Instance]):
+    def _update_solution_set(self, instances: Sequence[Instance]):
         """Updates the Novelty Search Solution set with all the instances that has a 's' greater than t_ss and 'p' > 0"""
         if not instances:
             return

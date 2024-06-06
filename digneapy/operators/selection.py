@@ -12,13 +12,14 @@
 from ..core import Instance, Solution
 import numpy as np
 import copy
-from typing import Callable, List, Tuple
+from typing import Callable
+from collections.abc import Sequence
 
-Selection = Callable[[List[Instance] | List[Solution]], Instance | Solution]
+Selection = Callable[[Sequence[Instance] | Sequence[Solution]], Instance | Solution]
 
 
 def binary_tournament_selection(
-    population: List[Instance] | List[Solution],
+    population: Sequence[Instance] | Sequence[Solution],
 ) -> Instance | Solution:
     """Binary Tournament Selection Operator
 

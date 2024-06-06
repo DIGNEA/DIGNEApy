@@ -13,16 +13,17 @@
 
 from ..core import OptProblem
 from digneapy.core import Instance, Domain
-from typing import Iterable, Tuple, Mapping
+from typing import Tuple, Mapping
 import numpy as np
 import itertools
+from collections.abc import Sequence
 
 
 class Knapsack(OptProblem):
     def __init__(
         self,
-        profits: Iterable[int],
-        weights: Iterable[int],
+        profits: Sequence[int],
+        weights: Sequence[int],
         capacity: int = 0,
         *args,
         **kwargs,
@@ -32,11 +33,11 @@ class Knapsack(OptProblem):
         self.profits = profits
         self.capacity = capacity
 
-    def evaluate(self, individual: Iterable) -> Tuple[float]:
+    def evaluate(self, individual: Sequence) -> Tuple[float]:
         """Evaluates the candidate individual with the information of the Knapsack
 
         Args:
-            individual (Iterable): Individual to evaluate
+            individual (Sequence): Individual to evaluate
 
         Raises:
             AttributeError: Raises an error if the len(individual) != len(profits or weights)
@@ -48,7 +49,7 @@ class Knapsack(OptProblem):
             msg = f"Mismatch between individual variables and instance variables in {self.__class__.__name__}"
             raise AttributeError(msg)
 
-        profit = 0
+        profit = 0.0
         packed = 0
 
         for i in range(len(individual)):
@@ -60,7 +61,7 @@ class Knapsack(OptProblem):
         profit -= penalty if penalty > 0.0 else 0.0
         return (profit,)
 
-    def __call__(self, individual: Iterable) -> Tuple[float]:
+    def __call__(self, individual: Sequence) -> Tuple[float]:
         return self.evaluate(individual)
 
     def __repr__(self):
@@ -87,7 +88,7 @@ class KPDomain(Domain):
         max_p: int = 1000,
         max_w: int = 1000,
         capacity_approach: str = "evolved",
-        max_capacity: int = 1e4,
+        max_capacity: int = int(1e4),
         capacity_ratio: float = 0.8,
     ):
         self.min_p = min_p
@@ -166,7 +167,7 @@ class KPDomain(Domain):
 
         return Instance(variables)
 
-    def extract_features(self, instance: Instance) -> Tuple[float]:
+    def extract_features(self, instance: Instance) -> Tuple:
         """Extract the features of the instance based on the domain
 
         Args:

@@ -176,10 +176,11 @@ def test_binary_selection_solutions_raises_empty():
 
 def test_binary_selection_one_ind(initialised_solutions):
     population = [initialised_solutions[0]]
+    expected = population[0]
     parent = selection.binary_tournament_selection(population)
-    assert type(parent) == type(population)
-    assert parent == population
-    assert id(parent) != id(population)
+    assert type(parent) == type(expected)
+    assert parent == expected
+    assert id(parent) != id(expected)
 
 
 @pytest.fixture

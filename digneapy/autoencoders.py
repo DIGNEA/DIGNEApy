@@ -11,7 +11,6 @@
 """
 
 from collections.abc import Sequence
-from typing import Callable
 from sklearn.preprocessing import StandardScaler
 import tensorflow as tf
 import keras

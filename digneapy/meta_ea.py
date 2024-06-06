@@ -14,7 +14,7 @@ from collections.abc import Sequence
 from deap import algorithms, base, cma, creator, tools
 from multiprocessing.pool import ThreadPool as Pool
 from digneapy.transformers import Transformer
-from typing import Callable, Iterable
+from typing import Callable, Optional
 import numpy as np
 from digneapy.solvers import DIRECTIONS, MAXIMISE
 
@@ -26,7 +26,7 @@ class MetaEA:
         transformer: Transformer | Callable[[Sequence], Sequence],
         eval_fn: Callable,
         dimension: int,
-        centroid: Sequence[float],
+        centroid: Optional[Sequence[float]] = None,
         sigma: float = 1.0,
         lambda_: int = 50,
         generations: int = 250,

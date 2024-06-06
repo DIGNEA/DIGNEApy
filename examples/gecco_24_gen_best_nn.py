@@ -78,8 +78,8 @@ class NSEval:
         for i in range(len(self.portfolio)):
             self.portfolio.rotate(i)  # This allow us to change the target on the fly
             eig = EIG(
-                10,
-                1000,
+                pop_size=10,
+                generations=1000,
                 domain=self.kp_domain,
                 portfolio=self.portfolio,
                 t_a=0.5,

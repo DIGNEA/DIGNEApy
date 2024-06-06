@@ -10,7 +10,7 @@
 @Desc    :   None
 """
 
-from typing import Callable, List
+from collections.abc import Sequence
 from digneapy.core import Solution, Solver, OptProblem
 import numpy as np
 from deap import creator, base, tools, algorithms
@@ -97,14 +97,16 @@ class EA(Solver):
         self._stats.register("max", np.max)
 
         self._logbook = None
-        self._best_found = None
+        self._best_found = Solution()
+
         self._name = f"EA_PS_{self._pop_size}_CXPB_{self._cxpb}_MUTPB_{self._mutpb}"
         self.__name__ = self._name
+
         if self._n_cores > 1:
             self._pool = multiprocessing.Pool(processes=self._n_cores)
             self._toolbox.register("map", self._pool.map)
 
-    def __call__(self, problem: OptProblem) -> List[Solution]:
+    def __call__(self, problem: OptProblem) -> Sequence[Solution]:
         """Call method of the EA solver. It runs the EA to solve the OptProblem given.
 
         Returns:
@@ -184,7 +186,7 @@ class ParEAKP(par_ea_kp.ParEAKP):
             f"ParEAKP_PS_{self._pop_size}_CXPB_{self._cxpb}_MUTPB_{self._mutpb}"
         )
 
-    def __call__(self, kp: Knapsack = None):
+    def __call__(self, kp: Knapsack):
         """Runs the algorithm to solve the KP problem
 
         Args:
@@ -194,7 +196,7 @@ class ParEAKP(par_ea_kp.ParEAKP):
             AttributeError: If no instance is given
 
         Returns:
-            List[Solution]: Best solution found by the algorithm
+            Sequence[Solution]: Best solution found by the algorithm
         """
         if kp is None:
             msg = "Knapsack Problem is None in ParEAKP.__call__()"

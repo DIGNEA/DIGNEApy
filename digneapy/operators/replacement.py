@@ -14,31 +14,34 @@ import numpy as np
 import copy
 import itertools
 from operator import attrgetter
-from typing import Callable, Union
+from typing import Callable
 from collections.abc import Sequence
 
 
 Replacement = Callable[
-    [Sequence[Union[Instance | Solution]], Sequence[Union[Instance | Solution]]],
-    Sequence[Union[Instance | Solution]],
+    [
+        Sequence[Instance] | Sequence[Solution],
+        Sequence[Instance] | Sequence[Solution],
+    ],
+    Sequence[Instance] | Sequence[Solution],
 ]
 
 
 def generational(
-    current_population: Sequence[Union[Instance | Solution]],
-    offspring: Sequence[Union[Instance | Solution]],
-) -> Sequence[Union[Instance | Solution]]:
+    current_population: Sequence[Instance] | Sequence[Solution],
+    offspring: Sequence[Instance] | Sequence[Solution],
+) -> Sequence[Instance] | Sequence[Solution]:
     """Returns the offspring population as the new current population
 
     Args:
-        current_population (Sequence[Union[Instance | Solution]]): Current population in the algorithm
-        offspring (Sequence[Union[Instance | Solution]]): Offspring population
+        current_population ( Sequence[Instance] | Sequence[Solution],): Current population in the algorithm
+        offspring ( Sequence[Instance] | Sequence[Solution],): Offspring population
 
     Raises:
         AttributeError: Raises if the sizes of the population are different
 
     Returns:
-        Sequence[Union[Instance | Solution]]: New population
+         Sequence[Instance] | Sequence[Solution]: New population
     """
     if len(current_population) != len(offspring):
         msg = f"The size of the current population ({len(current_population)}) != size of the offspring ({len(offspring)}) in generational replacement"
@@ -48,22 +51,22 @@ def generational(
 
 
 def first_improve_replacement(
-    current_population: Sequence[Union[Instance | Solution]],
-    offspring: Sequence[Union[Instance | Solution]],
-) -> Sequence[Union[Instance | Solution]]:
+    current_population: Sequence[Instance] | Sequence[Solution],
+    offspring: Sequence[Instance] | Sequence[Solution],
+) -> Sequence[Instance] | Sequence[Solution]:
     """Returns a new population produced by a greedy operator.
     Each individual in the current population is compared with its analogous in the offspring population
     and the best survives
 
     Args:
-        current_population (Sequence[Union[Instance | Solution]]): Current population in the algorithm
-        offspring (Sequence[Union[Instance | Solution]]): Offspring population
+        current_population ( Sequence[Instance] | Sequence[Solution],): Current population in the algorithm
+        offspring ( Sequence[Instance] | Sequence[Solution],): Offspring population
 
     Raises:
         AttributeError: Raises if the sizes of the population are different
 
     Returns:
-        Sequence[Union[Instance | Solution]]: New population
+         Sequence[Instance] | Sequence[Solution]: New population
     """
     if len(current_population) != len(offspring):
         msg = f"The size of the current population ({len(current_population)}) != size of the offspring ({len(offspring)}) in first_improve_replacement"
@@ -73,25 +76,25 @@ def first_improve_replacement(
 
 
 def elitist_replacement(
-    current_population: Sequence[Union[Instance | Solution]],
-    offspring: Sequence[Union[Instance | Solution]],
+    current_population: Sequence[Instance] | Sequence[Solution],
+    offspring: Sequence[Instance] | Sequence[Solution],
     hof: int = 1,
-) -> Sequence[Union[Instance | Solution]]:
+) -> Sequence[Instance] | Sequence[Solution]:
     """Returns a new population constructed using the Elitist approach.
     HoF number of individuals from the current + offspring populations are
     kept in the new population. The remaining individuals are selected from
     the offspring population.
 
     Args:
-        current_population Sequence[Union[Instance | Solution]]: Current population in the algorithm
-        offspring Sequence[Union[Instance | Solution]]: Offspring population
+        current_population  Sequence[Instance] | Sequence[Solution],: Current population in the algorithm
+        offspring  Sequence[Instance] | Sequence[Solution],: Offspring population
         hof (int, optional): _description_. Defaults to 1.
 
     Raises:
         AttributeError: Raises if the sizes of the population are different
 
     Returns:
-        Sequence[Union[Instance | Solution]]: New population
+         Sequence[Instance] | Sequence[Solution]: New population
     """
     if len(current_population) != len(offspring):
         msg = f"The size of the current population ({len(current_population)}) != size of the offspring ({len(offspring)}) in elitist_replacement"

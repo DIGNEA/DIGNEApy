@@ -16,16 +16,18 @@ from digneapy.generator import (
     EIG,
     _default_performance_metric,
     pisinger_performance_metric,
+    plot_generator_logbook,
 )
 from digneapy.solvers.heuristics import default_kp, map_kp, miw_kp, mpw_kp
 from digneapy.solvers.pisinger import *
 from digneapy.domains.knapsack import KPDomain
 from digneapy.operators import crossover, selection, mutation, replacement
 from collections import deque
+import os
 
 
 def test_default_generator():
-    eig = EIG()
+    eig = EIG(domain=None, portfolio=[])
     assert eig.pop_size == 100
     assert eig.generations == 1000
     assert eig.t_a == 0.001
@@ -69,13 +71,13 @@ def test_default_generator():
     )
 
     with pytest.raises(AttributeError) as e:
-        eig = EIG(phi=-1.0)
+        eig = EIG(domain=None, portfolio=[], phi=-1.0)
     assert (
         e.value.args[0]
         == f"Phi must be a float number in the range [0.0-1.0]. Got: -1.0."
     )
     with pytest.raises(AttributeError) as e:
-        eig = EIG(phi="hello")
+        eig = EIG(domain=None, portfolio=[], phi="hello")
     assert e.value.args[0] == f"Phi must be a float number in the range [0.0-1.0]."
 
 
@@ -85,7 +87,7 @@ def test_eig_gen_kp_perf_descriptor():
     generations = 1000
     t_a, t_ss, k = 3, 3, 3
     eig = EIG(
-        10,
+        pop_size=10,
         generations=generations,
         domain=kp_domain,
         portfolio=portfolio,
@@ -138,7 +140,7 @@ def test_eig_gen_kp_feat_descriptor():
     generations = 1000
     t_a, t_ss, k = 3, 3, 3
     eig = EIG(
-        10,
+        pop_size=10,
         generations=generations,
         domain=kp_domain,
         portfolio=portfolio,
@@ -184,6 +186,14 @@ def test_eig_gen_kp_feat_descriptor():
     eig._update_solution_set(list())
     assert current_len == len(eig.solution_set)
 
+    # Test the creation of the evolution images
+    log = eig.logbook
+    assert len(log) == eig.generations
+    filename = "test_evolution.png"
+    plot_generator_logbook(log, filename=filename)
+    assert os.path.exists(filename)
+    os.remove(filename)
+
 
 def test_eig_gen_kp_inst_descriptor():
     portfolio = deque([map_kp, mpw_kp])
@@ -191,7 +201,7 @@ def test_eig_gen_kp_inst_descriptor():
     generations = 1000
     t_a, t_ss, k = 3, 3, 3
     eig = EIG(
-        10,
+        pop_size=10,
         generations=generations,
         domain=kp_domain,
         portfolio=portfolio,
@@ -246,7 +256,7 @@ def test_eig_gen_kp_perf_descriptor_with_pisinger():
     generations = 1000
     t_a, t_ss, k = 1e-7, 1e-7, 3
     eig = EIG(
-        10,
+        pop_size=10,
         generations=generations,
         domain=kp_domain,
         portfolio=portfolio,

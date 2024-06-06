@@ -13,11 +13,11 @@
 from pisinger_cpp import minknap_cpp, combo_cpp, expknap_cpp
 from digneapy.domains.knapsack import Knapsack
 from digneapy.core import Solution
-from typing import List
 import numpy as np
+from collections.abc import Sequence
 
 
-def minknap(problem: Knapsack = None, only_time: bool = True) -> List[Solution]:
+def minknap(problem: Knapsack, only_time: bool = True) -> Sequence[Solution]:
     if problem is None:
         msg = "No problem found in args of minknap heuristic"
         raise AttributeError(msg)
@@ -30,7 +30,7 @@ def minknap(problem: Knapsack = None, only_time: bool = True) -> List[Solution]:
     return [Solution(chromosome=x, objectives=(f,), fitness=f)]
 
 
-def expknap(problem: Knapsack = None, only_time: bool = True) -> List[Solution]:
+def expknap(problem: Knapsack, only_time: bool = True) -> Sequence[Solution]:
     if problem is None:
         msg = "No problem found in args of expknap heuristic"
         raise AttributeError(msg)
@@ -43,7 +43,7 @@ def expknap(problem: Knapsack = None, only_time: bool = True) -> List[Solution]:
     return [Solution(chromosome=x, objectives=(f,), fitness=f)]
 
 
-def combo(problem: Knapsack = None, only_time: bool = True) -> List[Solution]:
+def combo(problem: Knapsack, only_time: bool = True) -> Sequence[Solution]:
     if problem is None:
         msg = "No problem found in args of combo heuristic"
         raise AttributeError(msg)

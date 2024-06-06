@@ -272,6 +272,8 @@ def test_eig_gen_kp_perf_descriptor_with_pisinger():
         assert all(len(s.portfolio_scores) == len(portfolio) for s in archive)
         p_scores = [s._portfolio_m for s in archive]
         # The instances are biased to the performance of the target
+        # in this case, the performance score is the minimum because
+        # we are measuring running time
         assert all(min(p_scores[i]) == p_scores[i][0] for i in range(len(p_scores)))
 
     if len(solution_set) != 0:
@@ -282,7 +284,7 @@ def test_eig_gen_kp_perf_descriptor_with_pisinger():
         assert all(len(s.features) == 0 for s in solution_set)
         assert all(len(s.portfolio_scores) == len(portfolio) for s in solution_set)
         p_scores = [s._portfolio_m for s in solution_set]
-        assert all(max(p_scores[i]) == p_scores[i][0] for i in range(len(p_scores)))
+        assert all(min(p_scores[i]) == p_scores[i][0] for i in range(len(p_scores)))
 
     # Check it does not insert any when list is empty
     current_len = len(eig.archive)

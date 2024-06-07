@@ -9,11 +9,11 @@
 @License :   (C)Copyright 2023, Alejandro Marrero
 @Desc    :   None
 """
-from collections.abc import Sequence
+from collections.abc import Sequence, Iterable
 from .novelty_search import NoveltySearch
 from .core import Instance, Domain, Solver
 from .operators import crossover, mutation, selection, replacement
-from typing import List, Iterable, Callable, Optional
+from typing import List, Callable, Optional
 from operator import attrgetter
 import numpy as np
 import copy
@@ -119,7 +119,9 @@ class EIG(NoveltySearch):
         t_ss: float = 0.001,
         k: int = 15,
         descriptor: str = "features",
-        transformer: Optional[Callable[[Sequence], Sequence]] = None,
+        transformer: Optional[
+            Callable[[Sequence | Iterable], Sequence | Iterable]
+        ] = None,
         repetitions: int = 1,
         cxrate: float = 0.5,
         mutrate: float = 0.8,
@@ -241,7 +243,7 @@ class EIG(NoveltySearch):
         for individual in population:
             individual.fitness = individual.p * self.phi + individual.s * phi_r
 
-    def _reproduce(self, p_1: Instance, p_2: Instance) -> Instance:
+    def _reproduce(self, p_1, p_2) -> Instance:
         """Generates a new offspring instance from two parent instances
 
         Args:

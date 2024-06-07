@@ -23,14 +23,14 @@ Replacement = Callable[
         Sequence[Instance] | Sequence[Solution],
         Sequence[Instance] | Sequence[Solution],
     ],
-    Sequence[Instance] | Sequence[Solution],
+    Sequence,
 ]
 
 
 def generational(
     current_population: Sequence[Instance] | Sequence[Solution],
     offspring: Sequence[Instance] | Sequence[Solution],
-) -> Sequence[Instance] | Sequence[Solution]:
+) -> Sequence:
     """Returns the offspring population as the new current population
 
     Args:
@@ -53,7 +53,7 @@ def generational(
 def first_improve_replacement(
     current_population: Sequence[Instance] | Sequence[Solution],
     offspring: Sequence[Instance] | Sequence[Solution],
-) -> Sequence[Instance] | Sequence[Solution]:
+) -> Sequence:
     """Returns a new population produced by a greedy operator.
     Each individual in the current population is compared with its analogous in the offspring population
     and the best survives
@@ -79,7 +79,7 @@ def elitist_replacement(
     current_population: Sequence[Instance] | Sequence[Solution],
     offspring: Sequence[Instance] | Sequence[Solution],
     hof: int = 1,
-) -> Sequence[Instance] | Sequence[Solution]:
+) -> Sequence:
     """Returns a new population constructed using the Elitist approach.
     HoF number of individuals from the current + offspring populations are
     kept in the new population. The remaining individuals are selected from

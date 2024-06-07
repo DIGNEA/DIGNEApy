@@ -10,7 +10,8 @@
 @Desc    :   None
 """
 
-from digneapy.solvers.evolutionary import ParEAKP, EA
+from digneapy.solvers.parallel_ea import ParEAKP
+from digneapy.solvers.evolutionary import EA
 from digneapy.solvers.heuristics import default_kp, map_kp, miw_kp, mpw_kp
 from digneapy.solvers.pisinger import minknap, combo, expknap
 from digneapy.solvers._constants import MAXIMISE, MINIMISE, DIRECTIONS
@@ -19,7 +20,8 @@ from digneapy.solvers._constants import MAXIMISE, MINIMISE, DIRECTIONS
 __all__ = [
     "ParEAKP",
     "EA",
-    "default_kp" "map_kp",
+    "default_kp",
+    "map_kp",
     "miw_kp",
     "mpw_kp",
     "minknap",

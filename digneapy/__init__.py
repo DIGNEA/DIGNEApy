@@ -2,7 +2,7 @@
 
 __author__ = """Alejandro Marrero"""
 __email__ = "amarrerd@ull.edu.es"
-__version__ = "0.1.1"
+__version__ = "0.2.0"
 
 from digneapy import domains, operators, solvers, core, transformers, generators, qd
 

@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.16.3)
-project(par_ea_kp LANGUAGES CXX VERSION 1.0.0 DESCRIPTION "Parallel EA for Knapsack Problems")
+project(parallel_ea_cpp LANGUAGES CXX VERSION 1.0.0 DESCRIPTION "Parallel EA for Knapsack Problems")
 
 set(CMAKE_CXX_STANDARD 20)
 enable_language(C)
@@ -28,7 +28,7 @@ if(OPENMP_FOUND)
 endif()
 
 # Always run with the optimisation flags
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++20 -isystem -fPIC -fpermissive -lstdc++fs -O3 -ffast-math -Wall -march=native -mtune=native")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++20 -isystem -fPIC -fpermissive -lstdc++fs -O3 -ffast-math -march=native -mtune=native")
 
-pybind11_add_module(par_ea_kp src/par_ea_kp.cpp src/PseudoRandom.cpp src/RandomGenerator.cpp)
-target_link_libraries(par_ea_kp PUBLIC OpenMP::OpenMP_CXX)
+pybind11_add_module(parallel_ea_cpp src/par_ea_kp.cpp src/PseudoRandom.cpp src/RandomGenerator.cpp)
+target_link_libraries(parallel_ea_cpp PUBLIC OpenMP::OpenMP_CXX)

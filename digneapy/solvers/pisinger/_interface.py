@@ -10,11 +10,10 @@
 @Desc    :   None
 """
 
-from pisinger_cpp import minknap_cpp, combo_cpp, expknap_cpp
 from digneapy.domains.knapsack import Knapsack
 from digneapy.core import Solution
 import numpy as np
-from collections.abc import Sequence
+from pisinger_cpp import minknap_cpp, combo_cpp, expknap_cpp
 
 
 def minknap(problem: Knapsack, only_time: bool = True) -> list[Solution]:

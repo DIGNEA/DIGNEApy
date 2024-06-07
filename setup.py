@@ -3,7 +3,6 @@
 """The setup script."""
 
 from setuptools import setup, find_packages, Extension
-from setuptools.command.build_ext import build_ext
 
 import digneapy
 from glob import glob
@@ -42,7 +41,7 @@ link_args = ["-fopenmp"]
 ext_modules = [
     Extension(
         "pisinger_cpp",
-        sorted(glob("digneapy/solvers/pisinger/src/*.cpp")),
+        sources=sorted(glob("digneapy/solvers/pisinger/src/*.cpp")),
         include_dirs=[
             # Path to pybind11 headers
             get_pybind_include(),
@@ -51,8 +50,14 @@ ext_modules = [
         language="c++",
     ),
     Extension(
-        "par_ea_kp",
-        sorted(glob("digneapy/solvers/par_ea_kp/src/*.cpp")),
+        "parallel_ea_cpp",
+        sources=[
+            "digneapy/solvers/parallel_ea/src/parallel_ea.cpp",
+            "digneapy/solvers/parallel_ea/src/PseudoRandom.h",
+            "digneapy/solvers/parallel_ea/src/PseudoRandom.cpp",
+            "digneapy/solvers/parallel_ea/src/RandomGenerator.h",
+            "digneapy/solvers/parallel_ea/src/RandomGenerator.cpp",
+        ],
         include_dirs=[
             # Path to pybind11 headers
             get_pybind_include(),
@@ -84,7 +89,13 @@ setup(
     license="GNU General Public License v3",
     long_description=readme + "\n\n" + history,
     include_package_data=True,
-    keywords=["dignea", "optimization", "instance generation"],
+    keywords=[
+        "dignea",
+        "optimization",
+        "instance generation",
+        "quality-diversity",
+        "NS",
+    ],
     name="digneapy",
     packages=find_packages(include=["digneapy", "digneapy.*"]),
     platforms=["any"],
@@ -93,6 +104,5 @@ setup(
     url="https://github.com/dignea/digneapy",
     version=digneapy.__version__,
     ext_modules=ext_modules,
-    cmdclass={"build_ext": build_ext},
     zip_safe=False,
 )

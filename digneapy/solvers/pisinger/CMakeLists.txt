@@ -22,6 +22,6 @@ include(GNUInstallDirs)
 find_package(pybind11 REQUIRED)
 
 # Always run with the optimisation flags
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++20 -isystem -fPIC -fpermissive -lstdc++fs -O3 -ffast-math -Wall -march=native -mtune=native")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++20 -isystem -fPIC -fpermissive -lstdc++fs -O3 -ffast-math -march=native -mtune=native")
 
 pybind11_add_module(pisinger_cpp src/pisinger.cpp src/minknap.cpp src/combo.cpp src/expknap.cpp)

@@ -30,7 +30,7 @@ Replacement = Callable[
 def generational(
     current_population: Sequence[Instance] | Sequence[Solution],
     offspring: Sequence[Instance] | Sequence[Solution],
-) -> Sequence:
+) -> list[Instance] | list[Solution]:
     """Returns the offspring population as the new current population
 
     Args:
@@ -53,7 +53,7 @@ def generational(
 def first_improve_replacement(
     current_population: Sequence[Instance] | Sequence[Solution],
     offspring: Sequence[Instance] | Sequence[Solution],
-) -> Sequence:
+) -> list[Instance] | list[Solution]:
     """Returns a new population produced by a greedy operator.
     Each individual in the current population is compared with its analogous in the offspring population
     and the best survives
@@ -66,7 +66,7 @@ def first_improve_replacement(
         AttributeError: Raises if the sizes of the population are different
 
     Returns:
-         Sequence[Instance] | Sequence[Solution]: New population
+         list[Instance] | list[Solution]: New population
     """
     if len(current_population) != len(offspring):
         msg = f"The size of the current population ({len(current_population)}) != size of the offspring ({len(offspring)}) in first_improve_replacement"
@@ -79,7 +79,7 @@ def elitist_replacement(
     current_population: Sequence[Instance] | Sequence[Solution],
     offspring: Sequence[Instance] | Sequence[Solution],
     hof: int = 1,
-) -> Sequence:
+) -> list[Instance] | list[Solution]:
     """Returns a new population constructed using the Elitist approach.
     HoF number of individuals from the current + offspring populations are
     kept in the new population. The remaining individuals are selected from
@@ -94,7 +94,7 @@ def elitist_replacement(
         AttributeError: Raises if the sizes of the population are different
 
     Returns:
-         Sequence[Instance] | Sequence[Solution]: New population
+          list[Instance] | list[Solution]:
     """
     if len(current_population) != len(offspring):
         msg = f"The size of the current population ({len(current_population)}) != size of the offspring ({len(offspring)}) in elitist_replacement"

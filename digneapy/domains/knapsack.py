@@ -11,15 +11,14 @@
 """
 
 
-from ..core import OptProblem
-from digneapy.core import Instance, Domain
+from digneapy.core import Instance, Domain, Problem
 from typing import Tuple, Mapping
 import numpy as np
 import itertools
 from collections.abc import Sequence
 
 
-class Knapsack(OptProblem):
+class Knapsack(Problem):
     def __init__(
         self,
         profits: Sequence[int],
@@ -33,7 +32,7 @@ class Knapsack(OptProblem):
         self.profits = profits
         self.capacity = capacity
 
-    def evaluate(self, individual: Sequence) -> Tuple[float]:
+    def evaluate(self, individual: Sequence) -> tuple[float]:
         """Evaluates the candidate individual with the information of the Knapsack
 
         Args:
@@ -61,7 +60,7 @@ class Knapsack(OptProblem):
         profit -= penalty if penalty > 0.0 else 0.0
         return (profit,)
 
-    def __call__(self, individual: Sequence) -> Tuple[float]:
+    def __call__(self, individual: Sequence) -> tuple[float]:
         return self.evaluate(individual)
 
     def __repr__(self):
@@ -167,7 +166,7 @@ class KPDomain(Domain):
 
         return Instance(variables)
 
-    def extract_features(self, instance: Instance) -> Tuple:
+    def extract_features(self, instance: Instance) -> tuple:
         """Extract the features of the instance based on the domain
 
         Args:

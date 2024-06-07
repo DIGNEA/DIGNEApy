@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 # -*-coding:utf-8 -*-
 """
-@File    :   __init__.py
-@Time    :   2024/05/29 11:14:50
+@File    :   _constants.py
+@Time    :   2024/06/07 11:20:47
 @Author  :   Alejandro Marrero 
 @Version :   1.0
 @Contact :   amarrerd@ull.edu.es
@@ -10,6 +10,6 @@
 @Desc    :   None
 """
 
-from ._interface import combo, expknap, minknap
-
-__all__ = ["combo", "expknap", "minknap"]
+MINIMISE = "minimise"
+MAXIMISE = "maximise"
+DIRECTIONS = (MINIMISE, MAXIMISE)

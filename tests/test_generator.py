@@ -11,15 +11,11 @@
 """
 
 import pytest
-from digneapy.novelty_search import Archive
-from digneapy.generator import (
-    EIG,
-    _default_performance_metric,
-    pisinger_performance_metric,
-    plot_generator_logbook,
-)
-from digneapy.solvers.heuristics import default_kp, map_kp, miw_kp, mpw_kp
-from digneapy.solvers.pisinger import *
+from digneapy.archives import Archive
+from digneapy.generators import EIG
+from digneapy.generators import def_perf_metric, pis_perf_metric
+from digneapy.generators.utils import plot_generator_logbook
+from digneapy.solvers import default_kp, map_kp, miw_kp, mpw_kp, combo, minknap, expknap
 from digneapy.domains.knapsack import KPDomain
 from digneapy.operators import crossover, selection, mutation, replacement
 from collections import deque
@@ -30,8 +26,6 @@ def test_default_generator():
     eig = EIG(domain=None, portfolio=[])
     assert eig.pop_size == 100
     assert eig.generations == 1000
-    assert eig.t_a == 0.001
-    assert eig.t_ss == 0.001
     assert eig.k == 15
     assert eig._describe_by == "features"
     assert eig._transformer is None
@@ -46,16 +40,16 @@ def test_default_generator():
     assert eig.replacement == replacement.generational
     assert eig.phi == 0.85
     assert eig.performance_function is not None
-    assert eig.performance_function == _default_performance_metric
+    assert eig.performance_function == def_perf_metric
 
     assert (
         eig.__str__()
-        == f"EIG(pop_size=100,gen=1000,domain=None,portfolio=[],NS(desciptor=features,t_a=0.001,t_ss=0.001,k=15,len(a)=0,len(ss)=0))"
+        == f"EIG(pop_size=100,gen=1000,domain=None,portfolio=[],NS(descriptor=features,k=15,A=(),S_S=()))"
     )
 
     assert (
         eig.__repr__()
-        == f"EIG<pop_size=100,gen=1000,domain=None,portfolio=[],NS<desciptor=features,t_a=0.001,t_ss=0.001,k=15,len(a)=0,len(ss)=0>>"
+        == f"EIG<pop_size=100,gen=1000,domain=None,portfolio=[],NS<descriptor=features,k=15,A=(),S_S=()>>"
     )
 
     with pytest.raises(AttributeError) as e:
@@ -85,15 +79,13 @@ def test_eig_gen_kp_perf_descriptor():
     portfolio = deque([default_kp, map_kp, miw_kp, mpw_kp])
     kp_domain = KPDomain(dimension=50, capacity_approach="evolved")
     generations = 1000
-    t_a, t_ss, k = 3, 3, 3
+    k = 3
     eig = EIG(
         pop_size=10,
         generations=generations,
         domain=kp_domain,
         portfolio=portfolio,
         k=k,
-        t_a=t_a,
-        t_ss=t_ss,
         repetitions=1,
         descriptor="performance",
         replacement=replacement.generational,
@@ -138,15 +130,13 @@ def test_eig_gen_kp_feat_descriptor():
     portfolio = deque([default_kp, map_kp, miw_kp, mpw_kp])
     kp_domain = KPDomain(dimension=50, capacity_approach="evolved")
     generations = 1000
-    t_a, t_ss, k = 3, 3, 3
+    k = 3
     eig = EIG(
         pop_size=10,
         generations=generations,
         domain=kp_domain,
         portfolio=portfolio,
         k=k,
-        t_a=t_a,
-        t_ss=t_ss,
         repetitions=1,
         descriptor="features",
         replacement=replacement.generational,
@@ -199,15 +189,13 @@ def test_eig_gen_kp_inst_descriptor():
     portfolio = deque([map_kp, mpw_kp])
     kp_domain = KPDomain(dimension=50, capacity_approach="evolved")
     generations = 1000
-    t_a, t_ss, k = 3, 3, 3
+    k = 3
     eig = EIG(
         pop_size=10,
         generations=generations,
         domain=kp_domain,
         portfolio=portfolio,
         k=k,
-        t_a=t_a,
-        t_ss=t_ss,
         repetitions=1,
         descriptor="instance",
         replacement=replacement.generational,
@@ -254,19 +242,17 @@ def test_eig_gen_kp_perf_descriptor_with_pisinger():
     portfolio = deque([combo, minknap, expknap])
     kp_domain = KPDomain(dimension=50, capacity_approach="evolved")
     generations = 1000
-    t_a, t_ss, k = 1e-7, 1e-7, 3
+    k = 3
     eig = EIG(
         pop_size=10,
         generations=generations,
         domain=kp_domain,
         portfolio=portfolio,
         k=k,
-        t_a=t_a,
-        t_ss=t_ss,
         repetitions=1,
         descriptor="performance",
         replacement=replacement.generational,
-        performance_function=pisinger_performance_metric,
+        performance_function=pis_perf_metric,
     )
     archive, solution_set = eig()
     # They could be empty

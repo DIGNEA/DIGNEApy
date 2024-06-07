@@ -24,7 +24,7 @@ def binary_tournament_selection(
     """Binary Tournament Selection Operator
 
     Args:
-        population (Iterable): Population of individuals to select a parent from
+        population (Sequence): Population of individuals to select a parent from
 
     Raises:
         RuntimeError: If the population is empty

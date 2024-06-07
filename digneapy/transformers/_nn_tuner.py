@@ -13,17 +13,17 @@
 from collections.abc import Sequence
 from deap import algorithms, base, cma, creator, tools
 from multiprocessing.pool import ThreadPool as Pool
-from digneapy.transformers import Transformer
+from digneapy.transformers import KerasNN, TorchNN, Transformer
 from typing import Callable, Optional
 import numpy as np
 from digneapy.solvers import DIRECTIONS, MAXIMISE
 
 
-class MetaEA:
+class NNTuner:
 
     def __init__(
         self,
-        transformer: Transformer | Callable[[Sequence], Sequence],
+        transformer: KerasNN | TorchNN,
         eval_fn: Callable,
         dimension: int,
         centroid: Optional[Sequence[float]] = None,
@@ -34,7 +34,9 @@ class MetaEA:
         n_jobs: int = 1,
     ):
         if transformer is None or not issubclass(transformer.__class__, Transformer):
-            raise AttributeError("transformer must be a NN object to run MetaEA")
+            raise AttributeError(
+                "transformer must be a subclass of KerasNN or TorchNN object to run MetaEA"
+            )
         if eval_fn is None:
             raise AttributeError(
                 "experiment_work must be a callable object to run MetaEA"
@@ -83,15 +85,15 @@ class MetaEA:
         self.stats.register("min", np.min)
         self.stats.register("max", np.max)
 
-    def evaluation(self, individual):
+    def evaluation(self, individual: Sequence[float]) -> tuple[float]:
         """Evaluates a chromosome of weights for a NN
         to generate spaces in optimisation domains
 
         Args:
-            individual (list): List of weights for a NN transformer
+            individual (Sequence[float]): Sequence of weights for a NN transformer
 
         Returns:
-            float: Space coverage of the space create from the NN transformer
+            tuple[float]: Space coverage of the space create from the NN transformer
         """
         self.transformer.update_weights(individual)
         filename = f"dataset_generation_{self.__performed_gens}_individual_{self.__evaluated_inds}.csv"

@@ -9,3 +9,15 @@
 @License :   (C)Copyright 2023, Alejandro Marrero
 @Desc    :   None
 """
+
+from digneapy.operators import crossover
+from digneapy.operators import mutation
+from digneapy.operators import selection
+from digneapy.operators import replacement
+
+__all__ = [
+    "crossover",
+    "mutation",
+    "selection",
+    "replacement",
+]

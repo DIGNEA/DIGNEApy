@@ -10,10 +10,11 @@
 @Desc    :   None
 """
 
-from digneapy.autoencoders import KPAE
+from digneapy.transformers import KPAE
 from collections import deque
-from digneapy.generator import EIG
-from digneapy.solvers.heuristics import default_kp, map_kp, miw_kp, mpw_kp
+from digneapy.archives import Archive
+from digneapy.generators import EIG
+from digneapy.solvers import default_kp, map_kp, miw_kp, mpw_kp
 from digneapy.domains.knapsack import KPDomain
 from digneapy.operators.replacement import first_improve_replacement, generational
 import copy
@@ -69,8 +70,8 @@ def generate_instances(dim: int = 50):
             generations=1000,
             domain=kp_domain,
             portfolio=portfolio,
-            t_a=1e-5,
-            t_ss=1e-5,
+            archive=Archive(threshold=1e-5),
+            s_set=Archive(threshold=1e-5),
             k=3,
             repetitions=1,
             descriptor="instance",

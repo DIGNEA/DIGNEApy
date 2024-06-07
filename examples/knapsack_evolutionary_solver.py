@@ -10,7 +10,7 @@
 @Desc    :   None
 """
 
-from digneapy.solvers.evolutionary import EA, MAXIMISE
+from digneapy.solvers import EA, MAXIMISE
 import numpy as np
 from digneapy.domains import knapsack
 

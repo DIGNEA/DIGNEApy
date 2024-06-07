@@ -2,7 +2,7 @@
 # -*-coding:utf-8 -*-
 """
 @File    :   __init__.py
-@Time    :   2024/05/29 11:14:50
+@Time    :   2024/06/07 12:16:04
 @Author  :   Alejandro Marrero 
 @Version :   1.0
 @Contact :   amarrerd@ull.edu.es
@@ -10,6 +10,7 @@
 @Desc    :   None
 """
 
-from ._interface import combo, expknap, minknap
+from digneapy.archives._base_archive import Archive
+from digneapy.archives._grid_archive import GridArchive
 
-__all__ = ["combo", "expknap", "minknap"]
+__all__ = ["Archive", "GridArchive"]

@@ -10,118 +10,33 @@
 @Desc    :   None
 """
 from collections.abc import Sequence, Iterable
-from .novelty_search import NoveltySearch
-from .core import Instance, Domain, Solver
-from .operators import crossover, mutation, selection, replacement
+from digneapy.generators.perf_metrics import default_performance_metric
+from digneapy.qd import NS
+from digneapy.archives import Archive
+from digneapy.core import Instance, Domain, Solver
+from digneapy.operators import crossover, mutation, selection, replacement
 from typing import List, Callable, Optional
 from operator import attrgetter
 import numpy as np
 import copy
 from deap import tools
-import matplotlib.pyplot as plt
-from matplotlib.lines import Line2D
-
-import seaborn as sns
-import pandas as pd
-
-PerformanceFn = Callable[[Sequence[float] | Iterable[float]], float]
 
 
-def _default_performance_metric(scores: Sequence[float] | Iterable[float]) -> float:
-    """Default performace metric for the instances.
-    It tries to maximise the gap between the target solver
-    and the other solvers in the portfolio.
-
-    Args:
-        scores (Iterable[float]): Scores of each solver over an instance. It is expected
-        that the first value is the score of the target.
-
-    Returns:
-        float: Performance value for an instance. Instance.p attribute.
-    """
-    return scores[0] - max(scores[1:])
+PerformanceFn = Callable[[Sequence[float]], float]
 
 
-def pisinger_performance_metric(scores: Sequence[float] | Iterable[float]) -> float:
-    """Pisinger Solvers performace metric for the instances.
-    It tries to maximise the gap between the runing time of the target solver
-    and the other solvers in the portfolio.
-
-    Args:
-        scores (Iterable[float]): Running time of each solver over an instance. It is expected
-        that the first value is the score of the target.
-
-    Returns:
-        float: Performance value for an instance. Instance.p attribute.
-    """
-    return min(scores[1:]) - scores[0]
-
-
-def plot_generator_logbook(logbook=None, filename: Optional[str] = ""):
-    df = pd.DataFrame(logbook.chapters["s"].select("avg"), columns=[r"$s$"])
-    df[r"$p$"] = logbook.chapters["p"].select("avg")
-    df["Generations"] = logbook.select("gen")
-
-    # Plot configuration
-    plt.rcParams["font.family"] = "serif"
-    plt.rcParams["font.sans-serif"] = [
-        "Tahoma",
-        "DejaVu Sans",
-        "Lucida Grande",
-        "Verdana",
-    ]
-    plt.rcParams["font.size"] = 16
-    plt.figure(figsize=(12, 8))
-    ax = sns.lineplot(
-        data=df,
-        x="Generations",
-        y=r"$s$",
-        marker="o",
-        color="blue",
-        markersize=5,
-        legend=False,
-    )
-
-    ax2 = plt.twinx()
-    sns.lineplot(
-        data=df,
-        x="Generations",
-        y=r"$p$",
-        marker="X",
-        markersize=5,
-        color="red",
-        legend=False,
-        ax=ax2,
-    )
-    ax.legend(
-        handles=[
-            Line2D([], [], marker="o", color="blue", label=r"$s$"),
-            Line2D([], [], marker="X", color="red", label=r"$p$"),
-        ],
-        loc="center right",
-    )
-
-    plt.title(r"Evolution of $s$ and $p$")
-    if filename:
-        plt.savefig(filename)
-    else:
-        plt.show()
-
-
-class EIG(NoveltySearch):
+class EIG(NS):
     def __init__(
         self,
         domain: Domain,
-        portfolio: Sequence[Solver],
+        portfolio: Iterable[Solver],
         pop_size: int = 100,
         generations: int = 1000,
-        t_a: float = 0.001,
-        t_ss: float = 0.001,
+        archive: Optional[Archive] = None,
+        s_set: Optional[Archive] = None,
         k: int = 15,
         descriptor: str = "features",
-        transformer: Optional[
-            Callable[[Sequence | Iterable], Sequence | Iterable]
-        ] = None,
+        transformer: Optional[Callable[[Sequence | Iterable], np.ndarray]] = None,
         repetitions: int = 1,
         cxrate: float = 0.5,
         mutrate: float = 0.8,
@@ -129,7 +44,7 @@ class EIG(NoveltySearch):
         mutation: mutation.Mutation = mutation.uniform_one_mutation,
         selection: selection.Selection = selection.binary_tournament_selection,
         replacement: replacement.Replacement = replacement.generational,
-        performance_function: PerformanceFn = _default_performance_metric,
+        performance_function: PerformanceFn = default_performance_metric,
         phi: float = 0.85,
     ):
         """Creates a Evolutionary Instance Generator based on Novelty Search
@@ -137,8 +52,8 @@ class EIG(NoveltySearch):
         Args:
             pop_size (int, optional): Number of instances in the population to evolve. Defaults to 100.
             evaluations (int, optional): Number of total evaluations to perform. Defaults to 1000.
-            t_a (float, optional): Archive threshold. Defaults to 0.001.
-            t_ss (float, optional): Solution set threshold. Defaults to 0.001.
+            archive (Archive, optional): Archive to store the instances to guide the evolution. Defaults to Archive(threshold=0.001)..
+            s_set (Archive, optional): Solution set to store the instances. Defaults to Archive(threshold=0.001).
             k (int, optional): Number of neighbours to calculate the sparseness. Defaults to 15.
             descriptor (str, optional): Descriptor used to calculate the diversity. The options are features, performance or instance. Defaults to "features".
             transformer (callable, optional): Define a strategy to transform the high-dimensional descriptors to low-dimensional.Defaults to None.
@@ -153,7 +68,7 @@ class EIG(NoveltySearch):
         Raises:
             AttributeError: Raises error if phi is not in the range [0.0-1.0]
         """
-        super().__init__(t_a, t_ss, k, descriptor, transformer)
+        super().__init__(archive, s_set, k, descriptor, transformer)
         self.pop_size = pop_size
         self.generations = generations
         self.domain = domain
@@ -259,21 +174,19 @@ class EIG(NoveltySearch):
         off = self.mutation(p_1, self.domain.bounds)
         return off
 
-    def _update_archive(self, instances: Sequence[Instance]):
+    def _update_archive(self, instances: Iterable[Instance]):
         """Updates the Novelty Search Archive with all the instances that has a 's' greater than t_a and 'p' > 0"""
         if not instances:
             return
-        self._archive.extend(
-            filter(lambda x: x.s >= self.t_a and x.p >= 0.0, instances)
-        )
+        filter_fn = lambda x: x.s >= self.archive.threshold and x.p >= 0.0
+        self.archive.extend(instances, filter_fn=filter_fn)
 
-    def _update_solution_set(self, instances: Sequence[Instance]):
+    def _update_solution_set(self, instances: Iterable[Instance]):
         """Updates the Novelty Search Solution set with all the instances that has a 's' greater than t_ss and 'p' > 0"""
         if not instances:
             return
-        self.solution_set.extend(
-            filter(lambda x: x.s >= self.t_ss and x.p >= 0.0, instances)
-        )
+        filter_fn = lambda x: x.s >= self.archive.threshold and x.p >= 0.0
+        self.solution_set.extend(instances, filter_fn)
 
     def _run(self, verbose: bool = False):
         if self.domain is None:
@@ -285,6 +198,10 @@ class EIG(NoveltySearch):
         self.population = [
             self.domain.generate_instance() for _ in range(self.pop_size)
         ]
+        # Filter function to update the archives
+        # It must consider the performance score
+        filter_fn = lambda x: x.s >= self.archive.threshold and x.p >= 0.0
+
         self._evaluate_population(self.population)
         performed_gens = 0
         while performed_gens < self.generations:
@@ -300,9 +217,12 @@ class EIG(NoveltySearch):
             self._evaluate_population(offspring)
             self.sparseness(offspring)
             self._compute_fitness(population=offspring)
-            self._update_archive(offspring)
+
+            self.archive.extend(offspring, filter_fn)
+
             self.sparseness_solution_set(offspring)
-            self._update_solution_set(offspring)
+            self.solution_set.extend(offspring, filter_fn)
+
             self.population = self.replacement(self.population, offspring)
 
             # Record the stats and update the performed gens

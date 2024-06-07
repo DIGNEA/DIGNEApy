@@ -12,9 +12,10 @@
 
 from collections import deque
 from digneapy.transformers import KerasNN
-from digneapy.meta_ea import MetaEA
-from digneapy.generator import EIG
-from digneapy.solvers.heuristics import default_kp, map_kp, miw_kp, mpw_kp
+from digneapy.transformers import NNTuner
+from digneapy.generators import EIG
+from digneapy.archives import Archive
+from digneapy.solvers import default_kp, map_kp, miw_kp, mpw_kp
 from digneapy.domains.knapsack import KPDomain
 from digneapy.operators.replacement import first_improve_replacement
 import numpy as np
@@ -93,12 +94,12 @@ class NSEval:
         for i in range(len(self.portfolio)):
             self.portfolio.rotate(i)  # This allow us to change the target on the fly
             eig = EIG(
-                popsize=10,
+                pop_size=10,
                 generations=1000,
                 domain=self.kp_domain,
                 portfolio=self.portfolio,
-                t_a=0.5,
-                t_ss=0.05,
+                archive=Archive(threshold=0.5),
+                s_set=Archive(threshold=0.05),
                 k=3,
                 repetitions=1,
                 descriptor="features",
@@ -145,7 +146,7 @@ def main():
     # NSEval is the evaluation/fitness function used to measure the NNs in CMA-Es
     ns_eval = NSEval(features_info, resolution=R)
     # Custom CMA-ES derived from DEAP to evolve NNs weights
-    cma_es = MetaEA(
+    cma_es = NNTuner(
         dimension=dimension,
         direction="maximise",
         lambda_=64,

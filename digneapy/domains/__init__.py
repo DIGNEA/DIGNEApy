@@ -9,3 +9,7 @@
 @License :   (C)Copyright 2023, Alejandro Marrero
 @Desc    :   None
 """
+
+from digneapy.domains.knapsack import Knapsack, KPDomain
+
+__all__ = ["Knapsack", "KPDomain"]

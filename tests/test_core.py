@@ -13,7 +13,7 @@
 import pytest
 import copy
 import numpy as np
-from digneapy.core import Instance, Domain, Solution, OptProblem
+from digneapy.core import Instance, Domain, Solution, Problem
 from deap import base, creator, tools
 
 
@@ -83,7 +83,7 @@ def test_default_solution_attrs(default_solution):
 
 
 def test_opt_problem():
-    problem = OptProblem()
+    problem = Problem()
     with pytest.raises(NotImplementedError):
         problem.evaluate(list())
 

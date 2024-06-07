@@ -12,8 +12,9 @@
 from typing import Dict
 from collections import deque
 from digneapy.transformers import KerasNN
-from digneapy.generator import EIG
-from digneapy.solvers.heuristics import default_kp, map_kp, miw_kp, mpw_kp
+from digneapy.generators import EIG
+from digneapy.archives import Archive
+from digneapy.solvers import default_kp, map_kp, miw_kp, mpw_kp
 from digneapy.domains.knapsack import KPDomain
 from digneapy.operators.replacement import first_improve_replacement
 import numpy as np
@@ -82,8 +83,8 @@ class NSEval:
                 generations=1000,
                 domain=self.kp_domain,
                 portfolio=self.portfolio,
-                t_a=0.5,
-                t_ss=0.05,
+                archive=Archive(threshold=0.5),
+                s_set=Archive(threshold=0.05),
                 k=3,
                 repetitions=1,
                 descriptor="features",

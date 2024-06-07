@@ -15,7 +15,7 @@ from sklearn.preprocessing import StandardScaler
 import tensorflow as tf
 import keras
 from keras.utils import pad_sequences
-from .transformers import Transformer
+from digneapy.transformers import Transformer
 import pickle
 import os
 

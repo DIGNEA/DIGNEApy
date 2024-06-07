@@ -14,8 +14,7 @@ import pytest
 import numpy as np
 from digneapy.domains import knapsack
 from digneapy.solvers import heuristics
-from digneapy.solvers.evolutionary import EA, ParEAKP
-from digneapy.solvers.pisinger import *
+from digneapy.solvers import EA, ParEAKP, combo, expknap, minknap
 from digneapy.core import Solution
 from deap import benchmarks
 from digneapy import solvers

@@ -11,8 +11,9 @@
 """
 
 
-from digneapy.generator import EIG
-from digneapy.solvers.heuristics import default_kp, map_kp, miw_kp, mpw_kp
+from digneapy.generators import EIG
+from digneapy.archives import Archive
+from digneapy.solvers import default_kp, map_kp, miw_kp, mpw_kp
 from digneapy.domains.knapsack import KPDomain
 from digneapy.operators.replacement import first_improve_replacement
 from collections import deque
@@ -52,8 +53,8 @@ def main(default_args):
             generations=generations,
             domain=kp_domain,
             portfolio=portfolio,
-            t_a=t_a,
-            t_ss=t_ss,
+            archive=Archive(threshold=t_a),
+            s_set=Archive(threshold=t_ss),
             k=k,
             repetitions=1,
             descriptor=descriptor,

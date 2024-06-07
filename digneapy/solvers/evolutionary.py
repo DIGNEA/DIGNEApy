@@ -11,16 +11,16 @@
 """
 
 from collections.abc import Sequence
-from digneapy.core import Solution, Solver, OptProblem
+from digneapy.core import Solution, Solver, Problem
 import numpy as np
 from deap import creator, base, tools, algorithms
-from digneapy.solvers import DIRECTIONS, MINIMISE, MAXIMISE
+from ._constants import MINIMISE, DIRECTIONS
 import multiprocessing
 import par_ea_kp
 from digneapy.domains.knapsack import Knapsack
 
 
-def gen_dignea_ind(icls, size: int, min_value, max_value):
+def _gen_dignea_ind(icls, size: int, min_value, max_value):
     """Auxiliar function to generate individual based on
     the Solution class of digneapy
     """
@@ -80,7 +80,7 @@ class EA(Solver):
 
         self._toolbox = base.Toolbox()
         self._toolbox.register(
-            "individual", gen_dignea_ind, creator.Individual, dim, min_g, max_g
+            "individual", _gen_dignea_ind, creator.Individual, dim, min_g, max_g
         )
 
         self._toolbox.register(
@@ -106,7 +106,7 @@ class EA(Solver):
             self._pool = multiprocessing.Pool(processes=self._n_cores)
             self._toolbox.register("map", self._pool.map)
 
-    def __call__(self, problem: OptProblem) -> Sequence[Solution]:
+    def __call__(self, problem: Problem, *args, **kwargs) -> list[Solution]:
         """Call method of the EA solver. It runs the EA to solve the OptProblem given.
 
         Returns:
@@ -186,7 +186,7 @@ class ParEAKP(par_ea_kp.ParEAKP):
             f"ParEAKP_PS_{self._pop_size}_CXPB_{self._cxpb}_MUTPB_{self._mutpb}"
         )
 
-    def __call__(self, kp: Knapsack):
+    def __call__(self, problem: Knapsack, *args, **kwargs) -> list[Solution]:
         """Runs the algorithm to solve the KP problem
 
         Args:
@@ -196,10 +196,12 @@ class ParEAKP(par_ea_kp.ParEAKP):
             AttributeError: If no instance is given
 
         Returns:
-            Sequence[Solution]: Best solution found by the algorithm
+            list[Solution]: List of size 1 with the best solution found by the algorithm
         """
-        if kp is None:
+        if problem is None:
             msg = "Knapsack Problem is None in ParEAKP.__call__()"
             raise AttributeError(msg)
-        x, fitness = self.run(len(kp), kp.weights, kp.profits, kp.capacity)
+        x, fitness = self.run(
+            len(problem), problem.weights, problem.profits, problem.capacity
+        )
         return [Solution(chromosome=x, objectives=(fitness,), fitness=fitness)]

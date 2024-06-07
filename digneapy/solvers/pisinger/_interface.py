@@ -17,7 +17,7 @@ import numpy as np
 from collections.abc import Sequence
 
 
-def minknap(problem: Knapsack, only_time: bool = True) -> Sequence[Solution]:
+def minknap(problem: Knapsack, only_time: bool = True) -> list[Solution]:
     if problem is None:
         msg = "No problem found in args of minknap heuristic"
         raise AttributeError(msg)
@@ -30,7 +30,7 @@ def minknap(problem: Knapsack, only_time: bool = True) -> Sequence[Solution]:
     return [Solution(chromosome=x, objectives=(f,), fitness=f)]
 
 
-def expknap(problem: Knapsack, only_time: bool = True) -> Sequence[Solution]:
+def expknap(problem: Knapsack, only_time: bool = True) -> list[Solution]:
     if problem is None:
         msg = "No problem found in args of expknap heuristic"
         raise AttributeError(msg)
@@ -43,7 +43,7 @@ def expknap(problem: Knapsack, only_time: bool = True) -> Sequence[Solution]:
     return [Solution(chromosome=x, objectives=(f,), fitness=f)]
 
 
-def combo(problem: Knapsack, only_time: bool = True) -> Sequence[Solution]:
+def combo(problem: Knapsack, only_time: bool = True) -> list[Solution]:
     if problem is None:
         msg = "No problem found in args of combo heuristic"
         raise AttributeError(msg)

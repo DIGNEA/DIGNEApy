@@ -63,8 +63,10 @@ class ParEAKP(_ParEACpp):
         Returns:
             List[Solution]: Best solution found by the algorithm
         """
-        if kp is None:
-            msg = "Knapsack Problem is None in ParEAKP.__call__()"
+        if problem is None:
+            msg = "Knapsack Problem is None in ParEAKP.__call__(). Expected a Knapsack instance."
             raise AttributeError(msg)
-        x, fitness = self.run(len(kp), kp.weights, kp.profits, kp.capacity)
+        x, fitness = self.run(
+            len(problem), problem.weights, problem.profits, problem.capacity
+        )
         return [Solution(chromosome=x, objectives=(fitness,), fitness=fitness)]

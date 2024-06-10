@@ -12,7 +12,7 @@
 
 from digneapy.core.solution import Solution
 from digneapy.core.problem import P
-from abc import ABC
+from abc import ABC, abstractmethod
 from typing import Generic
 
 
@@ -21,6 +21,7 @@ class Solver(ABC, Generic[P]):
     as its argument and returns a tuple with the solution found
     """
 
+    @abstractmethod
     def __call__(self, problem: P, *args, **kwargs) -> list[Solution]:
         """Solves a optimisation problem
 

@@ -10,6 +10,6 @@
 @Desc    :   None
 """
 
-from ._interface import combo, expknap, minknap
+from .__main__ import combo, expknap, minknap
 
 __all__ = ["combo", "expknap", "minknap"]

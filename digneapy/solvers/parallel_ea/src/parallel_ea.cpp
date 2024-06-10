@@ -11,7 +11,6 @@
 
 #include <omp.h>
 #include <pybind11/chrono.h>
-#include <pybind11/complex.h>
 #include <pybind11/functional.h>
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
@@ -235,20 +234,16 @@ void ParallelGeneticAlgorithm::reproduction(Individual &child1,
     }
 }
 
-std::tuple<vector<int>, float> parallel_ea_wrapper(
-    const int &popSize, const int &generations, const float &mutationRate,
-    const float &crossRate, const int &nCores, const int &n,
-    const vector<int> &weights, const vector<int> &profits,
-    const int capacity) {
-    auto solver = ParallelGeneticAlgorithm(popSize, generations, mutationRate,
-                                           crossRate, nCores);
-    return solver.run(n, weights, profits, capacity);
-}
-
 PYBIND11_MODULE(parallel_ea, m) {
     m.doc() = "Parallel EA for Knapsack Problems";
-    m.def("par_ea_cpp", &parallel_ea_wrapper, py::arg("popSize"),
-          py::arg("generations"), py::arg("mutationRate"), py::arg("crossRate"),
-          py::arg("nCores"), py::arg("n"), py::arg("weights"),
-          py::arg("profits"), py::arg("capacity"));
+    m.def("get_max_threads", &omp_get_max_threads,
+          "Returns max number of threads");
+    m.def("set_num_threads", &omp_set_num_threads, "Set number of threads");
+    py::class_<ParallelGeneticAlgorithm>(m, "_ParEACpp")
+        .def(py::init<int, int, double, double, int>(),
+             py::arg("populationSize"), py::arg("generations"),
+             py::arg("mutationRate"), py::arg("crossRate"),
+             py::arg("numberOfCores"))
+        .def("run", &ParallelGeneticAlgorithm::run, py::arg("n"),
+             py::arg("weights"), py::arg("profits"), py::arg("capacity"));
 }

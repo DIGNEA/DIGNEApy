@@ -15,7 +15,13 @@ from digneapy.archives import Archive
 from digneapy.generators import EIG
 from digneapy.generators import def_perf_metric, pis_perf_metric
 from digneapy.generators.utils import plot_generator_logbook
-from digneapy.solvers import default_kp, map_kp, miw_kp, mpw_kp, combo, minknap, expknap
+from digneapy.solvers import (
+    default_kp,
+    map_kp,
+    miw_kp,
+    mpw_kp,
+)
+from digneapy.solvers.pisinger import combo, minknap, expknap
 from digneapy.domains.knapsack import KPDomain
 from digneapy.operators import crossover, selection, mutation, replacement
 from collections import deque

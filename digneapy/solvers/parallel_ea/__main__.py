@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 # -*-coding:utf-8 -*-
 """
-@File    :   _interface.py
-@Time    :   2024/06/07 15:14:50
+@File    :   __main__.py
+@Time    :   2024/06/10 12:19:27
 @Author  :   Alejandro Marrero 
 @Version :   1.0
 @Contact :   amarrerd@ull.edu.es
@@ -13,10 +13,10 @@
 from digneapy.domains.knapsack import Knapsack
 from digneapy.core import Solution, Solver
 import numpy as np
-from parallel_ea_cpp import parallel_ea_wrapper
+from parallel_ea import _ParEACpp
 
 
-class ParEAKP(Solver[Knapsack]):
+class ParEAKP(_ParEACpp):
     """Parallel Evolutionary Algorithm for Knapsack Problems
     It uses Uniform One Mutation and Uniform Mutation as mating operators.
     The replacement is based on a Greedy strategy. The parent and offspring
@@ -41,6 +41,7 @@ class ParEAKP(Solver[Knapsack]):
             cxpb (float, optional): Probability of crossover between two individuals. Defaults to 0.7.
             cores (int, optional): Number of cores to use. Defaults to 1.
         """
+        super().__init__(self, pop_size, generations, mutpb, cxpb, cores)
         self._pop_size = pop_size
         self._generations = generations
         self._mutpb = mutpb
@@ -60,20 +61,10 @@ class ParEAKP(Solver[Knapsack]):
             AttributeError: If no instance is given
 
         Returns:
-            list[Solution]: List of size 1 with the best solution found by the algorithm
+            List[Solution]: Best solution found by the algorithm
         """
-        if problem is None:
+        if kp is None:
             msg = "Knapsack Problem is None in ParEAKP.__call__()"
             raise AttributeError(msg)
-        x, fitness = parallel_ea_wrapper(
-            self._pop_size,
-            self._generations,
-            self._mutpb,
-            self._cxpb,
-            self._n_cores,
-            len(problem),
-            problem.weights,
-            problem.profits,
-            problem.capacity,
-        )
+        x, fitness = self.run(len(kp), kp.weights, kp.profits, kp.capacity)
         return [Solution(chromosome=x, objectives=(fitness,), fitness=fitness)]

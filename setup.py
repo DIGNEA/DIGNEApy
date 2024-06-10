@@ -2,10 +2,11 @@
 
 """The setup script."""
 
-from setuptools import setup, find_packages, Extension
 
-import digneapy
 from glob import glob
+from setuptools import setup, Extension, find_packages
+from setuptools.command.build_ext import build_ext
+
 
 with open("README.md") as readme_file:
     readme = readme_file.read()
@@ -41,7 +42,7 @@ link_args = ["-fopenmp"]
 ext_modules = [
     Extension(
         "pisinger_cpp",
-        sources=sorted(glob("digneapy/solvers/pisinger/src/*.cpp")),
+        sorted(glob("digneapy/solvers/pisinger/src/*.cpp")),
         include_dirs=[
             # Path to pybind11 headers
             get_pybind_include(),
@@ -50,14 +51,8 @@ ext_modules = [
         language="c++",
     ),
     Extension(
-        "parallel_ea_cpp",
-        sources=[
-            "digneapy/solvers/parallel_ea/src/parallel_ea.cpp",
-            "digneapy/solvers/parallel_ea/src/PseudoRandom.h",
-            "digneapy/solvers/parallel_ea/src/PseudoRandom.cpp",
-            "digneapy/solvers/parallel_ea/src/RandomGenerator.h",
-            "digneapy/solvers/parallel_ea/src/RandomGenerator.cpp",
-        ],
+        "parallel_ea",
+        sorted(glob("digneapy/solvers/parallel_ea/src/*.cpp")),
         include_dirs=[
             # Path to pybind11 headers
             get_pybind_include(),
@@ -68,7 +63,6 @@ ext_modules = [
         language="c++",
     ),
 ]
-
 
 setup(
     author="Alejandro Marrero",
@@ -102,7 +96,8 @@ setup(
     test_suite="tests",
     tests_require=test_requirements,
     url="https://github.com/dignea/digneapy",
-    version=digneapy.__version__,
+    version="0.2.0",
     ext_modules=ext_modules,
+    cmdclass={"build_ext": build_ext},
     zip_safe=False,
 )

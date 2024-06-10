@@ -14,7 +14,7 @@
 from digneapy.core.instance import Instance
 from digneapy.core.problem import Problem
 
-from abc import ABC
+from abc import ABC, abstractmethod
 from collections.abc import Sequence
 from typing import Mapping, Tuple, Optional
 
@@ -32,6 +32,7 @@ class Domain(ABC):
         self.dimension = dimension
         self.bounds = bounds if bounds else [(0.0, 0.0)]
 
+    @abstractmethod
     def generate_instance(self) -> Instance:
         """Generates a new instances for the domain
 
@@ -41,6 +42,7 @@ class Domain(ABC):
         msg = "generate_instances is not implemented in Domain class."
         raise NotImplementedError(msg)
 
+    @abstractmethod
     def extract_features(self, instance: Instance) -> Tuple:
         """Extract the features of the instance based on the domain
 
@@ -53,6 +55,7 @@ class Domain(ABC):
         msg = "extract_features is not implemented in Domain class."
         raise NotImplementedError(msg)
 
+    @abstractmethod
     def extract_features_as_dict(self, instance: Instance) -> Mapping[str, float]:
         """Creates a dictionary with the features of the instance.
         The key are the names of each feature and the values are
@@ -67,6 +70,7 @@ class Domain(ABC):
         msg = "extract_features_as_dict is not implemented in Domain class."
         raise NotImplementedError(msg)
 
+    @abstractmethod
     def from_instance(self, instance: Instance) -> Problem:
         msg = "from_instance is not implemented in Domain class."
         raise NotImplementedError(msg)

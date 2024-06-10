@@ -11,7 +11,7 @@
 """
 
 
-from abc import ABC
+from abc import ABC, abstractmethod
 from collections.abc import Sequence
 from typing import Tuple, TypeVar
 
@@ -20,6 +20,7 @@ class Problem(ABC):
     def __init__(self, name: str = "DefaultOptProblem", *args, **kwargs):
         self._name = name
 
+    @abstractmethod
     def evaluate(self, individual: Sequence) -> Tuple[float]:
         """Evaluates the candidate individual with the information of the Knapsack
 
@@ -35,6 +36,7 @@ class Problem(ABC):
         msg = "evaluate method not implemented in OptProblem"
         raise NotImplementedError(msg)
 
+    @abstractmethod
     def __call__(self, individual: Sequence) -> Tuple[float]:
         msg = "__call__ method not implemented in OptProblem"
         raise NotImplementedError(msg)

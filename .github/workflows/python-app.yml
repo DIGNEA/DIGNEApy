@@ -43,3 +43,7 @@ jobs:
 
             - name: Build and install
               run: python3 -m pip install .
+
+            - name: Test with pytest
+              run: |
+                  pytest --doctest-modules

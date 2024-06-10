@@ -38,6 +38,7 @@ classifiers = [
 [project.urls]
 homepage = "https://github.com/dignea/digneapy"
 source = "https://github.com/dignea/digneapy"
+issues = "https://github.com/DIGNEA/DIGNEApy/issues"
 
 [project.optional-dependencies]
 test = ["pytest>=3"]

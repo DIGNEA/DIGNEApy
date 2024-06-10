@@ -41,7 +41,7 @@ class ParEAKP(_ParEACpp):
             cxpb (float, optional): Probability of crossover between two individuals. Defaults to 0.7.
             cores (int, optional): Number of cores to use. Defaults to 1.
         """
-        super().__init__(self, pop_size, generations, mutpb, cxpb, cores)
+        super().__init__(pop_size, generations, mutpb, cxpb, cores)
         self._pop_size = pop_size
         self._generations = generations
         self._mutpb = mutpb

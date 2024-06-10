@@ -15,7 +15,7 @@ from digneapy.generators import EIG
 from digneapy.archives import Archive
 
 from digneapy.generators.perf_metrics import pisinger_performance_metric
-from digneapy.solvers import combo, minknap, expknap
+from digneapy.solvers.pisinger import combo, minknap, expknap
 from digneapy.domains.knapsack import KPDomain
 from digneapy.operators.replacement import first_improve_replacement
 from collections import deque

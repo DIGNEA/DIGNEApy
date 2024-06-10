@@ -10,6 +10,7 @@
 @Desc    :   None
 """
 
+from typing import Tuple
 import pytest
 import copy
 import numpy as np
@@ -80,12 +81,6 @@ def test_default_solution_attrs(default_solution):
     assert default_solution.__gt__(list()) == NotImplemented
     empty_s = Solution()
     assert len(empty_s) == 0
-
-
-def test_opt_problem():
-    problem = Problem()
-    with pytest.raises(NotImplementedError):
-        problem.evaluate(list())
 
 
 @pytest.fixture
@@ -210,60 +205,22 @@ def test_hash_instances(initialised_instance, default_instance):
 
 
 @pytest.fixture
-def default_domain():
-    return Domain()
-
-
-@pytest.fixture
 def initialised_domain():
+    class FixturedDomain(Domain):
+        def extract_features(self, instance: Instance) -> Tuple:
+            return tuple()
+
+        def extract_features_as_dict(self, instance: Instance):
+            return dict()
+
+        def from_instance(self, instance: Instance) -> Problem:
+            return None
+
+        def generate_instance(self) -> Instance:
+            return Instance()
+
     bounds = list((0.0, 100.0) for _ in range(100))
-    return Domain(name="Fixtured_Domain", dimension=100, bounds=bounds)
-
-
-def test_default_domain_attrs(default_domain):
-    assert default_domain.name == "Domain"
-    assert default_domain.dimension == 0
-    assert default_domain.bounds == [(0.0, 0.0)]
-    assert len(default_domain) == default_domain.dimension
-
-
-def test_default_domina_not_impl_features(default_domain):
-    with pytest.raises(NotImplementedError):
-        default_domain.extract_features(list())
-
-    with pytest.raises(NotImplementedError):
-        default_domain.extract_features_as_dict(list())
-
-
-def test_lower_bounds(default_domain):
-    assert default_domain.lower_i(0) == 0.0
-    with pytest.raises(AttributeError):
-        default_domain.lower_i(-1)
-    with pytest.raises(AttributeError):
-        default_domain.lower_i(10000)
-
-
-def test_upper_bounds(default_domain):
-    assert default_domain.upper_i(0) == 0.0
-    with pytest.raises(AttributeError):
-        default_domain.upper_i(-1)
-    with pytest.raises(AttributeError):
-        default_domain.upper_i(10000)
-
-
-def test_not_impl_generate(default_domain):
-    with pytest.raises(Exception):
-        default_domain.generate_instance()
-
-
-def test_not_impl_extract(default_domain):
-    with pytest.raises(Exception):
-        default_domain.extract_features()
-
-
-def test_not_impl_from_instance(default_domain):
-    with pytest.raises(Exception):
-        default_domain.from_instance(None)
+    return FixturedDomain(name="Fixtured_Domain", dimension=100, bounds=bounds)
 
 
 def test_init_domain_attrs(initialised_domain):

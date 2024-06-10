@@ -1,0 +1,48 @@
+[build-system]
+requires = ["setuptools>=42", "cmake>=3.16.3", "wheel", "pybind11>=2.12.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "digneapy"
+version = "0.2.0"
+description = "Python version of the DIGNEA code for instance generation"
+authors = [{ name = "Alejandro Marrero", email = "amarrerd@ull.edu.es" }]
+readme = "README.md"
+requires-python = ">=3.10"
+license = { file = "LICENSE.txt" }
+keywords = [
+    "dignea",
+    "optimization",
+    "instance generation",
+    "quality-diversity",
+    "NS",
+]
+classifiers = [
+    'Development Status :: 5 - Production/Stable',
+    "Intended Audience :: Science/Research",
+    'Intended Audience :: Developers',
+    "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
+    "Natural Language :: English",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    'Topic :: Scientific/Engineering',
+    'Typing :: Typed',
+    'Operating System :: Microsoft :: Windows',
+    'Operating System :: POSIX',
+    'Operating System :: Unix',
+    'Operating System :: MacOS',
+]
+
+[project.urls]
+homepage = "https://github.com/dignea/digneapy"
+source = "https://github.com/dignea/digneapy"
+
+[project.optional-dependencies]
+test = ["pytest>=3"]
+
+[tool.cibuildwheel]
+test-command = "python {project}/tests/*.py"
+test-requires = "pytest"
+build-verbosity = 1

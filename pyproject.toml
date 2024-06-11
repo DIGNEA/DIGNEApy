@@ -43,10 +43,8 @@ issues = "https://github.com/DIGNEA/DIGNEApy/issues"
 [project.optional-dependencies]
 test = ["pytest>=3"]
 
-[tool.setuptools]
-py-modules = []
 
 [tool.cibuildwheel]
 test-requires = "pytest"
 test-command = "pytest {project}/tests"
-skip = ["pp*"]
+build-verbosity = 1

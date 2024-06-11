@@ -18,8 +18,6 @@ import keras
 from keras.utils import pad_sequences
 
 from digneapy.transformers import Transformer
-import pickle
-import os
 
 
 class KPAE(Transformer):

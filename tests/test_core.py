@@ -24,9 +24,7 @@ def gen_dignea_ind(icls, size: int, min_value, max_value):
     """Auxiliar function to generate individual based on
     the Solution class of digneapy
     """
-    chromosome = list(
-        np.random.randint(low=min_value, high=max_value, size=size)
-    )
+    chromosome = list(np.random.randint(low=min_value, high=max_value, size=size))
     return icls(chromosome=chromosome, fitness=creator.Fitness)
 
 
@@ -103,17 +101,17 @@ def test_default_instance_attrs(default_instance):
     assert default_instance.s == 0.0
     assert default_instance.fitness == 0.0
     assert not default_instance._variables
-    assert not default_instance.features
+    assert not default_instance.descriptor
     assert not default_instance.portfolio_scores
 
-    default_instance.features = list(range(3))
+    default_instance.descriptor = list(range(3))
     default_instance.portfolio_scores = [float(i) for i in range(3)]
     default_instance.fitness = 100.0
     default_instance.s = 10.0
     default_instance.p = 5.0
     assert (
         default_instance.__repr__()
-        == "Instance<f=100.0,p=5.0,s=10.0,vars=0,features=3,performance=3>"
+        == "Instance<f=100.0,p=5.0,s=10.0,vars=0,descriptor=3,performance=3>"
     )
     assert (
         format(default_instance, "p")
@@ -144,19 +142,13 @@ def test_default_instance_raises(default_instance):
         default_instance.fitness = "hello world"
 
     with pytest.raises(AttributeError):
-        _ = Instance(
-            variables=list(range(100)), fitness="hello", p=100.0, s=100.0
-        )
+        _ = Instance(variables=list(range(100)), fitness="hello", p=100.0, s=100.0)
 
     with pytest.raises(AttributeError):
-        _ = Instance(
-            variables=list(range(100)), fitness=100.0, p="hello", s=100.0
-        )
+        _ = Instance(variables=list(range(100)), fitness=100.0, p="hello", s=100.0)
 
     with pytest.raises(AttributeError):
-        _ = Instance(
-            variables=list(range(100)), fitness=100.0, p=100.0, s="hello"
-        )
+        _ = Instance(variables=list(range(100)), fitness=100.0, p=100.0, s="hello")
 
 
 def test_init_instance(initialised_instance):
@@ -164,7 +156,7 @@ def test_init_instance(initialised_instance):
     assert initialised_instance.s == 0.0
     assert initialised_instance.fitness == 0.0
     assert initialised_instance._variables == list(range(100))
-    assert not initialised_instance.features
+    assert not initialised_instance.descriptor
     assert not initialised_instance.portfolio_scores
 
 
@@ -174,10 +166,10 @@ def test_properties(initialised_instance):
     initialised_instance.portfolio_scores = performances
     assert initialised_instance.portfolio_scores == performances
 
-    assert not initialised_instance.features
+    assert not initialised_instance.descriptor
     f = list(range(10))
-    initialised_instance.features = f
-    assert initialised_instance.features == f
+    initialised_instance.descriptor = f
+    assert initialised_instance.descriptor == f
 
 
 def test_equal_instances(initialised_instance, default_instance):
@@ -198,7 +190,7 @@ def test_boolean(initialised_instance, default_instance):
 
 def test_str():
     instance = Instance(fitness=100, p=10.0, s=3.0)
-    expected = "Instance(f=100.0,p=10.0,s=3.0,features=(),performance=())"
+    expected = "Instance(f=100.0,p=10.0,s=3.0,descriptor=(),performance=())"
     assert str(instance) == expected
 
 

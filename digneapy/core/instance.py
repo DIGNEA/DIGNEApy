@@ -42,7 +42,7 @@ class Instance:
         self._p = p
         self._s = s
         self._portfolio_m: Tuple = tuple()
-        self._features: Tuple = tuple()
+        self._descriptor: Tuple = tuple()
 
     @property
     def p(self) -> float:
@@ -88,12 +88,12 @@ class Instance:
         self._fitness = float(f)
 
     @property
-    def features(self) -> tuple:
-        return self._features
+    def descriptor(self) -> tuple:
+        return self._descriptor
 
-    @features.setter
-    def features(self, f: tuple):
-        self._features = f
+    @descriptor.setter
+    def descriptor(self, desc: tuple):
+        self._descriptor = desc
 
     @property
     def portfolio_scores(self):
@@ -104,15 +104,13 @@ class Instance:
         self._portfolio_m = copy.deepcopy(p)
 
     def __repr__(self):
-        return f"Instance<f={self._fitness},p={self._p},s={self._s},vars={len(self._variables)},features={len(self._features)},performance={len(self._portfolio_m)}>"
+        return f"Instance<f={self._fitness},p={self._p},s={self._s},vars={len(self._variables)},descriptor={len(self._descriptor)},performance={len(self._portfolio_m)}>"
 
     def __str__(self):
-        features = reprlib.repr(self._features)
+        descriptor = reprlib.repr(self._descriptor)
         performance = reprlib.repr(self._portfolio_m)
-        performance = performance[
-            performance.find("(") : performance.rfind(")") + 1
-        ]
-        return f"Instance(f={self._fitness},p={self._p},s={self._s},features={features},performance={performance})"
+        performance = performance[performance.find("(") : performance.rfind(")") + 1]
+        return f"Instance(f={self._fitness},p={self._p},s={self._s},descriptor={descriptor},performance={performance})"
 
     def __iter__(self):
         return iter(self._variables)
@@ -167,7 +165,7 @@ class Instance:
             components = self._portfolio_m
         else:
             fmt_spec = fmt_spec[:-1]
-            components = self._features
+            components = self._descriptor
 
         components = (format(c, fmt_spec) for c in components)
         decriptor = "descriptor=({})".format(",".join(components))

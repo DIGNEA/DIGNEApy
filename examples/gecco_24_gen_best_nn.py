@@ -31,8 +31,7 @@ class NSEval:
         self.resolution = resolution
         self.features_info = features_info
         self.hypercube = [
-            np.linspace(start, stop, self.resolution)
-            for start, stop in features_info
+            np.linspace(start, stop, self.resolution) for start, stop in features_info
         ]
         self.kp_domain = KPDomain(dimension=50, capacity_approach="percentage")
         self.portfolio = deque([default_kp, map_kp, miw_kp, mpw_kp])
@@ -61,10 +60,7 @@ class NSEval:
             for solver, instances in generated_instances.items():
                 for inst in instances:
                     content = (
-                        solver
-                        + ","
-                        + ",".join(str(f) for f in inst.features)
-                        + "\n"
+                        solver + "," + ",".join(str(f) for f in inst.descriptor) + "\n"
                     )
                     file.write(content)
 
@@ -84,9 +80,7 @@ class NSEval:
         coverage = [set() for _ in range(8)]
         instances = {}
         for i in range(len(self.portfolio)):
-            self.portfolio.rotate(
-                i
-            )  # This allow us to change the target on the fly
+            self.portfolio.rotate(i)  # This allow us to change the target on the fly
             eig = EIG(
                 pop_size=10,
                 generations=1000,
@@ -104,7 +98,7 @@ class NSEval:
             instances[self.portfolio[0].__name__] = copy.copy(solution_set)
 
             for instance in solution_set:  # For each set of instances
-                for i, f in enumerate(instance.features):
+                for i, f in enumerate(instance.descriptor):
                     coverage[i].add(np.digitize(f, self.hypercube[i]))
 
         f = sum(len(s) for s in coverage)

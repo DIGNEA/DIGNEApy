@@ -43,9 +43,7 @@ class NS:
         s_set: Optional[Archive] = None,
         k: int = 15,
         descriptor="features",
-        transformer: Optional[
-            Callable[[Sequence | Iterable], np.ndarray]
-        ] = None,
+        transformer: Optional[Callable[[Sequence | Iterable], np.ndarray]] = None,
     ):
         """Creates an instance of the NoveltySearch Algorithm
         Args:
@@ -55,12 +53,8 @@ class NS:
             descriptor (str, optional): Descriptor to calculate the diversity. The options are features, performance or instance. Defaults to "features".
             transformer (callable, optional): Define a strategy to transform the high-dimensional descriptors to low-dimensional.Defaults to None.
         """
-        self._archive = (
-            archive if archive is not None else Archive(threshold=0.001)
-        )
-        self._solution_set = (
-            s_set if s_set is not None else Archive(threshold=0.001)
-        )
+        self._archive = archive if archive is not None else Archive(threshold=0.001)
+        self._solution_set = s_set if s_set is not None else Archive(threshold=0.001)
         self._k = k
         self._transformer = transformer
 
@@ -103,9 +97,7 @@ class NS:
         Returns:
             np.ndarray[float]: Returns an ndarray of descriptors.
         """
-        components = self._descriptor_strategy(
-            itertools.chain(instances, current_pop)
-        )
+        components = self._descriptor_strategy(itertools.chain(instances, current_pop))
         return np.vstack([components])
 
     def __compute_sparseness(
@@ -132,16 +124,12 @@ class NS:
         # The _desc_arr is a ndarray which contains the descriptor of the instances
         # from the archive and the new list of instances. The order is [instances, current_archive]
         # so we can easily calculate and update `s`
-        _desc_arr = self._combined_archive_and_population(
-            current_archive, instances
-        )
+        _desc_arr = self._combined_archive_and_population(current_archive, instances)
         if self._transformer is not None:
             # Transform the descriptors if necessary
             _desc_arr = self._transformer(_desc_arr)
 
-        neighbourhood = NearestNeighbors(
-            n_neighbors=neighbours, algorithm="ball_tree"
-        )
+        neighbourhood = NearestNeighbors(n_neighbors=neighbours, algorithm="ball_tree")
         neighbourhood.fit(_desc_arr)
         sparseness = []
         # We're only interesed in the instances given not the archive
@@ -151,6 +139,7 @@ class NS:
             dist, ind = dist[0][1:], ind[0][1:]
             s = frac * sum(dist)
             instance.s = s
+            instance.descriptor = descriptor
             sparseness.append(s)
 
         return sparseness
@@ -185,9 +174,7 @@ class NS:
             instances, self.archive, neighbours=self._k + 1
         )
 
-    def sparseness_solution_set(
-        self, instances: Sequence[Instance]
-    ) -> list[float]:
+    def sparseness_solution_set(self, instances: Sequence[Instance]) -> list[float]:
         """Calculates the sparseness of the given instances against the individuals
         in the Solution Set.
 
@@ -210,6 +197,4 @@ class NS:
             msg = f"{self.__class__.__name__} trying to calculate sparseness_solution_set with k = 2 >= len(instances)({len(instances)})"
             raise AttributeError(msg)
 
-        return self.__compute_sparseness(
-            instances, self.solution_set, neighbours=2
-        )
+        return self.__compute_sparseness(instances, self.solution_set, neighbours=2)

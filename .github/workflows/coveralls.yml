@@ -38,7 +38,7 @@ jobs:
                   flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
 
             - name: Build and install
-              run: python3 setup.py install
+              run: pip install
 
             - name: Run coverage and send to coveralls
               env:

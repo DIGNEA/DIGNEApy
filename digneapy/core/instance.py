@@ -15,7 +15,7 @@ import operator
 import reprlib
 from collections.abc import Iterable
 from functools import reduce
-from typing import Optional, Tuple
+from typing import Optional, Tuple, Sequence
 
 
 class Instance:
@@ -43,6 +43,15 @@ class Instance:
         self._s = s
         self._portfolio_m: Tuple = tuple()
         self._features: Tuple = tuple()
+        self._descriptor = tuple()
+
+    @property
+    def descriptor(self):
+        return self._descriptor
+
+    @descriptor.setter
+    def descriptor(self, desc: Sequence):
+        self._descriptor = desc
 
     @property
     def p(self) -> float:
@@ -109,9 +118,7 @@ class Instance:
     def __str__(self):
         features = reprlib.repr(self._features)
         performance = reprlib.repr(self._portfolio_m)
-        performance = performance[
-            performance.find("(") : performance.rfind(")") + 1
-        ]
+        performance = performance[performance.find("(") : performance.rfind(")") + 1]
         return f"Instance(f={self._fitness},p={self._p},s={self._s},features={features},performance={performance})"
 
     def __iter__(self):

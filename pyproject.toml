@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=42", "cmake>=3.16.3", "wheel", "pybind11>=2.12.0"]
+requires = ["setuptools>=42", "cmake>=3.16.3", "pybind11>=2.12.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -44,6 +44,7 @@ issues = "https://github.com/DIGNEA/DIGNEApy/issues"
 test = ["pytest>=3"]
 
 [tool.cibuildwheel]
-test-command = "python {project}/tests/*.py"
+before-all = "uname -a"
+test-command = "pytest tests/*.py"
 test-requires = "pytest"
 build-verbosity = 1

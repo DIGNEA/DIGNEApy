@@ -45,7 +45,7 @@ test = ["pytest>=3"]
 
 
 [tool.cibuildwheel]
-before-test = "python -m pip install -r requirements.txt"
-test-requires = "pytest"
+#before-test = "python -m pip install -r requirements.txt"
+test-requires = ["pytest", "numpy==1.26.0"]
 test-command = "pytest {project}/tests"
 build-verbosity = 1

@@ -3,19 +3,20 @@
 """
 @File    :   test_domains.py
 @Time    :   2024/04/15 11:01:33
-@Author  :   Alejandro Marrero 
+@Author  :   Alejandro Marrero
 @Version :   1.0
 @Contact :   amarrerd@ull.edu.es
 @License :   (C)Copyright 2024, Alejandro Marrero
 @Desc    :   None
 """
 
-
-import pytest
-import numpy as np
-from digneapy.domains import knapsack
-from digneapy.core import Instance
 import os
+
+import numpy as np
+import pytest
+
+from digneapy.core import Instance
+from digneapy.domains import knapsack
 
 
 @pytest.fixture

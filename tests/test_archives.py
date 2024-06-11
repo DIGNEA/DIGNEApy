@@ -3,17 +3,20 @@
 """
 @File    :   test_archives.py
 @Time    :   2024/06/07 12:47:37
-@Author  :   Alejandro Marrero 
+@Author  :   Alejandro Marrero
 @Version :   1.0
 @Contact :   amarrerd@ull.edu.es
 @License :   (C)Copyright 2024, Alejandro Marrero
 @Desc    :   None
 """
+
 import copy
-import pytest
+
 import numpy as np
-from digneapy.core import Instance
+import pytest
+
 from digneapy.archives import Archive, GridArchive
+from digneapy.core import Instance
 
 
 @pytest.fixture
@@ -115,7 +118,8 @@ def test_archive_extend(empty_archive):
     new_threshold = 1.0
     empty_archive.threshold = new_threshold
     instances = [
-        Instance([], fitness=0.0, p=0.0, s=np.random.random()) for _ in range(10)
+        Instance([], fitness=0.0, p=0.0, s=np.random.random())
+        for _ in range(10)
     ]
     filter_fn = lambda x: x.s >= empty_archive.threshold
     expected = len(list(filter(filter_fn, instances)))
@@ -127,7 +131,9 @@ def test_archive_extend_with_s_and_p(empty_archive):
     new_threshold = 1.0
     empty_archive.threshold = new_threshold
     instances = [
-        Instance([], fitness=0.0, p=np.random.randint(0, 100), s=np.random.random())
+        Instance(
+            [], fitness=0.0, p=np.random.randint(0, 100), s=np.random.random()
+        )
         for _ in range(10)
     ]
     filter_fn = lambda x: x.s >= empty_archive.threshold and x.p >= 50.0
@@ -149,7 +155,9 @@ def test_archive_extend_with_s_p_and_fitness(empty_archive):
         for _ in range(10)
     ]
     filter_fn = (
-        lambda x: x.s >= empty_archive.threshold and x.p >= 50.0 and x.fitness >= 0.5
+        lambda x: x.s >= empty_archive.threshold
+        and x.p >= 50.0
+        and x.fitness >= 0.5
     )
     expected = len(list(filter(filter_fn, instances)))
     empty_archive.extend(instances, filter_fn=filter_fn)
@@ -165,7 +173,13 @@ def empty_grid():
 def grid_5d():
     return GridArchive(
         dimensions=(20, 20, 20, 20, 20),
-        ranges=[(-1.0, 1.0), (-1.0, 1.0), (-1.0, 1.0), (-1.0, 1.0), (-1.0, 1.0)],
+        ranges=[
+            (-1.0, 1.0),
+            (-1.0, 1.0),
+            (-1.0, 1.0),
+            (-1.0, 1.0),
+            (-1.0, 1.0),
+        ],
     )
 
 

@@ -3,29 +3,30 @@
 """
 @File    :   test_generator.py
 @Time    :   2024/04/15 12:02:25
-@Author  :   Alejandro Marrero 
+@Author  :   Alejandro Marrero
 @Version :   1.0
 @Contact :   amarrerd@ull.edu.es
 @License :   (C)Copyright 2024, Alejandro Marrero
 @Desc    :   None
 """
 
+import os
+from collections import deque
+
 import pytest
+
 from digneapy.archives import Archive
-from digneapy.generators import EIG
-from digneapy.generators import def_perf_metric, pis_perf_metric
+from digneapy.domains.knapsack import KPDomain
+from digneapy.generators import EIG, def_perf_metric, pis_perf_metric
 from digneapy.generators.utils import plot_generator_logbook
+from digneapy.operators import crossover, mutation, replacement, selection
 from digneapy.solvers import (
     default_kp,
     map_kp,
     miw_kp,
     mpw_kp,
 )
-from digneapy.solvers.pisinger import combo, minknap, expknap
-from digneapy.domains.knapsack import KPDomain
-from digneapy.operators import crossover, selection, mutation, replacement
-from collections import deque
-import os
+from digneapy.solvers.pisinger import combo, expknap, minknap
 
 
 def test_default_generator():
@@ -78,7 +79,9 @@ def test_default_generator():
     )
     with pytest.raises(AttributeError) as e:
         eig = EIG(domain=None, portfolio=[], phi="hello")
-    assert e.value.args[0] == "Phi must be a float number in the range [0.0-1.0]."
+    assert (
+        e.value.args[0] == "Phi must be a float number in the range [0.0-1.0]."
+    )
 
 
 def test_eig_gen_kp_perf_descriptor():
@@ -110,7 +113,9 @@ def test_eig_gen_kp_perf_descriptor():
         assert all(len(s.portfolio_scores) == len(portfolio) for s in archive)
         p_scores = [s._portfolio_m for s in archive]
         # The instances are biased to the performance of the target
-        assert all(max(p_scores[i]) == p_scores[i][0] for i in range(len(p_scores)))
+        assert all(
+            max(p_scores[i]) == p_scores[i][0] for i in range(len(p_scores))
+        )
 
     if len(solution_set) != 0:
         assert all(len(s) == 101 for s in solution_set)
@@ -118,9 +123,13 @@ def test_eig_gen_kp_perf_descriptor():
         assert all(s.p >= 0.0 for s in solution_set)
         assert all(s.s >= 0.0 for s in solution_set)
         assert all(len(s.features) == 0 for s in solution_set)
-        assert all(len(s.portfolio_scores) == len(portfolio) for s in solution_set)
+        assert all(
+            len(s.portfolio_scores) == len(portfolio) for s in solution_set
+        )
         p_scores = [s._portfolio_m for s in solution_set]
-        assert all(max(p_scores[i]) == p_scores[i][0] for i in range(len(p_scores)))
+        assert all(
+            max(p_scores[i]) == p_scores[i][0] for i in range(len(p_scores))
+        )
 
     # Check it does not insert any when list is empty
     current_len = len(eig.archive)
@@ -161,7 +170,9 @@ def test_eig_gen_kp_feat_descriptor():
         assert all(len(s.portfolio_scores) == len(portfolio) for s in archive)
         p_scores = [s._portfolio_m for s in archive]
         # The instances are biased to the performance of the target
-        assert all(max(p_scores[i]) == p_scores[i][0] for i in range(len(p_scores)))
+        assert all(
+            max(p_scores[i]) == p_scores[i][0] for i in range(len(p_scores))
+        )
 
     if len(solution_set) != 0:
         assert all(len(s) == 101 for s in solution_set)
@@ -169,9 +180,13 @@ def test_eig_gen_kp_feat_descriptor():
         assert all(s.p >= 0.0 for s in solution_set)
         assert all(s.s >= 0.0 for s in solution_set)
         assert all(len(s.features) == 8 for s in solution_set)
-        assert all(len(s.portfolio_scores) == len(portfolio) for s in solution_set)
+        assert all(
+            len(s.portfolio_scores) == len(portfolio) for s in solution_set
+        )
         p_scores = [s._portfolio_m for s in solution_set]
-        assert all(max(p_scores[i]) == p_scores[i][0] for i in range(len(p_scores)))
+        assert all(
+            max(p_scores[i]) == p_scores[i][0] for i in range(len(p_scores))
+        )
 
     # Check it does not insert any when list is empty
     current_len = len(eig.archive)
@@ -222,7 +237,9 @@ def test_eig_gen_kp_inst_descriptor():
         assert all(len(s.portfolio_scores) == len(portfolio) for s in archive)
         p_scores = [s._portfolio_m for s in archive]
         # The instances are biased to the performance of the target
-        assert all(max(p_scores[i]) == p_scores[i][0] for i in range(len(p_scores)))
+        assert all(
+            max(p_scores[i]) == p_scores[i][0] for i in range(len(p_scores))
+        )
 
     if len(solution_set) != 0:
         assert all(len(s) == 101 for s in solution_set)
@@ -230,9 +247,13 @@ def test_eig_gen_kp_inst_descriptor():
         assert all(s.p >= 0.0 for s in solution_set)
         assert all(s.s >= 0.0 for s in solution_set)
         assert all(len(s.features) == 0 for s in solution_set)
-        assert all(len(s.portfolio_scores) == len(portfolio) for s in solution_set)
+        assert all(
+            len(s.portfolio_scores) == len(portfolio) for s in solution_set
+        )
         p_scores = [s._portfolio_m for s in solution_set]
-        assert all(max(p_scores[i]) == p_scores[i][0] for i in range(len(p_scores)))
+        assert all(
+            max(p_scores[i]) == p_scores[i][0] for i in range(len(p_scores))
+        )
 
     # Check it does not insert any when list is empty
     current_len = len(eig.archive)
@@ -276,7 +297,9 @@ def test_eig_gen_kp_perf_descriptor_with_pisinger():
         # The instances are biased to the performance of the target
         # in this case, the performance score is the minimum because
         # we are measuring running time
-        assert all(min(p_scores[i]) == p_scores[i][0] for i in range(len(p_scores)))
+        assert all(
+            min(p_scores[i]) == p_scores[i][0] for i in range(len(p_scores))
+        )
 
     if len(solution_set) != 0:
         assert all(len(s) == 101 for s in solution_set)
@@ -284,9 +307,13 @@ def test_eig_gen_kp_perf_descriptor_with_pisinger():
         assert all(s.p >= 0.0 for s in solution_set)
         assert all(s.s >= 0.0 for s in solution_set)
         assert all(len(s.features) == 0 for s in solution_set)
-        assert all(len(s.portfolio_scores) == len(portfolio) for s in solution_set)
+        assert all(
+            len(s.portfolio_scores) == len(portfolio) for s in solution_set
+        )
         p_scores = [s._portfolio_m for s in solution_set]
-        assert all(min(p_scores[i]) == p_scores[i][0] for i in range(len(p_scores)))
+        assert all(
+            min(p_scores[i]) == p_scores[i][0] for i in range(len(p_scores))
+        )
 
     # Check it does not insert any when list is empty
     current_len = len(eig.archive)

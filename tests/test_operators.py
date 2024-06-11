@@ -3,20 +3,22 @@
 """
 @File    :   crossover.py
 @Time    :   2023/11/03 11:04:36
-@Author  :   Alejandro Marrero 
+@Author  :   Alejandro Marrero
 @Version :   1.0
 @Contact :   amarrerd@ull.edu.es
 @License :   (C)Copyright 2023, Alejandro Marrero
 @Desc    :   None
 """
 
-import pytest
+import copy
 import itertools
 from operator import attrgetter
-import copy
-from digneapy.operators import crossover, selection, mutation, replacement
-from digneapy.core import Solution, Instance
+
 import numpy as np
+import pytest
+
+from digneapy.core import Instance, Solution
+from digneapy.operators import crossover, mutation, replacement, selection
 
 
 @pytest.fixture
@@ -225,7 +227,8 @@ def test_first_improve_replacement(population):
     ]
 
     expected = [
-        copy.copy(i) if i > j else copy.copy(j) for i, j in zip(population, offspring)
+        copy.copy(i) if i > j else copy.copy(j)
+        for i, j in zip(population, offspring)
     ]
 
     assert population != offspring
@@ -248,7 +251,9 @@ def test_elitist_replacement(population):
         for _ in range(100)
     ]
     new_best_f = (
-        max(itertools.chain(population, offspring), key=attrgetter("fitness")).fitness
+        max(
+            itertools.chain(population, offspring), key=attrgetter("fitness")
+        ).fitness
         + 10
     )
     population[0].fitness = new_best_f

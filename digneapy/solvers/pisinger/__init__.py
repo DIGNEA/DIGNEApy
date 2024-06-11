@@ -3,7 +3,7 @@
 """
 @File    :   __init__.py
 @Time    :   2024/05/29 11:14:50
-@Author  :   Alejandro Marrero 
+@Author  :   Alejandro Marrero
 @Version :   1.0
 @Contact :   amarrerd@ull.edu.es
 @License :   (C)Copyright 2024, Alejandro Marrero

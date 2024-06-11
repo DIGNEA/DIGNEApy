@@ -3,20 +3,21 @@
 """
 @File    :   _base_archive.py
 @Time    :   2024/06/07 12:17:34
-@Author  :   Alejandro Marrero 
+@Author  :   Alejandro Marrero
 @Version :   1.0
 @Contact :   amarrerd@ull.edu.es
 @License :   (C)Copyright 2024, Alejandro Marrero
 @Desc    :   None
 """
 
-
-from digneapy.core import Instance
-import numpy as np
 import operator
 from collections.abc import Iterable
 from functools import reduce
-from typing import Optional, Callable
+from typing import Callable, Optional
+
+import numpy as np
+
+from digneapy.core import Instance
 
 
 class Archive:
@@ -92,7 +93,9 @@ class Archive:
         >>> assert a1 == archive
         >>> assert empty_archive != archive
         """
-        return len(self) == len(other) and all(a == b for a, b in zip(self, other))
+        return len(self) == len(other) and all(
+            a == b for a, b in zip(self, other)
+        )
 
     def __hash__(self):
         hashes = (hash(i) for i in self.instances)

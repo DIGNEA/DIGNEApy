@@ -3,17 +3,18 @@
 """
 @File    :   solver.py
 @Time    :   2024/06/07 14:10:11
-@Author  :   Alejandro Marrero 
+@Author  :   Alejandro Marrero
 @Version :   1.0
 @Contact :   amarrerd@ull.edu.es
 @License :   (C)Copyright 2024, Alejandro Marrero
 @Desc    :   None
 """
 
-from digneapy.core.solution import Solution
-from digneapy.core.problem import P
 from abc import ABC, abstractmethod
 from typing import Generic
+
+from digneapy.core.problem import P
+from digneapy.core.solution import Solution
 
 
 class Solver(ABC, Generic[P]):

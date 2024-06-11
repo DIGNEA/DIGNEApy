@@ -3,20 +3,23 @@
 """
 @File    :   test_transformers.py
 @Time    :   2023/11/16 08:58:15
-@Author  :   Alejandro Marrero 
+@Author  :   Alejandro Marrero
 @Version :   1.0
 @Contact :   amarrerd@ull.edu.es
 @License :   (C)Copyright 2023, Alejandro Marrero
 @Desc    :   None
 """
+
 from __future__ import unicode_literals
 
 import os
-import pytest
+
 import numpy as np
 import pandas as pd
-from digneapy.transformers import Transformer, KerasNN, TorchNN
+import pytest
 from sklearn.metrics import mean_squared_error
+
+from digneapy.transformers import KerasNN, TorchNN, Transformer
 
 dir, _ = os.path.split(__file__)
 
@@ -60,7 +63,10 @@ def test_KerasNN_transformer_raises():
     activations = ("relu", "relu", None)
     expected_filename = "nn_transformer_bpp"
     transformer = KerasNN(
-        expected_filename, input_shape=[11], shape=shapes, activations=activations
+        expected_filename,
+        input_shape=[11],
+        shape=shapes,
+        activations=activations,
     )
 
     assert transformer._name == expected_filename + ".keras"
@@ -95,7 +101,10 @@ def test_KerasNN_transformer_bpp():
     activations = ("relu", "relu", None)
     expected_filename = "nn_transformer_bpp.keras"
     transformer = KerasNN(
-        expected_filename, input_shape=[11], shape=shapes, activations=activations
+        expected_filename,
+        input_shape=[11],
+        shape=shapes,
+        activations=activations,
     )
 
     weights = np.random.random_sample(size=204)
@@ -126,7 +135,10 @@ def test_KerasNN_transformer_kp():
     activations = ("relu", "relu", None)
     expected_filename = "nn_transformer_kp.keras"
     transformer = KerasNN(
-        expected_filename, input_shape=[8], shape=shapes, activations=activations
+        expected_filename,
+        input_shape=[8],
+        shape=shapes,
+        activations=activations,
     )
 
     weights = np.random.random_sample(size=118)
@@ -151,7 +163,10 @@ def test_KerasNN_reduced_transformer_kp():
     activations = ("relu", None)
     expected_filename = "nn_transformer_kp.keras"
     transformer = KerasNN(
-        expected_filename, input_shape=[8], shape=shapes, activations=activations
+        expected_filename,
+        input_shape=[8],
+        shape=shapes,
+        activations=activations,
     )
 
     weights = np.random.random_sample(size=46)
@@ -176,7 +191,10 @@ def test_KerasNN_autoencoder_bpp():
     activations = ("relu", "relu", None, "relu", "relu", None)
     expected_filename = "nn_autoencoder_bpp.keras"
     transformer = KerasNN(
-        expected_filename, input_shape=[11], shape=shapes, activations=activations
+        expected_filename,
+        input_shape=[11],
+        shape=shapes,
+        activations=activations,
     )
 
     weights = np.random.random_sample(size=291)

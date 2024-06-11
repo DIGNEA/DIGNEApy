@@ -4,7 +4,15 @@ __author__ = """Alejandro Marrero"""
 __email__ = "amarrerd@ull.edu.es"
 __version__ = "0.2.0"
 
-from digneapy import domains, operators, solvers, core, transformers, generators, qd
+from digneapy import (
+    core,
+    domains,
+    generators,
+    operators,
+    qd,
+    solvers,
+    transformers,
+)
 
 __all__ = [
     "domains",

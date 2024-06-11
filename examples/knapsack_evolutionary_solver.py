@@ -3,16 +3,17 @@
 """
 @File    :   knapsack_evolutionary_solver.py
 @Time    :   2024/4/11 11:41:13
-@Author  :   Alejandro Marrero 
+@Author  :   Alejandro Marrero
 @Version :   1.0
 @Contact :   amarrerd@ull.edu.es
 @License :   (C)Copyright 2024, Alejandro Marrero
 @Desc    :   None
 """
 
-from digneapy.solvers import EA, MAXIMISE
 import numpy as np
+
 from digneapy.domains import knapsack
+from digneapy.solvers import EA, MAXIMISE
 
 
 def main():

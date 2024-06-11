@@ -3,17 +3,17 @@
 """
 @File    :   heuristics.py
 @Time    :   2023/10/30 11:59:03
-@Author  :   Alejandro Marrero 
+@Author  :   Alejandro Marrero
 @Version :   1.0
 @Contact :   amarrerd@ull.edu.es
 @License :   (C)Copyright 2023, Alejandro Marrero
 @Desc    :   None
 """
 
-
-from digneapy.domains.knapsack import Knapsack
-from digneapy.core import Solution
 import numpy as np
+
+from digneapy.core import Solution
+from digneapy.domains.knapsack import Knapsack
 
 
 def default_kp(problem: Knapsack) -> list[Solution]:
@@ -29,7 +29,9 @@ def default_kp(problem: Knapsack) -> list[Solution]:
             inside += problem.weights[idx]
             profit += problem.profits[idx]
             chromosome[idx] = 1
-    return [Solution(chromosome=chromosome, objectives=(profit,), fitness=profit)]
+    return [
+        Solution(chromosome=chromosome, objectives=(profit,), fitness=profit)
+    ]
 
 
 def map_kp(problem: Knapsack) -> list[Solution]:
@@ -47,7 +49,9 @@ def map_kp(problem: Knapsack) -> list[Solution]:
             inside += problem.weights[idx]
             profit += problem.profits[idx]
             chromosome[idx] = 1
-    return [Solution(chromosome=chromosome, objectives=(profit,), fitness=profit)]
+    return [
+        Solution(chromosome=chromosome, objectives=(profit,), fitness=profit)
+    ]
 
 
 def miw_kp(problem: Knapsack) -> list[Solution]:
@@ -68,7 +72,9 @@ def miw_kp(problem: Knapsack) -> list[Solution]:
         else:
             break
 
-    return [Solution(chromosome=chromosome, objectives=(profit,), fitness=profit)]
+    return [
+        Solution(chromosome=chromosome, objectives=(profit,), fitness=profit)
+    ]
 
 
 def mpw_kp(problem: Knapsack) -> list[Solution]:
@@ -76,7 +82,9 @@ def mpw_kp(problem: Knapsack) -> list[Solution]:
         msg = "No problem found in args of mpw_kp heuristic"
         raise AttributeError(msg)
 
-    profits_per_weights = [(p / w) for p, w in zip(problem.profits, problem.weights)]
+    profits_per_weights = [
+        (p / w) for p, w in zip(problem.profits, problem.weights)
+    ]
     indices = np.argsort(profits_per_weights)[::-1]
     inside = 0
     profit = 0
@@ -87,4 +95,6 @@ def mpw_kp(problem: Knapsack) -> list[Solution]:
             profit += problem.profits[idx]
             chromosome[idx] = 1
 
-    return [Solution(chromosome=chromosome, objectives=(profit,), fitness=profit)]
+    return [
+        Solution(chromosome=chromosome, objectives=(profit,), fitness=profit)
+    ]

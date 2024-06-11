@@ -3,24 +3,26 @@
 """
 @File    :   generator.py
 @Time    :   2023/10/30 14:20:21
-@Author  :   Alejandro Marrero 
+@Author  :   Alejandro Marrero
 @Version :   1.0
 @Contact :   amarrerd@ull.edu.es
 @License :   (C)Copyright 2023, Alejandro Marrero
 @Desc    :   None
 """
-from collections.abc import Sequence, Iterable
-from digneapy.generators.perf_metrics import default_performance_metric
-from digneapy.qd import NS
-from digneapy.archives import Archive
-from digneapy.core import Instance, Domain, Solver
-from digneapy.operators import crossover, mutation, selection, replacement
-from typing import List, Callable, Optional
-from operator import attrgetter
-import numpy as np
+
 import copy
+from collections.abc import Iterable, Sequence
+from operator import attrgetter
+from typing import Callable, List, Optional
+
+import numpy as np
 from deap import tools
 
+from digneapy.archives import Archive
+from digneapy.core import Domain, Instance, Solver
+from digneapy.generators.perf_metrics import default_performance_metric
+from digneapy.operators import crossover, mutation, replacement, selection
+from digneapy.qd import NS
 
 PerformanceFn = Callable[[Sequence[float]], float]
 
@@ -36,7 +38,9 @@ class EIG(NS):
         s_set: Optional[Archive] = None,
         k: int = 15,
         descriptor: str = "features",
-        transformer: Optional[Callable[[Sequence | Iterable], np.ndarray]] = None,
+        transformer: Optional[
+            Callable[[Sequence | Iterable], np.ndarray]
+        ] = None,
         repetitions: int = 1,
         cxrate: float = 0.5,
         mutrate: float = 0.8,
@@ -100,7 +104,9 @@ class EIG(NS):
         try:
             phi = float(phi)
         except ValueError:
-            raise AttributeError("Phi must be a float number in the range [0.0-1.0].")
+            raise AttributeError(
+                "Phi must be a float number in the range [0.0-1.0]."
+            )
 
         if phi < 0.0 or phi > 1.0:
             msg = f"Phi must be a float number in the range [0.0-1.0]. Got: {phi}."
@@ -190,7 +196,9 @@ class EIG(NS):
 
     def _run(self, verbose: bool = False):
         if self.domain is None:
-            raise AttributeError("You must specify a domain to run the generator.")
+            raise AttributeError(
+                "You must specify a domain to run the generator."
+            )
         if len(self.portfolio) == 0:
             raise AttributeError(
                 "The portfolio is empty. To run the generator you must provide a valid portfolio of solvers"

@@ -3,19 +3,20 @@
 """
 @File    :   replacement.py
 @Time    :   2023/11/03 10:33:22
-@Author  :   Alejandro Marrero 
+@Author  :   Alejandro Marrero
 @Version :   1.0
 @Contact :   amarrerd@ull.edu.es
 @License :   (C)Copyright 2023, Alejandro Marrero
 @Desc    :   None
 """
-from ..core import Instance, Solution
+
 import copy
 import itertools
+from collections.abc import Sequence
 from operator import attrgetter
 from typing import Callable
-from collections.abc import Sequence
 
+from ..core import Instance, Solution
 
 Replacement = Callable[
     [

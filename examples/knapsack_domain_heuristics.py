@@ -3,22 +3,22 @@
 """
 @File    :   knapsack_domain_heuristics.py
 @Time    :   2023/11/02 11:18:13
-@Author  :   Alejandro Marrero 
+@Author  :   Alejandro Marrero
 @Version :   1.0
 @Contact :   amarrerd@ull.edu.es
 @License :   (C)Copyright 2023, Alejandro Marrero
 @Desc    :   Example of how to generated diverse and biased KP instances using DIGNEApy
 """
 
-
-from digneapy.generators import EIG
-from digneapy.archives import Archive
-from digneapy.solvers import default_kp, map_kp, miw_kp, mpw_kp
-from digneapy.domains.knapsack import KPDomain
-from digneapy.operators.replacement import first_improve_replacement
-from collections import deque
-import configparser
 import argparse
+import configparser
+from collections import deque
+
+from digneapy.archives import Archive
+from digneapy.domains.knapsack import KPDomain
+from digneapy.generators import EIG
+from digneapy.operators.replacement import first_improve_replacement
+from digneapy.solvers import default_kp, map_kp, miw_kp, mpw_kp
 
 
 def main(default_args):
@@ -44,7 +44,9 @@ def main(default_args):
         descriptor = config["generator"]["descriptor"]
 
     portfolio = deque([default_kp, map_kp, miw_kp, mpw_kp])
-    kp_domain = KPDomain(dimension=dimension, capacity_approach=capacity_approach)
+    kp_domain = KPDomain(
+        dimension=dimension, capacity_approach=capacity_approach
+    )
 
     for i in range(len(portfolio)):
         portfolio.rotate(i)

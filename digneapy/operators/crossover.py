@@ -3,20 +3,23 @@
 """
 @File    :   crossover.py
 @Time    :   2023/11/03 10:33:32
-@Author  :   Alejandro Marrero 
+@Author  :   Alejandro Marrero
 @Version :   1.0
 @Contact :   amarrerd@ull.edu.es
 @License :   (C)Copyright 2023, Alejandro Marrero
 @Desc    :   None
 """
 
-from ..core import Instance, Solution
-import numpy as np
 import copy
 from typing import Callable, Union
 
+import numpy as np
+
+from ..core import Instance, Solution
+
 Crossover = Callable[
-    [Union[Instance | Solution], Union[Instance | Solution]], Union[Instance | Solution]
+    [Union[Instance | Solution], Union[Instance | Solution]],
+    Union[Instance | Solution],
 ]
 
 
@@ -67,6 +70,8 @@ def uniform_crossover(
 
     probs = np.random.rand(len(ind_1))
     offspring = copy.deepcopy(ind_1)
-    chromosome = [i if pb <= cxpb else j for pb, i, j in zip(probs, ind_1, ind_2)]
+    chromosome = [
+        i if pb <= cxpb else j for pb, i, j in zip(probs, ind_1, ind_2)
+    ]
     offspring[:] = chromosome
     return offspring

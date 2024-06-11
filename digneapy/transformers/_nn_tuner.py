@@ -3,7 +3,7 @@
 """
 @File    :   meta_ea.py
 @Time    :   2024/04/25 09:54:42
-@Author  :   Alejandro Marrero 
+@Author  :   Alejandro Marrero
 @Version :   1.0
 @Contact :   amarrerd@ull.edu.es
 @License :   (C)Copyright 2024, Alejandro Marrero
@@ -11,16 +11,17 @@
 """
 
 from collections.abc import Sequence
-from deap import algorithms, base, cma, creator, tools
 from multiprocessing.pool import ThreadPool as Pool
-from digneapy.transformers import KerasNN, TorchNN, Transformer
 from typing import Callable, Optional
+
 import numpy as np
+from deap import algorithms, base, cma, creator, tools
+
 from digneapy.solvers import DIRECTIONS, MAXIMISE
+from digneapy.transformers import KerasNN, TorchNN, Transformer
 
 
 class NNTuner:
-
     def __init__(
         self,
         transformer: KerasNN | TorchNN,
@@ -33,7 +34,9 @@ class NNTuner:
         direction: str = MAXIMISE,
         n_jobs: int = 1,
     ):
-        if transformer is None or not issubclass(transformer.__class__, Transformer):
+        if transformer is None or not issubclass(
+            transformer.__class__, Transformer
+        ):
             raise AttributeError(
                 "transformer must be a subclass of KerasNN or TorchNN object to run MetaEA"
             )
@@ -45,11 +48,15 @@ class NNTuner:
         self.eval_fn = eval_fn
 
         self.dimension = dimension
-        self.centroid = centroid if centroid is not None else [0.0] * self.dimension
+        self.centroid = (
+            centroid if centroid is not None else [0.0] * self.dimension
+        )
         self.sigma = sigma
         self._lambda = lambda_ if lambda_ != 0 else 50
         self.generations = generations
-        self.__performed_gens = 0  # These vars are used to save the data in CSV files
+        self.__performed_gens = (
+            0  # These vars are used to save the data in CSV files
+        )
         self.__evaluated_inds = 0
 
         if direction not in DIRECTIONS:
@@ -68,7 +75,9 @@ class NNTuner:
         self.strategy = cma.Strategy(
             centroid=self.centroid, sigma=self.sigma, lambda_=self._lambda
         )
-        self.toolbox.register("generate", self.strategy.generate, creator.Individual)
+        self.toolbox.register(
+            "generate", self.strategy.generate, creator.Individual
+        )
         self.toolbox.register("update", self.strategy.update)
         if n_jobs < 1:
             msg = "The number of jobs must be at least 1."
@@ -107,6 +116,9 @@ class NNTuner:
 
     def __call__(self):
         population, logbook = algorithms.eaGenerateUpdate(
-            self.toolbox, ngen=self.generations, stats=self.stats, halloffame=self.hof
+            self.toolbox,
+            ngen=self.generations,
+            stats=self.stats,
+            halloffame=self.hof,
         )
         return (self.hof[0], population, logbook)

@@ -3,19 +3,24 @@
 """
 @File    :   selection.py
 @Time    :   2023/11/03 10:33:26
-@Author  :   Alejandro Marrero 
+@Author  :   Alejandro Marrero
 @Version :   1.0
 @Contact :   amarrerd@ull.edu.es
 @License :   (C)Copyright 2023, Alejandro Marrero
 @Desc    :   None
 """
-from ..core import Instance, Solution
-import numpy as np
-import copy
-from typing import Callable
-from collections.abc import Sequence
 
-Selection = Callable[[Sequence[Instance] | Sequence[Solution]], Instance | Solution]
+import copy
+from collections.abc import Sequence
+from typing import Callable
+
+import numpy as np
+
+from ..core import Instance, Solution
+
+Selection = Callable[
+    [Sequence[Instance] | Sequence[Solution]], Instance | Solution
+]
 
 
 def binary_tournament_selection(

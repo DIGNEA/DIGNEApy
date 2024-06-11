@@ -3,23 +3,23 @@
 """
 @File    :   test_heuristics.py
 @Time    :   2024/04/15 09:13:27
-@Author  :   Alejandro Marrero 
+@Author  :   Alejandro Marrero
 @Version :   1.0
 @Contact :   amarrerd@ull.edu.es
 @License :   (C)Copyright 2024, Alejandro Marrero
 @Desc    :   None
 """
 
-import pytest
 import numpy as np
+import pytest
+from deap import benchmarks
+
+from digneapy import solvers
+from digneapy.core import Solution
 from digneapy.domains import knapsack
-from digneapy.solvers import heuristics
-from digneapy.solvers import EA
+from digneapy.solvers import EA, heuristics
 from digneapy.solvers.parallel_ea import ParEAKP
 from digneapy.solvers.pisinger import combo, expknap, minknap
-from digneapy.core import Solution
-from deap import benchmarks
-from digneapy import solvers
 
 
 @pytest.fixture
@@ -236,7 +236,9 @@ def test_minknap(default_large_knap):
 
 def test_expknap(default_large_knap):
     solutions = expknap(default_large_knap)
-    assert solutions[0].fitness <= 15.0  # Here compares time (15.0s max time allowed)
+    assert (
+        solutions[0].fitness <= 15.0
+    )  # Here compares time (15.0s max time allowed)
     solutions = expknap(default_large_knap, only_time=False)
     assert len(solutions) == 1
     assert all(type(i) == Solution for i in solutions)

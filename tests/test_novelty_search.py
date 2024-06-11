@@ -2,10 +2,11 @@
 
 """Tests for `digneapy` package."""
 
-import pytest
 import numpy as np
-from digneapy.qd import NS
+import pytest
+
 from digneapy.core import Instance
+from digneapy.qd import NS
 
 
 def transformer(l):
@@ -135,7 +136,9 @@ def test_run_nsf_with_transformer(random_population):
 
 def test_run_nsp(nsp, random_population):
     assert nsp._describe_by == "performance"
-    assert all(len(instance.portfolio_scores) != 0 for instance in random_population)
+    assert all(
+        len(instance.portfolio_scores) != 0 for instance in random_population
+    )
     sparseness = nsp.sparseness(random_population)
     assert len(sparseness) == len(random_population)
 
@@ -165,7 +168,9 @@ def test_run_nsp(nsp, random_population):
 def test_run_ns_instance(nsi, random_population):
     assert nsi._describe_by == "instance"
     assert all(len(instance.features) != 0 for instance in random_population)
-    assert all(len(instance.portfolio_scores) != 0 for instance in random_population)
+    assert all(
+        len(instance.portfolio_scores) != 0 for instance in random_population
+    )
     assert all(len(instance) != 0 for instance in random_population)
 
     # Sparseness is calculated with the instance

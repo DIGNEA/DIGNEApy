@@ -3,22 +3,25 @@
 """
 @File    :   nn_transformer_gecco_23.py
 @Time    :   2023/11/10 14:09:41
-@Author  :   Alejandro Marrero 
+@Author  :   Alejandro Marrero
 @Version :   1.0
 @Contact :   amarrerd@ull.edu.es
 @License :   (C)Copyright 2023, Alejandro Marrero
 @Desc    :   None
 """
-from typing import Dict
-from collections import deque
-from digneapy.transformers import KerasNN
-from digneapy.generators import EIG
-from digneapy.archives import Archive
-from digneapy.solvers import default_kp, map_kp, miw_kp, mpw_kp
-from digneapy.domains.knapsack import KPDomain
-from digneapy.operators.replacement import first_improve_replacement
-import numpy as np
+
 import copy
+from collections import deque
+from typing import Dict
+
+import numpy as np
+
+from digneapy.archives import Archive
+from digneapy.domains.knapsack import KPDomain
+from digneapy.generators import EIG
+from digneapy.operators.replacement import first_improve_replacement
+from digneapy.solvers import default_kp, map_kp, miw_kp, mpw_kp
+from digneapy.transformers import KerasNN
 
 
 class NSEval:
@@ -28,7 +31,8 @@ class NSEval:
         self.resolution = resolution
         self.features_info = features_info
         self.hypercube = [
-            np.linspace(start, stop, self.resolution) for start, stop in features_info
+            np.linspace(start, stop, self.resolution)
+            for start, stop in features_info
         ]
         self.kp_domain = KPDomain(dimension=50, capacity_approach="percentage")
         self.portfolio = deque([default_kp, map_kp, miw_kp, mpw_kp])
@@ -57,7 +61,10 @@ class NSEval:
             for solver, instances in generated_instances.items():
                 for inst in instances:
                     content = (
-                        solver + "," + ",".join(str(f) for f in inst.features) + "\n"
+                        solver
+                        + ","
+                        + ",".join(str(f) for f in inst.features)
+                        + "\n"
                     )
                     file.write(content)
 
@@ -77,7 +84,9 @@ class NSEval:
         coverage = [set() for _ in range(8)]
         instances = {}
         for i in range(len(self.portfolio)):
-            self.portfolio.rotate(i)  # This allow us to change the target on the fly
+            self.portfolio.rotate(
+                i
+            )  # This allow us to change the target on the fly
             eig = EIG(
                 pop_size=10,
                 generations=1000,

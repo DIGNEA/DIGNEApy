@@ -3,18 +3,20 @@
 """
 @File    :   core.py
 @Time    :   2024/05/29 11:16:49
-@Author  :   Alejandro Marrero 
+@Author  :   Alejandro Marrero
 @Version :   1.0
 @Contact :   amarrerd@ull.edu.es
 @License :   (C)Copyright 2024, Alejandro Marrero
 @Desc    :   None
 """
 
-from pisinger_cpp import minknap_cpp, combo_cpp, expknap_cpp
-from digneapy.domains.knapsack import Knapsack
-from digneapy.core import Solution
 from typing import List
+
 import numpy as np
+from pisinger_cpp import combo_cpp, expknap_cpp, minknap_cpp
+
+from digneapy.core import Solution
+from digneapy.domains.knapsack import Knapsack
 
 
 def minknap(problem: Knapsack = None, only_time: bool = True) -> List[Solution]:

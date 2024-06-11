@@ -3,20 +3,19 @@
 """
 @File    :   instance.py
 @Time    :   2024/06/07 14:09:43
-@Author  :   Alejandro Marrero 
+@Author  :   Alejandro Marrero
 @Version :   1.0
 @Contact :   amarrerd@ull.edu.es
 @License :   (C)Copyright 2024, Alejandro Marrero
 @Desc    :   None
 """
 
-
 import copy
 import operator
 import reprlib
 from collections.abc import Iterable
 from functools import reduce
-from typing import Tuple, Optional
+from typing import Optional, Tuple
 
 
 class Instance:
@@ -110,7 +109,9 @@ class Instance:
     def __str__(self):
         features = reprlib.repr(self._features)
         performance = reprlib.repr(self._portfolio_m)
-        performance = performance[performance.find("(") : performance.rfind(")") + 1]
+        performance = performance[
+            performance.find("(") : performance.rfind(")") + 1
+        ]
         return f"Instance(f={self._fitness},p={self._p},s={self._s},features={features},performance={performance})"
 
     def __iter__(self):

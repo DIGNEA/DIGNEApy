@@ -3,13 +3,12 @@
 """
 @File    :   solution.py
 @Time    :   2024/06/07 14:09:54
-@Author  :   Alejandro Marrero 
+@Author  :   Alejandro Marrero
 @Version :   1.0
 @Contact :   amarrerd@ull.edu.es
 @License :   (C)Copyright 2024, Alejandro Marrero
 @Desc    :   None
 """
-
 
 import operator
 from collections.abc import Iterable

@@ -3,19 +3,21 @@
 """
 @File    :   autoencoders.py
 @Time    :   2024/05/28 10:06:48
-@Author  :   Alejandro Marrero 
+@Author  :   Alejandro Marrero
 @Version :   1.0
 @Contact :   amarrerd@ull.edu.es
 @License :   (C)Copyright 2024, Alejandro Marrero
 @Desc    :   None
 """
 
+import os
+import pickle
 from collections.abc import Sequence
+
 import keras
 from keras.utils import pad_sequences
+
 from digneapy.transformers import Transformer
-import pickle
-import os
 
 ENCODINGS = ("Best", "8D")
 
@@ -35,18 +37,28 @@ class KPAE(Transformer):
 
     _MAX_LENGTH = 2001
     _BEST_AE = "best_encoding/best_kp_ae_bayesian_lr_one_cycle_training.keras"
-    _BEST_ENC = "best_encoding/best_kp_ae_bayesian_lr_one_cycle_training_encoder.keras"
-    _BEST_DEC = "best_encoding/best_kp_ae_bayesian_lr_one_cycle_training_decoder.keras"
+    _BEST_ENC = (
+        "best_encoding/best_kp_ae_bayesian_lr_one_cycle_training_encoder.keras"
+    )
+    _BEST_DEC = (
+        "best_encoding/best_kp_ae_bayesian_lr_one_cycle_training_decoder.keras"
+    )
 
     _8D_AE = "8D_encoding/best_kp_ae_bayesian_8D_lr_one_cycle_training.keras"
-    _8D_ENC = "8D_encoding/best_kp_ae_bayesian_8D_lr_one_cycle_training_encoder.keras"
-    _8D_DEC = "8D_encoding/best_kp_ae_bayesian_8D_lr_one_cycle_training_decoder.keras"
+    _8D_ENC = (
+        "8D_encoding/best_kp_ae_bayesian_8D_lr_one_cycle_training_encoder.keras"
+    )
+    _8D_DEC = (
+        "8D_encoding/best_kp_ae_bayesian_8D_lr_one_cycle_training_decoder.keras"
+    )
 
     def __init__(self, name: str = "KP_AE", encoding: str = "Best"):
         super().__init__(name)
 
         if encoding not in ENCODINGS:
-            raise AttributeError(f"The encoding alternatives must be {ENCODINGS}")
+            raise AttributeError(
+                f"The encoding alternatives must be {ENCODINGS}"
+            )
 
         self._encoding = encoding
         if self._encoding == "Best":
@@ -61,7 +73,6 @@ class KPAE(Transformer):
         self._load_models()
 
     def _load_models(self):
-
         model_path = os.path.dirname(os.path.abspath(__file__)) + "/models/"
 
         with open(f"{model_path}kp_scaler_for_ae_different_N.pkl", "rb") as f:

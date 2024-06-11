@@ -3,25 +3,30 @@
 """
 @File    :   heuristics.py
 @Time    :   2024/4/11 11:14:36
-@Author  :   Alejandro Marrero 
+@Author  :   Alejandro Marrero
 @Version :   1.0
 @Contact :   amarrerd@ull.edu.es
 @License :   (C)Copyright 2024, Alejandro Marrero
 @Desc    :   None
 """
 
-from digneapy.core import Solution, Solver, Problem
-import numpy as np
-from deap import creator, base, tools, algorithms
-from ._constants import MINIMISE, DIRECTIONS
 import multiprocessing
+
+import numpy as np
+from deap import algorithms, base, creator, tools
+
+from digneapy.core import Problem, Solution, Solver
+
+from ._constants import DIRECTIONS, MINIMISE
 
 
 def _gen_dignea_ind(icls, size: int, min_value, max_value):
     """Auxiliar function to generate individual based on
     the Solution class of digneapy
     """
-    chromosome = icls(np.random.randint(low=min_value, high=max_value, size=size))
+    chromosome = icls(
+        np.random.randint(low=min_value, high=max_value, size=size)
+    )
     return chromosome
 
 
@@ -84,7 +89,9 @@ class EA(Solver):
             "population", tools.initRepeat, list, self._toolbox.individual
         )
         self._toolbox.register("mate", cx, indpb=0.5)
-        self._toolbox.register("mutate", mut, low=min_g, up=max_g, indpb=(1.0 / dim))
+        self._toolbox.register(
+            "mutate", mut, low=min_g, up=max_g, indpb=(1.0 / dim)
+        )
         self._toolbox.register("select", tools.selTournament, tournsize=2)
 
         self._stats = tools.Statistics(lambda ind: ind.fitness.values)
@@ -96,7 +103,9 @@ class EA(Solver):
         self._logbook = None
         self._best_found = Solution()
 
-        self._name = f"EA_PS_{self._pop_size}_CXPB_{self._cxpb}_MUTPB_{self._mutpb}"
+        self._name = (
+            f"EA_PS_{self._pop_size}_CXPB_{self._cxpb}_MUTPB_{self._mutpb}"
+        )
         self.__name__ = self._name
 
         if self._n_cores > 1:

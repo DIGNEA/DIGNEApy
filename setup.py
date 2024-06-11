@@ -2,11 +2,10 @@
 
 """The setup script."""
 
-
 from glob import glob
-from setuptools import setup, Extension, find_packages
-from setuptools.command.build_ext import build_ext
 
+from setuptools import Extension, find_packages, setup
+from setuptools.command.build_ext import build_ext
 
 with open("README.md") as readme_file:
     readme = readme_file.read()

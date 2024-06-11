@@ -3,19 +3,19 @@
 """
 @File    :   utils.py
 @Time    :   2024/06/07 14:22:35
-@Author  :   Alejandro Marrero 
+@Author  :   Alejandro Marrero
 @Version :   1.0
 @Contact :   amarrerd@ull.edu.es
 @License :   (C)Copyright 2024, Alejandro Marrero
 @Desc    :   None
 """
 
+from typing import Optional
 
 import matplotlib.pyplot as plt
 import pandas as pd
 import seaborn as sns
 from matplotlib.lines import Line2D
-from typing import Optional
 
 
 def plot_generator_logbook(logbook=None, filename: Optional[str] = ""):

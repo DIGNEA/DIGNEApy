@@ -15,7 +15,7 @@ import pytest
 import copy
 import numpy as np
 from digneapy.core import Instance, Domain, Solution, Problem
-from deap import base, creator, tools
+from deap import creator
 
 
 def gen_dignea_ind(icls, size: int, min_value, max_value):
@@ -109,15 +109,15 @@ def test_default_instance_attrs(default_instance):
     default_instance.p = 5.0
     assert (
         default_instance.__repr__()
-        == f"Instance<f=100.0,p=5.0,s=10.0,vars=0,features=3,performance=3>"
+        == "Instance<f=100.0,p=5.0,s=10.0,vars=0,features=3,performance=3>"
     )
     assert (
         format(default_instance, "p")
-        == f"Instance(f=100.0,p=5.0, s=10.0, descriptor=(0.0,1.0,2.0))"
+        == "Instance(f=100.0,p=5.0, s=10.0, descriptor=(0.0,1.0,2.0))"
     )
     assert (
         format(default_instance)
-        == f"Instance(f=100.0,p=5.0, s=10.0, descriptor=(0,1,2))"
+        == "Instance(f=100.0,p=5.0, s=10.0, descriptor=(0,1,2))"
     )
 
 

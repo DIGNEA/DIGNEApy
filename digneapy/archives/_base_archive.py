@@ -14,7 +14,6 @@
 from digneapy.core import Instance
 import numpy as np
 import operator
-import reprlib
 from collections.abc import Iterable
 from functools import reduce
 from typing import Optional, Callable

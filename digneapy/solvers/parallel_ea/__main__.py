@@ -11,8 +11,7 @@
 """
 
 from digneapy.domains.knapsack import Knapsack
-from digneapy.core import Solution, Solver
-import numpy as np
+from digneapy.core import Solution
 from parallel_ea import _ParEACpp
 
 

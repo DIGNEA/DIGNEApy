@@ -11,8 +11,6 @@
 """
 
 from collections.abc import Sequence
-from sklearn.preprocessing import StandardScaler
-import tensorflow as tf
 import keras
 from keras.utils import pad_sequences
 from digneapy.transformers import Transformer

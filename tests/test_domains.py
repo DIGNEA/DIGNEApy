@@ -12,7 +12,6 @@
 
 
 import pytest
-import copy
 import numpy as np
 from digneapy.domains import knapsack
 from digneapy.core import Instance
@@ -33,7 +32,7 @@ def test_default_kp_instance(default_kp):
     assert default_kp.capacity == 50
     assert default_kp.profits == list(range(1, 101))
     assert default_kp.weights == list(range(1, 101))
-    expected_repr = f"KP<n=100,C=50>"
+    expected_repr = "KP<n=100,C=50>"
     assert default_kp.__repr__() == expected_repr
     # Check is able to create a file
     default_kp.to_file()

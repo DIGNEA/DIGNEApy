@@ -3,10 +3,8 @@
 """Tests for `digneapy` package."""
 
 import pytest
-import copy
 import numpy as np
-from digneapy.archives import Archive
-from digneapy.qd import NS, instance_strategy
+from digneapy.qd import NS
 from digneapy.core import Instance
 
 

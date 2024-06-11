@@ -14,8 +14,7 @@ from ._base_archive import Archive
 from digneapy.core import Instance
 import numpy as np
 from collections.abc import Iterable, Sequence
-from functools import reduce
-from typing import Optional, Tuple, Callable
+from typing import Optional, Tuple
 
 
 class GridArchive(Archive):

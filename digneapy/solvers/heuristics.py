@@ -13,7 +13,6 @@
 
 from digneapy.domains.knapsack import Knapsack
 from digneapy.core import Solution
-from collections.abc import Sequence
 import numpy as np
 
 

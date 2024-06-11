@@ -83,7 +83,7 @@ def test_bool_on_default_archive(default_archive):
 
 
 def test_archive_magic(default_archive):
-    assert default_archive.__str__() == f"Archive(threshold=0.0,data=(|10|))"
+    assert default_archive.__str__() == "Archive(threshold=0.0,data=(|10|))"
     duplicated = copy.deepcopy(default_archive)
     assert hash(duplicated) == hash(default_archive)
 

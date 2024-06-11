@@ -13,7 +13,6 @@
 from digneapy.solvers.pisinger import combo, minknap, expknap
 import numpy as np
 from digneapy.domains import knapsack
-import numpy as np
 
 
 def main():

@@ -16,7 +16,7 @@ from digneapy.archives import Archive
 from digneapy.generators import EIG
 from digneapy.solvers import default_kp, map_kp, miw_kp, mpw_kp
 from digneapy.domains.knapsack import KPDomain
-from digneapy.operators.replacement import first_improve_replacement, generational
+from digneapy.operators.replacement import generational
 import copy
 import itertools
 

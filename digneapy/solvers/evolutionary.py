@@ -10,13 +10,11 @@
 @Desc    :   None
 """
 
-from collections.abc import Sequence
 from digneapy.core import Solution, Solver, Problem
 import numpy as np
 from deap import creator, base, tools, algorithms
 from ._constants import MINIMISE, DIRECTIONS
 import multiprocessing
-from digneapy.domains.knapsack import Knapsack
 
 
 def _gen_dignea_ind(icls, size: int, min_value, max_value):

@@ -50,12 +50,12 @@ def test_default_generator():
 
     assert (
         eig.__str__()
-        == f"EIG(pop_size=100,gen=1000,domain=None,portfolio=[],NS(descriptor=features,k=15,A=(),S_S=()))"
+        == "EIG(pop_size=100,gen=1000,domain=None,portfolio=[],NS(descriptor=features,k=15,A=(),S_S=()))"
     )
 
     assert (
         eig.__repr__()
-        == f"EIG<pop_size=100,gen=1000,domain=None,portfolio=[],NS<descriptor=features,k=15,A=(),S_S=()>>"
+        == "EIG<pop_size=100,gen=1000,domain=None,portfolio=[],NS<descriptor=features,k=15,A=(),S_S=()>>"
     )
 
     with pytest.raises(AttributeError) as e:
@@ -74,11 +74,11 @@ def test_default_generator():
         eig = EIG(domain=None, portfolio=[], phi=-1.0)
     assert (
         e.value.args[0]
-        == f"Phi must be a float number in the range [0.0-1.0]. Got: -1.0."
+        == "Phi must be a float number in the range [0.0-1.0]. Got: -1.0."
     )
     with pytest.raises(AttributeError) as e:
         eig = EIG(domain=None, portfolio=[], phi="hello")
-    assert e.value.args[0] == f"Phi must be a float number in the range [0.0-1.0]."
+    assert e.value.args[0] == "Phi must be a float number in the range [0.0-1.0]."
 
 
 def test_eig_gen_kp_perf_descriptor():

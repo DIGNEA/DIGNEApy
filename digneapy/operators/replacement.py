@@ -10,7 +10,6 @@
 @Desc    :   None
 """
 from ..core import Instance, Solution
-import numpy as np
 import copy
 import itertools
 from operator import attrgetter

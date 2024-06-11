@@ -13,7 +13,6 @@
 from collections.abc import Sequence
 from ..core import Instance, Solution
 import numpy as np
-import copy
 from typing import Callable, Tuple, Union
 
 Mutation = Callable[

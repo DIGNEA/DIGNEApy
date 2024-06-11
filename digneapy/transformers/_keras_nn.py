@@ -14,7 +14,6 @@ from collections.abc import Sequence
 from typing import Tuple, Optional
 import numpy as np
 from sklearn.preprocessing import StandardScaler
-import tensorflow as tf
 import keras
 
 

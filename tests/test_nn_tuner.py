@@ -13,7 +13,6 @@ from __future__ import unicode_literals
 
 import os
 import pytest
-import numpy as np
 import pandas as pd
 from digneapy.transformers import NNTuner, KerasNN
 from sklearn.metrics import mean_squared_error

@@ -100,7 +100,7 @@ class EIG(NS):
         try:
             phi = float(phi)
         except ValueError:
-            raise AttributeError(f"Phi must be a float number in the range [0.0-1.0].")
+            raise AttributeError("Phi must be a float number in the range [0.0-1.0].")
 
         if phi < 0.0 or phi > 1.0:
             msg = f"Phi must be a float number in the range [0.0-1.0]. Got: {phi}."

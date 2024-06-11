@@ -12,7 +12,7 @@
 
 
 from digneapy.core import Instance, Domain, Problem
-from typing import Tuple, Mapping
+from typing import Mapping
 import numpy as np
 import itertools
 from collections.abc import Sequence
@@ -98,7 +98,7 @@ class KPDomain(Domain):
 
         if capacity_ratio < 0.0 or capacity_ratio > 1.0 or not float(capacity_ratio):
             self.capacity_ratio = 0.8  # Default
-            msg = f"The capacity ratio must be a float number in the range [0.0-1.0]. Set as 0.8 as default."
+            msg = "The capacity ratio must be a float number in the range [0.0-1.0]. Set as 0.8 as default."
             print(msg)
         else:
             self.capacity_ratio = capacity_ratio

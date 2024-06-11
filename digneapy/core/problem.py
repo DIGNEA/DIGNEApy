@@ -3,13 +3,12 @@
 """
 @File    :   problem.py
 @Time    :   2024/06/07 14:07:55
-@Author  :   Alejandro Marrero 
+@Author  :   Alejandro Marrero
 @Version :   1.0
 @Contact :   amarrerd@ull.edu.es
 @License :   (C)Copyright 2024, Alejandro Marrero
 @Desc    :   None
 """
-
 
 from abc import ABC, abstractmethod
 from collections.abc import Sequence

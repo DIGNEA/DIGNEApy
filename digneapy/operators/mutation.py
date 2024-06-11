@@ -3,7 +3,7 @@
 """
 @File    :   mutation.py
 @Time    :   2023/11/03 10:33:30
-@Author  :   Alejandro Marrero 
+@Author  :   Alejandro Marrero
 @Version :   1.0
 @Contact :   amarrerd@ull.edu.es
 @License :   (C)Copyright 2023, Alejandro Marrero
@@ -11,10 +11,11 @@
 """
 
 from collections.abc import Sequence
-from ..core import Instance, Solution
-import numpy as np
-import copy
 from typing import Callable, Tuple, Union
+
+import numpy as np
+
+from ..core import Instance, Solution
 
 Mutation = Callable[
     [Union[Instance | Solution], Sequence[Tuple]], Union[Instance | Solution]

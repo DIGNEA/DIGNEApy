@@ -3,19 +3,21 @@
 """
 @File    :   torch_nn.py
 @Time    :   2024/06/07 13:58:32
-@Author  :   Alejandro Marrero 
+@Author  :   Alejandro Marrero
 @Version :   1.0
 @Contact :   amarrerd@ull.edu.es
 @License :   (C)Copyright 2024, Alejandro Marrero
 @Desc    :   None
 """
 
-from ._base_transformer import Transformer
 from collections.abc import Sequence
-from typing import Tuple, Optional
+from typing import Optional, Tuple
+
 import numpy as np
-from sklearn.preprocessing import StandardScaler
 import torch
+from sklearn.preprocessing import StandardScaler
+
+from ._base_transformer import Transformer
 
 
 class TorchNN(Transformer, torch.nn.Module):
@@ -45,7 +47,9 @@ class TorchNN(Transformer, torch.nn.Module):
         Transformer.__init__(self, name)
         torch.nn.Module.__init__(self)
         self._scaler = StandardScaler() if scale else None
-        self._model = torch.nn.ModuleList([torch.nn.Linear(input_size, shape[0])])
+        self._model = torch.nn.ModuleList(
+            [torch.nn.Linear(input_size, shape[0])]
+        )
         self._model.append(torch.nn.ReLU())
         for i in range(len(shape[1:-1])):
             self._model.append(torch.nn.Linear(shape[i], shape[i + 1]))
@@ -67,7 +71,9 @@ class TorchNN(Transformer, torch.nn.Module):
         pass
 
     def update_weights(self, parameters: Sequence[float]):
-        expected = sum(p.numel() for p in self._model.parameters() if p.requires_grad)
+        expected = sum(
+            p.numel() for p in self._model.parameters() if p.requires_grad
+        )
         if len(parameters) != expected:
             msg = f"Error in the amount of weights in NN.update_weigths. Expected {expected} and got {len(parameters)}"
             raise AttributeError(msg)

@@ -3,7 +3,7 @@
 """
 @File    :   nn_transformer_gecco_23.py
 @Time    :   2023/11/10 14:09:41
-@Author  :   Alejandro Marrero 
+@Author  :   Alejandro Marrero
 @Version :   1.0
 @Contact :   amarrerd@ull.edu.es
 @License :   (C)Copyright 2023, Alejandro Marrero
@@ -11,16 +11,17 @@
 """
 
 from collections import deque
-from digneapy.transformers import TorchNN
-from digneapy.archives import Archive
-from digneapy.transformers import NNTuner
-from digneapy.generators import EIG
-from digneapy.solvers import default_kp, map_kp, miw_kp, mpw_kp
-from digneapy.domains.knapsack import KPDomain
-from digneapy.operators.replacement import first_improve_replacement
+from typing import Optional
+
 import numpy as np
 import pandas as pd
-from typing import Optional
+
+from digneapy.archives import Archive
+from digneapy.domains.knapsack import KPDomain
+from digneapy.generators import EIG
+from digneapy.operators.replacement import first_improve_replacement
+from digneapy.solvers import default_kp, map_kp, miw_kp, mpw_kp
+from digneapy.transformers import NNTuner, TorchNN
 
 
 def save_best_nn_results(filename, best_nn):
@@ -48,7 +49,8 @@ class NSEval:
         self.resolution = resolution
         self.features_info = features_info
         self.hypercube = [
-            np.linspace(start, stop, self.resolution) for start, stop in features_info
+            np.linspace(start, stop, self.resolution)
+            for start, stop in features_info
         ]
         self.kp_domain = KPDomain(dimension=50, capacity_approach="percentage")
         self.portfolio = deque([default_kp, map_kp, miw_kp, mpw_kp])
@@ -75,7 +77,9 @@ class NSEval:
             file.write(",".join(features) + "\n")
             for solver, descriptors in generated_instances.items():
                 for desc in descriptors:
-                    content = solver + "," + ",".join(str(f) for f in desc) + "\n"
+                    content = (
+                        solver + "," + ",".join(str(f) for f in desc) + "\n"
+                    )
                     file.write(content)
 
     def __call__(self, transformer: TorchNN, filename: Optional[str] = None):
@@ -93,7 +97,9 @@ class NSEval:
         """
         gen_instances = {s.__name__: [] for s in self.portfolio}
         for i in range(len(self.portfolio)):
-            self.portfolio.rotate(i)  # This allow us to change the target on the fly
+            self.portfolio.rotate(
+                i
+            )  # This allow us to change the target on the fly
 
             eig = EIG(
                 pop_size=10,
@@ -111,12 +117,15 @@ class NSEval:
             archive, solution_set = eig()
             descriptors = [list(i.features) for i in solution_set]
             gen_instances[self.portfolio[0].__name__].extend(descriptors)
-        if any(len(l) != 0 for l in gen_instances.values()):
+        if any(len(sequence) != 0 for sequence in gen_instances.values()):
             self.__save_instances(filename, gen_instances)
 
         # Here we gather all the instances together to calculate the metric
         coverage = {k: set() for k in range(8)}
-        for solver, descriptors in gen_instances.items():  # For each set of instances
+        for (
+            solver,
+            descriptors,
+        ) in gen_instances.items():  # For each set of instances
             for desc in descriptors:  # For each descriptor in the set
                 for i, f in enumerate(desc):  # Location of the ith feature
                     coverage[i].add(np.digitize(f, self.hypercube[i]))

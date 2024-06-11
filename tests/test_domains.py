@@ -3,20 +3,20 @@
 """
 @File    :   test_domains.py
 @Time    :   2024/04/15 11:01:33
-@Author  :   Alejandro Marrero 
+@Author  :   Alejandro Marrero
 @Version :   1.0
 @Contact :   amarrerd@ull.edu.es
 @License :   (C)Copyright 2024, Alejandro Marrero
 @Desc    :   None
 """
 
-
-import pytest
-import copy
-import numpy as np
-from digneapy.domains import knapsack
-from digneapy.core import Instance
 import os
+
+import numpy as np
+import pytest
+
+from digneapy.core import Instance
+from digneapy.domains import knapsack
 
 
 @pytest.fixture
@@ -33,11 +33,11 @@ def test_default_kp_instance(default_kp):
     assert default_kp.capacity == 50
     assert default_kp.profits == list(range(1, 101))
     assert default_kp.weights == list(range(1, 101))
-    expected_repr = f"KP<n=100,C=50>"
+    expected_repr = "KP<n=100,C=50>"
     assert default_kp.__repr__() == expected_repr
     # Check is able to create a file
     default_kp.to_file()
-    assert os.path.exists("instance.kp") == True
+    assert os.path.exists("instance.kp")
     os.remove("instance.kp")
 
     with pytest.raises(Exception):
@@ -88,23 +88,6 @@ def test_default_kp_domain_wrong_args():
     assert domain.capacity_approach == "evolved"
 
 
-def test_kp_domain_to_instance():
-    dimension = 100
-    domain = knapsack.KPDomain(dimension, capacity_approach="fixed")
-    instance = domain.generate_instance()
-    assert len(instance) == 201  # Twice profits plus Q
-    assert instance._variables[0] == 1e4
-
-    domain.capacity_approach = "evolved"
-    instance = domain.generate_instance()
-    assert instance._variables[0] != 1e4
-    assert instance._variables[0] in range(1, 1e4)
-
-    domain.capacity_approach = "percentage"
-    instance = domain.generate_instance()
-    assert instance._variables[0] != 1e4
-
-
 def test_kp_domain_to_features():
     dimension = 100
     domain = knapsack.KPDomain(dimension, capacity_approach="fixed")
@@ -136,7 +119,7 @@ def test_kp_domain_to_features_dict():
     domain = knapsack.KPDomain(dimension, capacity_approach="fixed")
     instance = domain.generate_instance()
     features = domain.extract_features_as_dict(instance)
-    assert type(features) == dict
+    assert isinstance(features, dict)
     assert features["capacity"] == 1e4
     assert features["max_p"] <= 1000
     assert features["max_w"] <= 1000

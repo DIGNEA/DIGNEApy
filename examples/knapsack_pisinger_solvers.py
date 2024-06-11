@@ -3,23 +3,22 @@
 """
 @File    :   knapsack_pisinger_solvers.py
 @Time    :   2024/05/29 10:24:58
-@Author  :   Alejandro Marrero 
+@Author  :   Alejandro Marrero
 @Version :   1.0
 @Contact :   amarrerd@ull.edu.es
 @License :   (C)Copyright 2024, Alejandro Marrero
 @Desc    :   None
 """
 
-from digneapy.solvers.pisinger import combo, minknap, expknap
 import numpy as np
+
 from digneapy.domains import knapsack
-import numpy as np
+from digneapy.solvers.pisinger import combo, expknap, minknap
 
 
 def main():
     n = 1000
     c = np.random.randint(1e3, 1e5)
-    x = np.zeros(n, dtype=np.int32)
     w = np.random.randint(1000, 5000, size=n, dtype=np.int32)
     p = np.random.randint(1000, 5000, size=n, dtype=np.int32)
     kp = knapsack.Knapsack(profits=p, weights=w, capacity=c)

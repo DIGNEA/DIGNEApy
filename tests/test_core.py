@@ -3,26 +3,30 @@
 """
 @File    :   test_domain.py
 @Time    :   2023/10/25 08:34:10
-@Author  :   Alejandro Marrero 
+@Author  :   Alejandro Marrero
 @Version :   1.0
 @Contact :   amarrerd@ull.edu.es
 @License :   (C)Copyright 2023, Alejandro Marrero
 @Desc    :   None
 """
 
-from typing import Tuple
-import pytest
 import copy
+from typing import Tuple
+
 import numpy as np
-from digneapy.core import Instance, Domain, Solution, Problem
-from deap import base, creator, tools
+import pytest
+from deap import creator
+
+from digneapy.core import Domain, Instance, Problem, Solution
 
 
 def gen_dignea_ind(icls, size: int, min_value, max_value):
     """Auxiliar function to generate individual based on
     the Solution class of digneapy
     """
-    chromosome = list(np.random.randint(low=min_value, high=max_value, size=size))
+    chromosome = list(
+        np.random.randint(low=min_value, high=max_value, size=size)
+    )
     return icls(chromosome=chromosome, fitness=creator.Fitness)
 
 
@@ -109,15 +113,15 @@ def test_default_instance_attrs(default_instance):
     default_instance.p = 5.0
     assert (
         default_instance.__repr__()
-        == f"Instance<f=100.0,p=5.0,s=10.0,vars=0,features=3,performance=3>"
+        == "Instance<f=100.0,p=5.0,s=10.0,vars=0,features=3,performance=3>"
     )
     assert (
         format(default_instance, "p")
-        == f"Instance(f=100.0,p=5.0, s=10.0, descriptor=(0.0,1.0,2.0))"
+        == "Instance(f=100.0,p=5.0, s=10.0, descriptor=(0.0,1.0,2.0))"
     )
     assert (
         format(default_instance)
-        == f"Instance(f=100.0,p=5.0, s=10.0, descriptor=(0,1,2))"
+        == "Instance(f=100.0,p=5.0, s=10.0, descriptor=(0,1,2))"
     )
 
 
@@ -140,13 +144,19 @@ def test_default_instance_raises(default_instance):
         default_instance.fitness = "hello world"
 
     with pytest.raises(AttributeError):
-        s = Instance(variables=list(range(100)), fitness="hello", p=100.0, s=100.0)
+        _ = Instance(
+            variables=list(range(100)), fitness="hello", p=100.0, s=100.0
+        )
 
     with pytest.raises(AttributeError):
-        s = Instance(variables=list(range(100)), fitness=100.0, p="hello", s=100.0)
+        _ = Instance(
+            variables=list(range(100)), fitness=100.0, p="hello", s=100.0
+        )
 
     with pytest.raises(AttributeError):
-        s = Instance(variables=list(range(100)), fitness=100.0, p=100.0, s="hello")
+        _ = Instance(
+            variables=list(range(100)), fitness=100.0, p=100.0, s="hello"
+        )
 
 
 def test_init_instance(initialised_instance):

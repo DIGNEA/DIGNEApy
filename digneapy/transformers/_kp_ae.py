@@ -3,18 +3,20 @@
 """
 @File    :   autoencoders.py
 @Time    :   2024/05/28 10:06:48
-@Author  :   Alejandro Marrero 
+@Author  :   Alejandro Marrero
 @Version :   1.0
 @Contact :   amarrerd@ull.edu.es
 @License :   (C)Copyright 2024, Alejandro Marrero
 @Desc    :   None
 """
 
+import os
+import pickle
 from collections.abc import Sequence
-from sklearn.preprocessing import StandardScaler
-import tensorflow as tf
+
 import keras
 from keras.utils import pad_sequences
+
 from digneapy.transformers import Transformer
 import pickle
 import os
@@ -52,7 +54,6 @@ class KPAE(Transformer):
         self._load_models()
 
     def _load_models(self):
-
         model_path = os.path.dirname(os.path.abspath(__file__)) + "/models/"
 
         with open(f"{model_path}kp_scaler_for_ae_different_N.pkl", "rb") as f:

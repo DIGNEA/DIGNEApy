@@ -3,20 +3,22 @@
 """
 @File    :   test_meta_ea.py
 @Time    :   2024/04/25 09:59:15
-@Author  :   Alejandro Marrero 
+@Author  :   Alejandro Marrero
 @Version :   1.0
 @Contact :   amarrerd@ull.edu.es
 @License :   (C)Copyright 2024, Alejandro Marrero
 @Desc    :   None
 """
+
 from __future__ import unicode_literals
 
 import os
-import pytest
-import numpy as np
+
 import pandas as pd
-from digneapy.transformers import NNTuner, KerasNN
+import pytest
 from sklearn.metrics import mean_squared_error
+
+from digneapy.transformers import KerasNN, NNTuner
 
 dir, _ = os.path.split(__file__)
 
@@ -50,7 +52,10 @@ def test_hyper_cmaes_bpp():
     activations = ("relu", "relu", None, "relu", "relu", None)
     expected_filename = "nn_autoencoder_bpp.keras"
     transformer = KerasNN(
-        expected_filename, input_shape=[11], shape=shapes, activations=activations
+        expected_filename,
+        input_shape=[11],
+        shape=shapes,
+        activations=activations,
     )
     cma_es = NNTuner(
         dimension=dimension,
@@ -72,7 +77,10 @@ def test_hyper_cmaes_bpp_maximises():
     activations = ("relu", "relu", None, "relu", "relu", None)
     expected_filename = "nn_autoencoder_bpp.keras"
     transformer = KerasNN(
-        expected_filename, input_shape=[11], shape=shapes, activations=activations
+        expected_filename,
+        input_shape=[11],
+        shape=shapes,
+        activations=activations,
     )
     cma_es = NNTuner(
         dimension=dimension,
@@ -94,7 +102,10 @@ def test_hyper_cmaes_raises():
     activations = ("relu", "relu", None, "relu", "relu", None)
     expected_filename = "nn_autoencoder_bpp.keras"
     transformer = KerasNN(
-        expected_filename, input_shape=[11], shape=shapes, activations=activations
+        expected_filename,
+        input_shape=[11],
+        shape=shapes,
+        activations=activations,
     )
 
     # Raises because we do not specify any valid direction

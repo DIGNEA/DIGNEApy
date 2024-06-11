@@ -3,22 +3,23 @@
 """
 @File    :   kp_ae_example.py
 @Time    :   2024/05/28 10:23:57
-@Author  :   Alejandro Marrero 
+@Author  :   Alejandro Marrero
 @Version :   1.0
 @Contact :   amarrerd@ull.edu.es
 @License :   (C)Copyright 2024, Alejandro Marrero
 @Desc    :   None
 """
 
-from digneapy.transformers import KPAE
-from collections import deque
-from digneapy.archives import Archive
-from digneapy.generators import EIG
-from digneapy.solvers import default_kp, map_kp, miw_kp, mpw_kp
-from digneapy.domains.knapsack import KPDomain
-from digneapy.operators.replacement import first_improve_replacement, generational
 import copy
 import itertools
+from collections import deque
+
+from digneapy.archives import Archive
+from digneapy.domains.knapsack import KPDomain
+from digneapy.generators import EIG
+from digneapy.operators.replacement import generational
+from digneapy.solvers import default_kp, map_kp, miw_kp, mpw_kp
+from digneapy.transformers import KPAE
 
 
 def save_instances(filename, generated_instances, dimension):
@@ -28,18 +29,10 @@ def save_instances(filename, generated_instances, dimension):
         filename (str): Filename
         generated_instances (iterable): Iterable of instances
     """
-    old_features = [
-        "capacity",
-        "max_p",
-        "max_w",
-        "min_p",
-        "min_w",
-        "avg_eff",
-        "mean",
-        "std",
-    ]
     header = ["target", "N"] + list(
-        itertools.chain.from_iterable([(f"w_{i}", f"p_{i}") for i in range(dimension)])
+        itertools.chain.from_iterable(
+            [(f"w_{i}", f"p_{i}") for i in range(dimension)]
+        )
     )
     with open(filename, "w") as file:
         file.write(",".join(header) + "\n")
@@ -81,7 +74,9 @@ def generate_instances(dim: int = 50):
         _, solution_set = eig()
         instances[portfolio[0].__name__] = copy.copy(solution_set)
 
-    save_instances(f"kp_ns_best_autoencoder_N_{dim}_gr.csv", instances, dimension=dim)
+    save_instances(
+        f"kp_ns_best_autoencoder_N_{dim}_gr.csv", instances, dimension=dim
+    )
 
 
 if __name__ == "__main__":

@@ -3,17 +3,20 @@
 """
 @File    :   test_archives.py
 @Time    :   2024/06/07 12:47:37
-@Author  :   Alejandro Marrero 
+@Author  :   Alejandro Marrero
 @Version :   1.0
 @Contact :   amarrerd@ull.edu.es
 @License :   (C)Copyright 2024, Alejandro Marrero
 @Desc    :   None
 """
+
 import copy
-import pytest
+
 import numpy as np
+import pytest
+
+from digneapy.archives import Archive, GridArchive
 from digneapy.core import Instance
-from digneapy.archives import Archive
 
 
 @pytest.fixture
@@ -83,7 +86,7 @@ def test_bool_on_default_archive(default_archive):
 
 
 def test_archive_magic(default_archive):
-    assert default_archive.__str__() == f"Archive(threshold=0.0,data=(|10|))"
+    assert default_archive.__str__() == "Archive(threshold=0.0,data=(|10|))"
     duplicated = copy.deepcopy(default_archive)
     assert hash(duplicated) == hash(default_archive)
 
@@ -115,9 +118,13 @@ def test_archive_extend(empty_archive):
     new_threshold = 1.0
     empty_archive.threshold = new_threshold
     instances = [
-        Instance([], fitness=0.0, p=0.0, s=np.random.random()) for _ in range(10)
+        Instance([], fitness=0.0, p=0.0, s=np.random.random())
+        for _ in range(10)
     ]
-    filter_fn = lambda x: x.s >= empty_archive.threshold
+
+    def filter_fn(x):
+        return x.s >= empty_archive.threshold
+
     expected = len(list(filter(filter_fn, instances)))
     empty_archive.extend(instances, filter_fn=None)
     assert len(empty_archive) == expected
@@ -127,10 +134,15 @@ def test_archive_extend_with_s_and_p(empty_archive):
     new_threshold = 1.0
     empty_archive.threshold = new_threshold
     instances = [
-        Instance([], fitness=0.0, p=np.random.randint(0, 100), s=np.random.random())
+        Instance(
+            [], fitness=0.0, p=np.random.randint(0, 100), s=np.random.random()
+        )
         for _ in range(10)
     ]
-    filter_fn = lambda x: x.s >= empty_archive.threshold and x.p >= 50.0
+
+    def filter_fn(x):
+        return x.s >= empty_archive.threshold and x.p >= 50.0
+
     expected = len(list(filter(filter_fn, instances)))
     empty_archive.extend(instances, filter_fn=filter_fn)
     assert len(empty_archive) == expected
@@ -148,9 +160,56 @@ def test_archive_extend_with_s_p_and_fitness(empty_archive):
         )
         for _ in range(10)
     ]
-    filter_fn = (
-        lambda x: x.s >= empty_archive.threshold and x.p >= 50.0 and x.fitness >= 0.5
-    )
+
+    def filter_fn(x):
+        return (
+            x.s >= empty_archive.threshold and x.p >= 50.0 and x.fitness >= 0.5
+        )
+
     expected = len(list(filter(filter_fn, instances)))
     empty_archive.extend(instances, filter_fn=filter_fn)
     assert len(empty_archive) == expected
+
+
+@pytest.fixture
+def empty_grid():
+    return GridArchive(dimensions=[], ranges=[])
+
+
+@pytest.fixture
+def grid_5d():
+    return GridArchive(
+        dimensions=(20, 20, 20, 20, 20),
+        ranges=[
+            (-1.0, 1.0),
+            (-1.0, 1.0),
+            (-1.0, 1.0),
+            (-1.0, 1.0),
+            (-1.0, 1.0),
+        ],
+    )
+
+
+def test_empty_grid(empty_grid):
+    assert len(empty_grid) == 0
+    assert empty_grid._bins == 1
+    assert len(empty_grid._bounds) == 0
+
+
+def test_grid_5d(grid_5d):
+    expected_n_bins = np.prod((20, 20, 20, 20, 20))
+    assert len(grid_5d) == 0
+    assert grid_5d._bins == expected_n_bins
+    assert len(grid_5d._bounds) == 5
+    grid_zero = list(0 for _ in range(5))
+    grid_one = list(1 for _ in range(5))
+    index_of_zero = 0
+    index_of_one = 168421
+    assert grid_5d.grid_to_int_index(grid_zero) == index_of_zero
+    assert grid_5d.grid_to_int_index(grid_one) == index_of_one
+    np.testing.assert_array_equal(
+        grid_5d.int_to_grid_index(index_of_zero), np.asarray(grid_zero)
+    )
+    np.testing.assert_array_equal(
+        grid_5d.int_to_grid_index(index_of_one), np.asarray(grid_one)
+    )

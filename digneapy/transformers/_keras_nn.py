@@ -3,19 +3,21 @@
 """
 @File    :   _keras_nn.py
 @Time    :   2024/06/07 13:57:23
-@Author  :   Alejandro Marrero 
+@Author  :   Alejandro Marrero
 @Version :   1.0
 @Contact :   amarrerd@ull.edu.es
 @License :   (C)Copyright 2024, Alejandro Marrero
 @Desc    :   None
 """
-from ._base_transformer import Transformer
+
 from collections.abc import Sequence
-from typing import Tuple, Optional
+from typing import Optional, Tuple
+
+import keras
 import numpy as np
 from sklearn.preprocessing import StandardScaler
-import tensorflow as tf
-import keras
+
+from ._base_transformer import Transformer
 
 
 class KerasNN(Transformer):
@@ -76,7 +78,9 @@ class KerasNN(Transformer):
         pass
 
     def update_weights(self, weights: Sequence[float]):
-        expected = np.sum([np.prod(v.shape) for v in self._model.trainable_variables])
+        expected = np.sum(
+            [np.prod(v.shape) for v in self._model.trainable_variables]
+        )
         if len(weights) != expected:
             msg = f"Error in the amount of weights in NN.update_weigths. Expected {expected} and got {len(weights)}"
             raise AttributeError(msg)

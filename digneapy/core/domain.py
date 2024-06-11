@@ -3,20 +3,19 @@
 """
 @File    :   domain.py
 @Time    :   2024/06/07 14:08:47
-@Author  :   Alejandro Marrero 
+@Author  :   Alejandro Marrero
 @Version :   1.0
 @Contact :   amarrerd@ull.edu.es
 @License :   (C)Copyright 2024, Alejandro Marrero
 @Desc    :   None
 """
 
+from abc import ABC, abstractmethod
+from collections.abc import Sequence
+from typing import Mapping, Optional, Tuple
 
 from digneapy.core.instance import Instance
 from digneapy.core.problem import Problem
-
-from abc import ABC, abstractmethod
-from collections.abc import Sequence
-from typing import Mapping, Tuple, Optional
 
 
 class Domain(ABC):
@@ -56,7 +55,9 @@ class Domain(ABC):
         raise NotImplementedError(msg)
 
     @abstractmethod
-    def extract_features_as_dict(self, instance: Instance) -> Mapping[str, float]:
+    def extract_features_as_dict(
+        self, instance: Instance
+    ) -> Mapping[str, float]:
         """Creates a dictionary with the features of the instance.
         The key are the names of each feature and the values are
         the values extracted from instance.

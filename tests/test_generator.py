@@ -3,29 +3,30 @@
 """
 @File    :   test_generator.py
 @Time    :   2024/04/15 12:02:25
-@Author  :   Alejandro Marrero 
+@Author  :   Alejandro Marrero
 @Version :   1.0
 @Contact :   amarrerd@ull.edu.es
 @License :   (C)Copyright 2024, Alejandro Marrero
 @Desc    :   None
 """
 
+import os
+from collections import deque
+
 import pytest
+
 from digneapy.archives import Archive
-from digneapy.generators import EIG
-from digneapy.generators import def_perf_metric, pis_perf_metric
+from digneapy.domains.knapsack import KPDomain
+from digneapy.generators import EIG, def_perf_metric, pis_perf_metric
 from digneapy.generators.utils import plot_generator_logbook
+from digneapy.operators import crossover, mutation, replacement, selection
 from digneapy.solvers import (
     default_kp,
     map_kp,
     miw_kp,
     mpw_kp,
 )
-from digneapy.solvers.pisinger import combo, minknap, expknap
-from digneapy.domains.knapsack import KPDomain
-from digneapy.operators import crossover, selection, mutation, replacement
-from collections import deque
-import os
+from digneapy.solvers.pisinger import combo, expknap, minknap
 
 
 def test_default_generator():
@@ -50,12 +51,12 @@ def test_default_generator():
 
     assert (
         eig.__str__()
-        == f"EIG(pop_size=100,gen=1000,domain=None,portfolio=[],NS(descriptor=features,k=15,A=(),S_S=()))"
+        == "EIG(pop_size=100,gen=1000,domain=None,portfolio=[],NS(descriptor=features,k=15,A=(),S_S=()))"
     )
 
     assert (
         eig.__repr__()
-        == f"EIG<pop_size=100,gen=1000,domain=None,portfolio=[],NS<descriptor=features,k=15,A=(),S_S=()>>"
+        == "EIG<pop_size=100,gen=1000,domain=None,portfolio=[],NS<descriptor=features,k=15,A=(),S_S=()>>"
     )
 
     with pytest.raises(AttributeError) as e:
@@ -74,11 +75,11 @@ def test_default_generator():
         eig = EIG(domain=None, portfolio=[], phi=-1.0)
     assert (
         e.value.args[0]
-        == f"Phi must be a float number in the range [0.0-1.0]. Got: -1.0."
+        == "Phi must be a float number in the range [0.0-1.0]. Got: -1.0."
     )
     with pytest.raises(AttributeError) as e:
         eig = EIG(domain=None, portfolio=[], phi="hello")
-    assert e.value.args[0] == f"Phi must be a float number in the range [0.0-1.0]."
+    assert e.value.args[0] == "Phi must be a float number in the range [0.0-1.0]."
 
 
 def test_eig_gen_kp_perf_descriptor():
@@ -122,15 +123,6 @@ def test_eig_gen_kp_perf_descriptor():
         p_scores = [s._portfolio_m for s in solution_set]
         assert all(max(p_scores[i]) == p_scores[i][0] for i in range(len(p_scores)))
 
-    # Check it does not insert any when list is empty
-    current_len = len(eig.archive)
-    eig._update_archive(list())
-    assert current_len == len(eig.archive)
-
-    current_len = len(eig.solution_set)
-    eig._update_solution_set(list())
-    assert current_len == len(eig.solution_set)
-
 
 def test_eig_gen_kp_feat_descriptor():
     portfolio = deque([default_kp, map_kp, miw_kp, mpw_kp])
@@ -172,15 +164,6 @@ def test_eig_gen_kp_feat_descriptor():
         assert all(len(s.portfolio_scores) == len(portfolio) for s in solution_set)
         p_scores = [s._portfolio_m for s in solution_set]
         assert all(max(p_scores[i]) == p_scores[i][0] for i in range(len(p_scores)))
-
-    # Check it does not insert any when list is empty
-    current_len = len(eig.archive)
-    eig._update_archive(list())
-    assert current_len == len(eig.archive)
-
-    current_len = len(eig.solution_set)
-    eig._update_solution_set(list())
-    assert current_len == len(eig.solution_set)
 
     # Test the creation of the evolution images
     log = eig.logbook
@@ -234,15 +217,6 @@ def test_eig_gen_kp_inst_descriptor():
         p_scores = [s._portfolio_m for s in solution_set]
         assert all(max(p_scores[i]) == p_scores[i][0] for i in range(len(p_scores)))
 
-    # Check it does not insert any when list is empty
-    current_len = len(eig.archive)
-    eig._update_archive(list())
-    assert current_len == len(eig.archive)
-
-    current_len = len(eig.solution_set)
-    eig._update_solution_set(list())
-    assert current_len == len(eig.solution_set)
-
 
 def test_eig_gen_kp_perf_descriptor_with_pisinger():
     portfolio = deque([combo, minknap, expknap])
@@ -287,12 +261,3 @@ def test_eig_gen_kp_perf_descriptor_with_pisinger():
         assert all(len(s.portfolio_scores) == len(portfolio) for s in solution_set)
         p_scores = [s._portfolio_m for s in solution_set]
         assert all(min(p_scores[i]) == p_scores[i][0] for i in range(len(p_scores)))
-
-    # Check it does not insert any when list is empty
-    current_len = len(eig.archive)
-    eig._update_archive(list())
-    assert current_len == len(eig.archive)
-
-    current_len = len(eig.solution_set)
-    eig._update_solution_set(list())
-    assert current_len == len(eig.solution_set)

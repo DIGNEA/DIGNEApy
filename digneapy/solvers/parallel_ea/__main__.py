@@ -3,17 +3,17 @@
 """
 @File    :   __main__.py
 @Time    :   2024/06/10 12:19:27
-@Author  :   Alejandro Marrero 
+@Author  :   Alejandro Marrero
 @Version :   1.0
 @Contact :   amarrerd@ull.edu.es
 @License :   (C)Copyright 2024, Alejandro Marrero
 @Desc    :   None
 """
 
-from digneapy.domains.knapsack import Knapsack
-from digneapy.core import Solution, Solver
-import numpy as np
 from parallel_ea import _ParEACpp
+
+from digneapy.core import Solution
+from digneapy.domains.knapsack import Knapsack
 
 
 class ParEAKP(_ParEACpp):

@@ -3,21 +3,21 @@
 """
 @File    :   _base_archive.py
 @Time    :   2024/06/07 12:17:34
-@Author  :   Alejandro Marrero 
+@Author  :   Alejandro Marrero
 @Version :   1.0
 @Contact :   amarrerd@ull.edu.es
 @License :   (C)Copyright 2024, Alejandro Marrero
 @Desc    :   None
 """
 
-
-from digneapy.core import Instance
-import numpy as np
 import operator
-import reprlib
 from collections.abc import Iterable
 from functools import reduce
-from typing import Optional, Callable
+from typing import Callable, Optional
+
+import numpy as np
+
+from digneapy.core import Instance
 
 
 class Archive:
@@ -57,7 +57,7 @@ class Archive:
         except ValueError:
             msg = f"The threshold value {t} is not a float in 'threshold' setter of class {self.__class__.__name__}"
             raise AttributeError(msg)
-        self._threshold = t
+        self._threshold = t_f
 
     def __iter__(self):
         return iter(self._instances)
@@ -93,7 +93,9 @@ class Archive:
         >>> assert a1 == archive
         >>> assert empty_archive != archive
         """
-        return len(self) == len(other) and all(a == b for a, b in zip(self, other))
+        return len(self) == len(other) and all(
+            a == b for a, b in zip(self, other)
+        )
 
     def __hash__(self):
         hashes = (hash(i) for i in self.instances)
@@ -128,6 +130,9 @@ class Archive:
             msg = f"Only objects of type {Instance.__class__.__name__} can be inserted into an archive"
             raise AttributeError(msg)
 
+    def __default_filter(self, instance: Instance):
+        return instance.s >= self._threshold
+
     def extend(
         self, iterable: Iterable[Instance], filter_fn: Optional[Callable] = None
     ):
@@ -139,7 +144,7 @@ class Archive:
             filter_fn (Callable, optional): A function that takes an instance and returns a boolean.
                                              Defaults to filtering by sparseness.
         """
-        default_filter = lambda x: x.s >= self._threshold
+        default_filter = self.__default_filter
         actual_filter = filter_fn if filter_fn is not None else default_filter
 
         for i in filter(actual_filter, iterable):

@@ -39,7 +39,7 @@ def performance_strategy(iterable: Iterable[Instance]) -> list[float]:
     Returns:
         List: List of performance descriptors of each instance
     """
-    return [np.mean(i.portfolio_scores, axis=0) for i in iterable]
+    return [np.mean(i.portfolio_scores, axis=1) for i in iterable]
 
 
 def instance_strategy(iterable: Iterable[Instance]) -> list:

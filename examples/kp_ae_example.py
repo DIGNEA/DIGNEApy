@@ -60,7 +60,7 @@ def generate_instances(dim: int = 50):
     print("=" * 40 + f" Generating KP instances of N = {dim} " + "=" * 40)
     kp_domain = KPDomain(dimension=dim, capacity_approach="percentage")
     portfolio = deque([default_kp, map_kp, miw_kp, mpw_kp])
-    autoencoder = KPAE(encoding="Best")
+    autoencoder = KPAE(encoding=2)
 
     instances = {}
     for i in range(len(portfolio)):

@@ -19,42 +19,31 @@ from digneapy.transformers import Transformer
 import pickle
 import os
 
-ENCODINGS = ("Best", "8D")
-
 
 class KPAE(Transformer):
-    """_summary_
-
-    Args:
-        Transformer (_type_): _description_
-
-    Raises:
-        AttributeError: _description_
-
-    Returns:
-        _type_: _description_
-    """
-
+    _ENCODINGS = (2, 8)
     _MAX_LENGTH = 2001
-    _BEST_AE = "best_encoding/best_kp_ae_bayesian_lr_one_cycle_training.keras"
-    _BEST_ENC = "best_encoding/best_kp_ae_bayesian_lr_one_cycle_training_encoder.keras"
-    _BEST_DEC = "best_encoding/best_kp_ae_bayesian_lr_one_cycle_training_decoder.keras"
+    _2D_AE = "2D_encoding/best_kp_ae_bayesian_latent_dim_2D_lr_one_cycle_training.keras"
+    _2D_ENC = "2D_encoding/best_kp_ae_bayesian_latent_dim_2D_lr_one_cycle_training_encoder.keras"
+    _2D_DEC = "2D_encoding/best_kp_ae_bayesian_latent_dim_2D_lr_one_cycle_training_decoder.keras"
 
     _8D_AE = "8D_encoding/best_kp_ae_bayesian_8D_lr_one_cycle_training.keras"
     _8D_ENC = "8D_encoding/best_kp_ae_bayesian_8D_lr_one_cycle_training_encoder.keras"
     _8D_DEC = "8D_encoding/best_kp_ae_bayesian_8D_lr_one_cycle_training_decoder.keras"
 
-    def __init__(self, name: str = "KP_AE", encoding: str = "Best"):
+    def __init__(self, name: str = "KP_AE", encoding: int = 2):
         super().__init__(name)
 
-        if encoding not in ENCODINGS:
-            raise AttributeError(f"The encoding alternatives must be {ENCODINGS}")
+        if encoding not in KPAE._ENCODINGS:
+            raise AttributeError(
+                f"The encoding alternatives must be of type int and {KPAE._ENCODINGS}"
+            )
 
         self._encoding = encoding
-        if self._encoding == "Best":
-            self.ae_path = KPAE._BEST_AE
-            self.enc_path = KPAE._BEST_ENC
-            self.dec_path = KPAE._BEST_DEC
+        if self._encoding == 2:
+            self.ae_path = KPAE._2D_AE
+            self.enc_path = KPAE._2D_ENC
+            self.dec_path = KPAE._2D_DEC
         else:
             self.ae_path = KPAE._8D_AE
             self.enc_path = KPAE._8D_ENC

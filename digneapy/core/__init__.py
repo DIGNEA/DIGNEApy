@@ -15,3 +15,5 @@ from digneapy.core.instance import Instance
 from digneapy.core.problem import Problem
 from digneapy.core.solution import Solution
 from digneapy.core.solver import Solver
+
+__all__ = ["Domain", "Instance", "Problem", "Solution", "Solver"]

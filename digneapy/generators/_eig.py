@@ -180,19 +180,8 @@ class EIG(NS):
         off = self.mutation(p_1, self.domain.bounds)
         return off
 
-    def _update_archive(self, instances: Iterable[Instance]):
-        """Updates the Novelty Search Archive with all the instances that has a 's' greater than t_a and 'p' > 0"""
-        if not instances:
-            return
-        filter_fn = lambda x: x.s >= self.archive.threshold and x.p >= 0.0
-        self.archive.extend(instances, filter_fn=filter_fn)
-
-    def _update_solution_set(self, instances: Iterable[Instance]):
-        """Updates the Novelty Search Solution set with all the instances that has a 's' greater than t_ss and 'p' > 0"""
-        if not instances:
-            return
-        filter_fn = lambda x: x.s >= self.archive.threshold and x.p >= 0.0
-        self.solution_set.extend(instances, filter_fn)
+    def __diverse_biased_filter(self, instance: Instance) -> bool:
+        return instance.s >= self.archive.threshold and instance.p >= 0.0
 
     def _run(self, verbose: bool = False):
         if self.domain is None:
@@ -208,7 +197,6 @@ class EIG(NS):
         ]
         # Filter function to update the archives
         # It must consider the performance score
-        filter_fn = lambda x: x.s >= self.archive.threshold and x.p >= 0.0
 
         self._evaluate_population(self.population)
         performed_gens = 0
@@ -226,10 +214,10 @@ class EIG(NS):
             self.sparseness(offspring)
             self._compute_fitness(population=offspring)
 
-            self.archive.extend(offspring, filter_fn)
+            self.archive.extend(offspring, self.__diverse_biased_filter)
 
             self.sparseness_solution_set(offspring)
-            self.solution_set.extend(offspring, filter_fn)
+            self.solution_set.extend(offspring, self.__diverse_biased_filter)
 
             self.population = self.replacement(self.population, offspring)
 

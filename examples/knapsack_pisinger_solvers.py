@@ -19,7 +19,6 @@ from digneapy.solvers.pisinger import combo, expknap, minknap
 def main():
     n = 1000
     c = np.random.randint(1e3, 1e5)
-    x = np.zeros(n, dtype=np.int32)
     w = np.random.randint(1000, 5000, size=n, dtype=np.int32)
     p = np.random.randint(1000, 5000, size=n, dtype=np.int32)
     kp = knapsack.Knapsack(profits=p, weights=w, capacity=c)

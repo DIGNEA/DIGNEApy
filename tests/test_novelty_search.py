@@ -9,11 +9,11 @@ from digneapy.core import Instance
 from digneapy.qd import NS
 
 
-def transformer(l):
+def transformer(sequence):
     """
     Dummy transformer that takes a List and returns a list of list with two random numbers each
     """
-    return [[np.random.rand(), np.random.rand()] for _ in range(len(l))]
+    return [[np.random.rand(), np.random.rand()] for _ in range(len(sequence))]
 
 
 @pytest.fixture

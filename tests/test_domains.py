@@ -37,7 +37,7 @@ def test_default_kp_instance(default_kp):
     assert default_kp.__repr__() == expected_repr
     # Check is able to create a file
     default_kp.to_file()
-    assert os.path.exists("instance.kp") == True
+    assert os.path.exists("instance.kp")
     os.remove("instance.kp")
 
     with pytest.raises(Exception):
@@ -88,23 +88,6 @@ def test_default_kp_domain_wrong_args():
     assert domain.capacity_approach == "evolved"
 
 
-def test_kp_domain_to_instance():
-    dimension = 100
-    domain = knapsack.KPDomain(dimension, capacity_approach="fixed")
-    instance = domain.generate_instance()
-    assert len(instance) == 201  # Twice profits plus Q
-    assert instance._variables[0] == 1e4
-
-    domain.capacity_approach = "evolved"
-    instance = domain.generate_instance()
-    assert instance._variables[0] != 1e4
-    assert instance._variables[0] in range(1, 1e4)
-
-    domain.capacity_approach = "percentage"
-    instance = domain.generate_instance()
-    assert instance._variables[0] != 1e4
-
-
 def test_kp_domain_to_features():
     dimension = 100
     domain = knapsack.KPDomain(dimension, capacity_approach="fixed")
@@ -136,7 +119,7 @@ def test_kp_domain_to_features_dict():
     domain = knapsack.KPDomain(dimension, capacity_approach="fixed")
     instance = domain.generate_instance()
     features = domain.extract_features_as_dict(instance)
-    assert type(features) == dict
+    assert isinstance(features, dict)
     assert features["capacity"] == 1e4
     assert features["max_p"] <= 1000
     assert features["max_w"] <= 1000

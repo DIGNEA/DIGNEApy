@@ -204,7 +204,7 @@ def test_ea_raises_direction(default_instance):
     with pytest.raises(Exception):
         generations = 100
         pop_size = 10
-        ea = EA(
+        _ = EA(
             dir="ANY",
             dim=len(default_instance),
             min_g=0,

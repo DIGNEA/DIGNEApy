@@ -29,16 +29,6 @@ def save_instances(filename, generated_instances, dimension):
         filename (str): Filename
         generated_instances (iterable): Iterable of instances
     """
-    old_features = [
-        "capacity",
-        "max_p",
-        "max_w",
-        "min_p",
-        "min_w",
-        "avg_eff",
-        "mean",
-        "std",
-    ]
     header = ["target", "N"] + list(
         itertools.chain.from_iterable(
             [(f"w_{i}", f"p_{i}") for i in range(dimension)]

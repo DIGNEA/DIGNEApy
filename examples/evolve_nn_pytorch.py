@@ -117,7 +117,7 @@ class NSEval:
             archive, solution_set = eig()
             descriptors = [list(i.features) for i in solution_set]
             gen_instances[self.portfolio[0].__name__].extend(descriptors)
-        if any(len(l) != 0 for l in gen_instances.values()):
+        if any(len(sequence) != 0 for sequence in gen_instances.values()):
             self.__save_instances(filename, gen_instances)
 
         # Here we gather all the instances together to calculate the metric

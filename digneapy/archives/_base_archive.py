@@ -57,7 +57,7 @@ class Archive:
         except ValueError:
             msg = f"The threshold value {t} is not a float in 'threshold' setter of class {self.__class__.__name__}"
             raise AttributeError(msg)
-        self._threshold = t
+        self._threshold = t_f
 
     def __iter__(self):
         return iter(self._instances)
@@ -130,6 +130,9 @@ class Archive:
             msg = f"Only objects of type {Instance.__class__.__name__} can be inserted into an archive"
             raise AttributeError(msg)
 
+    def __default_filter(self, instance: Instance):
+        return instance.s >= self._threshold
+
     def extend(
         self, iterable: Iterable[Instance], filter_fn: Optional[Callable] = None
     ):
@@ -141,7 +144,7 @@ class Archive:
             filter_fn (Callable, optional): A function that takes an instance and returns a boolean.
                                              Defaults to filtering by sparseness.
         """
-        default_filter = lambda x: x.s >= self._threshold
+        default_filter = self.__default_filter
         actual_filter = filter_fn if filter_fn is not None else default_filter
 
         for i in filter(actual_filter, iterable):

@@ -144,17 +144,17 @@ def test_default_instance_raises(default_instance):
         default_instance.fitness = "hello world"
 
     with pytest.raises(AttributeError):
-        s = Instance(
+        _ = Instance(
             variables=list(range(100)), fitness="hello", p=100.0, s=100.0
         )
 
     with pytest.raises(AttributeError):
-        s = Instance(
+        _ = Instance(
             variables=list(range(100)), fitness=100.0, p="hello", s=100.0
         )
 
     with pytest.raises(AttributeError):
-        s = Instance(
+        _ = Instance(
             variables=list(range(100)), fitness=100.0, p=100.0, s="hello"
         )
 

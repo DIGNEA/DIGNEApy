@@ -18,7 +18,10 @@ import numpy as np
 from deap import algorithms, base, cma, creator, tools
 
 from digneapy.solvers import DIRECTIONS, MAXIMISE
-from digneapy.transformers import KerasNN, TorchNN, Transformer
+
+from ._base_transformer import Transformer
+from ._keras_nn import KerasNN
+from ._torch_nn import TorchNN
 
 
 class NNTuner:

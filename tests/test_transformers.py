@@ -70,8 +70,8 @@ def test_KerasNN_transformer_raises():
     )
 
     assert transformer._name == expected_filename + ".keras"
-    assert type(transformer.__str__()) == str
-    assert type(transformer.__repr__()) == str
+    assert isinstance(transformer.__str__(), str)
+    assert isinstance(transformer.__repr__(), str)
 
     with pytest.raises(Exception):
         # Raises exception because
@@ -109,7 +109,7 @@ def test_KerasNN_transformer_bpp():
 
     weights = np.random.random_sample(size=204)
     assert transformer is not None
-    assert transformer.update_weights(weights) == True
+    assert transformer.update_weights(weights)
     with pytest.raises(Exception):
         weights = np.random.random_sample(size=1000)
         transformer.update_weights(weights)
@@ -120,13 +120,13 @@ def test_KerasNN_transformer_bpp():
     assert all(len(x_i) == 2 for x_i in predicted)
 
     transformer.save()
-    assert os.path.exists(expected_filename) == True
+    assert os.path.exists(expected_filename)
     os.remove(expected_filename)
 
     # Now saving using a different filename
     new_filename = "random_transformer.keras"
     transformer.save(filename=new_filename)
-    assert os.path.exists(new_filename) == True
+    assert os.path.exists(new_filename)
     os.remove(new_filename)
 
 
@@ -143,7 +143,7 @@ def test_KerasNN_transformer_kp():
 
     weights = np.random.random_sample(size=118)
     assert transformer is not None
-    assert transformer.update_weights(weights) == True
+    assert transformer.update_weights(weights)
     with pytest.raises(Exception):
         weights = np.random.random_sample(size=1000)
         transformer.update_weights(weights)
@@ -171,7 +171,7 @@ def test_KerasNN_reduced_transformer_kp():
 
     weights = np.random.random_sample(size=46)
     assert transformer is not None
-    assert transformer.update_weights(weights) == True
+    assert transformer.update_weights(weights)
     with pytest.raises(Exception):
         weights = np.random.random_sample(size=1000)
         transformer.update_weights(weights)
@@ -199,7 +199,7 @@ def test_KerasNN_autoencoder_bpp():
 
     weights = np.random.random_sample(size=291)
     assert transformer is not None
-    assert transformer.update_weights(weights) == True
+    assert transformer.update_weights(weights)
     with pytest.raises(Exception):
         weights = np.random.random_sample(size=1000)
         transformer.update_weights(weights)
@@ -219,8 +219,8 @@ def test_TorchNN_transformer_raises():
     )
 
     assert transformer._name == expected_filename + ".torch"
-    assert type(transformer.__str__()) == str
-    assert type(transformer.__repr__()) == str
+    assert isinstance(transformer.__str__(), str)
+    assert isinstance(transformer.__repr__(), str)
 
     with pytest.raises(Exception):
         # Raises exception because X is empty
@@ -246,7 +246,7 @@ def test_TorchNN_transformer_bpp():
 
     weights = np.random.random_sample(size=72)
     assert transformer is not None
-    assert transformer.update_weights(weights) == True
+    assert transformer.update_weights(weights)
     with pytest.raises(Exception):
         weights = np.random.random_sample(size=1000)
         transformer.update_weights(weights)
@@ -257,13 +257,13 @@ def test_TorchNN_transformer_bpp():
     assert all(len(x_i) == 2 for x_i in predicted)
 
     transformer.save()
-    assert os.path.exists(expected_filename) == True
+    assert os.path.exists(expected_filename)
     os.remove(expected_filename)
 
     # Now saving using a different filename
     new_filename = "random_transformer.torch"
     transformer.save(filename=new_filename)
-    assert os.path.exists(new_filename) == True
+    assert os.path.exists(new_filename)
     os.remove(new_filename)
 
 
@@ -278,7 +278,7 @@ def test_TorchNN_transformer_kp():
 
     weights = np.random.random_sample(size=46)
     assert transformer is not None
-    assert transformer.update_weights(weights) == True
+    assert transformer.update_weights(weights)
     with pytest.raises(Exception):
         weights = np.random.random_sample(size=1000)
         transformer.update_weights(weights)
@@ -304,7 +304,7 @@ def test_TorchNN_autoencoder_bpp():
 
     weights = np.random.random_sample(size=138)
     assert transformer is not None
-    assert transformer.update_weights(weights) == True
+    assert transformer.update_weights(weights)
     with pytest.raises(Exception):
         weights = np.random.random_sample(size=1000)
         transformer.update_weights(weights)

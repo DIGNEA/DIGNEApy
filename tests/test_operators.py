@@ -156,7 +156,7 @@ def test_binary_selection_solutions(initialised_solutions):
     assert parent in population
 
 
-def test_binary_selection_solutions(initialised_instances):
+def test_binary_selection_instances(initialised_instances):
     population = list(initialised_instances)
     population[0].fitness = 100
     population[1].fitness = 50

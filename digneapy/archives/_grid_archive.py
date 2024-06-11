@@ -33,7 +33,7 @@ class GridArchive(Archive):
 
         self._dimensions = tuple(dimensions)
         self._bounds = ranges
-        self._bins = np.prod(self._dimensions)
+        self._bins = np.prod(self._dimensions, dtype=np.int32)
         self._grid = np.empty(self._bins, dtype=np.float32)
         self._data = {}
 
@@ -42,6 +42,9 @@ class GridArchive(Archive):
 
     def __repr__(self):
         return f"GridArchive(dim={self._dimensions},bins={self._bins},bounds=[{self._bounds},{self._bounds}])"
+
+    def __len__(self):
+        return len(self._data)
 
     def lower_i(self, i):
         if i < 0 or i > len(self._bounds):
@@ -78,6 +81,7 @@ class GridArchive(Archive):
                 self._data[idx] = instance
 
     def grid_to_int_index(self, grid_indices) -> np.ndarray:
+        grid_indices = np.asarray(grid_indices)
         return np.ravel_multi_index(grid_indices.T, self._dimensions).astype(np.int32)
 
     def int_to_grid_index(self, int_indices) -> np.ndarray:

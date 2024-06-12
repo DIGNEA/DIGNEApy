@@ -11,6 +11,7 @@
 """
 
 import copy
+import json
 from collections.abc import Iterable, Sequence
 from typing import Dict, Optional, Tuple
 
@@ -227,3 +228,16 @@ class GridArchive(Archive):
                 self._dimensions,
             )
         ).T.astype(np.int32)
+
+    def __dict__(self):
+        return {
+            "dimensions": self._dimensions.tolist(),
+            "lbs": self._lower_bounds.tolist(),
+            "ubs": self._upper_bounds,
+            "n_cells": self._cells,
+            "boundaries": self._boundaries.tolist(),
+            "grid": self._grid,
+        }
+
+    def to_json(self):
+        return json.dumps(self, default=lambda o: o.__dict__(), indent=4)

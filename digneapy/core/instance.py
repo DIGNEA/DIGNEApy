@@ -11,11 +11,14 @@
 """
 
 import copy
+import json
 import operator
 import reprlib
 from collections.abc import Iterable
 from functools import reduce
 from typing import Optional, Tuple
+
+import numpy as np
 
 
 class Instance:
@@ -27,9 +30,9 @@ class Instance:
         s: float = 0.0,
     ):
         if variables is not None:
-            self._variables = list(variables)
+            self._variables = np.asarray(variables)
         else:
-            self._variables = []
+            self._variables = np.empty(0)
         try:
             fitness = float(fitness)
             p = float(p)
@@ -157,8 +160,18 @@ class Instance:
         hashes = (hash(x) for x in self)
         return reduce(operator.or_, hashes, 0)
 
+    def __dict__(self):
+        return {
+            "fitness": self.fitness,
+            "s": self.s,
+            "p": self.p,
+            "portfolio": self._portfolio_m,
+            "variables": self._variables.tolist(),
+            "descriptor": self._descriptor.tolist(),
+        }
+
     def __bool__(self):
-        return bool(self._variables)
+        return self._variables.size != 0
 
     def __format__(self, fmt_spec=""):
         if fmt_spec.endswith("p"):
@@ -174,3 +187,8 @@ class Instance:
         msg = f"Instance(f={self._fitness},p={format(self._p, fmt_spec)}, s={format(self._s, fmt_spec)}, {decriptor})"
 
         return msg
+
+    def to_json(self):
+        return json.dumps(
+            self, default=lambda o: o.__dict__(), sort_keys=True, indent=4
+        )

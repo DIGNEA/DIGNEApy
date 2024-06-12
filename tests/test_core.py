@@ -102,7 +102,7 @@ def test_default_instance_attrs(default_instance):
     assert default_instance.p == 0.0
     assert default_instance.s == 0.0
     assert default_instance.fitness == 0.0
-    assert not default_instance._variables
+    np.testing.assert_array_equal(default_instance._variables, np.zeros(0))
     assert not default_instance.descriptor
     assert not default_instance.portfolio_scores
 
@@ -163,7 +163,8 @@ def test_init_instance(initialised_instance):
     assert initialised_instance.p == 0.0
     assert initialised_instance.s == 0.0
     assert initialised_instance.fitness == 0.0
-    assert initialised_instance._variables == list(range(100))
+    expected = np.asarray(list(range(100)))
+    np.testing.assert_array_equal(initialised_instance._variables, expected)
     assert not initialised_instance.descriptor
     assert not initialised_instance.portfolio_scores
 

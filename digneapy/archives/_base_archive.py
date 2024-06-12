@@ -10,6 +10,7 @@
 @Desc    :   None
 """
 
+import json
 import operator
 from collections.abc import Iterable
 from functools import reduce
@@ -35,7 +36,6 @@ class Archive:
             instances (Iterable[Instance], optional): Instances to initialise the archive. Defaults to None.
         """
         if instances:
-            # self._instances = list(array(self.typecode, d) for d in instances)
             self._instances = list(i for i in instances)
         else:
             self._instances = []
@@ -155,3 +155,19 @@ class Archive:
         outer_fmt = "({})"
         components = (format(c, fmt_spec) for c in variables)
         return outer_fmt.format(", ".join(components))
+
+    def __dict__(self):
+        """Converts the archive into a dictionary
+
+        Returns:
+            dict: Dict with the archive information
+        """
+        return {"threshold": self._threshold, "instances": self._instances}
+
+    def to_json(self) -> str:
+        """Converts the archive into a JSON object
+
+        Returns:
+            str: JSON str of the archive content
+        """
+        return json.dumps(self, default=lambda o: o.__dict__(), indent=4)

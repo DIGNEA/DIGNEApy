@@ -53,7 +53,7 @@ class KerasNN(Transformer):
         self._scaler = StandardScaler() if scale else None
 
         self._model = keras.models.Sequential()
-        self._model.add(keras.layers.InputLayer(input_shape=input_shape))
+        self._model.add(keras.layers.InputLayer(shape=input_shape))
         for d, act in zip(shape, activations):
             self._model.add(keras.layers.Dense(d, activation=act))
         self._model.compile(

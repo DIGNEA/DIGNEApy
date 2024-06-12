@@ -79,7 +79,9 @@ def test_default_generator():
     )
     with pytest.raises(AttributeError) as e:
         eig = EIG(domain=None, portfolio=[], phi="hello")
-    assert e.value.args[0] == "Phi must be a float number in the range [0.0-1.0]."
+    assert (
+        e.value.args[0] == "Phi must be a float number in the range [0.0-1.0]."
+    )
 
 
 def test_eig_gen_kp_perf_descriptor():
@@ -111,7 +113,9 @@ def test_eig_gen_kp_perf_descriptor():
         assert all(len(s.portfolio_scores) == len(portfolio) for s in archive)
         p_scores = [s._portfolio_m for s in archive]
         # The instances are biased to the performance of the target
-        assert all(max(p_scores[i]) == p_scores[i][0] for i in range(len(p_scores)))
+        assert all(
+            max(p_scores[i]) == p_scores[i][0] for i in range(len(p_scores))
+        )
 
     if len(solution_set) != 0:
         assert all(len(s) == 101 for s in solution_set)
@@ -119,9 +123,13 @@ def test_eig_gen_kp_perf_descriptor():
         assert all(s.p >= 0.0 for s in solution_set)
         assert all(s.s >= 0.0 for s in solution_set)
         assert all(len(s.descriptor) == len(portfolio) for s in solution_set)
-        assert all(len(s.portfolio_scores) == len(portfolio) for s in solution_set)
+        assert all(
+            len(s.portfolio_scores) == len(portfolio) for s in solution_set
+        )
         p_scores = [s._portfolio_m for s in solution_set]
-        assert all(max(p_scores[i]) == p_scores[i][0] for i in range(len(p_scores)))
+        assert all(
+            max(p_scores[i]) == p_scores[i][0] for i in range(len(p_scores))
+        )
 
 
 def test_eig_gen_kp_feat_descriptor():
@@ -153,7 +161,9 @@ def test_eig_gen_kp_feat_descriptor():
         assert all(len(s.portfolio_scores) == len(portfolio) for s in archive)
         p_scores = [s._portfolio_m for s in archive]
         # The instances are biased to the performance of the target
-        assert all(max(p_scores[i]) == p_scores[i][0] for i in range(len(p_scores)))
+        assert all(
+            max(p_scores[i]) == p_scores[i][0] for i in range(len(p_scores))
+        )
 
     if len(solution_set) != 0:
         assert all(len(s) == 101 for s in solution_set)
@@ -161,9 +171,13 @@ def test_eig_gen_kp_feat_descriptor():
         assert all(s.p >= 0.0 for s in solution_set)
         assert all(s.s >= 0.0 for s in solution_set)
         assert all(len(s.descriptor) == 8 for s in solution_set)
-        assert all(len(s.portfolio_scores) == len(portfolio) for s in solution_set)
+        assert all(
+            len(s.portfolio_scores) == len(portfolio) for s in solution_set
+        )
         p_scores = [s._portfolio_m for s in solution_set]
-        assert all(max(p_scores[i]) == p_scores[i][0] for i in range(len(p_scores)))
+        assert all(
+            max(p_scores[i]) == p_scores[i][0] for i in range(len(p_scores))
+        )
 
     # Test the creation of the evolution images
     log = eig.logbook
@@ -205,7 +219,9 @@ def test_eig_gen_kp_inst_descriptor():
         assert all(len(s.portfolio_scores) == len(portfolio) for s in archive)
         p_scores = [s._portfolio_m for s in archive]
         # The instances are biased to the performance of the target
-        assert all(max(p_scores[i]) == p_scores[i][0] for i in range(len(p_scores)))
+        assert all(
+            max(p_scores[i]) == p_scores[i][0] for i in range(len(p_scores))
+        )
 
     if len(solution_set) != 0:
         assert all(len(s) == 101 for s in solution_set)
@@ -213,9 +229,13 @@ def test_eig_gen_kp_inst_descriptor():
         assert all(s.p >= 0.0 for s in solution_set)
         assert all(s.s >= 0.0 for s in solution_set)
         assert all(len(s.descriptor) == len(s) for s in solution_set)
-        assert all(len(s.portfolio_scores) == len(portfolio) for s in solution_set)
+        assert all(
+            len(s.portfolio_scores) == len(portfolio) for s in solution_set
+        )
         p_scores = [s._portfolio_m for s in solution_set]
-        assert all(max(p_scores[i]) == p_scores[i][0] for i in range(len(p_scores)))
+        assert all(
+            max(p_scores[i]) == p_scores[i][0] for i in range(len(p_scores))
+        )
 
 
 def test_eig_gen_kp_perf_descriptor_with_pisinger():
@@ -250,7 +270,9 @@ def test_eig_gen_kp_perf_descriptor_with_pisinger():
         # The instances are biased to the performance of the target
         # in this case, the performance score is the minimum because
         # we are measuring running time
-        assert all(min(p_scores[i]) == p_scores[i][0] for i in range(len(p_scores)))
+        assert all(
+            min(p_scores[i]) == p_scores[i][0] for i in range(len(p_scores))
+        )
 
     if len(solution_set) != 0:
         assert all(len(s) == 101 for s in solution_set)
@@ -258,6 +280,10 @@ def test_eig_gen_kp_perf_descriptor_with_pisinger():
         assert all(s.p >= 0.0 for s in solution_set)
         assert all(s.s >= 0.0 for s in solution_set)
         assert all(len(s.descriptor) == len(portfolio) for s in solution_set)
-        assert all(len(s.portfolio_scores) == len(portfolio) for s in solution_set)
+        assert all(
+            len(s.portfolio_scores) == len(portfolio) for s in solution_set
+        )
         p_scores = [s._portfolio_m for s in solution_set]
-        assert all(min(p_scores[i]) == p_scores[i][0] for i in range(len(p_scores)))
+        assert all(
+            min(p_scores[i]) == p_scores[i][0] for i in range(len(p_scores))
+        )

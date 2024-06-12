@@ -172,11 +172,6 @@ def test_archive_extend_with_s_p_and_fitness(empty_archive):
 
 
 @pytest.fixture
-def empty_grid():
-    return GridArchive(dimensions=[], ranges=[])
-
-
-@pytest.fixture
 def grid_5d():
     return GridArchive(
         dimensions=(20, 20, 20, 20, 20),
@@ -190,26 +185,37 @@ def grid_5d():
     )
 
 
-def test_empty_grid(empty_grid):
-    assert len(empty_grid) == 0
-    assert empty_grid._bins == 1
-    assert len(empty_grid._bounds) == 0
-
-
 def test_grid_5d(grid_5d):
-    expected_n_bins = np.prod((20, 20, 20, 20, 20))
     assert len(grid_5d) == 0
-    assert grid_5d._bins == expected_n_bins
-    assert len(grid_5d._bounds) == 5
+    assert len(grid_5d.bounds) == len(grid_5d.dimensions)
     grid_zero = list(0 for _ in range(5))
     grid_one = list(1 for _ in range(5))
     index_of_zero = 0
     index_of_one = 168421
-    assert grid_5d.grid_to_int_index(grid_zero) == index_of_zero
-    assert grid_5d.grid_to_int_index(grid_one) == index_of_one
+    assert grid_5d._grid_to_int_index(grid_zero) == index_of_zero
+    assert grid_5d._grid_to_int_index(grid_one) == index_of_one
     np.testing.assert_array_equal(
         grid_5d.int_to_grid_index(index_of_zero), np.asarray(grid_zero)
     )
     np.testing.assert_array_equal(
         grid_5d.int_to_grid_index(index_of_one), np.asarray(grid_one)
     )
+
+
+def test_grid_5d_storage(grid_5d):
+    instances = []
+    for _ in range(10):
+        inst = Instance(
+            [], fitness=0.0, p=np.random.randint(0, 100), s=np.random.random()
+        )
+        inst.descriptor = tuple(np.random.random(size=5))
+        instances.append(inst)
+
+    assert len(grid_5d) == 0
+    grid_5d.extend(instances)
+    assert len(grid_5d) == len(instances)
+
+    instance = Instance()
+    instance.descriptor = tuple(np.random.random(size=5))
+    grid_5d.append(instance)
+    assert len(grid_5d) == len(instances) + 1

@@ -17,7 +17,7 @@ import keras
 import numpy as np
 from sklearn.preprocessing import StandardScaler
 
-from ._base_transformer import Transformer
+from .base import Transformer
 
 
 class KerasNN(Transformer):

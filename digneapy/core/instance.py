@@ -109,7 +109,9 @@ class Instance:
     def __str__(self):
         descriptor = reprlib.repr(self._descriptor)
         performance = reprlib.repr(self._portfolio_m)
-        performance = performance[performance.find("(") : performance.rfind(")") + 1]
+        performance = performance[
+            performance.find("(") : performance.rfind(")") + 1
+        ]
         return f"Instance(f={self._fitness},p={self._p},s={self._s},descriptor={descriptor},performance={performance})"
 
     def __iter__(self):

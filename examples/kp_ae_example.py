@@ -19,7 +19,7 @@ from digneapy.domains.knapsack import KPDomain
 from digneapy.generators import EIG
 from digneapy.operators.replacement import generational
 from digneapy.solvers import default_kp, map_kp, miw_kp, mpw_kp
-from digneapy.transformers import KPAE
+from digneapy.transformers.autoencoders import KPAE
 
 
 def save_instances(filename, generated_instances, dimension):

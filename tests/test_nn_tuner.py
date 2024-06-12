@@ -18,7 +18,8 @@ import pandas as pd
 import pytest
 from sklearn.metrics import mean_squared_error
 
-from digneapy.transformers import KerasNN, NNTuner
+from digneapy.transformers.keras_nn import KerasNN
+from digneapy.transformers.tuner import NNTuner
 
 dir, _ = os.path.split(__file__)
 

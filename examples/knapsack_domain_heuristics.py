@@ -44,9 +44,7 @@ def main(default_args):
         descriptor = config["generator"]["descriptor"]
 
     portfolio = deque([default_kp, map_kp, miw_kp, mpw_kp])
-    kp_domain = KPDomain(
-        dimension=dimension, capacity_approach=capacity_approach
-    )
+    kp_domain = KPDomain(dimension=dimension, capacity_approach=capacity_approach)
 
     for i in range(len(portfolio)):
         portfolio.rotate(i)

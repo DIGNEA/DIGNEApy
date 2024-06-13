@@ -26,7 +26,7 @@ def features_strategy(iterable: Iterable[Instance]) -> list:
     Returns:
         list: List of the feature descriptors of each instance
     """
-    return [i.features for i in iterable]
+    return [i._descriptor for i in iterable]
 
 
 def performance_strategy(iterable: Iterable[Instance]) -> list[float]:
@@ -39,7 +39,7 @@ def performance_strategy(iterable: Iterable[Instance]) -> list[float]:
     Returns:
         List: List of performance descriptors of each instance
     """
-    return [np.mean(i.portfolio_scores, axis=0) for i in iterable]
+    return [np.mean(i.portfolio_scores, axis=1) for i in iterable]
 
 
 def instance_strategy(iterable: Iterable[Instance]) -> list:

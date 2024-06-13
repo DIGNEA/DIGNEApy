@@ -70,8 +70,6 @@ def uniform_crossover(
 
     probs = np.random.rand(len(ind_1))
     offspring = copy.deepcopy(ind_1)
-    chromosome = [
-        i if pb <= cxpb else j for pb, i, j in zip(probs, ind_1, ind_2)
-    ]
+    chromosome = [i if pb <= cxpb else j for pb, i, j in zip(probs, ind_1, ind_2)]
     offspring[:] = chromosome
     return offspring

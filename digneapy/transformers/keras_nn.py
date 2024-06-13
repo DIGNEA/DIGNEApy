@@ -17,7 +17,7 @@ import keras
 import numpy as np
 from sklearn.preprocessing import StandardScaler
 
-from ._base_transformer import Transformer
+from .base import Transformer
 
 
 class KerasNN(Transformer):
@@ -53,7 +53,7 @@ class KerasNN(Transformer):
         self._scaler = StandardScaler() if scale else None
 
         self._model = keras.models.Sequential()
-        self._model.add(keras.layers.InputLayer(input_shape=input_shape))
+        self._model.add(keras.layers.InputLayer(shape=input_shape))
         for d, act in zip(shape, activations):
             self._model.add(keras.layers.Dense(d, activation=act))
         self._model.compile(
@@ -78,9 +78,7 @@ class KerasNN(Transformer):
         pass
 
     def update_weights(self, weights: Sequence[float]):
-        expected = np.sum(
-            [np.prod(v.shape) for v in self._model.trainable_variables]
-        )
+        expected = np.sum([np.prod(v.shape) for v in self._model.trainable_variables])
         if len(weights) != expected:
             msg = f"Error in the amount of weights in NN.update_weigths. Expected {expected} and got {len(weights)}"
             raise AttributeError(msg)

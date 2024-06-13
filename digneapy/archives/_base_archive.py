@@ -10,6 +10,7 @@
 @Desc    :   None
 """
 
+import json
 import operator
 from collections.abc import Iterable
 from functools import reduce
@@ -35,7 +36,6 @@ class Archive:
             instances (Iterable[Instance], optional): Instances to initialise the archive. Defaults to None.
         """
         if instances:
-            # self._instances = list(array(self.typecode, d) for d in instances)
             self._instances = list(i for i in instances)
         else:
             self._instances = []
@@ -85,17 +85,15 @@ class Archive:
 
         >>> import copy
         >>> variables = [list(range(d, d + 5)) for d in range(10)]
-        >>> instances = [Instance(variables=v) for v in variables]
-        >>> archive = Archive(instances)
-        >>> empty_archive = Archive()
+        >>> instances = [Instance(variables=v, s=1.0) for v in variables]
+        >>> archive = Archive(threshold=0.0, instances=instances)
+        >>> empty_archive = Archive(threshold=0.0)
 
         >>> a1 = copy.copy(archive)
         >>> assert a1 == archive
         >>> assert empty_archive != archive
         """
-        return len(self) == len(other) and all(
-            a == b for a, b in zip(self, other)
-        )
+        return len(self) == len(other) and all(a == b for a, b in zip(self, other))
 
     def __hash__(self):
         hashes = (hash(i) for i in self.instances)
@@ -105,8 +103,8 @@ class Archive:
         """Returns True if len(self) > 1
 
         >>> descriptors = [list(range(d, d + 5)) for d in range(10)]
-        >>> archive = Archive(descriptors)
-        >>> empty_archive = Archive()
+        >>> archive = Archive(threshold=0.0, instances=descriptors)
+        >>> empty_archive = Archive(threshold=0.0)
 
         >>> assert archive
         >>> assert not empty_archive
@@ -155,3 +153,12 @@ class Archive:
         outer_fmt = "({})"
         components = (format(c, fmt_spec) for c in variables)
         return outer_fmt.format(", ".join(components))
+
+    def to_json(self) -> str:
+        """Converts the archive into a JSON object
+
+        Returns:
+            str: JSON str of the archive content
+        """
+        data = {"threshold": self._threshold, "instances": self._instances}
+        return json.dumps(data, indent=4)

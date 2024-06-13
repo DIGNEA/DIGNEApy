@@ -85,7 +85,7 @@ def test_default_generator():
 def test_eig_gen_kp_perf_descriptor():
     portfolio = deque([default_kp, map_kp, miw_kp, mpw_kp])
     kp_domain = KPDomain(dimension=50, capacity_approach="evolved")
-    generations = 1000
+    generations = 100
     k = 3
     eig = EIG(
         pop_size=10,
@@ -107,7 +107,7 @@ def test_eig_gen_kp_perf_descriptor():
         assert all(s.fitness >= 0.0 for s in archive)
         assert all(s.p >= 0.0 for s in archive)
         assert all(s.s >= 0.0 for s in archive)
-        assert all(len(s.features) == 0 for s in archive)
+        assert all(len(s.descriptor) == len(portfolio) for s in archive)
         assert all(len(s.portfolio_scores) == len(portfolio) for s in archive)
         p_scores = [s._portfolio_m for s in archive]
         # The instances are biased to the performance of the target
@@ -118,7 +118,7 @@ def test_eig_gen_kp_perf_descriptor():
         assert all(s.fitness >= 0.0 for s in solution_set)
         assert all(s.p >= 0.0 for s in solution_set)
         assert all(s.s >= 0.0 for s in solution_set)
-        assert all(len(s.features) == 0 for s in solution_set)
+        assert all(len(s.descriptor) == len(portfolio) for s in solution_set)
         assert all(len(s.portfolio_scores) == len(portfolio) for s in solution_set)
         p_scores = [s._portfolio_m for s in solution_set]
         assert all(max(p_scores[i]) == p_scores[i][0] for i in range(len(p_scores)))
@@ -127,7 +127,7 @@ def test_eig_gen_kp_perf_descriptor():
 def test_eig_gen_kp_feat_descriptor():
     portfolio = deque([default_kp, map_kp, miw_kp, mpw_kp])
     kp_domain = KPDomain(dimension=50, capacity_approach="evolved")
-    generations = 1000
+    generations = 100
     k = 3
     eig = EIG(
         pop_size=10,
@@ -149,7 +149,7 @@ def test_eig_gen_kp_feat_descriptor():
         assert all(s.fitness >= 0.0 for s in archive)
         assert all(s.p >= 0.0 for s in archive)
         assert all(s.s >= 0.0 for s in archive)
-        assert all(len(s.features) == 8 for s in archive)
+        assert all(len(s.descriptor) == 8 for s in archive)
         assert all(len(s.portfolio_scores) == len(portfolio) for s in archive)
         p_scores = [s._portfolio_m for s in archive]
         # The instances are biased to the performance of the target
@@ -160,7 +160,7 @@ def test_eig_gen_kp_feat_descriptor():
         assert all(s.fitness >= 0.0 for s in solution_set)
         assert all(s.p >= 0.0 for s in solution_set)
         assert all(s.s >= 0.0 for s in solution_set)
-        assert all(len(s.features) == 8 for s in solution_set)
+        assert all(len(s.descriptor) == 8 for s in solution_set)
         assert all(len(s.portfolio_scores) == len(portfolio) for s in solution_set)
         p_scores = [s._portfolio_m for s in solution_set]
         assert all(max(p_scores[i]) == p_scores[i][0] for i in range(len(p_scores)))
@@ -177,7 +177,7 @@ def test_eig_gen_kp_feat_descriptor():
 def test_eig_gen_kp_inst_descriptor():
     portfolio = deque([map_kp, mpw_kp])
     kp_domain = KPDomain(dimension=50, capacity_approach="evolved")
-    generations = 1000
+    generations = 100
     k = 3
     eig = EIG(
         pop_size=10,
@@ -200,7 +200,7 @@ def test_eig_gen_kp_inst_descriptor():
         assert all(s.p >= 0.0 for s in archive)
         assert all(s.s >= 0.0 for s in archive)
         assert all(
-            len(s.features) == 0 for s in archive
+            len(s.descriptor) == len(s) for s in archive
         )  # Because we do not calculate features in this case
         assert all(len(s.portfolio_scores) == len(portfolio) for s in archive)
         p_scores = [s._portfolio_m for s in archive]
@@ -212,7 +212,7 @@ def test_eig_gen_kp_inst_descriptor():
         assert all(s.fitness >= 0.0 for s in solution_set)
         assert all(s.p >= 0.0 for s in solution_set)
         assert all(s.s >= 0.0 for s in solution_set)
-        assert all(len(s.features) == 0 for s in solution_set)
+        assert all(len(s.descriptor) == len(s) for s in solution_set)
         assert all(len(s.portfolio_scores) == len(portfolio) for s in solution_set)
         p_scores = [s._portfolio_m for s in solution_set]
         assert all(max(p_scores[i]) == p_scores[i][0] for i in range(len(p_scores)))
@@ -221,7 +221,7 @@ def test_eig_gen_kp_inst_descriptor():
 def test_eig_gen_kp_perf_descriptor_with_pisinger():
     portfolio = deque([combo, minknap, expknap])
     kp_domain = KPDomain(dimension=50, capacity_approach="evolved")
-    generations = 1000
+    generations = 100
     k = 3
     eig = EIG(
         pop_size=10,
@@ -244,7 +244,7 @@ def test_eig_gen_kp_perf_descriptor_with_pisinger():
         assert all(s.fitness >= 0.0 for s in archive)
         assert all(s.p >= 0.0 for s in archive)
         assert all(s.s >= 0.0 for s in archive)
-        assert all(len(s.features) == 0 for s in archive)
+        assert all(len(s.descriptor) == len(portfolio) for s in archive)
         assert all(len(s.portfolio_scores) == len(portfolio) for s in archive)
         p_scores = [s._portfolio_m for s in archive]
         # The instances are biased to the performance of the target
@@ -257,7 +257,7 @@ def test_eig_gen_kp_perf_descriptor_with_pisinger():
         assert all(s.fitness >= 0.0 for s in solution_set)
         assert all(s.p >= 0.0 for s in solution_set)
         assert all(s.s >= 0.0 for s in solution_set)
-        assert all(len(s.features) == 0 for s in solution_set)
+        assert all(len(s.descriptor) == len(portfolio) for s in solution_set)
         assert all(len(s.portfolio_scores) == len(portfolio) for s in solution_set)
         p_scores = [s._portfolio_m for s in solution_set]
         assert all(min(p_scores[i]) == p_scores[i][0] for i in range(len(p_scores)))

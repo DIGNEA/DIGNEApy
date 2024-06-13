@@ -10,10 +10,10 @@
 @Desc    :   None
 """
 
-from digneapy.transformers._base_transformer import Transformer
-from digneapy.transformers._keras_nn import KerasNN
-from digneapy.transformers._kp_ae import KPAE
-from digneapy.transformers._nn_tuner import NNTuner
-from digneapy.transformers._torch_nn import TorchNN
+from digneapy.transformers.autoencoders import KPAE
+from digneapy.transformers.base import Transformer
+from digneapy.transformers.keras_nn import KerasNN
+from digneapy.transformers.torch_nn import TorchNN
+from digneapy.transformers.tuner import NNTuner
 
-__all__ = ["Transformer", "KerasNN", "TorchNN", "NNTuner", "KPAE"]
+# __all__ = ["Transformer", "KerasNN", "TorchNN", "NNTuner", "KPAE"]

@@ -18,9 +18,7 @@ import numpy as np
 
 from ..core import Instance, Solution
 
-Selection = Callable[
-    [Sequence[Instance] | Sequence[Solution]], Instance | Solution
-]
+Selection = Callable[[Sequence[Instance] | Sequence[Solution]], Instance | Solution]
 
 
 def binary_tournament_selection(

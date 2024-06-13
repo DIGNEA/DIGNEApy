@@ -10,17 +10,7 @@
 @Desc    :   None
 """
 
-from digneapy.solvers._constants import DIRECTIONS, MAXIMISE, MINIMISE
 from digneapy.solvers.evolutionary import EA
 from digneapy.solvers.heuristics import default_kp, map_kp, miw_kp, mpw_kp
 
-__all__ = [
-    "EA",
-    "default_kp",
-    "map_kp",
-    "miw_kp",
-    "mpw_kp",
-    "MAXIMISE",
-    "MINIMISE",
-    "DIRECTIONS",
-]
+__all__ = ["EA", "default_kp", "map_kp", "miw_kp", "mpw_kp"]

@@ -227,8 +227,7 @@ def test_first_improve_replacement(population):
     ]
 
     expected = [
-        copy.copy(i) if i > j else copy.copy(j)
-        for i, j in zip(population, offspring)
+        copy.copy(i) if i > j else copy.copy(j) for i, j in zip(population, offspring)
     ]
 
     assert population != offspring
@@ -251,9 +250,7 @@ def test_elitist_replacement(population):
         for _ in range(100)
     ]
     new_best_f = (
-        max(
-            itertools.chain(population, offspring), key=attrgetter("fitness")
-        ).fitness
+        max(itertools.chain(population, offspring), key=attrgetter("fitness")).fitness
         + 10
     )
     population[0].fitness = new_best_f

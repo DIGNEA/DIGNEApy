@@ -19,7 +19,7 @@ from digneapy.domains.knapsack import KPDomain
 from digneapy.generators import EIG
 from digneapy.operators.replacement import generational
 from digneapy.solvers import default_kp, map_kp, miw_kp, mpw_kp
-from digneapy.transformers import KPAE
+from digneapy.transformers.autoencoders import KPAE
 
 
 def save_instances(filename, generated_instances, dimension):
@@ -30,9 +30,7 @@ def save_instances(filename, generated_instances, dimension):
         generated_instances (iterable): Iterable of instances
     """
     header = ["target", "N"] + list(
-        itertools.chain.from_iterable(
-            [(f"w_{i}", f"p_{i}") for i in range(dimension)]
-        )
+        itertools.chain.from_iterable([(f"w_{i}", f"p_{i}") for i in range(dimension)])
     )
     with open(filename, "w") as file:
         file.write(",".join(header) + "\n")
@@ -74,9 +72,7 @@ def generate_instances(dim: int = 50):
         _, solution_set = eig()
         instances[portfolio[0].__name__] = copy.copy(solution_set)
 
-    save_instances(
-        f"kp_ns_best_autoencoder_N_{dim}_gr.csv", instances, dimension=dim
-    )
+    save_instances(f"kp_ns_best_autoencoder_N_{dim}_gr.csv", instances, dimension=dim)
 
 
 if __name__ == "__main__":

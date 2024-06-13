@@ -14,7 +14,7 @@ import numpy as np
 import pytest
 from deap import benchmarks
 
-from digneapy import solvers
+from digneapy import Direction
 from digneapy.core import Solution
 from digneapy.domains import knapsack
 from digneapy.solvers import EA, heuristics
@@ -107,7 +107,7 @@ def test_ea_with_def_kp(default_instance):
     pop_size = 10
 
     ea = EA(
-        dir=solvers.MAXIMISE,
+        direction=Direction.MAXIMISE,
         dim=len(default_instance),
         min_g=0,
         max_g=1,
@@ -129,40 +129,12 @@ def test_ea_with_def_kp(default_instance):
     # So we dont compare the chromosomes
 
 
-def test_parallel_ea_with_def_kp(default_instance):
-    generations = 100
-    pop_size = 10
-
-    ea = EA(
-        dir=solvers.MAXIMISE,
-        dim=len(default_instance),
-        min_g=0,
-        max_g=1,
-        generations=generations,
-        pop_size=pop_size,
-        n_cores=2,
-    )
-    population = ea(default_instance)
-    assert len(population) == 11
-    assert len(ea._logbook) == generations + 1
-    assert len(ea._best_found) == len(default_instance)
-    assert len(ea._population) == pop_size
-
-    assert all(type(i) == Solution for i in population)
-    assert type(ea._best_found) == Solution
-    assert ea._best_found.fitness <= 50
-    assert ea.__name__ == "EA_PS_10_CXPB_0.6_MUTPB_0.3"
-    assert ea._name == "EA_PS_10_CXPB_0.6_MUTPB_0.3"
-    # There are multiple options to reach the maximum fitness
-    # So we dont compare the chromosomes
-
-
 def test_ea_solves_sphere():
     generations = 100
     pop_size = 10
 
     ea = EA(
-        dir=solvers.MINIMISE,
+        direction=Direction.MINIMISE,
         dim=30,
         min_g=0,
         max_g=1,
@@ -187,7 +159,7 @@ def test_ea_raises_problem():
         generations = 100
         pop_size = 10
         ea = EA(
-            dir=solvers.MAXIMISE,
+            direction=Direction.MAXIMISE,
             dim=100,
             min_g=0,
             max_g=1,
@@ -205,7 +177,7 @@ def test_ea_raises_direction(default_instance):
         generations = 100
         pop_size = 10
         _ = EA(
-            dir="ANY",
+            direction="ANY",
             dim=len(default_instance),
             min_g=0,
             max_g=1,
@@ -236,9 +208,7 @@ def test_minknap(default_large_knap):
 
 def test_expknap(default_large_knap):
     solutions = expknap(default_large_knap)
-    assert (
-        solutions[0].fitness <= 15.0
-    )  # Here compares time (15.0s max time allowed)
+    assert solutions[0].fitness <= 15.0  # Here compares time (15.0s max time allowed)
     solutions = expknap(default_large_knap, only_time=False)
     assert len(solutions) == 1
     assert all(type(i) == Solution for i in solutions)

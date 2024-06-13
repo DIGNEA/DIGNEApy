@@ -11,8 +11,8 @@ from digneapy import (
     operators,
     qd,
     solvers,
-    transformers,
 )
+from digneapy._constants import Direction
 
 __all__ = [
     "domains",
@@ -21,5 +21,5 @@ __all__ = [
     "core",
     "generators",
     "qd",
-    "transformers",
+    "Direction",
 ]

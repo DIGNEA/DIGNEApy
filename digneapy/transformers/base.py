@@ -22,14 +22,10 @@ class Transformer(ABC):
         raise NotImplementedError("train method not implemented in Transformer")
 
     def predict(self, X: Sequence[float]):
-        raise NotImplementedError(
-            "predict method not implemented in Transformer"
-        )
+        raise NotImplementedError("predict method not implemented in Transformer")
 
     def __call__(self, X: Sequence[float]):
-        raise NotImplementedError(
-            "__call__ method not implemented in Transformer"
-        )
+        raise NotImplementedError("__call__ method not implemented in Transformer")
 
     def save(self):
         raise NotImplementedError("save method not implemented in Transformer")

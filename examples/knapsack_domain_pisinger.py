@@ -29,9 +29,7 @@ def main():
     descriptor = "features"
 
     portfolio = deque([combo, minknap, expknap])
-    kp_domain = KPDomain(
-        dimension=dimension, capacity_approach=capacity_approach
-    )
+    kp_domain = KPDomain(dimension=dimension, capacity_approach=capacity_approach)
 
     for i in range(len(portfolio) + 1):
         portfolio.rotate(i)

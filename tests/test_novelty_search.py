@@ -76,7 +76,7 @@ def random_population():
         for _ in range(100)
     ]
     for i, instance in enumerate(instances):
-        instance.features = features[i]
+        instance.descriptor = features[i]
         instance.portfolio_scores = performances[i]
 
     return instances
@@ -84,7 +84,7 @@ def random_population():
 
 def test_run_nsf(nsf, random_population):
     assert nsf._describe_by == "features"
-    assert all(len(instance.features) != 0 for instance in random_population)
+    assert all(len(instance.descriptor) != 0 for instance in random_population)
     sparseness = nsf.sparseness(random_population)
     assert len(sparseness) == len(random_population)
 
@@ -129,16 +129,14 @@ def test_run_nsf(nsf, random_population):
 
 def test_run_nsf_with_transformer(random_population):
     nsft = NS(k=3, descriptor="features", transformer=transformer)
-    assert all(len(instance.features) != 0 for instance in random_population)
+    assert all(len(instance.descriptor) != 0 for instance in random_population)
     sparseness = nsft.sparseness(random_population)
     assert len(sparseness) == len(random_population)
 
 
 def test_run_nsp(nsp, random_population):
     assert nsp._describe_by == "performance"
-    assert all(
-        len(instance.portfolio_scores) != 0 for instance in random_population
-    )
+    assert all(len(instance.portfolio_scores) != 0 for instance in random_population)
     sparseness = nsp.sparseness(random_population)
     assert len(sparseness) == len(random_population)
 
@@ -167,10 +165,8 @@ def test_run_nsp(nsp, random_population):
 
 def test_run_ns_instance(nsi, random_population):
     assert nsi._describe_by == "instance"
-    assert all(len(instance.features) != 0 for instance in random_population)
-    assert all(
-        len(instance.portfolio_scores) != 0 for instance in random_population
-    )
+    assert all(len(instance.descriptor) != 0 for instance in random_population)
+    assert all(len(instance.portfolio_scores) != 0 for instance in random_population)
     assert all(len(instance) != 0 for instance in random_population)
 
     # Sparseness is calculated with the instance

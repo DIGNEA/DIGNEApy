@@ -19,7 +19,9 @@ import pandas as pd
 import pytest
 from sklearn.metrics import mean_squared_error
 
-from digneapy.transformers import KerasNN, TorchNN, Transformer
+from digneapy.transformers.base import Transformer
+from digneapy.transformers.keras_nn import KerasNN
+from digneapy.transformers.torch_nn import TorchNN
 
 dir, _ = os.path.split(__file__)
 

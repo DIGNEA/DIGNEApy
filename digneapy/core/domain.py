@@ -55,9 +55,7 @@ class Domain(ABC):
         raise NotImplementedError(msg)
 
     @abstractmethod
-    def extract_features_as_dict(
-        self, instance: Instance
-    ) -> Mapping[str, float]:
+    def extract_features_as_dict(self, instance: Instance) -> Mapping[str, float]:
         """Creates a dictionary with the features of the instance.
         The key are the names of each feature and the values are
         the values extracted from instance.

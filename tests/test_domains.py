@@ -94,7 +94,7 @@ def test_kp_domain_to_features():
     instance = domain.generate_instance()
     features = domain.extract_features(instance)
 
-    assert type(features) == tuple
+    assert isinstance(features, tuple)
     assert features[0] == 1e4
     assert features[1] <= 1000
     assert features[2] <= 1000
@@ -106,7 +106,7 @@ def test_kp_domain_to_features():
 
     domain.capacity_approach = "evolved"
     features = domain.extract_features(instance)
-    features[0] == instance[0]
+    assert features[0] == instance[0]
 
     domain.capacity_approach = "percentage"
     features = domain.extract_features(instance)

@@ -17,9 +17,7 @@ from collections.abc import Sequence
 import keras
 from keras.utils import pad_sequences
 
-from digneapy.transformers import Transformer
-import pickle
-import os
+from digneapy.transformers.base import Transformer
 
 
 class KPAE(Transformer):

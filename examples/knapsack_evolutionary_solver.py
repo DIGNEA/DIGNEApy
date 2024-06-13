@@ -12,8 +12,9 @@
 
 import numpy as np
 
+from digneapy import Direction
 from digneapy.domains import knapsack
-from digneapy.solvers import EA, MAXIMISE
+from digneapy.solvers import EA
 
 
 def main():
@@ -24,7 +25,7 @@ def main():
     kp = knapsack.Knapsack(profits=p, weights=w, capacity=q)
     print(f"Instance to solve: {kp}")
     solver = EA(
-        dir=MAXIMISE,
+        direction=Direction.MAXIMISE,
         dim=N,
         pop_size=32,
         cxpb=0.8,

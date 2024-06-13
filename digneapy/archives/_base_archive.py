@@ -85,9 +85,9 @@ class Archive:
 
         >>> import copy
         >>> variables = [list(range(d, d + 5)) for d in range(10)]
-        >>> instances = [Instance(variables=v) for v in variables]
-        >>> archive = Archive(instances)
-        >>> empty_archive = Archive()
+        >>> instances = [Instance(variables=v, s=1.0) for v in variables]
+        >>> archive = Archive(threshold=0.0, instances=instances)
+        >>> empty_archive = Archive(threshold=0.0)
 
         >>> a1 = copy.copy(archive)
         >>> assert a1 == archive
@@ -105,8 +105,8 @@ class Archive:
         """Returns True if len(self) > 1
 
         >>> descriptors = [list(range(d, d + 5)) for d in range(10)]
-        >>> archive = Archive(descriptors)
-        >>> empty_archive = Archive()
+        >>> archive = Archive(threshold=0.0, instances=descriptors)
+        >>> empty_archive = Archive(threshold=0.0)
 
         >>> assert archive
         >>> assert not empty_archive
@@ -156,18 +156,11 @@ class Archive:
         components = (format(c, fmt_spec) for c in variables)
         return outer_fmt.format(", ".join(components))
 
-    def __dict__(self):
-        """Converts the archive into a dictionary
-
-        Returns:
-            dict: Dict with the archive information
-        """
-        return {"threshold": self._threshold, "instances": self._instances}
-
     def to_json(self) -> str:
         """Converts the archive into a JSON object
 
         Returns:
             str: JSON str of the archive content
         """
-        return json.dumps(self, default=lambda o: o.__dict__(), indent=4)
+        data = {"threshold": self._threshold, "instances": self._instances}
+        return json.dumps(data, indent=4)

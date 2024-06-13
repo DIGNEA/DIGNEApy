@@ -229,8 +229,8 @@ class GridArchive(Archive):
             )
         ).T.astype(np.int32)
 
-    def __dict__(self):
-        return {
+    def to_json(self):
+        data = {
             "dimensions": self._dimensions.tolist(),
             "lbs": self._lower_bounds.tolist(),
             "ubs": self._upper_bounds,
@@ -238,6 +238,4 @@ class GridArchive(Archive):
             "boundaries": self._boundaries.tolist(),
             "grid": self._grid,
         }
-
-    def to_json(self):
-        return json.dumps(self, default=lambda o: o.__dict__(), indent=4)
+        return json.dumps(data, indent=4)

@@ -12,6 +12,7 @@ from digneapy import (
     qd,
     solvers,
 )
+from digneapy._constants import Direction
 
 __all__ = [
     "domains",
@@ -20,4 +21,5 @@ __all__ = [
     "core",
     "generators",
     "qd",
+    "Direction",
 ]

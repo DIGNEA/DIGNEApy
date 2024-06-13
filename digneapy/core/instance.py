@@ -160,16 +160,6 @@ class Instance:
         hashes = (hash(x) for x in self)
         return reduce(operator.or_, hashes, 0)
 
-    def __dict__(self):
-        return {
-            "fitness": self.fitness,
-            "s": self.s,
-            "p": self.p,
-            "portfolio": self._portfolio_m,
-            "variables": self._variables.tolist(),
-            "descriptor": self._descriptor.tolist(),
-        }
-
     def __bool__(self):
         return self._variables.size != 0
 
@@ -189,6 +179,12 @@ class Instance:
         return msg
 
     def to_json(self):
-        return json.dumps(
-            self, default=lambda o: o.__dict__(), sort_keys=True, indent=4
-        )
+        data = {
+            "fitness": self.fitness,
+            "s": self.s,
+            "p": self.p,
+            "portfolio": self._portfolio_m,
+            "variables": self._variables.tolist(),
+            "descriptor": self._descriptor.tolist(),
+        }
+        return json.dumps(data, sort_keys=True, indent=4)

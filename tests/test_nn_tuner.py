@@ -18,6 +18,7 @@ import pandas as pd
 import pytest
 from sklearn.metrics import mean_squared_error
 
+from digneapy import Direction
 from digneapy.transformers.keras_nn import KerasNN
 from digneapy.transformers.tuner import NNTuner
 
@@ -60,7 +61,7 @@ def test_hyper_cmaes_bpp():
     )
     cma_es = NNTuner(
         dimension=dimension,
-        direction="maximise",
+        direction=Direction.MAXIMISE,
         transformer=transformer,
         generations=5,
         eval_fn=experimental_work_test,
@@ -85,7 +86,7 @@ def test_hyper_cmaes_bpp_maximises():
     )
     cma_es = NNTuner(
         dimension=dimension,
-        direction="minimise",
+        direction=Direction.MINIMISE,
         transformer=transformer,
         generations=5,
         eval_fn=experimental_work_test,
@@ -124,7 +125,7 @@ def test_hyper_cmaes_raises():
         cma_es = NNTuner(
             transformer=None,
             dimension=dimension,
-            direction="maximise",
+            direction=Direction.MAXIMISE,
             generations=5,
             eval_fn=experimental_work_test,
         )
@@ -133,7 +134,7 @@ def test_hyper_cmaes_raises():
     with pytest.raises(AttributeError):
         cma_es = NNTuner(
             dimension=dimension,
-            direction="maximise",
+            direction=Direction.MAXIMISE,
             generations=5,
             transformer=transformer,
             eval_fn=None,
@@ -143,7 +144,7 @@ def test_hyper_cmaes_raises():
     with pytest.raises(AttributeError):
         cma_es = NNTuner(
             dimension=dimension,
-            direction="maximise",
+            direction=Direction.MAXIMISE,
             generations=5,
             transformer=transformer,
             eval_fn=experimental_work_test,
@@ -152,7 +153,7 @@ def test_hyper_cmaes_raises():
 
     cma_es = NNTuner(
         dimension=dimension,
-        direction="maximise",
+        direction=Direction.MAXIMISE,
         generations=5,
         transformer=transformer,
         eval_fn=experimental_work_test,

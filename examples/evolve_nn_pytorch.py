@@ -16,6 +16,7 @@ from typing import Optional
 import numpy as np
 import pandas as pd
 
+from digneapy import Direction
 from digneapy.archives import Archive
 from digneapy.domains.knapsack import KPDomain
 from digneapy.generators import EIG
@@ -161,7 +162,7 @@ def main():
     # Custom CMA-ES derived from DEAP to evolve NNs weights
     cma_es = NNTuner(
         dimension=dimension,
-        direction="maximise",
+        direction=Direction.MAXIMISE,
         lambda_=64,
         generations=250,
         transformer=nn,

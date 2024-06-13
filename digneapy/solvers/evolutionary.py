@@ -15,9 +15,8 @@ import multiprocessing
 import numpy as np
 from deap import algorithms, base, creator, tools
 
+from digneapy._constants import Direction
 from digneapy.core import Problem, Solution, Solver
-
-from ._constants import DIRECTIONS, MINIMISE
 
 
 def _gen_dignea_ind(icls, size: int, min_value, max_value):
@@ -35,7 +34,7 @@ class EA(Solver):
 
     def __init__(
         self,
-        dir: str,
+        direction: Direction,
         dim: int,
         min_g: int | float,
         max_g: int | float,
@@ -61,10 +60,12 @@ class EA(Solver):
         Raises:
             AttributeError: If direction is not in digneapy.solvers.DIRECTIONS
         """
-        if dir not in DIRECTIONS:
-            raise AttributeError("Direction not allowed")
+        if not isinstance(direction, Direction):
+            raise AttributeError(
+                f"Direction not allowed. Please use a value of the class Direction({Direction.values()})"
+            )
 
-        self.direction = dir
+        self.direction = direction
         self._cx = cx
         self._mut = mut
         self._pop_size = pop_size
@@ -72,18 +73,17 @@ class EA(Solver):
         self._mutpb = mutpb
         self._generations = generations
         self._n_cores = n_cores if n_cores > 1 else 1
-
-        mult = 1.0
-        if dir == MINIMISE:
-            mult = -1.0
-
-        creator.create("Fitness", base.Fitness, weights=(mult,))
-        creator.create("Individual", list, fitness=creator.Fitness)
-
         self._toolbox = base.Toolbox()
-        self._toolbox.register(
-            "individual", _gen_dignea_ind, creator.Individual, dim, min_g, max_g
-        )
+
+        if direction == Direction.MINIMISE:
+            self._toolbox.register(
+                "individual", _gen_dignea_ind, creator.IndMin, dim, min_g, max_g
+            )
+
+        else:
+            self._toolbox.register(
+                "individual", _gen_dignea_ind, creator.IndMax, dim, min_g, max_g
+            )
 
         self._toolbox.register(
             "population", tools.initRepeat, list, self._toolbox.individual
@@ -155,62 +155,3 @@ class EA(Solver):
             fitness=self._hof[0].fitness.values[0],
         )
         return [self._best_found, *cast_pop]
-
-
-# class ParEAKP(_ParEACpp):
-#     """Parallel Evolutionary Algorithm for Knapsack Problems
-#     It uses Uniform One Mutation and Uniform Mutation as mating operators.
-#     The replacement is based on a Greedy strategy. The parent and offspring
-#     populations are evaluated pairwise and at each position i, the best individual
-#     between parent_i and offspring_i survives for the next_population_i.
-#     """
-
-#     def __init__(
-#         self,
-#         pop_size: int = 32,
-#         generations: int = 1000,
-#         mutpb: float = 0.2,
-#         cxpb: float = 0.7,
-#         cores: int = 1,
-#     ):
-#         """Creates an instance of the ParEAKP solver
-
-#         Args:
-#             pop_size (int, optional): Population size. Defaults to 32.
-#             generations (int, optional): Number of generations to perform. Defaults to 1000.
-#             mutpb (float, optional): Probability of mutation. Defaults to 0.2.
-#             cxpb (float, optional): Probability of crossover between two individuals. Defaults to 0.7.
-#             cores (int, optional): Number of cores to use. Defaults to 1.
-#         """
-#         super().__init__(pop_size, generations, mutpb, cxpb, cores)
-#         self._pop_size = pop_size
-#         self._generations = generations
-#         self._mutpb = mutpb
-#         self._cxpb = cxpb
-#         self._n_cores = cores
-#         self.__name__ = (
-#             f"ParEAKP_PS_{self._pop_size}_CXPB_{self._cxpb}_MUTPB_{self._mutpb}"
-#         )
-
-#     def __call__(self, problem: Knapsack, *args, **kwargs) -> list[Solution]:
-#         """Runs the algorithm to solve the KP problem
-
-#         Args:
-#             kp (Knapsack, optional): Instance of a KP. Defaults to None.
-
-#         Raises:
-#             AttributeError: If no instance is given
-
-#         Returns:
-#             list[Solution]: List of size 1 with the best solution found by the algorithm
-#         """
-#         if problem is None:
-#             msg = "Knapsack Problem is None in ParEAKP.__call__()"
-#             raise AttributeError(msg)
-#         x, fitness = self.run(
-#             len(problem),
-#             problem.weights,
-#             problem.profits,
-#             problem.capacity,
-#         )
-#         return [Solution(chromosome=x, objectives=(fitness,), fitness=fitness)]

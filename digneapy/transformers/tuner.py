@@ -10,9 +10,9 @@
 @Desc    :   None
 """
 
-from collections.abc import Sequence
+from collections.abc import Sequence, Callable
 from multiprocessing.pool import ThreadPool as Pool
-from typing import Callable, Optional
+from typing import Optional
 
 import numpy as np
 from deap import algorithms, base, cma, creator, tools

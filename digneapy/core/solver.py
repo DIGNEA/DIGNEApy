@@ -11,10 +11,14 @@
 """
 
 from abc import ABC, abstractmethod
-from typing import Generic
+from typing import Generic, Protocol
 
 from digneapy.core.problem import P
 from digneapy.core.solution import Solution
+
+
+class SupportsSolve(Protocol, Generic[P]):
+    def __call__(self, problem: P, *args, **kwargs) -> list[Solution]: ...
 
 
 class Solver(ABC, Generic[P]):

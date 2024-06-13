@@ -10,9 +10,8 @@
 @Desc    :   None
 """
 
-from collections.abc import Sequence
-from typing import Callable, Tuple, Union
-
+from collections.abc import Sequence, Callable
+from typing import Tuple, Union
 import numpy as np
 
 from ..core import Instance, Solution

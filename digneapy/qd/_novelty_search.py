@@ -11,8 +11,8 @@
 """
 
 import itertools
-from collections.abc import Iterable, Sequence
-from typing import Callable, Optional
+from collections.abc import Iterable, Sequence, Callable
+from typing import Optional
 
 import numpy as np
 from sklearn.neighbors import NearestNeighbors

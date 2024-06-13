@@ -14,8 +14,8 @@ import json
 import operator
 from collections.abc import Iterable
 from functools import reduce
-from typing import Callable, Optional
-
+from typing import Optional
+from collections.abc import Callable
 import numpy as np
 
 from digneapy.core import Instance

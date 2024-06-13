@@ -14,7 +14,7 @@ import copy
 import itertools
 from collections.abc import Sequence
 from operator import attrgetter
-from typing import Callable
+from collections.abc import Callable
 
 from ..core import Instance, Solution
 

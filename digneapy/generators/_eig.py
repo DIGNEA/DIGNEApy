@@ -13,13 +13,13 @@
 import copy
 from collections.abc import Iterable, Sequence
 from operator import attrgetter
-from typing import Callable, List, Optional
-
+from typing import Optional
+from collections.abc import Callable
 import numpy as np
 from deap import tools
 
 from digneapy.archives import Archive
-from digneapy.core import Domain, Instance, Solver
+from digneapy.core import Domain, Instance, SupportsSolve
 from digneapy.generators.perf_metrics import default_performance_metric
 from digneapy.operators import crossover, mutation, replacement, selection
 from digneapy.qd import NS
@@ -31,7 +31,7 @@ class EIG(NS):
     def __init__(
         self,
         domain: Domain,
-        portfolio: Iterable[Solver],
+        portfolio: Iterable[SupportsSolve],
         pop_size: int = 100,
         generations: int = 1000,
         archive: Optional[Archive] = None,
@@ -60,7 +60,7 @@ class EIG(NS):
             descriptor (str, optional): Descriptor used to calculate the diversity. The options are features, performance or instance. Defaults to "features".
             transformer (callable, optional): Define a strategy to transform the high-dimensional descriptors to low-dimensional.Defaults to None.
             domain (Domain): Domain for which the instances are generated for.
-            portfolio (Tuple[Solver]): Tuple of callable objects that can evaluate a instance.
+            portfolio (Iterable[SupportSolve]): Iterable item of callable objects that can evaluate a instance.
             repetitions (int, optional): Number times a solver in the portfolio must be run over the same instance. Defaults to 1.
             cxrate (float, optional): Crossover rate. Defaults to 0.5.
             mutrate (float, optional): Mutation rate. Defaults to 0.8.
@@ -75,7 +75,7 @@ class EIG(NS):
         self.generations = generations
         self.domain = domain
         self.portfolio = tuple(portfolio) if portfolio else ()
-        self.population: List[Instance] = []
+        self.population: list[Instance] = []
         self.repetitions = repetitions
         self.cxrate = cxrate
         self.mutrate = mutrate

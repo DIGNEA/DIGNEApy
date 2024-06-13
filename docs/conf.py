@@ -20,9 +20,10 @@
 import os
 import sys
 
+import digneapy
+
 sys.path.insert(0, os.path.abspath(".."))
 
-import digneapy
 
 # -- General configuration ---------------------------------------------
 
@@ -32,16 +33,50 @@ import digneapy
 
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom ones.
-extensions = ["sphinx.ext.autodoc", "sphinx.ext.viewcode"]
+extensions = [
+    "sphinx.ext.autodoc",
+    "sphinx.ext.autosummary",
+    "sphinx.ext.viewcode",
+    "sphinx.ext.napoleon",
+    "sphinx.ext.mathjax",
+    "sphinx.ext.intersphinx",
+    "sphinx_copybutton",
+    "myst_parser",
+    "matplotlib.sphinxext.plot_directive",
+    "sphinx_toolbox.more_autodoc.autonamedtuple",
+    "sphinx_autodoc_typehints",
+    "sphinx_codeautolink",
+]
+napoleon_google_docstring = True
+napoleon_numpy_docstring = False
+napoleon_use_param = True  # see tox-dev/sphinx-autodoc-typehints#15
+napoleon_use_ivar = True
+napoleon_include_special_with_doc = True
+# MyST NB -- exclude execution of Jupyter notebooks because they can take a
+# while to run.
+nb_execution_mode = "off"
 
+# https://github.com/executablebooks/MyST-NB/issues/441
+myst_enable_extensions = [
+    "amsmath",
+    "colon_fence",
+    "deflist",
+    "dollarmath",
+    "html_image",
+]
+# Auto-generate heading anchors.
+myst_heading_anchors = 3
+
+html_sidebars = {
+    "**": ["globaltoc.html", "relations.html", "sourcelink.html", "searchbox.html"],
+}
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ["_templates"]
 
 # The suffix(es) of source filenames.
 # You can specify multiple suffix as a list of string:
 #
-# source_suffix = ['.rst', '.md']
-source_suffix = ".rst"
+source_suffix = [".rst", ".md"]
 
 # The master toctree document.
 master_doc = "index"
@@ -50,7 +85,7 @@ master_doc = "index"
 project = "digneapy"
 copyright = "2023, Alejandro Marrero"
 author = "Alejandro Marrero"
-
+autosummary_generate = True
 # The version info for the project you're documenting, acts as replacement
 # for |version| and |release|, also used in various other places throughout
 # the built documents.
@@ -65,7 +100,7 @@ release = digneapy.__version__
 #
 # This is also used if you do content translation via gettext catalogs.
 # Usually you set "language" from the command line for these cases.
-language = None
+language = "en"
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
@@ -84,13 +119,18 @@ todo_include_todos = False
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-html_theme = "alabaster"
+html_theme = "sphinx_rtd_theme"
 
 # Theme options are theme-specific and customize the look and feel of a
 # theme further.  For a list of options available for each theme, see the
 # documentation.
 #
-# html_theme_options = {}
+html_theme_options = {}
+
+html_last_updated_fmt = None
+
+html_use_index = True
+html_domain_indices = True
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
@@ -158,3 +198,25 @@ texinfo_documents = [
         "Miscellaneous",
     ),
 ]
+
+# Autodoc and autosummary
+autodoc_member_order = "groupwise"  # Can be overridden by :member-order:
+autodoc_default_options = {
+    "inherited-members": True,
+}
+autosummary_generate = True
+
+# Matplotlib plot directive.
+plot_include_source = True
+plot_formats = [("png", 90)]
+plot_html_show_formats = False
+plot_html_show_source_link = False
+
+# Intersphinx
+intersphinx_mapping = {
+    "matplotlib": ("https://matplotlib.org/stable/", None),
+    "numpy": ("https://numpy.org/doc/stable/", None),
+    "pandas": ("https://pandas.pydata.org/pandas-docs/stable/", None),
+    "python": ("https://docs.python.org/3/", None),
+    "sklearn": ("https://scikit-learn.org/stable/", None),
+}

@@ -208,9 +208,7 @@ def test_minknap(default_large_knap):
 
 def test_expknap(default_large_knap):
     solutions = expknap(default_large_knap)
-    assert (
-        solutions[0].fitness <= 15.0
-    )  # Here compares time (15.0s max time allowed)
+    assert solutions[0].fitness <= 15.0  # Here compares time (15.0s max time allowed)
     solutions = expknap(default_large_knap, only_time=False)
     assert len(solutions) == 1
     assert all(type(i) == Solution for i in solutions)

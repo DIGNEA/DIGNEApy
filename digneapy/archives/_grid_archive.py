@@ -170,14 +170,9 @@ class GridArchive(Archive):
         Args:
             iterable (Iterable[Instance]): Iterable of instances
         """
-        indeces = self.index_of(
-            np.asarray([inst.descriptor for inst in iterable])
-        )
+        indeces = self.index_of(np.asarray([inst.descriptor for inst in iterable]))
         for idx, instance in zip(indeces, iterable):
-            if (
-                idx not in self._grid
-                or instance.fitness > self._grid[idx].fitness
-            ):
+            if idx not in self._grid or instance.fitness > self._grid[idx].fitness:
                 self._grid[idx] = copy.deepcopy(instance)
 
     def index_of(self, descriptors):
@@ -216,9 +211,7 @@ class GridArchive(Archive):
 
     def _grid_to_int_index(self, grid_indices) -> np.ndarray:
         grid_indices = np.asarray(grid_indices)
-        return np.ravel_multi_index(grid_indices.T, self._dimensions).astype(
-            np.int32
-        )
+        return np.ravel_multi_index(grid_indices.T, self._dimensions).astype(np.int32)
 
     def int_to_grid_index(self, int_indices) -> np.ndarray:
         int_indices = np.asarray(int_indices)

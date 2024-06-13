@@ -93,9 +93,7 @@ class Archive:
         >>> assert a1 == archive
         >>> assert empty_archive != archive
         """
-        return len(self) == len(other) and all(
-            a == b for a, b in zip(self, other)
-        )
+        return len(self) == len(other) and all(a == b for a, b in zip(self, other))
 
     def __hash__(self):
         hashes = (hash(i) for i in self.instances)

@@ -28,12 +28,8 @@ class KPAE(Transformer):
     _2D_DEC = "2D_encoding/best_kp_ae_bayesian_latent_dim_2D_lr_one_cycle_training_decoder.keras"
 
     _8D_AE = "8D_encoding/best_kp_ae_bayesian_8D_lr_one_cycle_training.keras"
-    _8D_ENC = (
-        "8D_encoding/best_kp_ae_bayesian_8D_lr_one_cycle_training_encoder.keras"
-    )
-    _8D_DEC = (
-        "8D_encoding/best_kp_ae_bayesian_8D_lr_one_cycle_training_decoder.keras"
-    )
+    _8D_ENC = "8D_encoding/best_kp_ae_bayesian_8D_lr_one_cycle_training_encoder.keras"
+    _8D_DEC = "8D_encoding/best_kp_ae_bayesian_8D_lr_one_cycle_training_decoder.keras"
 
     def __init__(self, name: str = "KP_AE", encoding: int = 2):
         super().__init__(name)

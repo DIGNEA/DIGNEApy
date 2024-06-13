@@ -118,8 +118,7 @@ def test_archive_extend(empty_archive):
     new_threshold = 1.0
     empty_archive.threshold = new_threshold
     instances = [
-        Instance([], fitness=0.0, p=0.0, s=np.random.random())
-        for _ in range(10)
+        Instance([], fitness=0.0, p=0.0, s=np.random.random()) for _ in range(10)
     ]
 
     def filter_fn(x):
@@ -134,9 +133,7 @@ def test_archive_extend_with_s_and_p(empty_archive):
     new_threshold = 1.0
     empty_archive.threshold = new_threshold
     instances = [
-        Instance(
-            [], fitness=0.0, p=np.random.randint(0, 100), s=np.random.random()
-        )
+        Instance([], fitness=0.0, p=np.random.randint(0, 100), s=np.random.random())
         for _ in range(10)
     ]
 
@@ -162,9 +159,7 @@ def test_archive_extend_with_s_p_and_fitness(empty_archive):
     ]
 
     def filter_fn(x):
-        return (
-            x.s >= empty_archive.threshold and x.p >= 50.0 and x.fitness >= 0.5
-        )
+        return x.s >= empty_archive.threshold and x.p >= 50.0 and x.fitness >= 0.5
 
     expected = len(list(filter(filter_fn, instances)))
     empty_archive.extend(instances, filter_fn=filter_fn)

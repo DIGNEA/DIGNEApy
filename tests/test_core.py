@@ -24,9 +24,7 @@ def gen_dignea_ind(icls, size: int, min_value, max_value):
     """Auxiliar function to generate individual based on
     the Solution class of digneapy
     """
-    chromosome = list(
-        np.random.randint(low=min_value, high=max_value, size=size)
-    )
+    chromosome = list(np.random.randint(low=min_value, high=max_value, size=size))
     return icls(chromosome=chromosome, fitness=creator.Fitness)
 
 
@@ -144,19 +142,13 @@ def test_default_instance_raises(default_instance):
         default_instance.fitness = "hello world"
 
     with pytest.raises(AttributeError):
-        _ = Instance(
-            variables=list(range(100)), fitness="hello", p=100.0, s=100.0
-        )
+        _ = Instance(variables=list(range(100)), fitness="hello", p=100.0, s=100.0)
 
     with pytest.raises(AttributeError):
-        _ = Instance(
-            variables=list(range(100)), fitness=100.0, p="hello", s=100.0
-        )
+        _ = Instance(variables=list(range(100)), fitness=100.0, p="hello", s=100.0)
 
     with pytest.raises(AttributeError):
-        _ = Instance(
-            variables=list(range(100)), fitness=100.0, p=100.0, s="hello"
-        )
+        _ = Instance(variables=list(range(100)), fitness=100.0, p=100.0, s="hello")
 
 
 def test_init_instance(initialised_instance):

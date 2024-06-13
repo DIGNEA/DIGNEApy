@@ -47,9 +47,7 @@ class TorchNN(Transformer, torch.nn.Module):
         Transformer.__init__(self, name)
         torch.nn.Module.__init__(self)
         self._scaler = StandardScaler() if scale else None
-        self._model = torch.nn.ModuleList(
-            [torch.nn.Linear(input_size, shape[0])]
-        )
+        self._model = torch.nn.ModuleList([torch.nn.Linear(input_size, shape[0])])
         self._model.append(torch.nn.ReLU())
         for i in range(len(shape[1:-1])):
             self._model.append(torch.nn.Linear(shape[i], shape[i + 1]))
@@ -71,9 +69,7 @@ class TorchNN(Transformer, torch.nn.Module):
         pass
 
     def update_weights(self, parameters: Sequence[float]):
-        expected = sum(
-            p.numel() for p in self._model.parameters() if p.requires_grad
-        )
+        expected = sum(p.numel() for p in self._model.parameters() if p.requires_grad)
         if len(parameters) != expected:
             msg = f"Error in the amount of weights in NN.update_weigths. Expected {expected} and got {len(parameters)}"
             raise AttributeError(msg)

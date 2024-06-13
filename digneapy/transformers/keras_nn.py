@@ -78,9 +78,7 @@ class KerasNN(Transformer):
         pass
 
     def update_weights(self, weights: Sequence[float]):
-        expected = np.sum(
-            [np.prod(v.shape) for v in self._model.trainable_variables]
-        )
+        expected = np.sum([np.prod(v.shape) for v in self._model.trainable_variables])
         if len(weights) != expected:
             msg = f"Error in the amount of weights in NN.update_weigths. Expected {expected} and got {len(weights)}"
             raise AttributeError(msg)

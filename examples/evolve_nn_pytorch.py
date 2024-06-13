@@ -51,8 +51,7 @@ class NSEval:
         self.resolution = resolution
         self.features_info = features_info
         self.hypercube = [
-            np.linspace(start, stop, self.resolution)
-            for start, stop in features_info
+            np.linspace(start, stop, self.resolution) for start, stop in features_info
         ]
         self.kp_domain = KPDomain(dimension=50, capacity_approach="percentage")
         self.portfolio = deque([default_kp, map_kp, miw_kp, mpw_kp])
@@ -79,9 +78,7 @@ class NSEval:
             file.write(",".join(features) + "\n")
             for solver, descriptors in generated_instances.items():
                 for desc in descriptors:
-                    content = (
-                        solver + "," + ",".join(str(f) for f in desc) + "\n"
-                    )
+                    content = solver + "," + ",".join(str(f) for f in desc) + "\n"
                     file.write(content)
 
     def __call__(self, transformer: TorchNN, filename: Optional[str] = None):
@@ -99,9 +96,7 @@ class NSEval:
         """
         gen_instances = {s.__name__: [] for s in self.portfolio}
         for i in range(len(self.portfolio)):
-            self.portfolio.rotate(
-                i
-            )  # This allow us to change the target on the fly
+            self.portfolio.rotate(i)  # This allow us to change the target on the fly
 
             eig = EIG(
                 pop_size=10,

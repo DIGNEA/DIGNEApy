@@ -97,11 +97,7 @@ class KPDomain(Domain):
         self.max_w = max_w
         self.max_capacity = max_capacity
 
-        if (
-            capacity_ratio < 0.0
-            or capacity_ratio > 1.0
-            or not float(capacity_ratio)
-        ):
+        if capacity_ratio < 0.0 or capacity_ratio > 1.0 or not float(capacity_ratio):
             self.capacity_ratio = 0.8  # Default
             msg = "The capacity ratio must be a float number in the range [0.0-1.0]. Set as 0.8 as default."
             print(msg)
@@ -167,9 +163,7 @@ class KPDomain(Domain):
             case "fixed":
                 capacity = self.max_capacity
 
-        variables = [int(capacity)] + list(
-            itertools.chain(*zip(weights, profits))
-        )
+        variables = [int(capacity)] + list(itertools.chain(*zip(weights, profits)))
 
         return Instance(variables)
 
@@ -207,9 +201,7 @@ class KPDomain(Domain):
             np.std(vars),
         )
 
-    def extract_features_as_dict(
-        self, instance: Instance
-    ) -> Mapping[str, float]:
+    def extract_features_as_dict(self, instance: Instance) -> Mapping[str, float]:
         """Creates a dictionary with the features of the instance.
         The key are the names of each feature and the values are
         the values extracted from instance.
@@ -242,6 +234,4 @@ class KPDomain(Domain):
             case "fixed":
                 capacity = self.max_capacity
 
-        return Knapsack(
-            profits=profits, weights=weights, capacity=int(capacity)
-        )
+        return Knapsack(profits=profits, weights=weights, capacity=int(capacity))

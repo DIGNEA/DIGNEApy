@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*-coding:utf-8 -*-
 """
-@File    :   desc_strategies.py
+@File    :   _descriptor_strategies.py
 @Time    :   2024/06/07 14:29:09
 @Author  :   Alejandro Marrero
 @Version :   1.0
@@ -10,17 +10,32 @@
 @Desc    :   Descriptors Strategies for Instance Generation
 """
 
-from collections.abc import Callable, Iterable
+from collections.abc import Callable, Iterable, MutableMapping
 
 import numpy as np
 
 from digneapy.core import Instance
 
-descriptor_strategies = {}
+""" DescStrategy defines the type for a Descriptor Strategy.
+    A descriptor strategy is any callable able to extract the
+    valuable information to describe each instance in a iterable.
+    Args:
+        iterable of objects of the Instance class
+    Returns:
+        np.ndarray: Array with the descriptors of each instance in the iterable
+"""
+DescStrategy = Callable[[Iterable[Instance]], np.ndarray]
 
 
 def rdstrat(key: str, verbose: bool = False):
-    def decorate(func: Callable[[Iterable[Instance]], np.ndarray]):
+    """Decorator to create new descriptor strategies
+
+    Args:
+        key (str): Key to refer the descriptor-function
+        verbose (bool, optional): Prints a message when the function is registered. Defaults to False.
+    """
+
+    def decorate(func: DescStrategy):
         if verbose:
             print(f"Registering descriptor function: {func.__name__} with key: {key}")
         descriptor_strategies[key] = func
@@ -29,7 +44,6 @@ def rdstrat(key: str, verbose: bool = False):
     return decorate
 
 
-@rdstrat(key="features")
 def features_strategy(iterable: Iterable[Instance]) -> np.ndarray:
     """It generates the feature descriptor of an instance
 
@@ -42,7 +56,6 @@ def features_strategy(iterable: Iterable[Instance]) -> np.ndarray:
     return np.asarray([i._descriptor for i in iterable])
 
 
-@rdstrat(key="performance")
 def performance_strategy(iterable: Iterable[Instance]) -> np.ndarray:
     """It generates the performance descriptor of an instance
     based on the scores of the solvers in the portfolio over such instance
@@ -56,7 +69,6 @@ def performance_strategy(iterable: Iterable[Instance]) -> np.ndarray:
     return np.asarray([np.mean(i.portfolio_scores, axis=1) for i in iterable])
 
 
-@rdstrat(key="instance")
 def instance_strategy(iterable: Iterable[Instance]) -> np.ndarray:
     """It returns the instance information as its descriptor
 
@@ -67,3 +79,15 @@ def instance_strategy(iterable: Iterable[Instance]) -> np.ndarray:
         np.ndarray: Array of descriptor instance (whole instace data)
     """
     return np.asarray([*iterable])
+
+
+""" Set of pre-defined descriptor strategies available in digneapy.
+    - features --> Creates a np.ndarray with all the features of the instances.
+    - performance --> Creates a np.ndarray with the mean performance score of each solver over the instances.
+    - instance --> Creates a np.ndarray with the whole instance as its self descriptor.
+"""
+descriptor_strategies: MutableMapping[str, DescStrategy] = {
+    "features": features_strategy,
+    "performance": performance_strategy,
+    "instance": instance_strategy,
+}

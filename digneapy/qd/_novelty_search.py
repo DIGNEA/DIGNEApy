@@ -19,7 +19,7 @@ from sklearn.neighbors import NearestNeighbors
 
 from digneapy.archives import Archive
 from digneapy.core import Instance
-from digneapy.qd.desc_strategies import descriptor_strategies, features_strategy
+from digneapy.qd._desc_strategies import descriptor_strategies, features_strategy
 from digneapy.transformers import SupportsTransform
 
 
@@ -33,7 +33,7 @@ class NS:
         archive: Optional[Archive] = None,
         s_set: Optional[Archive] = None,
         k: int = 15,
-        descriptor="features",
+        descriptor: str = "features",
         transformer: Optional[SupportsTransform] = None,
     ):
         """Creates an instance of the NoveltySearch Algorithm
@@ -41,7 +41,7 @@ class NS:
             archive (Archive, optional): Archive to store the instances to guide the evolution. Defaults to Archive(threshold=0.001)..
             s_set (Archive, optional): Solution set to store the instances. Defaults to Archive(threshold=0.001).
             k (int, optional): Number of neighbours to calculate the sparseness. Defaults to 15.
-            descriptor (str, optional): Descriptor to calculate the diversity. The options are features, performance or instance. Defaults to "features".
+            descriptor (str, optional): Descriptor to calculate the diversity. The options available are defined in the dictionary digneapy.qd.descriptor_strategies. Defaults to "features".
             transformer (callable, optional): Define a strategy to transform the high-dimensional descriptors to low-dimensional.Defaults to None.
         """
         self._archive = archive if archive is not None else Archive(threshold=0.001)

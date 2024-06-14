@@ -17,8 +17,12 @@ import pytest
 
 from digneapy.archives import Archive
 from digneapy.domains.knapsack import KPDomain
-from digneapy.generators import EIG, def_perf_metric, pis_perf_metric
-from digneapy.generators.utils import plot_generator_logbook
+from digneapy.generators import (
+    EIG,
+    def_perf_metric,
+    pis_perf_metric,
+    plot_generator_logbook,
+)
 from digneapy.operators import crossover, mutation, replacement, selection
 from digneapy.solvers import (
     default_kp,

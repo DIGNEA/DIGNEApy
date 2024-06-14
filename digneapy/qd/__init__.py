@@ -11,7 +11,7 @@
 """
 
 from digneapy.qd._cma_me import CMA_ME
-from digneapy.qd._descriptor_strategies import (
+from digneapy.qd._desc_strategies import (
     descriptor_strategies,
     features_strategy,
     instance_strategy,

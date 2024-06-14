@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 # -*-coding:utf-8 -*-
 """
-@File    :   cma_me.py
-@Time    :   2024/06/14 10:00:08
+@File    :   __init__.py
+@Time    :   2024/06/14 13:45:31
 @Author  :   Alejandro Marrero
 @Version :   1.0
 @Contact :   amarrerd@ull.edu.es
@@ -10,7 +10,6 @@
 @Desc    :   None
 """
 
+from ._timers import clock
 
-class CMA_ME:
-    def __init__(self):
-        pass
+__all__ = ["clock"]

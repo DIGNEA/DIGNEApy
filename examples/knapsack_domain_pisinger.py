@@ -14,8 +14,7 @@ from collections import deque
 
 from digneapy.archives import Archive
 from digneapy.domains.knapsack import KPDomain
-from digneapy.generators import EIG
-from digneapy.generators.perf_metrics import pisinger_performance_metric
+from digneapy.generators import EIG, pis_perf_metric
 from digneapy.operators.replacement import first_improve_replacement
 from digneapy.solvers.pisinger import combo, expknap, minknap
 
@@ -43,7 +42,7 @@ def main():
             k=k,
             repetitions=1,
             descriptor=descriptor,
-            performance_function=pisinger_performance_metric,
+            performance_function=pis_perf_metric,
             replacement=first_improve_replacement,
         )
         print(eig)

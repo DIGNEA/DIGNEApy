@@ -34,6 +34,9 @@ class Solution:
     def __str__(self) -> str:
         return f"Solution(dim={len(self.chromosome)},f={self.fitness},objs={self.objectives},const={self.constraints})"
 
+    def __repr__(self) -> str:
+        return f"Solution<dim={len(self.chromosome)},f={self.fitness},objs={self.objectives},const={self.constraints}>"
+
     def __len__(self) -> int:
         return len(self.chromosome)
 

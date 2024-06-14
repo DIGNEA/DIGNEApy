@@ -11,8 +11,9 @@
 """
 
 import copy
-from typing import Union
 from collections.abc import Callable
+from typing import Union
+
 import numpy as np
 
 from ..core import Instance, Solution

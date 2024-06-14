@@ -14,10 +14,50 @@ from abc import ABC, abstractmethod
 from collections.abc import Sequence
 from typing import Tuple, TypeVar
 
+import numpy as np
+
 
 class Problem(ABC):
-    def __init__(self, name: str = "DefaultOptProblem", *args, **kwargs):
+    def __init__(
+        self,
+        dimension: int,
+        bounds: Sequence[tuple],
+        name: str = "DefaultOptProblem",
+        dtype=np.float64,
+        *args,
+        **kwargs,
+    ):
         self._name = name
+        self._dimension = dimension
+        self._bounds = bounds
+        self._dtype = dtype
+        if len(self._bounds) != 0:
+            ranges = list(zip(*bounds))
+            self._lbs = np.array(ranges[0], dtype=dtype)
+            self._ubs = np.array(ranges[0], dtype=dtype)
+
+    @property
+    def dimension(self):
+        return self._dimension
+
+    @property
+    def bounds(self):
+        return self._bounds
+
+    @property
+    def l_bounds(self):
+        return self._lbs
+
+    @property
+    def u_bounds(self):
+        return self.u_bounds
+
+    def get_bounds_at(self, i: int) -> tuple:
+        if i < 0 or i > len(self._bounds):
+            raise RuntimeError(
+                f"Index {i} out-of-range. The bounds are 0-{len(self._bounds)} "
+            )
+        return (self._lbs[i], self._ubs[i])
 
     @abstractmethod
     def evaluate(self, individual: Sequence) -> Tuple[float]:
@@ -41,4 +81,4 @@ class Problem(ABC):
         raise NotImplementedError(msg)
 
 
-P = TypeVar("P", bound=Problem)
+P = TypeVar("P", bound=Problem, contravariant=True)

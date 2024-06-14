@@ -12,9 +12,10 @@
 
 import os
 import pickle
-from collections.abc import Sequence
 
 import keras
+import numpy as np
+import numpy.typing as npt
 from keras.utils import pad_sequences
 
 from digneapy.transformers.base import Transformer
@@ -30,6 +31,8 @@ class KPAE(Transformer):
     _8D_AE = "8D_encoding/best_kp_ae_bayesian_8D_lr_one_cycle_training.keras"
     _8D_ENC = "8D_encoding/best_kp_ae_bayesian_8D_lr_one_cycle_training_encoder.keras"
     _8D_DEC = "8D_encoding/best_kp_ae_bayesian_8D_lr_one_cycle_training_decoder.keras"
+
+    _MODELS_PATH = os.path.dirname(os.path.abspath(__file__)) + "/models/"
 
     def __init__(self, name: str = "KP_AE", encoding: int = 2):
         super().__init__(name)
@@ -49,19 +52,14 @@ class KPAE(Transformer):
             self.enc_path = KPAE._8D_ENC
             self.dec_path = KPAE._8D_DEC
 
-        self._load_models()
-
-    def _load_models(self):
-        model_path = os.path.dirname(os.path.abspath(__file__)) + "/models/"
-
-        with open(f"{model_path}kp_scaler_for_ae_different_N.pkl", "rb") as f:
+        with open(f"{KPAE._MODELS_PATH}kp_scaler_for_ae_different_N.pkl", "rb") as f:
             self._scaler = pickle.load(f)
 
-        self._model = keras.models.load_model(f"{model_path}/{self.ae_path}")
-        self._encoder = keras.models.load_model(f"{model_path}/{self.enc_path}")
-        self._decoder = keras.models.load_model(f"{model_path}/{self.dec_path}")
+        self._model = keras.models.load_model(f"{KPAE._MODELS_PATH}/{self.ae_path}")
+        self._encoder = keras.models.load_model(f"{KPAE._MODELS_PATH}/{self.enc_path}")
+        self._decoder = keras.models.load_model(f"{KPAE._MODELS_PATH}/{self.dec_path}")
 
-    def _preprocess(self, X: Sequence[float]) -> Sequence[float]:
+    def _preprocess(self, X: npt.NDArray) -> np.ndarray:
         # Scale and pad the instances before using AE
         # We pad the data to maximum allowed length
         X_padded = pad_sequences(
@@ -70,14 +68,14 @@ class KPAE(Transformer):
         X_padded = self._scaler.transform(X_padded)
         return X_padded
 
-    def encode(self, X: Sequence[float]) -> Sequence[float]:
+    def encode(self, X: npt.NDArray) -> np.ndarray:
         # Gets an array of instances
         # Scale and pad the instances
         # Encode them
         X_padded = self._preprocess(X)
         return self._encoder.predict(X_padded, verbose=0)
 
-    def decode(self, X: Sequence[float]) -> Sequence[float]:
+    def decode(self, X: npt.NDArray) -> np.ndarray:
         # Gets an array of encoded instances
         # Decode them
         # Use scaler.inverse_transform() to get the instance back
@@ -85,5 +83,5 @@ class KPAE(Transformer):
         X_decoded = self._scaler.inverse_transform(X_decoded)
         return X_decoded
 
-    def __call__(self, X: Sequence[float]) -> Sequence[float]:
+    def __call__(self, X: npt.NDArray) -> np.ndarray:
         return self.encode(X)

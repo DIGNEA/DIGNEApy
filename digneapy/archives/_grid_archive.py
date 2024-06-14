@@ -117,6 +117,19 @@ class GridArchive(Archive):
     def n_cells(self):
         return self._cells
 
+    @property
+    def coverage(self):
+        """Get the coverage of the hypercube space.
+        The coverage is calculated has the number of cells filled over the total space available.
+
+        Returns:
+            float: Filled cells over the total available.
+        """
+        if len(self._grid) == 0:
+            return 0.0
+
+        return self._cells / len(self._grid)
+
     def __str__(self):
         return f"GridArchive(dim={self._dimensions},cells={self._cells},bounds={self._boundaries})"
 

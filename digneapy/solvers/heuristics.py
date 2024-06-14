@@ -16,7 +16,7 @@ from digneapy.core import Solution
 from digneapy.domains.knapsack import Knapsack
 
 
-def default_kp(problem: Knapsack) -> list[Solution]:
+def default_kp(problem: Knapsack, *args, **kwargs) -> list[Solution]:
     if problem is None:
         msg = "No problem found in args of default_kp heuristic"
         raise AttributeError(msg)
@@ -32,7 +32,7 @@ def default_kp(problem: Knapsack) -> list[Solution]:
     return [Solution(chromosome=chromosome, objectives=(profit,), fitness=profit)]
 
 
-def map_kp(problem: Knapsack) -> list[Solution]:
+def map_kp(problem: Knapsack, *args, **kwargs) -> list[Solution]:
     if problem is None:
         msg = "No problem found in args of map_kp heuristic"
         raise AttributeError(msg)
@@ -50,7 +50,7 @@ def map_kp(problem: Knapsack) -> list[Solution]:
     return [Solution(chromosome=chromosome, objectives=(profit,), fitness=profit)]
 
 
-def miw_kp(problem: Knapsack) -> list[Solution]:
+def miw_kp(problem: Knapsack, *args, **kwargs) -> list[Solution]:
     if problem is None:
         msg = "No problem found in args of miw_kp heuristic"
         raise AttributeError(msg)
@@ -71,7 +71,7 @@ def miw_kp(problem: Knapsack) -> list[Solution]:
     return [Solution(chromosome=chromosome, objectives=(profit,), fitness=profit)]
 
 
-def mpw_kp(problem: Knapsack) -> list[Solution]:
+def mpw_kp(problem: Knapsack, *args, **kwargs) -> list[Solution]:
     if problem is None:
         msg = "No problem found in args of mpw_kp heuristic"
         raise AttributeError(msg)

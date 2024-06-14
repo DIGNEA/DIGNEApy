@@ -12,10 +12,10 @@
 
 import json
 import operator
-from collections.abc import Iterable
+from collections.abc import Callable, Iterable
 from functools import reduce
 from typing import Optional
-from collections.abc import Callable
+
 import numpy as np
 
 from digneapy.core import Instance

@@ -11,18 +11,21 @@
 """
 
 import copy
-from collections.abc import Iterable, Sequence
+from collections.abc import Callable, Iterable, Sequence
 from operator import attrgetter
 from typing import Optional
-from collections.abc import Callable
+
 import numpy as np
 from deap import tools
 
 from digneapy.archives import Archive
-from digneapy.core import Domain, Instance, SupportsSolve
+from digneapy.core import Domain, Instance
+from digneapy.core.problem import P
+from digneapy.core.solver import SupportsSolve
 from digneapy.generators.perf_metrics import default_performance_metric
 from digneapy.operators import crossover, mutation, replacement, selection
 from digneapy.qd import NS
+from digneapy.transformers import SupportsTransform
 
 PerformanceFn = Callable[[Sequence[float]], float]
 
@@ -31,14 +34,14 @@ class EIG(NS):
     def __init__(
         self,
         domain: Domain,
-        portfolio: Iterable[SupportsSolve],
+        portfolio: Iterable[SupportsSolve[P]],
         pop_size: int = 100,
         generations: int = 1000,
         archive: Optional[Archive] = None,
         s_set: Optional[Archive] = None,
         k: int = 15,
         descriptor: str = "features",
-        transformer: Optional[Callable[[Sequence | Iterable], np.ndarray]] = None,
+        transformer: Optional[SupportsTransform] = None,
         repetitions: int = 1,
         cxrate: float = 0.5,
         mutrate: float = 0.8,

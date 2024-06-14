@@ -10,21 +10,34 @@
 @Desc    :   None
 """
 
-from abc import ABC
-from collections.abc import Sequence
+from abc import ABC, abstractmethod
+from typing import Protocol
+
+import numpy as np
+import numpy.typing as npt
 
 
-class Transformer(ABC):
+class SupportsTransform(Protocol):
+    """Protocol to type check all the transformer types in digneapy.
+    A Transformer is any callable type that receives a sequence and transforms it
+    to other sequence.
+    """
+
+    def __call__(self, X: npt.NDArray) -> np.ndarray: ...
+
+
+class Transformer(ABC, SupportsTransform):
     def __init__(self, name: str):
         self._name = name
 
-    def train(self, X: Sequence[float]):
+    def train(self, X: npt.NDArray):
         raise NotImplementedError("train method not implemented in Transformer")
 
-    def predict(self, X: Sequence[float]):
+    def predict(self, X: npt.NDArray) -> np.ndarray:
         raise NotImplementedError("predict method not implemented in Transformer")
 
-    def __call__(self, X: Sequence[float]):
+    @abstractmethod
+    def __call__(self, X: npt.NDArray) -> np.ndarray:
         raise NotImplementedError("__call__ method not implemented in Transformer")
 
     def save(self):

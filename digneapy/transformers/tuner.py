@@ -10,7 +10,7 @@
 @Desc    :   None
 """
 
-from collections.abc import Sequence, Callable
+from collections.abc import Callable, Sequence
 from multiprocessing.pool import ThreadPool as Pool
 from typing import Optional
 

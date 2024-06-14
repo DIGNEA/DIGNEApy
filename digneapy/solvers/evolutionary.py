@@ -16,7 +16,9 @@ import numpy as np
 from deap import algorithms, base, creator, tools
 
 from digneapy._constants import Direction
-from digneapy.core import Problem, Solution, Solver
+from digneapy.core import Solution, Solver
+from digneapy.core.problem import P
+from digneapy.core.solver import SupportsSolve
 
 
 def _gen_dignea_ind(icls, size: int, min_value, max_value):
@@ -27,7 +29,7 @@ def _gen_dignea_ind(icls, size: int, min_value, max_value):
     return chromosome
 
 
-class EA(Solver):
+class EA(Solver, SupportsSolve[P]):
     """Evolutionary Algorithm from DEAP for digneapy"""
 
     def __init__(
@@ -106,7 +108,7 @@ class EA(Solver):
             self._pool = multiprocessing.Pool(processes=self._n_cores)
             self._toolbox.register("map", self._pool.map)
 
-    def __call__(self, problem: Problem, *args, **kwargs) -> list[Solution]:
+    def __call__(self, problem: P, *args, **kwargs) -> list[Solution]:
         """Call method of the EA solver. It runs the EA to solve the OptProblem given.
 
         Returns:

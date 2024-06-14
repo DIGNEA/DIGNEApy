@@ -214,3 +214,24 @@ def test_grid_5d_storage(grid_5d):
     instance.descriptor = tuple(np.random.random(size=5))
     grid_5d.append(instance)
     assert len(grid_5d) == len(instances) + 1
+
+
+def test_grid_limits():
+    archive = GridArchive(
+        dimensions=(5, 5), ranges=[(0, 100), (0, 100)], dtype=np.int32
+    )
+    instances = []
+    max_allowed = 25
+    n_instances = 1000
+    for _ in range(n_instances):
+        inst = Instance(
+            [], fitness=0.0, p=np.random.randint(0, 100), s=np.random.random()
+        )
+        inst.descriptor = tuple(np.random.randint(low=0, high=100, size=2))
+        instances.append(inst)
+
+    assert len(archive) == 0
+    assert archive.n_cells <= max_allowed
+    archive.extend(instances)
+    assert len(archive) == max_allowed
+    assert archive.coverage <= 1.0

@@ -31,6 +31,8 @@ def main():
         cxpb=0.8,
         mutpb=(1.0 / 100.0),
         generations=1000,
+        min_g=0,
+        max_g=1,
     )
     solutions = solver(kp)
     print(solutions)

@@ -11,7 +11,7 @@
 """
 
 import itertools
-from collections.abc import Iterable, Sequence, Callable
+from collections.abc import Sequence
 from typing import Optional
 
 import numpy as np
@@ -24,6 +24,7 @@ from digneapy.qd.desc_strategies import (
     instance_strategy,
     performance_strategy,
 )
+from digneapy.transformers import SupportsTransform
 
 
 class NS:
@@ -43,7 +44,7 @@ class NS:
         s_set: Optional[Archive] = None,
         k: int = 15,
         descriptor="features",
-        transformer: Optional[Callable[[Sequence | Iterable], np.ndarray]] = None,
+        transformer: Optional[SupportsTransform] = None,
     ):
         """Creates an instance of the NoveltySearch Algorithm
         Args:
@@ -87,7 +88,7 @@ class NS:
 
     def _combined_archive_and_population(
         self, current_pop: Archive, instances: Sequence[Instance]
-    ) -> np.ndarray[float]:
+    ) -> np.ndarray:
         """Combines the archive and the given population before computing the sparseness
 
         Args:
@@ -95,7 +96,7 @@ class NS:
             instances (Sequence[Instance]): Sequence of instances to evaluate.
 
         Returns:
-            np.ndarray[float]: Returns an ndarray of descriptors.
+            np.ndarray: Returns an ndarray of descriptors.
         """
         components = self._descriptor_strategy(itertools.chain(instances, current_pop))
         return np.vstack([components])

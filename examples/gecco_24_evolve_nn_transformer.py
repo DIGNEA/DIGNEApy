@@ -134,8 +134,12 @@ def main():
     dimension = 118  # Number of weights of the NN for KP
     nn = KerasNN(
         name="NN_transformer_kp_domain.keras",
-        input_shape=[8],
-        shape=(8, 4, 2),
+        input_shape=(8,),
+        shape=(
+            8,
+            4,
+            2,
+        ),
         activations=("relu", "relu", None),
     )
     # KP Features information extracted from previously generated instances

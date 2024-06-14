@@ -11,9 +11,10 @@
 """
 
 from collections.abc import Sequence
-from typing import Optional, Tuple
+from typing import Optional
 
 import numpy as np
+import numpy.typing as npt
 import torch
 from sklearn.preprocessing import StandardScaler
 
@@ -25,7 +26,7 @@ class TorchNN(Transformer, torch.nn.Module):
         self,
         name: str,
         input_size: int,
-        shape: Tuple[int],
+        shape: Sequence[int],
         output_size: int,
         scale: bool = True,
     ):
@@ -65,9 +66,6 @@ class TorchNN(Transformer, torch.nn.Module):
         name = filename if filename is not None else self._name
         torch.save(self._model.state_dict(), name)
 
-    def train(self):
-        pass
-
     def update_weights(self, parameters: Sequence[float]):
         expected = sum(p.numel() for p in self._model.parameters() if p.requires_grad)
         if len(parameters) != expected:
@@ -96,15 +94,15 @@ class TorchNN(Transformer, torch.nn.Module):
 
         return True
 
-    def predict(self, X: Sequence):
+    def predict(self, X: npt.NDArray) -> np.ndarray:
         return self.forward(X)
 
-    def forward(self, X):
+    def forward(self, X: npt.NDArray) -> np.ndarray:
         """This is a necessary method for the PyTorch module.
         It works as a predict method in Keras
 
         Args:
-            X (Sequence): Sequence of instances to evaluate and predict their descriptor
+            X (npt.NDArray): Sequence of instances to evaluate and predict their descriptor
 
         Raises:
             RuntimeError: If Sequence is empty
@@ -125,5 +123,5 @@ class TorchNN(Transformer, torch.nn.Module):
         y = y.detach().numpy()
         return y
 
-    def __call__(self, X):
+    def __call__(self, X: npt.NDArray) -> np.ndarray:
         return self.forward(X)

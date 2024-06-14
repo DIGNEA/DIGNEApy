@@ -43,21 +43,31 @@ X = pd.read_csv(os.path.join(dir, "data/eig_bpp_instances_only_features.csv"))
 X = X[features]
 
 
-def test_default_transformer():
-    t = Transformer(name="Default")
-    assert t._name == "Default"
+@pytest.fixture
+def default_transformer():
+    class DTrans(Transformer):
+        def __init__(self):
+            super().__init__(name="Default")
+
+        def __call__(self, X) -> np.ndarray:
+            return np.zeros(0)
+
+    return DTrans()
+
+
+def test_default_transformer(default_transformer):
+    assert default_transformer._name == "Default"
 
     with pytest.raises(Exception):
-        t.train(list())
+        default_transformer.train(list())
 
     with pytest.raises(Exception):
-        t.predict(list())
+        default_transformer.predict(list())
 
     with pytest.raises(Exception):
-        t.save()
+        default_transformer.save()
 
-    with pytest.raises(Exception):
-        t(list())
+    np.testing.assert_array_equal(np.zeros(0), default_transformer(list()))
 
 
 def test_KerasNN_transformer_raises():

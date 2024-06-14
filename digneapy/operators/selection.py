@@ -11,7 +11,8 @@
 """
 
 import copy
-from collections.abc import Sequence, Callable
+from collections.abc import Callable, Sequence
+
 import numpy as np
 
 from ..core import Instance, Solution

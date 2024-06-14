@@ -16,7 +16,19 @@ import numpy as np
 
 from digneapy.core import Instance
 
+descriptor_strategies = {}
 
+
+def rdstrat(key: str):
+    def decorate(func):
+        print(f"Registering function: {func} with key: {key}")
+        descriptor_strategies[key] = func
+        return func
+
+    return decorate
+
+
+@rdstrat(key="features")
 def features_strategy(iterable: Iterable[Instance]) -> list:
     """It generates the feature descriptor of an instance
 
@@ -29,6 +41,7 @@ def features_strategy(iterable: Iterable[Instance]) -> list:
     return [i._descriptor for i in iterable]
 
 
+@rdstrat(key="performance")
 def performance_strategy(iterable: Iterable[Instance]) -> list[float]:
     """It generates the performance descriptor of an instance
     based on the scores of the solvers in the portfolio over such instance
@@ -42,6 +55,7 @@ def performance_strategy(iterable: Iterable[Instance]) -> list[float]:
     return [np.mean(i.portfolio_scores, axis=1) for i in iterable]
 
 
+@rdstrat(key="instance")
 def instance_strategy(iterable: Iterable[Instance]) -> list:
     """It returns the instance information as its descriptor
 

@@ -19,11 +19,7 @@ from sklearn.neighbors import NearestNeighbors
 
 from digneapy.archives import Archive
 from digneapy.core import Instance
-from digneapy.qd.desc_strategies import (
-    features_strategy,
-    instance_strategy,
-    performance_strategy,
-)
+from digneapy.qd.desc_strategies import descriptor_strategies, features_strategy
 from digneapy.transformers import SupportsTransform
 
 
@@ -31,12 +27,6 @@ class NS:
     """Descriptor strategies for the Novelty Search algorithm.
     The current version supports Features, Performance and Instance variations.
     """
-
-    __descriptor_strategies = {
-        "features": features_strategy,
-        "performance": performance_strategy,
-        "instance": instance_strategy,
-    }
 
     def __init__(
         self,
@@ -59,14 +49,14 @@ class NS:
         self._k = k
         self._transformer = transformer
 
-        if descriptor not in self.__descriptor_strategies:
+        if descriptor not in descriptor_strategies:
             msg = f"describe_by {descriptor} not available in {self.__class__.__name__}.__init__. Set to features by default"
             print(msg)
             self._describe_by = "features"
             self._descriptor_strategy = features_strategy
         else:
             self._describe_by = descriptor
-            self._descriptor_strategy = self.__descriptor_strategies[descriptor]
+            self._descriptor_strategy = descriptor_strategies[descriptor]
 
     @property
     def archive(self):

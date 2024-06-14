@@ -18,7 +18,7 @@ import numpy as np
 
 from digneapy.archives import Archive
 from digneapy.core import Instance
-from digneapy.qd.desc_strategies import descriptor_strategies, features_strategy
+from digneapy.qd._descriptor_strategies import descriptor_strategies, features_strategy
 
 
 class CMA_ME:

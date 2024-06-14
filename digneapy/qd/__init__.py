@@ -11,14 +11,14 @@
 """
 
 from digneapy.qd._cma_me import CMA_ME
-from digneapy.qd._novelty_search import NS
-from digneapy.qd.desc_strategies import (
+from digneapy.qd._descriptor_strategies import (
     descriptor_strategies,
     features_strategy,
     instance_strategy,
     performance_strategy,
     rdstrat,
 )
+from digneapy.qd._novelty_search import NS
 
 __all__ = [
     "NS",

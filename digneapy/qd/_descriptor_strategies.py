@@ -19,9 +19,10 @@ from digneapy.core import Instance
 descriptor_strategies = {}
 
 
-def rdstrat(key: str):
+def rdstrat(key: str, verbose: bool = False):
     def decorate(func: Callable[[Iterable[Instance]], np.ndarray]):
-        print(f"Registering function: {func} with key: {key}")
+        if verbose:
+            print(f"Registering descriptor function: {func.__name__} with key: {key}")
         descriptor_strategies[key] = func
         return func
 
@@ -36,7 +37,7 @@ def features_strategy(iterable: Iterable[Instance]) -> np.ndarray:
         iterable (Iterable[Instance]): Instances to describe
 
     Returns:
-        list: List of the feature descriptors of each instance
+        np.ndarray: Array of the feature descriptors of each instance
     """
     return np.asarray([i._descriptor for i in iterable])
 
@@ -50,7 +51,7 @@ def performance_strategy(iterable: Iterable[Instance]) -> np.ndarray:
         iterable (Iterable[Instance]): Instances to describe
 
     Returns:
-        List: List of performance descriptors of each instance
+        np.ndarray: Array of performance descriptors of each instance
     """
     return np.asarray([np.mean(i.portfolio_scores, axis=1) for i in iterable])
 
@@ -63,6 +64,6 @@ def instance_strategy(iterable: Iterable[Instance]) -> np.ndarray:
         iterable (Iterable[Instance]): Instances to describe
 
     Returns:
-        List: List of descriptor instance (whole instace data)
+        np.ndarray: Array of descriptor instance (whole instace data)
     """
     return np.asarray([*iterable])

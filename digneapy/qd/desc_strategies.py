@@ -10,7 +10,7 @@
 @Desc    :   Descriptors Strategies for Instance Generation
 """
 
-from collections.abc import Iterable
+from collections.abc import Callable, Iterable
 
 import numpy as np
 
@@ -20,7 +20,7 @@ descriptor_strategies = {}
 
 
 def rdstrat(key: str):
-    def decorate(func):
+    def decorate(func: Callable[[Iterable[Instance]], np.ndarray]):
         print(f"Registering function: {func} with key: {key}")
         descriptor_strategies[key] = func
         return func
@@ -29,7 +29,7 @@ def rdstrat(key: str):
 
 
 @rdstrat(key="features")
-def features_strategy(iterable: Iterable[Instance]) -> list:
+def features_strategy(iterable: Iterable[Instance]) -> np.ndarray:
     """It generates the feature descriptor of an instance
 
     Args:
@@ -38,11 +38,11 @@ def features_strategy(iterable: Iterable[Instance]) -> list:
     Returns:
         list: List of the feature descriptors of each instance
     """
-    return [i._descriptor for i in iterable]
+    return np.asarray([i._descriptor for i in iterable])
 
 
 @rdstrat(key="performance")
-def performance_strategy(iterable: Iterable[Instance]) -> list[float]:
+def performance_strategy(iterable: Iterable[Instance]) -> np.ndarray:
     """It generates the performance descriptor of an instance
     based on the scores of the solvers in the portfolio over such instance
 
@@ -52,11 +52,11 @@ def performance_strategy(iterable: Iterable[Instance]) -> list[float]:
     Returns:
         List: List of performance descriptors of each instance
     """
-    return [np.mean(i.portfolio_scores, axis=1) for i in iterable]
+    return np.asarray([np.mean(i.portfolio_scores, axis=1) for i in iterable])
 
 
 @rdstrat(key="instance")
-def instance_strategy(iterable: Iterable[Instance]) -> list:
+def instance_strategy(iterable: Iterable[Instance]) -> np.ndarray:
     """It returns the instance information as its descriptor
 
     Args:
@@ -65,4 +65,4 @@ def instance_strategy(iterable: Iterable[Instance]) -> list:
     Returns:
         List: List of descriptor instance (whole instace data)
     """
-    return [*iterable]
+    return np.asarray([*iterable])

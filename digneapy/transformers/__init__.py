@@ -12,12 +12,11 @@
 
 import os
 
+from digneapy.transformers.autoencoders import KPAE
 from digneapy.transformers.base import SupportsTransform, Transformer
-
-from .autoencoders import KPAE
-from .keras_nn import KerasNN
-from .torch_nn import TorchNN
-from .tuner import NNTuner
+from digneapy.transformers.keras_nn import KerasNN
+from digneapy.transformers.torch_nn import TorchNN
+from digneapy.transformers.tuner import NNTuner
 
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
 

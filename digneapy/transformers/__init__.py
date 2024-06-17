@@ -10,6 +10,15 @@
 @Desc    :   None
 """
 
+import os
+
 from digneapy.transformers.base import SupportsTransform, Transformer
 
-__all__ = ["Transformer", "SupportsTransform"]
+from .autoencoders import KPAE
+from .keras_nn import KerasNN
+from .torch_nn import TorchNN
+from .tuner import NNTuner
+
+os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
+
+__all__ = ["Transformer", "SupportsTransform", "KerasNN", "TorchNN", "NNTuner", "KPAE"]

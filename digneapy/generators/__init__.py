@@ -20,8 +20,11 @@ from digneapy.generators._perf_metrics import (
 )
 from digneapy.generators._utils import plot_generator_logbook
 
+from ._map_elites_gen import MElitGen
+
 __all__ = [
     "EIG",
+    "MElitGen",
     "PerformanceFn",
     "def_perf_metric",
     "pis_perf_metric",

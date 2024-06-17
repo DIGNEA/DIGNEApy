@@ -12,8 +12,8 @@
 
 from digneapy.archives import GridArchive
 from digneapy.domains.knapsack import KPDomain
+from digneapy.generators import MElitGen
 from digneapy.operators.mutation import uniform_one_mutation
-from digneapy.qd import MapElites
 from digneapy.solvers import default_kp, map_kp, miw_kp, mpw_kp
 
 
@@ -32,7 +32,7 @@ def map_elites_knapsack():
         ],
     )
     domain = KPDomain(dimension=50, capacity_approach="percentage")
-    map_elites = MapElites(
+    map_elites = MElitGen(
         domain,
         portfolio=[map_kp, default_kp, miw_kp],
         archive=archive,

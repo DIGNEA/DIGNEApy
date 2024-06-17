@@ -233,5 +233,7 @@ class KPDomain(Domain):
                 capacity = np.sum(weights) * self.capacity_ratio
             case "fixed":
                 capacity = self.max_capacity
-
+        # The KP capacity must be updated JIC
+        instance._variables[0] = capacity
+        
         return Knapsack(profits=profits, weights=weights, capacity=int(capacity))

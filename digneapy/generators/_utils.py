@@ -88,6 +88,7 @@ def plot_map_elites_logbook(logbook=None, filename: Optional[str] = ""):
         sns.lineplot(data=df, x="Generation", y=key, color=color, label=key)
     plt.legend(loc="best")
     plt.title(r"Evolution of fitness in the Map-Elites generator")
+    plt.ylabel("Fitness")
     if filename:
         plt.savefig(filename)
     else:

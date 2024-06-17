@@ -87,8 +87,8 @@ class MElitGen:
             self._domain.generate_instance() for _ in range(self._init_pop_size)
         ]
         instances = self._evaluate_population(instances)
-        self.archive.extend(instances)
-        record = self._stats_fitness.compile(self.archive.instances)
+        self._archive.extend(instances)
+        record = self._stats_fitness.compile(self._archive.instances)
         self._logbook.record(gen=0, **record)
 
     def _evaluate_population(self, population: Iterable[Instance]):
@@ -127,12 +127,11 @@ class MElitGen:
         self._populate_archive()
         performed_gens = 0
         while performed_gens < self._generations:
-            _instances = list(self._archive.instances)
-            offspring = random.choices(_instances, k=self._init_pop_size)
+            selected = random.choices(self._archive.instances, k=self._init_pop_size)
             offspring = list(
                 map(
-                    lambda i: self._mutation(ind=i, bounds=self._domain.bounds),
-                    offspring,
+                    lambda ind: self._mutation(ind, bounds=self._domain.bounds),
+                    selected,
                 )
             )
 
@@ -140,7 +139,7 @@ class MElitGen:
             self._archive.extend(offspring)
 
             # Record the stats and update the performed gens
-            record = self._stats_fitness.compile(self.archive.instances)
+            record = self._stats_fitness.compile(self._archive.instances)
             self._logbook.record(gen=performed_gens + 1, **record)
 
             if verbose:

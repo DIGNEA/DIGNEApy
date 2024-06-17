@@ -17,6 +17,7 @@ import pytest
 
 from digneapy.archives import Archive, GridArchive
 from digneapy.core import Instance
+from digneapy.domains import KPDomain
 
 
 @pytest.fixture
@@ -231,7 +232,84 @@ def test_grid_limits():
         instances.append(inst)
 
     assert len(archive) == 0
-    assert archive.n_cells <= max_allowed
+    assert archive.n_cells == max_allowed
     archive.extend(instances)
     assert len(archive) == max_allowed
     assert archive.coverage <= 1.0
+
+
+def test_grid_extend_outside_bounds():
+    archive = GridArchive(
+        dimensions=(5, 5), ranges=[(0, 100), (0, 100)], dtype=np.int32
+    )
+    instances = []
+    max_allowed = 25
+    n_instances = 1000
+    for _ in range(n_instances):
+        inst = Instance(
+            [],
+            fitness=np.random.randint(100, 1000),
+            p=np.random.randint(100, 1000),
+            s=np.random.random(),
+        )
+        inst.descriptor = tuple(np.random.randint(low=1000, high=10000, size=2))
+        instances.append(inst)
+
+    assert len(archive) == 0
+    assert archive.n_cells == max_allowed
+    archive.extend(instances)
+    # Out-of-bounds only inserts one in the very last cell available
+    assert len(archive) == 1
+    assert archive.filled_cells[0] == 24
+
+
+def test_grid_extend_under_bounds():
+    archive = GridArchive(
+        dimensions=(5, 5), ranges=[(100, 1000), (100, 1000)], dtype=np.int32
+    )
+    instances = []
+    max_allowed = 25
+    n_instances = 1000
+    for _ in range(n_instances):
+        inst = Instance(
+            [],
+            fitness=np.random.randint(100, 1000),
+            p=np.random.randint(100, 1000),
+            s=np.random.random(),
+        )
+        inst.descriptor = tuple(np.random.randint(low=1, high=99, size=2))
+        instances.append(inst)
+
+    assert len(archive) == 0
+    assert archive.n_cells == max_allowed
+    archive.extend(instances)
+    # Out-of-bounds only inserts one in the very first cell available
+    assert len(archive) == 1
+    assert archive.filled_cells[0] == 0
+
+
+def test_grid_with_kp_instances():
+    archive = GridArchive(
+        dimensions=(20, 20, 20, 20, 20, 20, 20, 20),
+        ranges=[
+            (700, 30000),
+            (890, 1000),
+            (860, 1000.0),
+            (1.0, 200),
+            (1.0, 230.0),
+            (0.10, 12.0),
+            (400, 610),
+            (240, 330),
+        ],
+    )
+    n_instances = 1_000
+    domain = KPDomain(dimension=50, capacity_approach="percentage")
+    instances = [domain.generate_instance() for _ in range(n_instances)]
+    for instance in instances:
+        instance.descriptor = domain.extract_features(instance)
+
+    assert len(archive) == 0
+    assert archive.n_cells == np.prod(np.array((20,) * 8))
+    archive.extend(instances)
+    assert len(archive) > 0
+    assert all(idx > 0 for idx in archive.filled_cells)

@@ -42,7 +42,7 @@ class Domain(ABC):
         raise NotImplementedError(msg)
 
     @abstractmethod
-    def extract_features(self, instance: Instance) -> Tuple:
+    def extract_features(self, instances: Instance) -> tuple:
         """Extract the features of the instance based on the domain
 
         Args:

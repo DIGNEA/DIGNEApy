@@ -23,10 +23,10 @@ from digneapy.core.problem import P
 from digneapy.core.solver import SupportsSolve
 from digneapy.generators._perf_metrics import PerformanceFn, default_performance_metric
 from digneapy.operators import mutation
-from digneapy.qd import MapElites, descriptor_strategies
+from digneapy.qd import descriptor_strategies
 
 
-class MElitGen(MapElites):
+class MElitGen:
     def __init__(
         self,
         domain: Domain,
@@ -39,31 +39,32 @@ class MElitGen(MapElites):
         strategy: str,
         performance_function: PerformanceFn = default_performance_metric,
     ):
-        super().__init__(archive, mutation, domain.bounds)
+        self._domain = domain
+        self._portfolio = list(portfolio)
+        self._init_pop_size = initial_pop_size
+        self._generations = generations
+        self._archive = archive
+        self._mutation = mutation
+        self._repetitions = repetitions
+        self._performance_fn = performance_function
 
         if strategy not in descriptor_strategies:
             msg = f"strategy {strategy} not available in {self.__class__.__name__}.__init__. Set to features by default"
             print(msg)
-            self._descriptor_strategy = descriptor_strategies["features"]
-            self._descriptor = "features"
-        else:
-            self._descriptor_strategy = descriptor_strategies[strategy]
-            self._descriptor = strategy
+            strategy = "features"
 
-        self._portfolio = portfolio
-        self._init_pop_size = initial_pop_size
-        self._generations = generations
-        self._repetitions = repetitions
-        self._performance_fn = performance_function
-
-        self._domain = domain
+        match strategy:
+            case "features":
+                self._descriptor_strategy = self._domain.extract_features
+            case _:
+                self._descriptor_strategy = descriptor_strategies[strategy]
+                self._descriptor = strategy
 
         self._stats_fitness = tools.Statistics(key=lambda ind: ind.fitness)
         self._stats_fitness.register("avg", np.mean)
         self._stats_fitness.register("std", np.std)
         self._stats_fitness.register("min", np.min)
         self._stats_fitness.register("max", np.max)
-
         self._logbook = tools.Logbook()
         self._logbook.header = "gen", "min", "avg", "std", "max"
 
@@ -87,6 +88,8 @@ class MElitGen(MapElites):
         ]
         instances = self._evaluate_population(instances)
         self.archive.extend(instances)
+        record = self._stats_fitness.compile(self.archive.instances)
+        self._logbook.record(gen=0, **record)
 
     def _evaluate_population(self, population: Iterable[Instance]):
         """Evaluates the population of instances using the portfolio of solvers.
@@ -116,11 +119,7 @@ class MElitGen(MapElites):
             individual.portfolio_scores = tuple(solvers_scores)
             individual.p = self._performance_fn(avg_p_solver)
             individual.fitness = individual.p
-
-            if self._descriptor == "features":
-                individual.descriptor = self._domain.extract_features(individual)
-            else:
-                individual.descriptor = self._descriptor_strategy(individual)
+            individual.descriptor = tuple(self._descriptor_strategy(individual))
 
         return population
 
@@ -128,19 +127,21 @@ class MElitGen(MapElites):
         self._populate_archive()
         performed_gens = 0
         while performed_gens < self._generations:
-            instances = list(self._archive.instances)
-            offspring = random.choices(instances, k=self._init_pop_size)
+            _instances = list(self._archive.instances)
+            offspring = random.choices(_instances, k=self._init_pop_size)
             offspring = list(
                 map(
                     lambda i: self._mutation(ind=i, bounds=self._domain.bounds),
                     offspring,
                 )
             )
-            offspring = self._evaluate_population(instances)
-            self.archive.extend(offspring)
+
+            offspring = self._evaluate_population(offspring)
+            self._archive.extend(offspring)
+
             # Record the stats and update the performed gens
             record = self._stats_fitness.compile(self.archive.instances)
-            self._logbook.record(gen=performed_gens, **record)
+            self._logbook.record(gen=performed_gens + 1, **record)
 
             if verbose:
                 status = f"\rGeneration {performed_gens}/{self._generations} completed"

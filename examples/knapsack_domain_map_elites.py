@@ -19,7 +19,7 @@ from digneapy.solvers import default_kp, map_kp, miw_kp
 
 def map_elites_knapsack():
     archive = GridArchive(
-        dimensions=(10,) * 8,
+        dimensions=(20,) * 8,
         ranges=[
             (1, 1e4),
             (890, 1000),

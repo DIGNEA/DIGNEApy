@@ -312,4 +312,4 @@ def test_grid_with_kp_instances():
     assert archive.n_cells == np.prod(np.array((20,) * 8))
     archive.extend(instances)
     assert len(archive) > 0
-    assert all(idx > 0 for idx in archive.filled_cells)
+    assert all(idx > 0 and idx < archive.n_cells for idx in archive.filled_cells)

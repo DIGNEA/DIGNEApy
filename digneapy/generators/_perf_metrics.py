@@ -10,7 +10,13 @@
 @Desc    :   None
 """
 
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
+
+"""Performance Function type. From any sequence it calculates the performance score.
+Returns:
+    float: Performance score
+"""
+PerformanceFn = Callable[[Sequence], float]
 
 
 def default_performance_metric(scores: Sequence[float]) -> float:

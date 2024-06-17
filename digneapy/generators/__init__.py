@@ -11,12 +11,22 @@
 """
 
 from digneapy.generators._eig import EIG
-from digneapy.generators.perf_metrics import (
+from digneapy.generators._perf_metrics import PerformanceFn
+from digneapy.generators._perf_metrics import (
     default_performance_metric as def_perf_metric,
 )
-from digneapy.generators.perf_metrics import (
+from digneapy.generators._perf_metrics import (
     pisinger_performance_metric as pis_perf_metric,
 )
-from digneapy.generators.utils import plot_generator_logbook as plot_gen_log
+from digneapy.generators._utils import plot_generator_logbook
 
-__all__ = ["EIG", "plot_gen_log", "def_perf_metric", "pis_perf_metric"]
+from ._map_elites_gen import MElitGen
+
+__all__ = [
+    "EIG",
+    "MElitGen",
+    "PerformanceFn",
+    "def_perf_metric",
+    "pis_perf_metric",
+    "plot_generator_logbook",
+]

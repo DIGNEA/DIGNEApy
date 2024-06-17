@@ -11,34 +11,37 @@
 """
 
 import copy
-from collections.abc import Iterable, Sequence
+from collections.abc import Iterable
 from operator import attrgetter
-from typing import Callable, List, Optional
+from typing import Optional
 
 import numpy as np
 from deap import tools
 
 from digneapy.archives import Archive
-from digneapy.core import Domain, Instance, Solver
-from digneapy.generators.perf_metrics import default_performance_metric
+from digneapy.core import Domain, Instance
+from digneapy.core.problem import P
+from digneapy.core.solver import SupportsSolve
+from digneapy.generators._perf_metrics import default_performance_metric
 from digneapy.operators import crossover, mutation, replacement, selection
 from digneapy.qd import NS
+from digneapy.transformers import SupportsTransform
 
-PerformanceFn = Callable[[Sequence[float]], float]
+from ._perf_metrics import PerformanceFn
 
 
 class EIG(NS):
     def __init__(
         self,
         domain: Domain,
-        portfolio: Iterable[Solver],
+        portfolio: Iterable[SupportsSolve[P]],
         pop_size: int = 100,
         generations: int = 1000,
         archive: Optional[Archive] = None,
         s_set: Optional[Archive] = None,
         k: int = 15,
         descriptor: str = "features",
-        transformer: Optional[Callable[[Sequence | Iterable], np.ndarray]] = None,
+        transformer: Optional[SupportsTransform] = None,
         repetitions: int = 1,
         cxrate: float = 0.5,
         mutrate: float = 0.8,
@@ -57,10 +60,10 @@ class EIG(NS):
             archive (Archive, optional): Archive to store the instances to guide the evolution. Defaults to Archive(threshold=0.001)..
             s_set (Archive, optional): Solution set to store the instances. Defaults to Archive(threshold=0.001).
             k (int, optional): Number of neighbours to calculate the sparseness. Defaults to 15.
-            descriptor (str, optional): Descriptor used to calculate the diversity. The options are features, performance or instance. Defaults to "features".
+            descriptor (str, optional): Descriptor used to calculate the diversity. The options available are defined in the dictionary digneapy.qd.descriptor_strategies. Defaults to "features".
             transformer (callable, optional): Define a strategy to transform the high-dimensional descriptors to low-dimensional.Defaults to None.
             domain (Domain): Domain for which the instances are generated for.
-            portfolio (Tuple[Solver]): Tuple of callable objects that can evaluate a instance.
+            portfolio (Iterable[SupportSolve]): Iterable item of callable objects that can evaluate a instance.
             repetitions (int, optional): Number times a solver in the portfolio must be run over the same instance. Defaults to 1.
             cxrate (float, optional): Crossover rate. Defaults to 0.5.
             mutrate (float, optional): Mutation rate. Defaults to 0.8.
@@ -75,7 +78,7 @@ class EIG(NS):
         self.generations = generations
         self.domain = domain
         self.portfolio = tuple(portfolio) if portfolio else ()
-        self.population: List[Instance] = []
+        self.population: list[Instance] = []
         self.repetitions = repetitions
         self.cxrate = cxrate
         self.mutrate = mutrate
@@ -94,10 +97,10 @@ class EIG(NS):
         self._stats.register("min", np.min)
         self._stats.register("max", np.max)
 
-        self.logbook = tools.Logbook()
-        self.logbook.header = "gen", "s", "p"
-        self.logbook.chapters["s"].header = "min", "avg", "std", "max"
-        self.logbook.chapters["p"].header = "min", "avg", "std", "max"
+        self._logbook = tools.Logbook()
+        self._logbook.header = "gen", "s", "p"
+        self._logbook.chapters["s"].header = "min", "avg", "std", "max"
+        self._logbook.chapters["p"].header = "min", "avg", "std", "max"
 
         try:
             phi = float(phi)
@@ -108,6 +111,10 @@ class EIG(NS):
             msg = f"Phi must be a float number in the range [0.0-1.0]. Got: {phi}."
             raise AttributeError(msg)
         self.phi = phi
+
+    @property
+    def log(self) -> tools.Logbook:
+        return self._logbook
 
     def __str__(self):
         port_names = [s.__name__ for s in self.portfolio]
@@ -147,7 +154,7 @@ class EIG(NS):
                 solvers_scores.append(scores)
                 avg_p_solver[i] = np.mean(scores)
 
-            individual.portfolio_scores = list(solvers_scores)
+            individual.portfolio_scores = tuple(solvers_scores)
             individual.p = self.performance_function(avg_p_solver)
 
     def _compute_fitness(self, population: Iterable[Instance]):
@@ -217,7 +224,7 @@ class EIG(NS):
 
             # Record the stats and update the performed gens
             record = self._stats.compile(self.population)
-            self.logbook.record(gen=performed_gens, **record)
+            self._logbook.record(gen=performed_gens, **record)
             performed_gens += 1
 
             if verbose:

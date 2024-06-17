@@ -11,19 +11,16 @@
 """
 
 import itertools
-from collections.abc import Iterable, Sequence
-from typing import Callable, Optional
+from collections.abc import Sequence
+from typing import Optional
 
 import numpy as np
 from sklearn.neighbors import NearestNeighbors
 
 from digneapy.archives import Archive
 from digneapy.core import Instance
-from digneapy.qd.desc_strategies import (
-    features_strategy,
-    instance_strategy,
-    performance_strategy,
-)
+from digneapy.qd._desc_strategies import descriptor_strategies, features_strategy
+from digneapy.transformers import SupportsTransform
 
 
 class NS:
@@ -31,26 +28,20 @@ class NS:
     The current version supports Features, Performance and Instance variations.
     """
 
-    __descriptor_strategies = {
-        "features": features_strategy,
-        "performance": performance_strategy,
-        "instance": instance_strategy,
-    }
-
     def __init__(
         self,
         archive: Optional[Archive] = None,
         s_set: Optional[Archive] = None,
         k: int = 15,
-        descriptor="features",
-        transformer: Optional[Callable[[Sequence | Iterable], np.ndarray]] = None,
+        descriptor: str = "features",
+        transformer: Optional[SupportsTransform] = None,
     ):
         """Creates an instance of the NoveltySearch Algorithm
         Args:
             archive (Archive, optional): Archive to store the instances to guide the evolution. Defaults to Archive(threshold=0.001)..
             s_set (Archive, optional): Solution set to store the instances. Defaults to Archive(threshold=0.001).
             k (int, optional): Number of neighbours to calculate the sparseness. Defaults to 15.
-            descriptor (str, optional): Descriptor to calculate the diversity. The options are features, performance or instance. Defaults to "features".
+            descriptor (str, optional): Descriptor to calculate the diversity. The options available are defined in the dictionary digneapy.qd.descriptor_strategies. Defaults to "features".
             transformer (callable, optional): Define a strategy to transform the high-dimensional descriptors to low-dimensional.Defaults to None.
         """
         self._archive = archive if archive is not None else Archive(threshold=0.001)
@@ -58,14 +49,14 @@ class NS:
         self._k = k
         self._transformer = transformer
 
-        if descriptor not in self.__descriptor_strategies:
+        if descriptor not in descriptor_strategies:
             msg = f"describe_by {descriptor} not available in {self.__class__.__name__}.__init__. Set to features by default"
             print(msg)
             self._describe_by = "features"
             self._descriptor_strategy = features_strategy
         else:
             self._describe_by = descriptor
-            self._descriptor_strategy = self.__descriptor_strategies[descriptor]
+            self._descriptor_strategy = descriptor_strategies[descriptor]
 
     @property
     def archive(self):
@@ -87,7 +78,7 @@ class NS:
 
     def _combined_archive_and_population(
         self, current_pop: Archive, instances: Sequence[Instance]
-    ) -> np.ndarray[float]:
+    ) -> np.ndarray:
         """Combines the archive and the given population before computing the sparseness
 
         Args:
@@ -95,7 +86,7 @@ class NS:
             instances (Sequence[Instance]): Sequence of instances to evaluate.
 
         Returns:
-            np.ndarray[float]: Returns an ndarray of descriptors.
+            np.ndarray: Returns an ndarray of descriptors.
         """
         components = self._descriptor_strategy(itertools.chain(instances, current_pop))
         return np.vstack([components])

@@ -11,13 +11,22 @@
 """
 
 from abc import ABC, abstractmethod
-from typing import Generic
+from typing import Protocol
 
 from digneapy.core.problem import P
 from digneapy.core.solution import Solution
 
 
-class Solver(ABC, Generic[P]):
+class SupportsSolve(Protocol[P]):
+    """Protocol to type check all the solver types in digneapy.
+    A solver is any callable type that receives at least a problem (Problem) and
+    returns a list of object of the Solution  class.
+    """
+
+    def __call__(self, problem: P, *args, **kwargs) -> list[Solution]: ...
+
+
+class Solver(ABC, SupportsSolve[P]):
     """Solver is any callable type that receives a OptProblem
     as its argument and returns a tuple with the solution found
     """

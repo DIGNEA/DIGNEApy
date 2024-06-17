@@ -12,9 +12,9 @@
 
 import json
 import operator
-from collections.abc import Iterable
+from collections.abc import Callable, Iterable
 from functools import reduce
-from typing import Callable, Optional
+from typing import Optional
 
 import numpy as np
 

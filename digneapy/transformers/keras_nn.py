@@ -11,10 +11,11 @@
 """
 
 from collections.abc import Sequence
-from typing import Optional, Tuple
+from typing import Optional
 
 import keras
 import numpy as np
+import numpy.typing as npt
 from sklearn.preprocessing import StandardScaler
 
 from .base import Transformer
@@ -24,9 +25,9 @@ class KerasNN(Transformer):
     def __init__(
         self,
         name: str,
-        input_shape: Tuple[int],
-        shape: Tuple[int],
-        activations: Tuple[str],
+        input_shape: Sequence[int],
+        shape: Sequence[int],
+        activations: Sequence[Optional[str]],
         scale: bool = True,
     ):
         """Neural Network used to transform a space into another. This class uses a Tensorflow and Keras backend.
@@ -74,9 +75,6 @@ class KerasNN(Transformer):
         else:
             self._model.save(self._name)
 
-    def train(self):
-        pass
-
     def update_weights(self, weights: Sequence[float]):
         expected = np.sum([np.prod(v.shape) for v in self._model.trainable_variables])
         if len(weights) != expected:
@@ -93,7 +91,7 @@ class KerasNN(Transformer):
         self._model.set_weights(reshaped_weights)
         return True
 
-    def predict(self, X: Sequence) -> np.ndarray:
+    def predict(self, X: npt.NDArray) -> np.ndarray:
         if len(X) == 0:
             msg = "X cannot be None in KerasNN predict"
             raise RuntimeError(msg)
@@ -101,5 +99,5 @@ class KerasNN(Transformer):
             X = self._scaler.fit_transform(X)
         return self._model.predict(X, verbose=0)
 
-    def __call__(self, X: Sequence):
+    def __call__(self, X: npt.NDArray) -> np.ndarray:
         return self.predict(X)

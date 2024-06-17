@@ -10,15 +10,14 @@
 @Desc    :   None
 """
 
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from multiprocessing.pool import ThreadPool as Pool
-from typing import Callable, Optional
+from typing import Optional
 
 import numpy as np
 from deap import algorithms, base, cma, creator, tools
 
-from digneapy import Direction
-
+from .._constants import Direction
 from .base import Transformer
 from .keras_nn import KerasNN
 from .torch_nn import TorchNN

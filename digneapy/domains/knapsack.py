@@ -28,7 +28,12 @@ class Knapsack(Problem):
         *args,
         **kwargs,
     ):
-        super().__init__("KP", args, kwargs)
+        assert len(profits) == len(weights)
+        assert capacity > 0
+
+        bounds = list((0, 1) for _ in range(len(profits)))
+        super().__init__(dimension=len(profits), bounds=bounds, name="KP")
+
         self.weights = weights
         self.profits = profits
         self.capacity = capacity

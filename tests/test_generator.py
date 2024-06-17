@@ -17,8 +17,12 @@ import pytest
 
 from digneapy.archives import Archive
 from digneapy.domains.knapsack import KPDomain
-from digneapy.generators import EIG, def_perf_metric, pis_perf_metric
-from digneapy.generators.utils import plot_generator_logbook
+from digneapy.generators import (
+    EIG,
+    def_perf_metric,
+    pis_perf_metric,
+    plot_generator_logbook,
+)
 from digneapy.operators import crossover, mutation, replacement, selection
 from digneapy.solvers import (
     default_kp,
@@ -166,7 +170,7 @@ def test_eig_gen_kp_feat_descriptor():
         assert all(max(p_scores[i]) == p_scores[i][0] for i in range(len(p_scores)))
 
     # Test the creation of the evolution images
-    log = eig.logbook
+    log = eig._logbook
     assert len(log) == eig.generations
     filename = "test_evolution.png"
     plot_generator_logbook(log, filename=filename)

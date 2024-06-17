@@ -10,9 +10,7 @@ Diverse Instance Generator with Novelty Search and Evolutionary Algorithms
 Repository containing the Python version of DIGNEA, a Diverse Instance Generator with Novelty Search and Evolutionary Algorithms. This framework is an extensible tool for generating diverse and discriminatory instances for any desired domain. The instances obtained generated will be biased to the performance of a *target* in a specified portfolio of algorithms. 
 
 
-
-
-### Dependencies
+## Dependencies
 
 - Numpy
 - Sklearn
@@ -45,6 +43,7 @@ DIGNEA was used in the following publications:
 ## How to cite DIGNEA
 
 If you use DIGNEA in your research work, remember to cite: 
+
 >
 >@article{dignea_23,
 >title = {DIGNEA: A tool to generate diverse and discriminatory instance suites for optimisation domains},

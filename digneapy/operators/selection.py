@@ -11,8 +11,7 @@
 """
 
 import copy
-from collections.abc import Sequence
-from typing import Callable
+from collections.abc import Callable, Sequence
 
 import numpy as np
 

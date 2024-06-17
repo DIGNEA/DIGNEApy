@@ -128,7 +128,15 @@ class GridArchive(Archive):
         if len(self._grid) == 0:
             return 0.0
 
-        return self._cells / len(self._grid)
+        return len(self._grid) / self._cells
+
+    @property
+    def filled_cells(self):
+        return self._grid.keys()
+
+    @property
+    def instances(self):
+        return self._grid.values()
 
     def __str__(self):
         return f"GridArchive(dim={self._dimensions},cells={self._cells},bounds={self._boundaries})"

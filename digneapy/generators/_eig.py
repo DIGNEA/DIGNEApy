@@ -97,10 +97,10 @@ class EIG(NS):
         self._stats.register("min", np.min)
         self._stats.register("max", np.max)
 
-        self.logbook = tools.Logbook()
-        self.logbook.header = "gen", "s", "p"
-        self.logbook.chapters["s"].header = "min", "avg", "std", "max"
-        self.logbook.chapters["p"].header = "min", "avg", "std", "max"
+        self._logbook = tools.Logbook()
+        self._logbook.header = "gen", "s", "p"
+        self._logbook.chapters["s"].header = "min", "avg", "std", "max"
+        self._logbook.chapters["p"].header = "min", "avg", "std", "max"
 
         try:
             phi = float(phi)
@@ -111,6 +111,10 @@ class EIG(NS):
             msg = f"Phi must be a float number in the range [0.0-1.0]. Got: {phi}."
             raise AttributeError(msg)
         self.phi = phi
+
+    @property
+    def log(self) -> tools.Logbook:
+        return self._logbook
 
     def __str__(self):
         port_names = [s.__name__ for s in self.portfolio]
@@ -220,7 +224,7 @@ class EIG(NS):
 
             # Record the stats and update the performed gens
             record = self._stats.compile(self.population)
-            self.logbook.record(gen=performed_gens, **record)
+            self._logbook.record(gen=performed_gens, **record)
             performed_gens += 1
 
             if verbose:

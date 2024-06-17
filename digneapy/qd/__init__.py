@@ -18,10 +18,12 @@ from digneapy.qd._desc_strategies import (
     performance_strategy,
     rdstrat,
 )
+from digneapy.qd._map_elites import MapElites
 from digneapy.qd._novelty_search import NS
 
 __all__ = [
     "NS",
+    "MapElites",
     "CMA_ME",
     "features_strategy",
     "performance_strategy",

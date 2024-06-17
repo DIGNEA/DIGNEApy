@@ -189,11 +189,9 @@ class KPDomain(Domain):
         weights = vars[0::2]
         profits = vars[1::2]
         avg_eff = sum([p / w for p, w in zip(profits, weights)]) / len(vars)
-        capacity = 0
+        capacity = int(instance._variables[0])
         # Sets the capacity according to the method
         match self.capacity_approach:
-            case "evolved":
-                capacity = int(instance._variables[0])
             case "percentage":
                 capacity = np.sum(weights) * self.capacity_ratio
             case "fixed":
@@ -229,15 +227,13 @@ class KPDomain(Domain):
         variables = instance._variables
         weights = []
         profits = []
+        capacity = int(variables[0])
         for i in range(1, len(variables[1:]), 2):
             weights.append(int(variables[i]))
             profits.append(int(variables[i + 1]))
 
-        capacity = 0
         # Sets the capacity according to the method
         match self.capacity_approach:
-            case "evolved":
-                capacity = int(instance._variables[0])
             case "percentage":
                 capacity = np.sum(weights) * self.capacity_ratio
             case "fixed":

@@ -17,8 +17,7 @@ from typing import Optional
 import numpy as np
 from deap import algorithms, base, cma, creator, tools
 
-from digneapy import Direction
-
+from .._constants import Direction
 from .base import Transformer
 from .keras_nn import KerasNN
 from .torch_nn import TorchNN

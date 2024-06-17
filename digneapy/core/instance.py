@@ -16,7 +16,7 @@ import operator
 import reprlib
 from collections.abc import Iterable
 from functools import reduce
-from typing import Optional, Tuple
+from typing import Optional, Sequence, Tuple
 
 import numpy as np
 

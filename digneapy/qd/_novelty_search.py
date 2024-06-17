@@ -123,7 +123,7 @@ class NS:
         neighbourhood = NearestNeighbors(n_neighbors=neighbours, algorithm="ball_tree")
         neighbourhood.fit(_desc_arr)
         sparseness = []
-        # We're only interesed in the instances given not the archive
+        # We're only interesed in the new instances
         frac = 1.0 / neighbours
         for instance, descriptor in zip(instances, _desc_arr[: len(instances)]):
             dist, ind = neighbourhood.kneighbors([descriptor])

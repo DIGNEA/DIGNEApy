@@ -76,6 +76,10 @@ class Knapsack(Problem):
             for w, p in zip(self.weights, self.profits):
                 file.write(f"{w}\t{p}\n")
 
+    def to_instance(self) -> Instance:
+        _vars = [self.capacity] + list(zip(self.weights, self.profits))
+        return Instance(variables=_vars)
+        
 
 class KPDomain(Domain):
     __capacity_approaches = ("evolved", "percentage", "fixed")

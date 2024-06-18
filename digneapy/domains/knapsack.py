@@ -12,7 +12,7 @@
 
 import itertools
 from collections.abc import Sequence
-from typing import Mapping
+from typing import Mapping, Self
 
 import numpy as np
 
@@ -75,19 +75,23 @@ class Knapsack(Problem):
     def __len__(self):
         return len(self.weights)
 
+    def create_solution(self) -> Solution:
+        chromosome = list(np.random.randint(low=0, high=1, size=self._dimension))
+        return Solution(chromosome=chromosome)
+
     def to_file(self, filename: str = "instance.kp"):
         with open(filename, "w") as file:
             file.write(f"{len(self)}\t{self.capacity}\n\n")
             for w, p in zip(self.weights, self.profits):
                 file.write(f"{w}\t{p}\n")
 
+    @classmethod
+    def from_file(cls, filename: str) -> Self:
+        raise NotImplementedError("from_file not implemented in Knapsack yet")
+
     def to_instance(self) -> Instance:
         _vars = [self.capacity] + list(zip(self.weights, self.profits))
         return Instance(variables=_vars)
-
-    def create_solution(self) -> Solution:
-        chromosome = list(np.random.randint(low=0, high=1, size=self._dimension))
-        return Solution(chromosome=chromosome)
 
 
 class KPDomain(Domain):

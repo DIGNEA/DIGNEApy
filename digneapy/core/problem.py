@@ -12,7 +12,7 @@
 
 from abc import ABC, abstractmethod
 from collections.abc import Sequence
-from typing import Tuple, TypeVar
+from typing import Self, Tuple, TypeVar
 
 import numpy as np
 
@@ -89,6 +89,16 @@ class Problem(ABC):
     @abstractmethod
     def __call__(self, individual: Sequence) -> Tuple[float]:
         msg = "__call__ method not implemented in Problem"
+        raise NotImplementedError(msg)
+
+    @abstractmethod
+    def to_file(self, filename: str):
+        msg = "to_file method not implemented in Problem"
+        raise NotImplementedError(msg)
+
+    @classmethod
+    def from_file(cls, filename: str) -> Self:
+        msg = "from_file method not implemented in Problem"
         raise NotImplementedError(msg)
 
 

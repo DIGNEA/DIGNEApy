@@ -11,7 +11,7 @@
 """
 
 from collections.abc import Iterable, Sequence
-from typing import Mapping
+from typing import Mapping, Self
 
 import numpy as np
 
@@ -51,17 +51,15 @@ class BPP(Problem):
         if len(individual) != self._dimension:
             msg = f"Mismatch between individual variables and instance variables in {self.__class__.__name__}"
             raise AttributeError(msg)
-        filled: dict[int, int] = {}
-        for i in range(len(individual)):
-            bin = individual[i]
-            if bin in filled:
-                filled[bin] += self._items[i]
-            else:
-                filled[bin] = self._items[i]
 
-        used_bins = max(individual)
+        used_bins = np.max(individual).astype(int) + 1
+        fill_i = np.zeros(used_bins)
+
+        for item_idx, bin in enumerate(individual):
+            fill_i[bin] += self._items[item_idx]
+
         fitness = (
-            sum((f / self._capacity) * (f / self._capacity) for f in filled.values())
+            sum(((f_i / self._capacity) * (f_i / self._capacity)) for f_i in fill_i)
             / used_bins
         )
 
@@ -76,19 +74,30 @@ class BPP(Problem):
     def __len__(self):
         return self._dimension
 
+    def create_solution(self) -> Solution:
+        items = list(range(self._dimension))
+        return Solution(chromosome=items)
+
     def to_file(self, filename: str = "instance.bpp"):
         with open(filename, "w") as file:
             file.write(f"{len(self)}\t{self._capacity}\n\n")
             for i in self._items:
                 file.write(f"{i}\n")
 
+    @classmethod
+    def from_file(cls, filename: str) -> Self:
+        with open(filename) as f:
+            lines = f.readlines()
+            lines = [line.rstrip() for line in lines]
+
+        (_, capacity) = lines[0].split()
+        items = list(int(i) for i in lines[2:])
+
+        return cls(items=items, capacity=int(capacity))
+
     def to_instance(self) -> Instance:
         _vars = [self._capacity, *self._items]
         return Instance(variables=_vars)
-
-    def create_solution(self) -> Solution:
-        items = list(range(self._dimension))
-        return Solution(chromosome=items)
 
 
 class BPPDomain(Domain):

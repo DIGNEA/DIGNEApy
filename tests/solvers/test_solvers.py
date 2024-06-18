@@ -17,7 +17,7 @@ from deap import benchmarks
 from digneapy import Direction
 from digneapy.core import Solution
 from digneapy.domains import knapsack
-from digneapy.solvers import EA, heuristics
+from digneapy.solvers import EA, _kp_heuristics
 from digneapy.solvers.parallel_ea import ParEAKP
 from digneapy.solvers.pisinger import combo, expknap, minknap
 
@@ -42,7 +42,7 @@ def default_large_knap():
 def test_default_kp_heuristic(default_instance):
     assert default_instance.capacity == 50
     assert len(default_instance) == 100
-    solution = heuristics.default_kp(default_instance)[0]
+    solution = _kp_heuristics.default_kp(default_instance)[0]
     expected_p = sum(default_instance.profits[:9])
     expected_chromosome = [1.0] * 9 + [0.0] * 91
     assert len(solution) == len(default_instance)
@@ -51,13 +51,13 @@ def test_default_kp_heuristic(default_instance):
     assert solution.chromosome == expected_chromosome
 
     with pytest.raises(Exception):
-        heuristics.default_kp(None)
+        _kp_heuristics.default_kp(None)
 
 
 def test_map_kp_heuristic(default_instance):
     assert default_instance.capacity == 50
     assert len(default_instance) == 100
-    solution = heuristics.map_kp(default_instance)[0]
+    solution = _kp_heuristics.map_kp(default_instance)[0]
     expected_p = 50
     expected_chromosome = [0] * 49 + [1] + [0] * 50
     assert len(solution) == len(default_instance)
@@ -66,7 +66,7 @@ def test_map_kp_heuristic(default_instance):
     assert solution.chromosome == expected_chromosome
 
     with pytest.raises(Exception):
-        heuristics.map_kp(None)
+        _kp_heuristics.map_kp(None)
 
 
 def test_miw_kp_heuristic(default_instance):
@@ -75,7 +75,7 @@ def test_miw_kp_heuristic(default_instance):
     """
     assert default_instance.capacity == 50
     assert len(default_instance) == 100
-    solution = heuristics.miw_kp(default_instance)[0]
+    solution = _kp_heuristics.miw_kp(default_instance)[0]
     expected_p = sum(default_instance.profits[:9])
     expected_chromosome = [1.0] * 9 + [0.0] * 91
     assert len(solution) == len(default_instance)
@@ -84,13 +84,13 @@ def test_miw_kp_heuristic(default_instance):
     assert solution.chromosome == expected_chromosome
 
     with pytest.raises(Exception):
-        heuristics.miw_kp(None)
+        _kp_heuristics.miw_kp(None)
 
 
 def test_mpw_kp_heuristic(default_instance):
     assert default_instance.capacity == 50
     assert len(default_instance) == 100
-    solution = heuristics.mpw_kp(default_instance)[0]
+    solution = _kp_heuristics.mpw_kp(default_instance)[0]
     expected_p = 47
     expected_chromosome = [1.0] * 4 + [0.0] * 32 + [1.0] + [0.0] * 63
     assert len(solution) == len(default_instance)
@@ -99,7 +99,7 @@ def test_mpw_kp_heuristic(default_instance):
     assert solution.chromosome == expected_chromosome
 
     with pytest.raises(Exception):
-        heuristics.mpw_kp(None)
+        _kp_heuristics.mpw_kp(None)
 
 
 def test_ea_with_def_kp(default_instance):

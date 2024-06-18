@@ -16,13 +16,15 @@ from typing import Tuple, TypeVar
 
 import numpy as np
 
+from .solution import Solution
+
 
 class Problem(ABC):
     def __init__(
         self,
         dimension: int,
         bounds: Sequence[tuple],
-        name: str = "DefaultOptProblem",
+        name: str = "DefaultProblem",
         dtype=np.float64,
         *args,
         **kwargs,
@@ -60,6 +62,15 @@ class Problem(ABC):
         return (self._lbs[i], self._ubs[i])
 
     @abstractmethod
+    def create_solution(self) -> Solution:
+        """Creates a random solution to the problem.
+        This method can be used to initialise the solutions
+        for any algorithm
+        """
+        msg = "create_solution method not implemented in Problem"
+        raise NotImplementedError(msg)
+
+    @abstractmethod
     def evaluate(self, individual: Sequence) -> Tuple[float]:
         """Evaluates the candidate individual with the information of the Knapsack
 
@@ -72,12 +83,12 @@ class Problem(ABC):
         Returns:
             Tuple[float]: Profit
         """
-        msg = "evaluate method not implemented in OptProblem"
+        msg = "evaluate method not implemented in Problem"
         raise NotImplementedError(msg)
 
     @abstractmethod
     def __call__(self, individual: Sequence) -> Tuple[float]:
-        msg = "__call__ method not implemented in OptProblem"
+        msg = "__call__ method not implemented in Problem"
         raise NotImplementedError(msg)
 
 

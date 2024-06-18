@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*-coding:utf-8 -*-
 """
-@File    :   test_domains.py
+@File    :   test_knapsack_domain.py
 @Time    :   2024/04/15 11:01:33
 @Author  :   Alejandro Marrero
 @Version :   1.0

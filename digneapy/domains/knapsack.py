@@ -16,7 +16,7 @@ from typing import Mapping
 
 import numpy as np
 
-from digneapy.core import Domain, Instance, Problem
+from digneapy.core import Domain, Instance, Problem, Solution
 
 
 class Knapsack(Problem):
@@ -84,7 +84,11 @@ class Knapsack(Problem):
     def to_instance(self) -> Instance:
         _vars = [self.capacity] + list(zip(self.weights, self.profits))
         return Instance(variables=_vars)
-        
+
+    def create_solution(self) -> Solution:
+        chromosome = list(np.random.randint(low=0, high=1, size=self._dimension))
+        return Solution(chromosome=chromosome)
+
 
 class KPDomain(Domain):
     __capacity_approaches = ("evolved", "percentage", "fixed")
@@ -240,5 +244,5 @@ class KPDomain(Domain):
                 capacity = self.max_capacity
         # The KP capacity must be updated JIC
         instance._variables[0] = capacity
-        
+
         return Knapsack(profits=profits, weights=weights, capacity=int(capacity))

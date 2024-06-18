@@ -10,6 +10,7 @@
 @Desc    :   None
 """
 
+from digneapy.domains.bin_packing import BPP, BPPDomain
 from digneapy.domains.knapsack import Knapsack, KPDomain
 
-__all__ = ["Knapsack", "KPDomain"]
+__all__ = ["Knapsack", "KPDomain", "BPP", "BPPDomain"]

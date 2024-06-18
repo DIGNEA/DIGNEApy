@@ -12,7 +12,7 @@
 
 from digneapy.archives import GridArchive
 from digneapy.domains.knapsack import KPDomain
-from digneapy.generators import MElitGen
+from digneapy.generators import MElitGen, plot_map_elites_logbook
 from digneapy.operators.mutation import uniform_one_mutation
 from digneapy.solvers import default_kp, map_kp, miw_kp
 
@@ -31,21 +31,23 @@ def map_elites_knapsack():
             (240, 330),
         ],
     )
+
     domain = KPDomain(dimension=50, capacity_approach="percentage")
     map_elites = MElitGen(
         domain,
         portfolio=[map_kp, default_kp, miw_kp],
         archive=archive,
-        initial_pop_size=10,
+        initial_pop_size=5,
         mutation=uniform_one_mutation,
         generations=1000,
         strategy="features",
         repetitions=1,
     )
-    archive = map_elites(verbose=True)
+    archive = map_elites(verbose=False)
     log = map_elites.log
-    print(log)
+    # print(log)
     print(archive.coverage)
+    plot_map_elites_logbook(log, "example.png")
 
 
 if __name__ == "__main__":

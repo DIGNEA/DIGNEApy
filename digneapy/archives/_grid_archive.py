@@ -80,8 +80,8 @@ class GridArchive(Archive):
         self._upper_bounds = np.array(ranges[1], dtype=dtype)
         self._interval = self._upper_bounds - self._lower_bounds
         self._eps = eps
-        self._cells = np.prod(self._dimensions, dtype=np.int64)
-        self._grid: Dict[np.int64, Instance] = {}
+        self._cells = np.prod(self._dimensions, dtype=int)
+        self._grid: Dict[int, Instance] = {}
 
         self._boundaries = []
         for dimension, l_b, u_b in zip(
@@ -226,14 +226,14 @@ class GridArchive(Archive):
         grid_indices = (
             (self._dimensions * (descriptors - self._lower_bounds) + self._eps)
             / self._interval
-        ).astype(np.int64)
+        ).astype(int)
         # Clip the indexes to make sure they are in the expected range for each dimension
         grid_indices = np.clip(grid_indices, 0, self._dimensions - 1)
         return self._grid_to_int_index(grid_indices)
 
     def _grid_to_int_index(self, grid_indices) -> np.ndarray:
         grid_indices = np.asarray(grid_indices)
-        return np.ravel_multi_index(grid_indices.T, self._dimensions).astype(np.int64)
+        return np.ravel_multi_index(grid_indices.T, self._dimensions).astype(int)
 
     def int_to_grid_index(self, int_indices) -> np.ndarray:
         int_indices = np.asarray(int_indices)
@@ -242,7 +242,7 @@ class GridArchive(Archive):
                 int_indices,
                 self._dimensions,
             )
-        ).T.astype(np.int64)
+        ).T.astype(int)
 
     def to_json(self):
         data = {

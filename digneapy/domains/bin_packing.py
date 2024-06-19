@@ -81,8 +81,8 @@ class BPP(Problem):
     def to_file(self, filename: str = "instance.bpp"):
         with open(filename, "w") as file:
             file.write(f"{len(self)}\t{self._capacity}\n\n")
-            for i in self._items:
-                file.write(f"{i}\n")
+            content = "\n".join(str(i) for i in self._items)
+            file.write(content)
 
     @classmethod
     def from_file(cls, filename: str) -> Self:

@@ -82,12 +82,17 @@ class Knapsack(Problem):
     def to_file(self, filename: str = "instance.kp"):
         with open(filename, "w") as file:
             file.write(f"{len(self)}\t{self.capacity}\n\n")
-            for w, p in zip(self.weights, self.profits):
-                file.write(f"{w}\t{p}\n")
+            content = "\n".join(
+                f"{w_i}\t{p_i}" for w_i, p_i in zip(self.weights, self.profits)
+            )
+            file.write(content)
 
     @classmethod
     def from_file(cls, filename: str) -> Self:
-        raise NotImplementedError("from_file not implemented in Knapsack yet")
+        content = np.loadtxt(filename, dtype=int)
+        capacity = content[0][1]
+        weights, profits = content[1:, 0], content[1:, 1]
+        return cls(profits=profits, weights=weights, capacity=capacity)
 
     def to_instance(self) -> Instance:
         _vars = [self.capacity] + list(zip(self.weights, self.profits))

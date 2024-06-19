@@ -42,7 +42,7 @@ class Knapsack(Problem):
         """Evaluates the candidate individual with the information of the Knapsack
 
         Args:
-            individual (Sequence): Individual to evaluate
+            individual (Sequence | Solution): Individual to evaluate
 
         Raises:
             AttributeError: Raises an error if the len(individual) != len(profits or weights)
@@ -50,23 +50,26 @@ class Knapsack(Problem):
         Returns:
             Tuple[float]: Profit
         """
-        chromosome = (
-            individual.chromosome if isinstance(individual, Solution) else individual
-        )
-        if len(chromosome) != len(self.profits):
+
+        if len(individual) != len(self.profits):
             msg = f"Mismatch between individual variables and instance variables in {self.__class__.__name__}"
             raise AttributeError(msg)
 
         profit = 0.0
         packed = 0
 
-        for i in range(len(chromosome)):
-            profit += chromosome[i] * self.profits[i]
-            packed += chromosome[i] * self.weights[i]
+        for i in range(len(individual)):
+            profit += individual[i] * self.profits[i]
+            packed += individual[i] * self.weights[i]
 
         difference = packed - self.capacity
         penalty = 100.0 * difference
         profit -= penalty if penalty > 0.0 else 0.0
+
+        if isinstance(individual, Solution):
+            individual.fitness = profit
+            individual.objectives = (profit,)
+
         return (profit,)
 
     def __call__(self, individual: Sequence | Solution) -> tuple[float]:

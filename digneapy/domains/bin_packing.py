@@ -43,28 +43,28 @@ class BPP(Problem):
             (x) = \\frac{\\sum_{k=1}^{N} \\left(\\frac{fill_k}{C}\\right)^2}{N}
 
         Args:
-            individual (Sequence): Individual to evaluate
+            individual (Sequence | Solution): Individual to evaluate
 
         Returns:
             Tuple[float]: Falkenauer Fitness
         """
-        chromosome = (
-            individual.chromosome if isinstance(individual, Solution) else individual
-        )
-        if len(chromosome) != self._dimension:
+        if len(individual) != self._dimension:
             msg = f"Mismatch between individual variables and instance variables in {self.__class__.__name__}"
             raise ValueError(msg)
 
-        used_bins = np.max(chromosome).astype(int) + 1
+        used_bins = np.max(individual).astype(int) + 1
         fill_i = np.zeros(used_bins)
 
-        for item_idx, bin in enumerate(chromosome):
+        for item_idx, bin in enumerate(individual):
             fill_i[bin] += self._items[item_idx]
 
         fitness = (
             sum(((f_i / self._capacity) * (f_i / self._capacity)) for f_i in fill_i)
             / used_bins
         )
+        if isinstance(individual, Solution):
+            individual.fitness = fitness
+            individual.objectives = (fitness,)
 
         return (fitness,)
 

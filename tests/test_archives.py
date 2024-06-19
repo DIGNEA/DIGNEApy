@@ -34,6 +34,8 @@ def empty_archive():
 def test_empty_archive(empty_archive):
     assert 0 == len(empty_archive)
     assert empty_archive.threshold == 0.0
+    with pytest.raises(TypeError):
+        empty_archive.threshold = "HELLO"
 
 
 def test_archive_to_array(default_archive):
@@ -66,7 +68,7 @@ def test_append_instance(empty_archive):
     assert 1 == len(empty_archive)
     assert [instance] == empty_archive.instances
     d = list(range(10))
-    with pytest.raises(Exception):
+    with pytest.raises(TypeError):
         empty_archive.append(d)
 
 
@@ -181,6 +183,66 @@ def grid_5d():
     )
 
 
+def test_grid_archive_raises():
+    # Raises AttributeError when dimension < 1
+    with pytest.raises(ValueError):
+        _ = GridArchive(dimensions=[], ranges=[])
+
+    # Raises because instances are not of type Instance
+    with pytest.raises(TypeError):
+        instances = np.random.randint(low=0, high=10, size=(10, 2))
+        _ = GridArchive(
+            dimensions=(2, 2), ranges=[(0, 10), (0, 10)], instances=instances
+        )
+
+    # Raises because instance is not of type Instance
+    with pytest.raises(TypeError):
+        instance = np.random.randint(low=0, high=10, size=2)
+        archive = GridArchive(dimensions=(2, 2), ranges=[(0, 10), (0, 10)])
+        archive.append(instance)
+
+    # Raises out-of lower bound
+    with pytest.raises(ValueError):
+        archive = GridArchive(dimensions=(2, 2), ranges=[(0, 10), (0, 10)])
+        _ = archive.lower_i(-1)
+
+    # Raises out-of lower bound
+    with pytest.raises(ValueError):
+        archive = GridArchive(dimensions=(2, 2), ranges=[(0, 10), (0, 10)])
+        _ = archive.lower_i(100)
+
+    # Raises out-of upper bound
+    with pytest.raises(ValueError):
+        archive = GridArchive(dimensions=(2, 2), ranges=[(0, 10), (0, 10)])
+        _ = archive.upper_i(-1)
+
+    # Raises out-of upper bound
+    with pytest.raises(ValueError):
+        archive = GridArchive(dimensions=(2, 2), ranges=[(0, 10), (0, 10)])
+        _ = archive.upper_i(100)
+
+    # Raises index shape is not valid
+    with pytest.raises(ValueError):
+        archive = GridArchive(dimensions=(2, 2), ranges=[(0, 10), (0, 10)])
+        descriptors = np.random.randint(low=0, high=10, size=(10, 10))
+        _ = archive.index_of(descriptors)
+
+
+def test_grid_archive_populated():
+    instances = []
+    for _ in range(10):
+        instance = Instance()
+        instance.descriptor = np.random.randint(low=0, high=10, size=2)
+        instances.append(instance)
+    archive = GridArchive(
+        dimensions=(2, 2), ranges=[(0, 10), (0, 10)], instances=instances
+    )
+    assert len(archive) != 0
+    assert all(archive.lower_i(i) == 0 for i in range(len(archive.bounds)))
+    assert all(archive.upper_i(i) == 10 for i in range(len(archive.bounds)))
+    assert all(isinstance(i, Instance) for i in archive)
+
+
 def test_grid_5d(grid_5d):
     assert len(grid_5d) == 0
     assert len(grid_5d.bounds) == len(grid_5d.dimensions)
@@ -221,6 +283,9 @@ def test_grid_limits():
     archive = GridArchive(
         dimensions=(5, 5), ranges=[(0, 100), (0, 100)], dtype=np.int32
     )
+
+    assert archive.coverage == 0.0  # Empty archive
+    assert len(list(iter(archive))) == 0
     instances = []
     max_allowed = 25
     n_instances = 1000
@@ -313,3 +378,21 @@ def test_grid_with_kp_instances():
     archive.extend(instances)
     assert len(archive) > 0
     assert all(idx > 0 and idx < archive.n_cells for idx in archive.filled_cells)
+
+
+def test_grid_archive_getitem():
+    instances = []
+    for _ in range(1000):
+        instance = Instance()
+        instance.descriptor = np.random.randint(low=0, high=10, size=2)
+        instances.append(instance)
+
+    archive = GridArchive(
+        dimensions=(10, 10), ranges=[(0, 10), (0, 10)], instances=instances
+    )
+    results = archive[[0, 11], [0, 5]]
+    assert isinstance(results, dict)
+    assert len(results) == 2
+    results = archive[[0, 5]]
+    assert isinstance(results, dict)
+    assert len(results) == 1

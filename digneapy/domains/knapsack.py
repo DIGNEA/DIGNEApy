@@ -38,7 +38,7 @@ class Knapsack(Problem):
         self.profits = profits
         self.capacity = capacity
 
-    def evaluate(self, individual: Sequence) -> tuple[float]:
+    def evaluate(self, individual: Sequence | Solution) -> tuple[float]:
         """Evaluates the candidate individual with the information of the Knapsack
 
         Args:
@@ -50,23 +50,26 @@ class Knapsack(Problem):
         Returns:
             Tuple[float]: Profit
         """
-        if len(individual) != len(self.profits):
+        chromosome = (
+            individual.chromosome if isinstance(individual, Solution) else individual
+        )
+        if len(chromosome) != len(self.profits):
             msg = f"Mismatch between individual variables and instance variables in {self.__class__.__name__}"
             raise AttributeError(msg)
 
         profit = 0.0
         packed = 0
 
-        for i in range(len(individual)):
-            profit += individual[i] * self.profits[i]
-            packed += individual[i] * self.weights[i]
+        for i in range(len(chromosome)):
+            profit += chromosome[i] * self.profits[i]
+            packed += chromosome[i] * self.weights[i]
 
         difference = packed - self.capacity
         penalty = 100.0 * difference
         profit -= penalty if penalty > 0.0 else 0.0
         return (profit,)
 
-    def __call__(self, individual: Sequence) -> tuple[float]:
+    def __call__(self, individual: Sequence | Solution) -> tuple[float]:
         return self.evaluate(individual)
 
     def __repr__(self):
@@ -95,7 +98,9 @@ class Knapsack(Problem):
         return cls(profits=profits, weights=weights, capacity=capacity)
 
     def to_instance(self) -> Instance:
-        _vars = [self.capacity] + list(zip(self.weights, self.profits))
+        _vars = [self.capacity] + list(
+            itertools.chain.from_iterable([*zip(self.weights, self.profits)])
+        )
         return Instance(variables=_vars)
 
 
@@ -137,11 +142,7 @@ class KPDomain(Domain):
             (min_w, max_w) if i % 2 == 0 else (min_p, max_p)
             for i in range(2 * dimension)
         ]
-        super().__init__(
-            "KP",
-            dimension=dimension,
-            bounds=bounds,
-        )
+        super().__init__(dimension=dimension, bounds=bounds, name="KP")
 
     @property
     def capacity_approach(self):

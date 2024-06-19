@@ -30,13 +30,14 @@ class Problem(ABC):
         **kwargs,
     ):
         self._name = name
+        self.__name__ = name
         self._dimension = dimension
         self._bounds = bounds
         self._dtype = dtype
         if len(self._bounds) != 0:
             ranges = list(zip(*bounds))
             self._lbs = np.array(ranges[0], dtype=dtype)
-            self._ubs = np.array(ranges[0], dtype=dtype)
+            self._ubs = np.array(ranges[1], dtype=dtype)
 
     @property
     def dimension(self):
@@ -46,17 +47,9 @@ class Problem(ABC):
     def bounds(self):
         return self._bounds
 
-    @property
-    def l_bounds(self):
-        return self._lbs
-
-    @property
-    def u_bounds(self):
-        return self.u_bounds
-
     def get_bounds_at(self, i: int) -> tuple:
         if i < 0 or i > len(self._bounds):
-            raise RuntimeError(
+            raise ValueError(
                 f"Index {i} out-of-range. The bounds are 0-{len(self._bounds)} "
             )
         return (self._lbs[i], self._ubs[i])
@@ -71,11 +64,11 @@ class Problem(ABC):
         raise NotImplementedError(msg)
 
     @abstractmethod
-    def evaluate(self, individual: Sequence) -> Tuple[float]:
+    def evaluate(self, individual: Sequence | Solution) -> Tuple[float]:
         """Evaluates the candidate individual with the information of the Knapsack
 
         Args:
-            individual (Sequence): Individual to evaluate
+            individual (Sequence | Solution): Individual to evaluate
 
         Raises:
             AttributeError: Raises an error if the len(individual) != len(instance) / 2
@@ -87,7 +80,7 @@ class Problem(ABC):
         raise NotImplementedError(msg)
 
     @abstractmethod
-    def __call__(self, individual: Sequence) -> Tuple[float]:
+    def __call__(self, individual: Sequence | Solution) -> Tuple[float]:
         msg = "__call__ method not implemented in Problem"
         raise NotImplementedError(msg)
 

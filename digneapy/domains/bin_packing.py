@@ -35,7 +35,7 @@ class BPP(Problem):
         bounds = list((0, dim - 1) for _ in range(dim))
         super().__init__(dimension=dim, bounds=bounds, name="BPP")
 
-    def evaluate(self, individual: Sequence) -> tuple[float]:
+    def evaluate(self, individual: Sequence | Solution) -> tuple[float]:
         """Evaluates the candidate individual with the information of the Bin Packing.
         The fitness of the solution is the amount of unused space, as well as the
         number of bins for a specific solution. Falkenauer (1998) performance metric
@@ -48,14 +48,17 @@ class BPP(Problem):
         Returns:
             Tuple[float]: Falkenauer Fitness
         """
-        if len(individual) != self._dimension:
+        chromosome = (
+            individual.chromosome if isinstance(individual, Solution) else individual
+        )
+        if len(chromosome) != self._dimension:
             msg = f"Mismatch between individual variables and instance variables in {self.__class__.__name__}"
-            raise AttributeError(msg)
+            raise ValueError(msg)
 
-        used_bins = np.max(individual).astype(int) + 1
+        used_bins = np.max(chromosome).astype(int) + 1
         fill_i = np.zeros(used_bins)
 
-        for item_idx, bin in enumerate(individual):
+        for item_idx, bin in enumerate(chromosome):
             fill_i[bin] += self._items[item_idx]
 
         fitness = (
@@ -65,7 +68,7 @@ class BPP(Problem):
 
         return (fitness,)
 
-    def __call__(self, individual: Sequence) -> tuple[float]:
+    def __call__(self, individual: Sequence | Solution) -> tuple[float]:
         return self.evaluate(individual)
 
     def __repr__(self):
@@ -113,13 +116,13 @@ class BPPDomain(Domain):
         capacity_ratio: float = 0.8,
     ):
         if dimension < 0:
-            raise RuntimeError(f"Expected dimension > 0 got {dimension}")
+            raise ValueError(f"Expected dimension > 0 got {dimension}")
         if min_i < 0:
-            raise RuntimeError(f"Expected min_i > 0 got {min_i}")
+            raise ValueError(f"Expected min_i > 0 got {min_i}")
         if max_i < 0:
-            raise RuntimeError(f"Expected max_i > 0 got {max_i}")
+            raise ValueError(f"Expected max_i > 0 got {max_i}")
         if min_i > max_i:
-            raise RuntimeError(
+            raise ValueError(
                 f"Expected min_i to be less than max_i got ({min_i}, {max_i})"
             )
 
@@ -143,11 +146,7 @@ class BPPDomain(Domain):
             self._capacity_approach = capacity_approach
 
         bounds = [(self._min_i, self._max_i) for _ in range(self._dimension)]
-        super().__init__(
-            "BPP",
-            dimension=dimension,
-            bounds=bounds,
-        )
+        super().__init__(dimension=dimension, bounds=bounds, name="BPP")
 
     @property
     def capacity_approach(self):

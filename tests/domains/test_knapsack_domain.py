@@ -10,6 +10,7 @@
 @Desc    :   None
 """
 
+import itertools
 import os
 
 import numpy as np
@@ -153,3 +154,21 @@ def test_kp_domain_to_instance():
     assert len(kp_instance.profits) == dimension
     expected_q = int(np.sum(kp_instance.weights) * domain.capacity_ratio)
     assert kp_instance.capacity == expected_q
+
+
+def test_knapsack_problems(default_kp):
+    solution = default_kp.create_solution()
+    assert len(solution) == len(default_kp)
+    # Checks solution is in ranges
+    assert all(0 <= i <= 1 for i in solution)
+    fitness_s = default_kp(solution)
+    fitness_ch = default_kp(solution.chromosome)
+    assert fitness_s == fitness_ch
+
+
+def test_knapsack_to_instance(default_kp):
+    expected_vars = [default_kp.capacity] + list(
+        itertools.chain.from_iterable([*zip(default_kp.weights, default_kp.profits)])
+    )
+    instance = default_kp.to_instance()
+    np.testing.assert_array_equal(instance._variables, expected_vars)

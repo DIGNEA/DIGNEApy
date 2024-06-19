@@ -10,50 +10,57 @@
 @Desc    :   None
 """
 
-from typing import Tuple
+from typing import Mapping, Tuple
 
 import pytest
 
 from digneapy.core import Domain, Instance, Problem
 
 
+class FixturedDomain(Domain):
+    def __init__(self):
+        dimension = 100
+        bounds = [(0, 1000) for _ in range(dimension)]
+        super().__init__(dimension=dimension, bounds=bounds)
+
+    def extract_features(self, instances: Instance) -> Tuple:
+        return super().extract_features(instances)
+
+    def extract_features_as_dict(self, instance: Instance) -> Mapping[str, float]:
+        return super().extract_features_as_dict(instance)
+
+    def from_instance(self, instance: Instance) -> Problem:
+        return super().from_instance(instance)
+
+    def generate_instance(self) -> Instance:
+        return super().generate_instance()
+
+
 @pytest.fixture
 def initialised_domain():
-    class FixturedDomain(Domain):
-        def extract_features(self, instance: Instance) -> Tuple:
-            return tuple()
-
-        def extract_features_as_dict(self, instance: Instance):
-            return dict()
-
-        def from_instance(self, instance: Instance) -> Problem:
-            return None
-
-        def generate_instance(self) -> Instance:
-            return Instance()
-
-    bounds = list((0.0, 100.0) for _ in range(100))
-    return FixturedDomain(name="Fixtured_Domain", dimension=100, bounds=bounds)
+    return FixturedDomain()
 
 
 def test_init_domain_attrs(initialised_domain):
-    assert initialised_domain.name == "Fixtured_Domain"
+    assert initialised_domain.name == "Domain"
     assert initialised_domain.dimension == 100
-    assert initialised_domain.bounds == [(0.0, 100.0) for _ in range(100)]
+    assert initialised_domain.bounds == [(0.0, 1000.0) for _ in range(100)]
     assert len(initialised_domain) == initialised_domain.dimension
+    assert all(initialised_domain.get_bounds_at(i) == (0.0, 1000.0) for i in range(100))
 
+    with pytest.raises(ValueError):
+        initialised_domain.get_bounds_at(10000)
+    with pytest.raises(ValueError):
+        initialised_domain.get_bounds_at(-1)
 
-def test_lower_bounds_init(initialised_domain):
-    assert all(initialised_domain.lower_i(i) == 0.0 for i in range(100))
-    with pytest.raises(AttributeError):
-        initialised_domain.lower_i(-1)
-    with pytest.raises(AttributeError):
-        initialised_domain.lower_i(10000)
+    with pytest.raises(NotImplementedError):
+        initialised_domain.generate_instance()
 
+    with pytest.raises(NotImplementedError):
+        initialised_domain.extract_features(Instance())
 
-def test_upper_bounds_init(initialised_domain):
-    assert all(initialised_domain.lower_i(i) == 0.0 for i in range(100))
-    with pytest.raises(AttributeError):
-        initialised_domain.upper_i(-1)
-    with pytest.raises(AttributeError):
-        initialised_domain.upper_i(10000)
+    with pytest.raises(NotImplementedError):
+        initialised_domain.extract_features_as_dict(Instance())
+
+    with pytest.raises(NotImplementedError):
+        initialised_domain.from_instance(Instance())

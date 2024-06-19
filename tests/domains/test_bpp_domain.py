@@ -60,6 +60,18 @@ def test_default_bpp_domain():
     assert domain._max_i == 1000
     assert domain.bounds == [(1, 1000) for _ in range(dimension)]
 
+    with pytest.raises(ValueError):
+        BPPDomain(dimension=-1)
+
+    with pytest.raises(ValueError):
+        BPPDomain(min_i=-1)
+
+    with pytest.raises(ValueError):
+        BPPDomain(max_i=-1)
+
+    with pytest.raises(ValueError):
+        BPPDomain(min_i=100, max_i=1)
+
 
 def test_default_bpp_domain_wrong_args():
     dimension = 100
@@ -170,3 +182,20 @@ def test_bpp_domain_to_instance():
     assert instance._variables[0] == bpp_instance._capacity
     assert instance._variables[0] == int(expected_q)
     assert bpp_instance._capacity == int(expected_q)
+
+
+def test_bpp_problem(default_bpp):
+    solution = default_bpp.create_solution()
+    expected_vars = list(range(100))
+    assert all(s_i == e_i for s_i, e_i in zip(solution, expected_vars))
+
+    fitness_s = default_bpp(solution)
+    fitness_ch = default_bpp(solution.chromosome)
+    assert fitness_s == fitness_ch
+
+    assert isinstance(fitness_s, tuple)
+    assert fitness_s[0] >= 1.0
+
+    instance = default_bpp.to_instance()
+    expected_vars = [default_bpp._capacity, *default_bpp._items]
+    assert all(v_i == e_i for v_i, e_i in zip(instance._variables, expected_vars))

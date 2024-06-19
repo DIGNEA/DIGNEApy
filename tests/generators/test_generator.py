@@ -63,25 +63,25 @@ def test_default_generator():
         == "EIG<pop_size=100,gen=1000,domain=None,portfolio=[],NS<descriptor=features,k=15,A=(),S_S=()>>"
     )
 
-    with pytest.raises(AttributeError) as e:
+    with pytest.raises(ValueError) as e:
         eig()
     assert e.value.args[0] == "You must specify a domain to run the generator."
 
     eig.domain = KPDomain()
-    with pytest.raises(AttributeError) as e:
+    with pytest.raises(ValueError) as e:
         eig()
     assert (
         e.value.args[0]
         == "The portfolio is empty. To run the generator you must provide a valid portfolio of solvers"
     )
 
-    with pytest.raises(AttributeError) as e:
+    with pytest.raises(ValueError) as e:
         eig = EIG(domain=None, portfolio=[], phi=-1.0)
     assert (
         e.value.args[0]
         == "Phi must be a float number in the range [0.0-1.0]. Got: -1.0."
     )
-    with pytest.raises(AttributeError) as e:
+    with pytest.raises(ValueError) as e:
         eig = EIG(domain=None, portfolio=[], phi="hello")
     assert e.value.args[0] == "Phi must be a float number in the range [0.0-1.0]."
 

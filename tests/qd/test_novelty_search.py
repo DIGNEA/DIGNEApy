@@ -116,14 +116,14 @@ def test_run_nsf(nsf, random_population):
     spars_ss = nsf.sparseness_solution_set(random_population)
     assert len(spars_ss) == len(spars_ss)
     # Raises because the list is empty
-    with pytest.raises(AttributeError):
+    with pytest.raises(ValueError):
         nsf.sparseness_solution_set(list())
     # Raises because the one element of the list is empty
-    with pytest.raises(AttributeError):
+    with pytest.raises(ValueError):
         new_pop = random_population + [[]]
         nsf.sparseness_solution_set(new_pop)
     # Raises because we need at least to elements to calculate the sparseness
-    with pytest.raises(AttributeError):
+    with pytest.raises(ValueError):
         nsf.sparseness_solution_set(random_population[:1])
 
 

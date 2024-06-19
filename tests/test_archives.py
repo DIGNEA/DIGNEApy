@@ -184,7 +184,7 @@ def grid_5d():
 
 
 def test_grid_archive_raises():
-    # Raises AttributeError when dimension < 1
+    # Raises ValueError when dimension < 1
     with pytest.raises(ValueError):
         _ = GridArchive(dimensions=[], ranges=[])
 

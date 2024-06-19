@@ -71,7 +71,7 @@ class Problem(ABC):
             individual (Sequence | Solution): Individual to evaluate
 
         Raises:
-            AttributeError: Raises an error if the len(individual) != len(instance) / 2
+            ValueError: Raises an error if the len(individual) != len(instance) / 2
 
         Returns:
             Tuple[float]: Profit

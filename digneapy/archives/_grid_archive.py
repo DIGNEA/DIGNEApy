@@ -215,7 +215,7 @@ class GridArchive(Archive):
             i (Instance): Instace to be inserted
 
         Raises:
-            AttributeError: ``instance`` is not a instance of the class Instance.
+            TypeError: ``instance`` is not a instance of the class Instance.
         """
         if isinstance(i, Instance):
             index = self.index_of(np.asarray(i.descriptor))

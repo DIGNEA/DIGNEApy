@@ -111,7 +111,7 @@ def test_hyper_cmaes_raises():
     )
 
     # Raises because we do not specify any valid direction
-    with pytest.raises(AttributeError):
+    with pytest.raises(ValueError):
         cma_es = NNTuner(
             dimension=dimension,
             generations=5,
@@ -121,7 +121,7 @@ def test_hyper_cmaes_raises():
         )
 
     # Raises because we do not specify any transformer
-    with pytest.raises(AttributeError):
+    with pytest.raises(TypeError):
         cma_es = NNTuner(
             transformer=None,
             dimension=dimension,
@@ -131,7 +131,7 @@ def test_hyper_cmaes_raises():
         )
 
     # Raises because we do not specify any eval_fn
-    with pytest.raises(AttributeError):
+    with pytest.raises(ValueError):
         cma_es = NNTuner(
             dimension=dimension,
             direction=Direction.MAXIMISE,
@@ -141,7 +141,7 @@ def test_hyper_cmaes_raises():
         )
 
     # Raises because we n_jobs < 1
-    with pytest.raises(AttributeError):
+    with pytest.raises(ValueError):
         cma_es = NNTuner(
             dimension=dimension,
             direction=Direction.MAXIMISE,

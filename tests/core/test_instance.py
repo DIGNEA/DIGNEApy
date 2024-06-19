@@ -65,22 +65,22 @@ def test_default_instance_raises(default_instance):
     assert default_instance.s == 50.0
     assert default_instance.fitness == 500.0
 
-    with pytest.raises(AttributeError):
+    with pytest.raises(ValueError):
         default_instance.p = "hello world"
 
-    with pytest.raises(AttributeError):
+    with pytest.raises(ValueError):
         default_instance.s = "hello world"
 
-    with pytest.raises(AttributeError):
+    with pytest.raises(ValueError):
         default_instance.fitness = "hello world"
 
-    with pytest.raises(AttributeError):
+    with pytest.raises(ValueError):
         _ = Instance(variables=list(range(100)), fitness="hello", p=100.0, s=100.0)
 
-    with pytest.raises(AttributeError):
+    with pytest.raises(ValueError):
         _ = Instance(variables=list(range(100)), fitness=100.0, p="hello", s=100.0)
 
-    with pytest.raises(AttributeError):
+    with pytest.raises(ValueError):
         _ = Instance(variables=list(range(100)), fitness=100.0, p=100.0, s="hello")
 
 

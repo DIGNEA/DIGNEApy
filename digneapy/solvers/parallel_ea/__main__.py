@@ -58,14 +58,14 @@ class ParEAKP(_ParEACpp):
             kp (Knapsack, optional): Instance of a KP. Defaults to None.
 
         Raises:
-            AttributeError: If no instance is given
+            ValueError: If no instance is given
 
         Returns:
             List[Solution]: Best solution found by the algorithm
         """
         if problem is None:
             msg = "Knapsack Problem is None in ParEAKP.__call__(). Expected a Knapsack instance."
-            raise AttributeError(msg)
+            raise ValueError(msg)
         x, fitness = self.run(
             len(problem), problem.weights, problem.profits, problem.capacity
         )

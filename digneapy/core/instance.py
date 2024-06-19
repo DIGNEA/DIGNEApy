@@ -38,7 +38,7 @@ class Instance:
             p = float(p)
             s = float(s)
         except ValueError:
-            raise AttributeError(
+            raise ValueError(
                 "The fitness, p and s parameters must be convertible to float"
             )
         self._fitness = fitness
@@ -58,7 +58,7 @@ class Instance:
         except ValueError:
             # if performance != 0.0 and not float(performance):
             msg = f"The performance value {performance} is not a float in 'p' setter of class {self.__class__.__name__}"
-            raise AttributeError(msg)
+            raise ValueError(msg)
         self._p = performance
 
     @property
@@ -72,7 +72,7 @@ class Instance:
         except ValueError:
             # if novelty != 0.0 and not float(novelty):
             msg = f"The novelty value {novelty} is not a float in 's' setter of class {self.__class__.__name__}"
-            raise AttributeError(msg)
+            raise ValueError(msg)
         self._s = novelty
 
     @property
@@ -86,7 +86,7 @@ class Instance:
         except ValueError:
             # if f != 0.0 and not float(f):
             msg = f"The fitness value {f} is not a float in fitness setter of class {self.__class__.__name__}"
-            raise AttributeError(msg)
+            raise ValueError(msg)
 
         self._fitness = float(f)
 

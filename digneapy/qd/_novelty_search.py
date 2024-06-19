@@ -147,19 +147,19 @@ class NS:
             verbose (bool, optional): Flag to show the progress. Defaults to False.
 
         Raises:
-            AttributeError: If len(d) where d is the descriptor of each instance i differs from another
-            AttributeError: If NoveltySearch.k >= len(instances)
+            ValueError: If len(d) where d is the descriptor of each instance i differs from another
+            ValueError: If NoveltySearch.k >= len(instances)
 
         Returns:
             list[float]: List of sparseness values, one for each instance
         """
         if len(instances) == 0 or any(len(d) == 0 for d in instances):
             msg = f"{self.__class__.__name__} trying to calculate sparseness on an empty Instance list"
-            raise AttributeError(msg)
+            raise ValueError(msg)
 
         if self._k >= len(instances):
             msg = f"{self.__class__.__name__} trying to calculate sparseness with k({self._k}) > len(instances)({len(instances)})"
-            raise AttributeError(msg)
+            raise ValueError(msg)
 
         return self.__compute_sparseness(
             instances, self.archive, neighbours=self._k + 1
@@ -173,8 +173,8 @@ class NS:
             instances (Sequence[Instance]): Instances to calculate their sparseness
 
         Raises:
-            AttributeError: If len(d) where d is the descriptor of each instance i differs from another
-            AttributeError: If 2 >= len(instances)
+            ValueError: If len(d) where d is the descriptor of each instance i differs from another
+            ValueError: If 2 >= len(instances)
 
         Returns:
             list[float]: List of sparseness values, one for each instance
@@ -182,10 +182,10 @@ class NS:
 
         if len(instances) == 0 or any(len(d) == 0 for d in instances):
             msg = f"{self.__class__.__name__} trying to update the solution set with an empty instance list"
-            raise AttributeError(msg)
+            raise ValueError(msg)
 
         if len(instances) <= 2:
             msg = f"{self.__class__.__name__} trying to calculate sparseness_solution_set with k = 2 >= len(instances)({len(instances)})"
-            raise AttributeError(msg)
+            raise ValueError(msg)
 
         return self.__compute_sparseness(instances, self.solution_set, neighbours=2)

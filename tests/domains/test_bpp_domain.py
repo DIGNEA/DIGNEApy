@@ -58,7 +58,9 @@ def test_default_bpp_domain():
     assert domain.capacity_ratio == 0.8
     assert domain._min_i == 1
     assert domain._max_i == 1000
-    assert domain.bounds == [(1, 1000) for _ in range(dimension)]
+    assert domain.bounds == [(1, domain._max_capacity)] + [
+        (1, 1000) for _ in range(dimension)
+    ]
 
     with pytest.raises(ValueError):
         BPPDomain(dimension=-1)

@@ -26,11 +26,12 @@ def uniform_one_mutation(
     ind: Instance | Solution, bounds: Sequence[Tuple]
 ) -> Instance | Solution:
     if len(ind) != len(bounds):
-        msg = "The size of individual and bounds is different in uniform_one_mutation"
-        raise AttributeError(msg)
+        msg = f"The size of individual ({len(ind)}) and bounds {len(bounds)} is different in uniform_one_mutation"
+        raise ValueError(msg)
+
     if not all(len(b) == 2 for b in bounds):
         msg = "Error bounds in uniform_one_mutation. The bounds list must contain tuples where each tuple is (l_i, u_i)"
-        raise AttributeError(msg)
+        raise ValueError(msg)
 
     mutation_point = np.random.randint(low=0, high=len(ind))
 

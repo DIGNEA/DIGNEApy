@@ -39,11 +39,11 @@ class KerasNN(Transformer):
             scale (bool, optional): Includes scaler step before prediction. Defaults to True.
 
         Raises:
-            AttributeError: Raises if any attribute is not valid.
+            ValueError: Raises if any attribute is not valid.
         """
         if len(activations) != len(shape):
             msg = f"Expected {len(shape)} activation functions but only got {len(activations)}"
-            raise AttributeError(msg)
+            raise ValueError(msg)
         if not name.endswith(".keras"):
             name = name + ".keras"
 
@@ -79,7 +79,7 @@ class KerasNN(Transformer):
         expected = np.sum([np.prod(v.shape) for v in self._model.trainable_variables])
         if len(weights) != expected:
             msg = f"Error in the amount of weights in NN.update_weigths. Expected {expected} and got {len(weights)}"
-            raise AttributeError(msg)
+            raise ValueError(msg)
         start = 0
         new_weights = []
         for v in self._model.trainable_variables:

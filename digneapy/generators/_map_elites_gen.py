@@ -52,13 +52,12 @@ class MElitGen:
             msg = f"strategy {strategy} not available in {self.__class__.__name__}.__init__. Set to features by default"
             print(msg)
             strategy = "features"
-
+        self._descriptor = strategy
         match strategy:
             case "features":
                 self._descriptor_strategy = self._domain.extract_features
             case _:
                 self._descriptor_strategy = descriptor_strategies[strategy]
-                self._descriptor = strategy
 
         self._stats_fitness = tools.Statistics(key=lambda ind: ind.fitness)
         self._stats_fitness.register("avg", np.mean)
@@ -76,11 +75,15 @@ class MElitGen:
     def log(self) -> tools.Logbook:
         return self._logbook
 
-    def __str__(self):
-        return "MapElites()"
+    def __str__(self) -> str:
+        port_names = [s.__name__ for s in self._portfolio]
+        domain_name = self._domain.name if self._domain is not None else "None"
+        return f"MapElites(descriptor={self._descriptor},pop_size={self._init_pop_size},gen={self._generations},domain={domain_name},portfolio={port_names!r})"
 
     def __repr__(self) -> str:
-        return "MapElites<>"
+        port_names = [s.__name__ for s in self._portfolio]
+        domain_name = self._domain.name if self._domain is not None else "None"
+        return f"MapElites<descriptor={self._descriptor},pop_size={self._init_pop_size},gen={self._generations},domain={domain_name},portfolio={port_names!r}>"
 
     def _populate_archive(self):
         instances = [

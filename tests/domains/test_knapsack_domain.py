@@ -72,7 +72,7 @@ def test_default_kp_domain():
     assert domain.min_w == 1
     assert domain.max_p == 1000
     assert domain.max_w == 1000
-    assert domain.bounds == [(0.0, 1e4)] + [
+    assert domain.bounds == [(1.0, 1e4)] + [
         (1, 1000) if i % 2 == 0 else (1, 1000) for i in range(2 * dimension)
     ]
 

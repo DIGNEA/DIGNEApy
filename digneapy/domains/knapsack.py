@@ -45,7 +45,7 @@ class Knapsack(Problem):
             individual (Sequence | Solution): Individual to evaluate
 
         Raises:
-            AttributeError: Raises an error if the len(individual) != len(profits or weights)
+            ValueError: Raises an error if the len(individual) != len(profits or weights)
 
         Returns:
             Tuple[float]: Profit
@@ -53,7 +53,7 @@ class Knapsack(Problem):
 
         if len(individual) != len(self.profits):
             msg = f"Mismatch between individual variables and instance variables in {self.__class__.__name__}"
-            raise AttributeError(msg)
+            raise ValueError(msg)
 
         profit = 0.0
         packed = 0
@@ -141,7 +141,7 @@ class KPDomain(Domain):
         else:
             self._capacity_approach = capacity_approach
 
-        bounds = [(0.0, self.max_capacity)] + [
+        bounds = [(1.0, self.max_capacity)] + [
             (min_w, max_w) if i % 2 == 0 else (min_p, max_p)
             for i in range(2 * dimension)
         ]

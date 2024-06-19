@@ -19,7 +19,7 @@ from digneapy.domains.knapsack import Knapsack
 def default_kp(problem: Knapsack, *args, **kwargs) -> list[Solution]:
     if problem is None:
         msg = "No problem found in args of default_kp heuristic"
-        raise AttributeError(msg)
+        raise ValueError(msg)
 
     inside = 0
     profit = 0
@@ -35,7 +35,7 @@ def default_kp(problem: Knapsack, *args, **kwargs) -> list[Solution]:
 def map_kp(problem: Knapsack, *args, **kwargs) -> list[Solution]:
     if problem is None:
         msg = "No problem found in args of map_kp heuristic"
-        raise AttributeError(msg)
+        raise ValueError(msg)
 
     indices = np.argsort(problem.profits)[::-1]
 
@@ -53,7 +53,7 @@ def map_kp(problem: Knapsack, *args, **kwargs) -> list[Solution]:
 def miw_kp(problem: Knapsack, *args, **kwargs) -> list[Solution]:
     if problem is None:
         msg = "No problem found in args of miw_kp heuristic"
-        raise AttributeError(msg)
+        raise ValueError(msg)
 
     indices = np.argsort(problem.weights)
 
@@ -74,7 +74,7 @@ def miw_kp(problem: Knapsack, *args, **kwargs) -> list[Solution]:
 def mpw_kp(problem: Knapsack, *args, **kwargs) -> list[Solution]:
     if problem is None:
         msg = "No problem found in args of mpw_kp heuristic"
-        raise AttributeError(msg)
+        raise ValueError(msg)
 
     profits_per_weights = [(p / w) for p, w in zip(problem.profits, problem.weights)]
     indices = np.argsort(profits_per_weights)[::-1]

@@ -37,14 +37,14 @@ def generational(
         offspring ( Sequence[Instance] | Sequence[Solution],): Offspring population
 
     Raises:
-        AttributeError: Raises if the sizes of the population are different
+        ValueError: Raises if the sizes of the population are different
 
     Returns:
          Sequence[Instance] | Sequence[Solution]: New population
     """
     if len(current_population) != len(offspring):
         msg = f"The size of the current population ({len(current_population)}) != size of the offspring ({len(offspring)}) in generational replacement"
-        raise AttributeError(msg)
+        raise ValueError(msg)
 
     return copy.deepcopy(offspring)
 
@@ -62,14 +62,14 @@ def first_improve_replacement(
         offspring ( Sequence[Instance] | Sequence[Solution],): Offspring population
 
     Raises:
-        AttributeError: Raises if the sizes of the population are different
+        ValueError: Raises if the sizes of the population are different
 
     Returns:
          list[Instance] | list[Solution]: New population
     """
     if len(current_population) != len(offspring):
         msg = f"The size of the current population ({len(current_population)}) != size of the offspring ({len(offspring)}) in first_improve_replacement"
-        raise AttributeError(msg)
+        raise ValueError(msg)
 
     return [a if a > b else b for a, b in zip(current_population, offspring)]
 
@@ -90,14 +90,14 @@ def elitist_replacement(
         hof (int, optional): _description_. Defaults to 1.
 
     Raises:
-        AttributeError: Raises if the sizes of the population are different
+        ValueError: Raises if the sizes of the population are different
 
     Returns:
           list[Instance] | list[Solution]:
     """
     if len(current_population) != len(offspring):
         msg = f"The size of the current population ({len(current_population)}) != size of the offspring ({len(offspring)}) in elitist_replacement"
-        raise AttributeError(msg)
+        raise ValueError(msg)
 
     combined_population = sorted(
         itertools.chain(current_population, offspring),

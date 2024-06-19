@@ -39,7 +39,7 @@ class TorchNN(Transformer, torch.nn.Module):
             output_size (int): Number of neurons in the output layer.
             scale (bool, optional): Includes scaler step before prediction. Defaults to True.
         Raises:
-            AttributeError: Raises if any attribute is not valid.
+            ValueError: Raises if any attribute is not valid.
         """
 
         if not name.endswith(".torch"):
@@ -70,7 +70,7 @@ class TorchNN(Transformer, torch.nn.Module):
         expected = sum(p.numel() for p in self._model.parameters() if p.requires_grad)
         if len(parameters) != expected:
             msg = f"Error in the amount of weights in NN.update_weigths. Expected {expected} and got {len(parameters)}"
-            raise AttributeError(msg)
+            raise ValueError(msg)
         start = 0
         for layer in self._model.children():
             if isinstance(layer, torch.nn.Linear):

@@ -71,7 +71,7 @@ class EIG(NS):
             The target solver is the first solver in the portfolio. Defaults to True.
 
         Raises:
-            AttributeError: Raises error if phi is not in the range [0.0-1.0]
+            ValueError: Raises error if phi is not in the range [0.0-1.0]
         """
         super().__init__(archive, s_set, k, descriptor, transformer)
         self.pop_size = pop_size
@@ -105,11 +105,11 @@ class EIG(NS):
         try:
             phi = float(phi)
         except ValueError:
-            raise AttributeError("Phi must be a float number in the range [0.0-1.0].")
+            raise ValueError("Phi must be a float number in the range [0.0-1.0].")
 
         if phi < 0.0 or phi > 1.0:
             msg = f"Phi must be a float number in the range [0.0-1.0]. Got: {phi}."
-            raise AttributeError(msg)
+            raise ValueError(msg)
         self.phi = phi
 
     @property
@@ -188,9 +188,9 @@ class EIG(NS):
 
     def _run(self, verbose: bool = False):
         if self.domain is None:
-            raise AttributeError("You must specify a domain to run the generator.")
+            raise ValueError("You must specify a domain to run the generator.")
         if len(self.portfolio) == 0:
-            raise AttributeError(
+            raise ValueError(
                 "The portfolio is empty. To run the generator you must provide a valid portfolio of solvers"
             )
         self.population = [

@@ -38,7 +38,7 @@ class KPAE(Transformer):
         super().__init__(name)
 
         if encoding not in KPAE._ENCODINGS:
-            raise AttributeError(
+            raise ValueError(
                 f"The encoding alternatives must be of type int and {KPAE._ENCODINGS}"
             )
 

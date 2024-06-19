@@ -82,7 +82,7 @@ def test_best_fit_solves_sample(default_bpp_instance):
 
 
 def test_best_fit_raises_sample(default_bpp_instance):
-    with pytest.raises(AttributeError):
+    with pytest.raises(ValueError):
         best_fit(None)
 
 
@@ -100,7 +100,7 @@ def test_first_fit_solves_sample(default_bpp_instance):
 
 
 def test_first_fit_raises_sample(default_bpp_instance):
-    with pytest.raises(AttributeError):
+    with pytest.raises(ValueError):
         first_fit(None)
 
 
@@ -118,7 +118,7 @@ def test_next_fit_solves_sample(default_bpp_instance):
 
 
 def test_next_fit_raises_sample(default_bpp_instance):
-    with pytest.raises(AttributeError):
+    with pytest.raises(ValueError):
         next_fit(None)
 
 
@@ -136,7 +136,7 @@ def test_worst_fit_solves_sample(default_bpp_instance):
 
 
 def test_worst_fit_raises_sample(default_bpp_instance):
-    with pytest.raises(AttributeError):
+    with pytest.raises(ValueError):
         worst_fit(None)
 
 

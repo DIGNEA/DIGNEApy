@@ -22,7 +22,7 @@ from digneapy.domains.knapsack import Knapsack
 def minknap(problem: Knapsack = None, only_time: bool = True) -> List[Solution]:
     if problem is None:
         msg = "No problem found in args of minknap heuristic"
-        raise AttributeError(msg)
+        raise ValueError(msg)
 
     x = np.zeros(len(problem))
     time, best = minknap_cpp(
@@ -35,7 +35,7 @@ def minknap(problem: Knapsack = None, only_time: bool = True) -> List[Solution]:
 def expknap(problem: Knapsack = None, only_time: bool = True) -> List[Solution]:
     if problem is None:
         msg = "No problem found in args of expknap heuristic"
-        raise AttributeError(msg)
+        raise ValueError(msg)
 
     x = np.zeros(len(problem))
     time, best = expknap_cpp(
@@ -48,7 +48,7 @@ def expknap(problem: Knapsack = None, only_time: bool = True) -> List[Solution]:
 def combo(problem: Knapsack = None, only_time: bool = True) -> List[Solution]:
     if problem is None:
         msg = "No problem found in args of combo heuristic"
-        raise AttributeError(msg)
+        raise ValueError(msg)
 
     x = np.zeros(len(problem))
     time, best = combo_cpp(

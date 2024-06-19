@@ -18,7 +18,7 @@ from digneapy.domains.bin_packing import BPP
 
 def best_fit(problem: BPP, *args, **kwargs) -> list[Solution]:
     if problem is None:
-        raise AttributeError("No problem found in best_fit heuristic")
+        raise ValueError("No problem found in best_fit heuristic")
     assignment = np.zeros(len(problem), dtype=int)
     bin_capacities = []
     items = problem._items
@@ -49,7 +49,7 @@ def best_fit(problem: BPP, *args, **kwargs) -> list[Solution]:
 
 def first_fit(problem: BPP, *args, **kwargs) -> list[Solution]:
     if problem is None:
-        raise AttributeError("No problem found in first_fit heuristic")
+        raise ValueError("No problem found in first_fit heuristic")
     assignment = np.zeros(len(problem), dtype=int)
     open_bins = []
     items = problem._items
@@ -73,7 +73,7 @@ def first_fit(problem: BPP, *args, **kwargs) -> list[Solution]:
 
 def next_fit(problem: BPP, *args, **kwargs) -> list[Solution]:
     if problem is None:
-        raise AttributeError("No problem found in next_fit heuristic")
+        raise ValueError("No problem found in next_fit heuristic")
 
     assignment = np.zeros(len(problem), dtype=int)
     items = problem._items
@@ -94,7 +94,7 @@ def next_fit(problem: BPP, *args, **kwargs) -> list[Solution]:
 
 def worst_fit(problem: BPP, *args, **kwargs) -> list[Solution]:
     if problem is None:
-        raise AttributeError("No problem found in worst_fit heuristic")
+        raise ValueError("No problem found in worst_fit heuristic")
 
     assignment = np.zeros(len(problem), dtype=int)
     bin_capacities: list[int] = []

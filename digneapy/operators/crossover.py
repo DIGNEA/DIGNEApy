@@ -34,14 +34,14 @@ def one_point_crossover(
         ind_2 Instance or Solution: Second individual to apply crossover
 
     Raises:
-        AttributeError: When the len(ind_1) != len(ind_2)
+        ValueError: When the len(ind_1) != len(ind_2)
 
     Returns:
         Instance or Solution: New individual
     """
     if len(ind_1) != len(ind_2):
         msg = f"Individual of different length in uniform_crossover. len(ind_1) = {len(ind_1)} != len(ind_2) = {len(ind_2)}"
-        raise AttributeError(msg)
+        raise ValueError(msg)
 
     cross_point = np.random.randint(low=0, high=len(ind_1))
     offspring = copy.deepcopy(ind_1)
@@ -60,14 +60,14 @@ def uniform_crossover(
         cxpb (float, optional): _description_. Defaults to 0.5.
 
     Raises:
-        AttributeError: When the len(ind_1) != len(ind_2)
+        ValueError: When the len(ind_1) != len(ind_2)
 
     Returns:
         Instance or Solution: New individual
     """
     if len(ind_1) != len(ind_2):
         msg = f"Individual of different length in uniform_crossover. len(ind_1) = {len(ind_1)} != len(ind_2) = {len(ind_2)}"
-        raise AttributeError(msg)
+        raise ValueError(msg)
 
     probs = np.random.rand(len(ind_1))
     offspring = copy.deepcopy(ind_1)

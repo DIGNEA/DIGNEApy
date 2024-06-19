@@ -49,7 +49,7 @@ class BPP(Problem):
             Tuple[float]: Falkenauer Fitness
         """
         if len(individual) != self._dimension:
-            msg = f"Mismatch between individual variables and instance variables in {self.__class__.__name__}"
+            msg = f"Mismatch between individual variables ({len(individual)}) and instance variables ({self._dimension}) in {self.__class__.__name__}"
             raise ValueError(msg)
 
         used_bins = np.max(individual).astype(int) + 1
@@ -145,7 +145,9 @@ class BPPDomain(Domain):
         else:
             self._capacity_approach = capacity_approach
 
-        bounds = [(self._min_i, self._max_i) for _ in range(self._dimension)]
+        bounds = [(1.0, self._max_capacity)] + [
+            (self._min_i, self._max_i) for _ in range(self._dimension)
+        ]
         super().__init__(dimension=dimension, bounds=bounds, name="BPP")
 
     @property

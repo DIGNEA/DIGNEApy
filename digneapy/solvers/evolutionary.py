@@ -58,10 +58,10 @@ class EA(Solver, SupportsSolve[P]):
             generations (int, optional): Number of generations to perform. Defaults to 500.
 
         Raises:
-            AttributeError: If direction is not in digneapy.solvers.DIRECTIONS
+            TypeError: If direction is not in digneapy.solvers.DIRECTIONS
         """
         if not isinstance(direction, Direction):
-            raise AttributeError(
+            raise TypeError(
                 f"Direction not allowed. Please use a value of the class Direction({Direction.values()})"
             )
 
@@ -116,7 +116,7 @@ class EA(Solver, SupportsSolve[P]):
         """
         if problem is None:
             msg = "Problem is None in EA.__call__()"
-            raise AttributeError(msg)
+            raise ValueError(msg)
 
         self._toolbox.register("evaluate", problem)
         # Reset the algorithm

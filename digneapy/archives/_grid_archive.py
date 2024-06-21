@@ -36,7 +36,7 @@ class GridArchive(Archive):
     def __init__(
         self,
         dimensions: Sequence[int],
-        ranges: Sequence[Tuple[float]],
+        ranges: Sequence[Tuple[float, float]],
         instances: Optional[Iterable[Instance]] = None,
         eps: float = 1e-6,
         dtype=np.float64,
@@ -80,12 +80,13 @@ class GridArchive(Archive):
         self._cells = np.prod(self._dimensions, dtype=int)
         self._grid: Dict[int, Instance] = {}
 
-        self._boundaries = []
+        _bounds = []
         for dimension, l_b, u_b in zip(
             self._dimensions, self._lower_bounds, self._upper_bounds
         ):
-            self._boundaries.append(np.linspace(l_b, u_b, dimension + 1))
+            _bounds.append(np.linspace(l_b, u_b, dimension))
 
+        self._boundaries = np.asarray(_bounds)
         if instances is not None:
             self.extend(instances)
 

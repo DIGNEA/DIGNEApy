@@ -10,9 +10,6 @@ from setuptools.command.build_ext import build_ext
 with open("README.md") as readme_file:
     readme = readme_file.read()
 
-with open("HISTORY.md") as history_file:
-    history = history_file.read()
-
 requirements = []
 
 test_requirements = [
@@ -79,7 +76,7 @@ setup(
     description="Python version of the DIGNEA code for instance generation",
     install_requires=requirements,
     license="GNU General Public License v3",
-    long_description=readme + "\n\n" + history,
+    long_description=readme + "\n\n",
     include_package_data=True,
     keywords=[
         "dignea",

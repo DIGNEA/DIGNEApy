@@ -53,7 +53,7 @@ def features_strategy(iterable: Iterable[Instance]) -> np.ndarray:
     Returns:
         np.ndarray: Array of the feature descriptors of each instance
     """
-    return np.asarray([i._descriptor for i in iterable])
+    return np.asarray([i.descriptor for i in iterable])
 
 
 def performance_strategy(iterable: Iterable[Instance]) -> np.ndarray:

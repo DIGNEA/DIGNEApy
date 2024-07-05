@@ -65,7 +65,7 @@ def test_map_kp_heuristic(default_instance):
     assert solution.fitness == expected_p
     assert solution.chromosome == expected_chromosome
 
-    with pytest.raises(Exception):
+    with pytest.raises(ValueError):
         _kp_heuristics.map_kp(None)
 
 
@@ -83,7 +83,7 @@ def test_miw_kp_heuristic(default_instance):
     assert solution.fitness == expected_p
     assert solution.chromosome == expected_chromosome
 
-    with pytest.raises(Exception):
+    with pytest.raises(ValueError):
         _kp_heuristics.miw_kp(None)
 
 
@@ -98,7 +98,7 @@ def test_mpw_kp_heuristic(default_instance):
     assert solution.fitness == expected_p
     assert solution.chromosome == expected_chromosome
 
-    with pytest.raises(Exception):
+    with pytest.raises(ValueError):
         _kp_heuristics.mpw_kp(None)
 
 
@@ -121,7 +121,7 @@ def test_ea_with_def_kp(default_instance):
     assert len(ea._population) == pop_size
 
     assert all(type(i) == Solution for i in population)
-    assert type(ea._best_found) == Solution
+    assert isinstance(ea._best_found, Solution)
     assert ea._best_found.fitness <= 50  # 50 Is the optimal
     assert ea.__name__ == "EA_PS_10_CXPB_0.6_MUTPB_0.3"
     assert ea._name == "EA_PS_10_CXPB_0.6_MUTPB_0.3"
@@ -147,7 +147,7 @@ def test_ea_solves_sphere():
     assert len(ea._best_found) == 30
     assert len(ea._population) == pop_size
     assert all(type(i) == Solution for i in ea._population)
-    assert type(ea._best_found) == Solution
+    assert isinstance(ea._best_found, Solution)
 
 
 def test_ea_raises_problem():
@@ -231,11 +231,11 @@ def test_pisingers_raises():
     """
     Raises an exception because the the problem is None
     """
-    with pytest.raises(Exception):
+    with pytest.raises(ValueError):
         expknap(None)
-    with pytest.raises(Exception):
+    with pytest.raises(ValueError):
         combo(None)
-    with pytest.raises(Exception):
+    with pytest.raises(ValueError):
         minknap(None)
 
 
@@ -250,5 +250,5 @@ def test_parallel_cpp_ea():
     assert solver._n_cores == 1
     assert solver.__name__ == "ParEAKP_PS_32_CXPB_0.7_MUTPB_0.2"
 
-    with pytest.raises(Exception):
+    with pytest.raises(ValueError):
         solver(None)

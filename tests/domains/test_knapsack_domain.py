@@ -102,8 +102,8 @@ def test_kp_domain_to_features():
     assert features[3] >= 1
     assert features[4] >= 1
     assert features[-3] != 0.0
-    assert features[-2] == np.mean(instance._variables[1:])
-    assert features[-1] == np.std(instance._variables[1:])
+    assert features[-2] == np.mean(instance.variables[1:])
+    assert features[-1] == np.std(instance.variables[1:])
 
     domain.capacity_approach = "evolved"
     features = domain.extract_features(instance)
@@ -111,7 +111,7 @@ def test_kp_domain_to_features():
 
     domain.capacity_approach = "percentage"
     features = domain.extract_features(instance)
-    expected_q = int(np.sum(instance._variables[1::2]) * 0.8)
+    expected_q = int(np.sum(instance.variables[1::2]) * 0.8)
     assert features[0] == expected_q
 
 
@@ -127,8 +127,8 @@ def test_kp_domain_to_features_dict():
     assert features["min_w"] >= 1
     assert features["min_p"] >= 1
     assert features["avg_eff"] != 0.0
-    assert features["mean"] == np.mean(instance._variables[1:])
-    assert features["std"] == np.std(instance._variables[1:])
+    assert features["mean"] == np.mean(instance.variables[1:])
+    assert features["std"] == np.std(instance.variables[1:])
 
 
 def test_kp_domain_to_instance():
@@ -171,4 +171,4 @@ def test_knapsack_to_instance(default_kp):
         itertools.chain.from_iterable([*zip(default_kp.weights, default_kp.profits)])
     )
     instance = default_kp.to_instance()
-    np.testing.assert_array_equal(instance._variables, expected_vars)
+    np.testing.assert_array_equal(instance.variables, expected_vars)

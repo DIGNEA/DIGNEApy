@@ -10,10 +10,6 @@
 @Desc    :   None
 """
 
-import copy
-import itertools
-from operator import attrgetter
-
 import numpy as np
 import pytest
 

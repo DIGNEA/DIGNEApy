@@ -325,7 +325,8 @@ def test_grid_extend_outside_bounds():
     archive.extend(instances)
     # Out-of-bounds only inserts one in the very last cell available
     assert len(archive) == 1
-    assert archive.filled_cells[0] == 24
+    filled_cells = list(archive.filled_cells)
+    assert filled_cells[0] == 24
 
 
 def test_grid_extend_under_bounds():
@@ -350,7 +351,8 @@ def test_grid_extend_under_bounds():
     archive.extend(instances)
     # Out-of-bounds only inserts one in the very first cell available
     assert len(archive) == 1
-    assert archive.filled_cells[0] == 0
+    filled_cells = list(archive.filled_cells)
+    assert filled_cells[0] == 0
 
 
 def test_grid_with_kp_instances():

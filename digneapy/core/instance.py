@@ -15,7 +15,7 @@ import operator
 import reprlib
 from collections.abc import Iterable
 from functools import reduce
-from typing import Optional, TypeVar
+from typing import Optional
 
 import numpy as np
 

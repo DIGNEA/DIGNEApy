@@ -12,7 +12,7 @@
 
 import operator
 from collections.abc import Iterable
-from typing import Optional, TypeVar
+from typing import Optional
 
 
 class Solution:

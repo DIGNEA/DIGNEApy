@@ -105,4 +105,4 @@ def elitist_replacement(
         reverse=True,
     )
     top = combined_population[:hof]
-    return list(top, *offspring[1:])
+    return list(top + offspring[1:])

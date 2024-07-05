@@ -205,8 +205,8 @@ class BPPDomain(Domain):
         Returns:
             Tuple[float]: Values of each feature
         """
-        capacity = instance._variables[0]
-        vars = np.asarray(instance._variables[1:])
+        capacity = instance.variables[0]
+        vars = np.asarray(instance.variables[1:])
         vars_norm = vars / capacity
         huge = sum(k > 0.5 for k in vars_norm) / self._dimension
         large = sum(0.5 >= k > 1 / 3 for k in vars_norm) / self._dimension
@@ -242,8 +242,8 @@ class BPPDomain(Domain):
         return {k: v for k, v in zip(names.split(","), features)}
 
     def from_instance(self, instance: Instance) -> BPP:
-        items = instance._variables[1:]
-        capacity = int(instance._variables[0])
+        items = instance.variables[1:]
+        capacity = int(instance.variables[0])
         # Sets the capacity according to the method
         match self.capacity_approach:
             case "percentage":
@@ -252,5 +252,5 @@ class BPPDomain(Domain):
                 capacity = self._max_capacity
 
         # The BPP capacity must be updated JIC
-        instance._variables[0] = capacity
+        instance.variables[0] = capacity
         return BPP(items=items, capacity=int(capacity))

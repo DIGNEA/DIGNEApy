@@ -91,8 +91,8 @@ def test_bpp_domain_to_features():
     instance = domain.generate_instance()
     features = domain.extract_features(instance)
 
-    capacity = instance._variables[0]
-    items = np.asarray(instance._variables[1:])
+    capacity = instance.variables[0]
+    items = np.asarray(instance.variables[1:])
     items_norm = items / capacity
 
     assert isinstance(features, tuple)
@@ -107,8 +107,8 @@ def test_bpp_domain_to_features():
 
     domain.capacity_approach = "evolved"
     features = domain.extract_features(instance)
-    new_capacity = instance._variables[0]
-    items = np.asarray(instance._variables[1:])
+    new_capacity = instance.variables[0]
+    items = np.asarray(instance.variables[1:])
     items_norm = items / new_capacity
     expected_f = (
         np.mean(items_norm),
@@ -121,8 +121,8 @@ def test_bpp_domain_to_features():
 
     domain.capacity_approach = "percentage"
     features = domain.extract_features(instance)
-    new_capacity = instance._variables[0]
-    items = np.asarray(instance._variables[1:])
+    new_capacity = instance.variables[0]
+    items = np.asarray(instance.variables[1:])
     items_norm = items / new_capacity
     expected_f = (
         np.mean(items_norm),
@@ -132,7 +132,7 @@ def test_bpp_domain_to_features():
         np.min(items_norm),
     )
     assert expected_f == features[:5]
-    assert instance._variables[0] == new_capacity
+    assert instance.variables[0] == new_capacity
 
 
 def test_bpp_domain_to_features_dict():
@@ -141,8 +141,8 @@ def test_bpp_domain_to_features_dict():
     instance = domain.generate_instance()
     features = domain.extract_features_as_dict(instance)
 
-    capacity = instance._variables[0]
-    items = np.asarray(instance._variables[1:])
+    capacity = instance.variables[0]
+    items = np.asarray(instance.variables[1:])
     items_norm = items / capacity
 
     assert isinstance(features, dict)
@@ -179,10 +179,10 @@ def test_bpp_domain_to_instance():
     bpp_instance = domain.from_instance(instance)
     assert len(bpp_instance._items) == dimension
     assert len(bpp_instance) == dimension
-    items = instance._variables[1:]
+    items = instance.variables[1:]
     expected_q = np.sum(items) * domain.capacity_ratio
-    assert instance._variables[0] == bpp_instance._capacity
-    assert instance._variables[0] == int(expected_q)
+    assert instance.variables[0] == bpp_instance._capacity
+    assert instance.variables[0] == int(expected_q)
     assert bpp_instance._capacity == int(expected_q)
 
 
@@ -200,4 +200,4 @@ def test_bpp_problem(default_bpp):
 
     instance = default_bpp.to_instance()
     expected_vars = [default_bpp._capacity, *default_bpp._items]
-    assert all(v_i == e_i for v_i, e_i in zip(instance._variables, expected_vars))
+    assert all(v_i == e_i for v_i, e_i in zip(instance.variables, expected_vars))

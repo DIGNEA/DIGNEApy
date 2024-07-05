@@ -33,7 +33,7 @@ def test_default_instance_attrs(default_instance):
     assert default_instance.p == 0.0
     assert default_instance.s == 0.0
     assert default_instance.fitness == 0.0
-    np.testing.assert_array_equal(default_instance._variables, np.zeros(0))
+    np.testing.assert_array_equal(default_instance.variables, np.zeros(0))
     assert not default_instance.descriptor
     assert not default_instance.portfolio_scores
 
@@ -89,14 +89,14 @@ def test_init_instance(initialised_instance):
     assert initialised_instance.s == 0.0
     assert initialised_instance.fitness == 0.0
     expected = np.asarray(list(range(100)))
-    np.testing.assert_array_equal(initialised_instance._variables, expected)
+    np.testing.assert_array_equal(initialised_instance.variables, expected)
     assert not initialised_instance.descriptor
     assert not initialised_instance.portfolio_scores
 
 
 def test_properties(initialised_instance):
     assert not initialised_instance.portfolio_scores
-    performances = list(range(4))
+    performances = tuple(range(4))
     initialised_instance.portfolio_scores = performances
     assert initialised_instance.portfolio_scores == performances
 
@@ -109,10 +109,16 @@ def test_properties(initialised_instance):
 def test_equal_instances(initialised_instance, default_instance):
     assert not initialised_instance == default_instance
     instance_2 = copy.copy(initialised_instance)
+
     assert initialised_instance == instance_2
-    assert default_instance.__eq__(list()) == NotImplemented
-    assert default_instance.__gt__(list()) == NotImplemented
-    assert default_instance.__ge__(list()) == NotImplemented
+
+    with pytest.raises(NotImplementedError) as _:
+        _ = default_instance == list()
+    with pytest.raises(NotImplementedError) as _:
+        _ = default_instance >= list()
+    with pytest.raises(NotImplementedError) as _:
+        _ = default_instance > list()
+
     instance_2.fitness = default_instance.fitness + 100.0
     assert instance_2 >= default_instance
 

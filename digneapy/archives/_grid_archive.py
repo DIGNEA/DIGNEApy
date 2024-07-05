@@ -13,7 +13,6 @@
 import copy
 import json
 from collections.abc import Iterable, Sequence
-from operator import attrgetter
 from typing import Dict, Optional, Tuple
 
 import numpy as np
@@ -134,7 +133,7 @@ class GridArchive(Archive):
 
     @property
     def filled_cells(self):
-        return len(self._grid)
+        return self._grid.keys()
 
     @property
     def instances(self):

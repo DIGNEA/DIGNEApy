@@ -15,14 +15,14 @@ from collections.abc import Callable, Sequence
 
 import numpy as np
 
-from ..core import Instance, Solution
+from ..core import IndType
 
-Selection = Callable[[Sequence[Instance] | Sequence[Solution]], Instance | Solution]
+Selection = Callable[[Sequence[IndType]], IndType]
 
 
 def binary_tournament_selection(
-    population: Sequence[Instance] | Sequence[Solution],
-) -> Instance | Solution:
+    population: Sequence[IndType],
+) -> IndType:
     """Binary Tournament Selection Operator
 
     Args:

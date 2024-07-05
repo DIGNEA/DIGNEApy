@@ -12,21 +12,18 @@
 
 import copy
 from collections.abc import Callable
-from typing import Union
 
 import numpy as np
 
-from ..core import Instance, Solution
+from ..core import IndType
 
 Crossover = Callable[
-    [Union[Instance | Solution], Union[Instance | Solution]],
-    Union[Instance | Solution],
+    [IndType, IndType],
+    IndType,
 ]
 
 
-def one_point_crossover(
-    ind_1: Instance | Solution, ind_2: Instance | Solution
-) -> Instance | Solution:
+def one_point_crossover(ind_1: IndType, ind_2: IndType) -> IndType:
     """One point crossover
 
     Args:
@@ -49,9 +46,7 @@ def one_point_crossover(
     return offspring
 
 
-def uniform_crossover(
-    ind_1: Instance | Solution, ind_2: Instance | Solution, cxpb: float = 0.5
-) -> Instance | Solution:
+def uniform_crossover(ind_1: IndType, ind_2: IndType, cxpb: float = 0.5) -> IndType:
     """Uniform Crossover Operator for Instances and Solutions
 
     Args:

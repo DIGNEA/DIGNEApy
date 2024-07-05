@@ -11,20 +11,16 @@
 """
 
 from collections.abc import Callable, Sequence
-from typing import Tuple, Union
+from typing import Tuple
 
 import numpy as np
 
-from ..core import Instance, Solution
+from ..core import IndType
 
-Mutation = Callable[
-    [Union[Instance | Solution], Sequence[Tuple]], Union[Instance | Solution]
-]
+Mutation = Callable[[IndType, Sequence[Tuple]], IndType]
 
 
-def uniform_one_mutation(
-    ind: Instance | Solution, bounds: Sequence[Tuple]
-) -> Instance | Solution:
+def uniform_one_mutation(ind: IndType, bounds: Sequence[Tuple]) -> IndType:
     if len(ind) != len(bounds):
         msg = f"The size of individual ({len(ind)}) and bounds {len(bounds)} is different in uniform_one_mutation"
         raise ValueError(msg)

@@ -36,7 +36,7 @@ class GridArchive(Archive):
     def __init__(
         self,
         dimensions: Sequence[int],
-        ranges: Sequence[Tuple[float]],
+        ranges: Sequence[Tuple[float, float]],
         instances: Optional[Iterable[Instance]] = None,
         eps: float = 1e-6,
         dtype=np.float64,
@@ -59,18 +59,17 @@ class GridArchive(Archive):
             epsilon when computing the archive indices in the :meth:`index_of`
             method -- refer to the implementation `here. Defaults to 1e-6.
             dtype(str or data-type): Data type of the solutions, objectives,
-            and measures. We only support ``"f"`` / ``np.float32`` and ``"d"`` /
-            ``np.float64``.
+            and measures.
 
         Raises:
-            AttributeError: ``dimensions`` and ``ranges`` are not the same length
+            ValueError: ``dimensions`` and ``ranges`` are not the same length
         """
         Archive.__init__(self, threshold=np.inf)
         if len(ranges) == 0 or len(dimensions) == 0:
-            raise AttributeError("dimensions or ranges must have length >= 1")
+            raise ValueError("dimensions or ranges must have length >= 1")
         if len(ranges) != len(dimensions):
-            raise AttributeError(
-                "len(dimensions) != len(ranges) in GridArchive.__init__()"
+            raise ValueError(
+                f"len(dimensions) = {len(dimensions)} != len(ranges) = {len(ranges)} in GridArchive.__init__()"
             )
 
         self._dimensions = np.asarray(dimensions)
@@ -79,16 +78,18 @@ class GridArchive(Archive):
         self._upper_bounds = np.array(ranges[1], dtype=dtype)
         self._interval = self._upper_bounds - self._lower_bounds
         self._eps = eps
-        self._cells = np.prod(self._dimensions, dtype=np.int32)
-        self._grid: Dict[np.int32, Instance] = {}
+        self._cells = np.prod(self._dimensions, dtype=int)
+        self._grid: Dict[int, Instance] = {}
 
-        self._boundaries = []
+        _bounds = []
         for dimension, l_b, u_b in zip(
             self._dimensions, self._lower_bounds, self._upper_bounds
         ):
-            self._boundaries.append(np.linspace(l_b, u_b, dimension + 1))
+            _bounds.append(np.linspace(l_b, u_b, dimension))
 
-        if instances:
+        self._boundaries = np.asarray(_bounds)
+
+        if instances is not None:
             self.extend(instances)
 
     @property
@@ -104,7 +105,7 @@ class GridArchive(Archive):
         entries laid out like this::
 
             Archive cells:  | 0 | 1 |   ...   |    self.dims[i]    |
-            boundaries[i]:  0   1   2   self.dims[i] - 1     self.dims[i]
+            boundaries[i]:    0   1   2            self.dims[i] - 1  self.dims[i]
 
         Thus, ``boundaries[i][j]`` and ``boundaries[i][j + 1]`` are the lower
         and upper bounds of cell ``j`` in dimension ``i``. To access the lower
@@ -136,7 +137,7 @@ class GridArchive(Archive):
 
     @property
     def instances(self):
-        return self._grid.values()
+        return list(self._grid.values())
 
     def __str__(self):
         return f"GridArchive(dim={self._dimensions},cells={self._cells},bounds={self._boundaries})"
@@ -147,43 +148,86 @@ class GridArchive(Archive):
     def __len__(self):
         return len(self._grid)
 
+    def __getitem__(self, key):
+        """Returns a dictionary with the descriptors as the keys. The values are the instances found.
+        Note that some of the given keys may not be in the archive.
+
+        Args:
+            key (array-like or descriptor): Descriptors of the instances that want to retrieve.
+            Valid examples are:
+            -   archive[[0,11], [0,5]] --> Get the instances with the descriptors (0,11) and (0, 5)
+            -   archive[0,11] --> Get the instance with the descriptor (0,11)
+
+        Raises:
+            TypeError: If the key is an slice. Not allowed.
+            ValueError: If the shape of the keys are not valid.
+
+        Returns:
+            dict: Returns a dict with the found instances.
+        """
+        if isinstance(key, slice):
+            raise TypeError(
+                "Slicing is not available in GridArchive. Use 1D index or descriptor-type indeces"
+            )
+        descriptors = np.asarray(key)
+        if descriptors.ndim == 1 and descriptors.shape[0] != len(self._dimensions):
+            raise ValueError(
+                f"Expected descriptors to be an array with shape "
+                f"(batch_size, 1) or (batch_size, dimensions) (i.e. shape "
+                f"(batch_size, {len(self._dimensions)})) but it had shape "
+                f"{descriptors.shape}"
+            )
+
+        indeces = self.index_of(descriptors).tolist()
+        if isinstance(indeces, int):
+            indeces = [indeces]
+            descriptors = [descriptors]
+
+        instances = {}
+        for idx, desc in zip(indeces, descriptors):
+            if idx not in self._grid:
+                print(f"There is not any instance in the cell {desc}.")
+            else:
+                instances[tuple(desc)] = copy.copy(self._grid[idx])
+        return instances
+
     def __iter__(self):
         """Iterates over the dictionary of instances
 
         Returns:
             Iterator: Yields position in the hypercube and instance located in such position
         """
-        return iter(self._grid)
+        return iter(self._grid.values())
 
     def lower_i(self, i):
-        if i < 0 or i > len(self._boundaries):
+        if i < 0 or i > len(self._lower_bounds):
             msg = f"index {i} is out of bounds. Valid values are [0-{len(self._boundaries)}]"
-            raise AttributeError(msg)
-        return self._boundaries[i][0]
+            raise ValueError(msg)
+        return self._lower_bounds[i]
 
     def upper_i(self, i):
-        if i < 0 or i > len(self._boundaries):
+        if i < 0 or i > len(self._upper_bounds):
             msg = f"index {i} is out of bounds. Valid values are [0-{len(self._boundaries)}]"
-            raise AttributeError(msg)
-        return self._boundaries[i][1]
+            raise ValueError(msg)
+        return self._upper_bounds[i]
 
-    def append(self, i: Instance):
+    def append(self, instance: Instance):
         """Inserts an Instance into the Grid
 
         Args:
-            i (Instance): Instace to be inserted
+            instance (Instance): Instace to be inserted
 
         Raises:
-            AttributeError: ``instance`` is not a instance of the class Instance.
+            TypeError: ``instance`` is not a instance of the class Instance.
         """
-        if isinstance(i, Instance):
-            index = self.index_of(np.asarray(i.descriptor))
-            if index not in self._grid or i.fitness > self._grid[index].fitness:
-                self._grid[index] = i
+        if isinstance(instance, Instance):
+            index = self.index_of(np.asarray(instance.descriptor))
+            if index not in self._grid or instance > self._grid[index]:
+                self._grid[index] = copy.deepcopy(instance)
 
         else:
             msg = "Only objects of type Instance can be inserted into a GridArchive"
-            raise AttributeError(msg)
+            raise TypeError(msg)
 
     def extend(self, iterable: Iterable[Instance], *args, **kwargs):
         """Includes all the instances in iterable into the Grid
@@ -191,8 +235,12 @@ class GridArchive(Archive):
         Args:
             iterable (Iterable[Instance]): Iterable of instances
         """
-        indeces = self.index_of(np.asarray([inst.descriptor for inst in iterable]))
-        for idx, instance in zip(indeces, iterable):
+        if not all(isinstance(i, Instance) for i in iterable):
+            msg = "Only objects of type Instance can be inserted into a GridArchive"
+            raise TypeError(msg)
+
+        indeces = self.index_of([inst.descriptor for inst in iterable])
+        for idx, instance in zip(indeces, iterable, strict=True):
             if idx not in self._grid or instance.fitness > self._grid[idx].fitness:
                 self._grid[idx] = copy.deepcopy(instance)
 
@@ -225,14 +273,15 @@ class GridArchive(Archive):
         grid_indices = (
             (self._dimensions * (descriptors - self._lower_bounds) + self._eps)
             / self._interval
-        ).astype(np.int32)
+        ).astype(int)
 
-        grid_indices = np.clip(grid_indices, 0, self._dimensions - 1)
-        return self._grid_to_int_index(grid_indices)
+        # Clip the indexes to make sure they are in the expected range for each dimension
+        clipped = np.clip(grid_indices, 0, self._dimensions - 1)
+        return self._grid_to_int_index(clipped)
 
     def _grid_to_int_index(self, grid_indices) -> np.ndarray:
         grid_indices = np.asarray(grid_indices)
-        return np.ravel_multi_index(grid_indices.T, self._dimensions).astype(np.int32)
+        return np.ravel_multi_index(grid_indices.T, self._dimensions).astype(int)
 
     def int_to_grid_index(self, int_indices) -> np.ndarray:
         int_indices = np.asarray(int_indices)
@@ -241,15 +290,13 @@ class GridArchive(Archive):
                 int_indices,
                 self._dimensions,
             )
-        ).T.astype(np.int32)
+        ).T.astype(int)
 
     def to_json(self):
         data = {
             "dimensions": self._dimensions.tolist(),
             "lbs": self._lower_bounds.tolist(),
-            "ubs": self._upper_bounds,
-            "n_cells": self._cells,
-            "boundaries": self._boundaries.tolist(),
-            "grid": self._grid,
+            "ubs": self._upper_bounds.tolist(),
+            "n_cells": self._cells.astype(int),
         }
         return json.dumps(data, indent=4)

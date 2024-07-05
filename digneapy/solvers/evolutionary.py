@@ -11,6 +11,7 @@
 """
 
 import multiprocessing
+from operator import attrgetter
 
 import numpy as np
 from deap import algorithms, base, creator, tools
@@ -58,10 +59,10 @@ class EA(Solver, SupportsSolve[P]):
             generations (int, optional): Number of generations to perform. Defaults to 500.
 
         Raises:
-            AttributeError: If direction is not in digneapy.solvers.DIRECTIONS
+            TypeError: If direction is not in digneapy.solvers.DIRECTIONS
         """
         if not isinstance(direction, Direction):
-            raise AttributeError(
+            raise TypeError(
                 f"Direction not allowed. Please use a value of the class Direction({Direction.values()})"
             )
 
@@ -92,7 +93,7 @@ class EA(Solver, SupportsSolve[P]):
         self._toolbox.register("mutate", mut, low=min_g, up=max_g, indpb=(1.0 / dim))
         self._toolbox.register("select", tools.selTournament, tournsize=2)
 
-        self._stats = tools.Statistics(lambda ind: ind.fitness.values)
+        self._stats = tools.Statistics(key=lambda ind: ind.fitness.values)
         self._stats.register("avg", np.mean)
         self._stats.register("std", np.std)
         self._stats.register("min", np.min)
@@ -116,7 +117,7 @@ class EA(Solver, SupportsSolve[P]):
         """
         if problem is None:
             msg = "Problem is None in EA.__call__()"
-            raise AttributeError(msg)
+            raise ValueError(msg)
 
         self._toolbox.register("evaluate", problem)
         # Reset the algorithm

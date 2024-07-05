@@ -37,13 +37,12 @@ class NNTuner:
         n_jobs: int = 1,
     ):
         if transformer is None or not issubclass(transformer.__class__, Transformer):
-            raise AttributeError(
+            raise TypeError(
                 "transformer must be a subclass of KerasNN or TorchNN object to run MetaEA"
             )
         if eval_fn is None:
-            raise AttributeError(
-                "experiment_work must be a callable object to run MetaEA"
-            )
+            raise ValueError("experiment_work must be a callable object to run MetaEA")
+
         self.transformer = transformer
         self.eval_fn = eval_fn
 
@@ -57,7 +56,7 @@ class NNTuner:
 
         if not isinstance(direction, Direction):
             msg = f"Direction: {direction} not available. Please choose between {Direction.values()}"
-            raise AttributeError(msg)
+            raise ValueError(msg)
 
         self.direction = direction
         self.toolbox = base.Toolbox()
@@ -72,7 +71,7 @@ class NNTuner:
         self.toolbox.register("update", self.strategy.update)
         if n_jobs < 1:
             msg = "The number of jobs must be at least 1."
-            raise AttributeError(msg)
+            raise ValueError(msg)
         elif n_jobs > 1:
             self.n_processors = n_jobs
             self.pool = Pool(processes=self.n_processors)

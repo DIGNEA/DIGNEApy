@@ -12,11 +12,11 @@
 
 import itertools
 from collections.abc import Sequence
-from typing import Mapping
+from typing import Mapping, Self
 
 import numpy as np
 
-from digneapy.core import Domain, Instance, Problem
+from digneapy.core import Domain, Instance, Problem, Solution
 
 
 class Knapsack(Problem):
@@ -38,21 +38,22 @@ class Knapsack(Problem):
         self.profits = profits
         self.capacity = capacity
 
-    def evaluate(self, individual: Sequence) -> tuple[float]:
+    def evaluate(self, individual: Sequence | Solution) -> tuple[float]:
         """Evaluates the candidate individual with the information of the Knapsack
 
         Args:
-            individual (Sequence): Individual to evaluate
+            individual (Sequence | Solution): Individual to evaluate
 
         Raises:
-            AttributeError: Raises an error if the len(individual) != len(profits or weights)
+            ValueError: Raises an error if the len(individual) != len(profits or weights)
 
         Returns:
             Tuple[float]: Profit
         """
+
         if len(individual) != len(self.profits):
             msg = f"Mismatch between individual variables and instance variables in {self.__class__.__name__}"
-            raise AttributeError(msg)
+            raise ValueError(msg)
 
         profit = 0.0
         packed = 0
@@ -64,9 +65,14 @@ class Knapsack(Problem):
         difference = packed - self.capacity
         penalty = 100.0 * difference
         profit -= penalty if penalty > 0.0 else 0.0
+
+        if isinstance(individual, Solution):
+            individual.fitness = profit
+            individual.objectives = (profit,)
+
         return (profit,)
 
-    def __call__(self, individual: Sequence) -> tuple[float]:
+    def __call__(self, individual: Sequence | Solution) -> tuple[float]:
         return self.evaluate(individual)
 
     def __repr__(self):
@@ -75,16 +81,31 @@ class Knapsack(Problem):
     def __len__(self):
         return len(self.weights)
 
+    def create_solution(self) -> Solution:
+        chromosome = list(np.random.randint(low=0, high=1, size=self._dimension))
+        return Solution(chromosome=chromosome)
+
     def to_file(self, filename: str = "instance.kp"):
         with open(filename, "w") as file:
             file.write(f"{len(self)}\t{self.capacity}\n\n")
-            for w, p in zip(self.weights, self.profits):
-                file.write(f"{w}\t{p}\n")
+            content = "\n".join(
+                f"{w_i}\t{p_i}" for w_i, p_i in zip(self.weights, self.profits)
+            )
+            file.write(content)
+
+    @classmethod
+    def from_file(cls, filename: str) -> Self:
+        content = np.loadtxt(filename, dtype=int)
+        capacity = content[0][1]
+        weights, profits = content[1:, 0], content[1:, 1]
+        return cls(profits=profits, weights=weights, capacity=capacity)
 
     def to_instance(self) -> Instance:
-        _vars = [self.capacity] + list(zip(self.weights, self.profits))
+        _vars = [self.capacity] + list(
+            itertools.chain.from_iterable([*zip(self.weights, self.profits)])
+        )
         return Instance(variables=_vars)
-        
+
 
 class KPDomain(Domain):
     __capacity_approaches = ("evolved", "percentage", "fixed")
@@ -120,15 +141,11 @@ class KPDomain(Domain):
         else:
             self._capacity_approach = capacity_approach
 
-        bounds = [(0.0, self.max_capacity)] + [
+        bounds = [(1.0, self.max_capacity)] + [
             (min_w, max_w) if i % 2 == 0 else (min_p, max_p)
             for i in range(2 * dimension)
         ]
-        super().__init__(
-            "KP",
-            dimension=dimension,
-            bounds=bounds,
-        )
+        super().__init__(dimension=dimension, bounds=bounds, name="KP")
 
     @property
     def capacity_approach(self):
@@ -185,11 +202,11 @@ class KPDomain(Domain):
         Returns:
             Tuple[float]: Values of each feature
         """
-        vars = instance._variables[1:]
+        vars = instance.variables[1:]
         weights = vars[0::2]
         profits = vars[1::2]
         avg_eff = sum([p / w for p, w in zip(profits, weights)]) / len(vars)
-        capacity = int(instance._variables[0])
+        capacity = int(instance.variables[0])
         # Sets the capacity according to the method
         match self.capacity_approach:
             case "percentage":
@@ -224,7 +241,7 @@ class KPDomain(Domain):
         return {k: v for k, v in zip(names.split(","), features)}
 
     def from_instance(self, instance: Instance) -> Knapsack:
-        variables = instance._variables
+        variables = instance.variables
         weights = []
         profits = []
         capacity = int(variables[0])
@@ -239,6 +256,6 @@ class KPDomain(Domain):
             case "fixed":
                 capacity = self.max_capacity
         # The KP capacity must be updated JIC
-        instance._variables[0] = capacity
-        
+        instance.variables[0] = capacity
+
         return Knapsack(profits=profits, weights=weights, capacity=int(capacity))

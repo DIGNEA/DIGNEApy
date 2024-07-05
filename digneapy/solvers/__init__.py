@@ -10,7 +10,18 @@
 @Desc    :   None
 """
 
+from digneapy.solvers._bpp_heuristics import best_fit, first_fit, next_fit, worst_fit
+from digneapy.solvers._kp_heuristics import default_kp, map_kp, miw_kp, mpw_kp
 from digneapy.solvers.evolutionary import EA
-from digneapy.solvers.heuristics import default_kp, map_kp, miw_kp, mpw_kp
 
-__all__ = ["EA", "default_kp", "map_kp", "miw_kp", "mpw_kp"]
+__all__ = [
+    "EA",
+    "default_kp",
+    "map_kp",
+    "miw_kp",
+    "mpw_kp",
+    "best_fit",
+    "first_fit",
+    "next_fit",
+    "worst_fit",
+]

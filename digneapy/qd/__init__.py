@@ -12,22 +12,22 @@
 
 from digneapy.qd._cma_me import CMA_ME
 from digneapy.qd._desc_strategies import (
+    DescStrategy,
     descriptor_strategies,
     features_strategy,
     instance_strategy,
     performance_strategy,
     rdstrat,
 )
-from digneapy.qd._map_elites import MapElites
 from digneapy.qd._novelty_search import NS
 
 __all__ = [
     "NS",
-    "MapElites",
     "CMA_ME",
     "features_strategy",
     "performance_strategy",
     "instance_strategy",
     "descriptor_strategies",
     "rdstrat",
+    "DescStrategy",
 ]

@@ -12,9 +12,11 @@
 
 from abc import ABC, abstractmethod
 from collections.abc import Sequence
-from typing import Tuple, TypeVar
+from typing import Self, Tuple, TypeVar
 
 import numpy as np
+
+from .solution import Solution
 
 
 class Problem(ABC):
@@ -22,19 +24,20 @@ class Problem(ABC):
         self,
         dimension: int,
         bounds: Sequence[tuple],
-        name: str = "DefaultOptProblem",
+        name: str = "DefaultProblem",
         dtype=np.float64,
         *args,
         **kwargs,
     ):
         self._name = name
+        self.__name__ = name
         self._dimension = dimension
         self._bounds = bounds
         self._dtype = dtype
         if len(self._bounds) != 0:
             ranges = list(zip(*bounds))
             self._lbs = np.array(ranges[0], dtype=dtype)
-            self._ubs = np.array(ranges[0], dtype=dtype)
+            self._ubs = np.array(ranges[1], dtype=dtype)
 
     @property
     def dimension(self):
@@ -44,40 +47,51 @@ class Problem(ABC):
     def bounds(self):
         return self._bounds
 
-    @property
-    def l_bounds(self):
-        return self._lbs
-
-    @property
-    def u_bounds(self):
-        return self.u_bounds
-
     def get_bounds_at(self, i: int) -> tuple:
         if i < 0 or i > len(self._bounds):
-            raise RuntimeError(
+            raise ValueError(
                 f"Index {i} out-of-range. The bounds are 0-{len(self._bounds)} "
             )
         return (self._lbs[i], self._ubs[i])
 
     @abstractmethod
-    def evaluate(self, individual: Sequence) -> Tuple[float]:
+    def create_solution(self) -> Solution:
+        """Creates a random solution to the problem.
+        This method can be used to initialise the solutions
+        for any algorithm
+        """
+        msg = "create_solution method not implemented in Problem"
+        raise NotImplementedError(msg)
+
+    @abstractmethod
+    def evaluate(self, individual: Sequence | Solution) -> Tuple[float]:
         """Evaluates the candidate individual with the information of the Knapsack
 
         Args:
-            individual (Sequence): Individual to evaluate
+            individual (Sequence | Solution): Individual to evaluate
 
         Raises:
-            AttributeError: Raises an error if the len(individual) != len(instance) / 2
+            ValueError: Raises an error if the len(individual) != len(instance) / 2
 
         Returns:
             Tuple[float]: Profit
         """
-        msg = "evaluate method not implemented in OptProblem"
+        msg = "evaluate method not implemented in Problem"
         raise NotImplementedError(msg)
 
     @abstractmethod
-    def __call__(self, individual: Sequence) -> Tuple[float]:
-        msg = "__call__ method not implemented in OptProblem"
+    def __call__(self, individual: Sequence | Solution) -> Tuple[float]:
+        msg = "__call__ method not implemented in Problem"
+        raise NotImplementedError(msg)
+
+    @abstractmethod
+    def to_file(self, filename: str):
+        msg = "to_file method not implemented in Problem"
+        raise NotImplementedError(msg)
+
+    @classmethod
+    def from_file(cls, filename: str) -> Self:
+        msg = "from_file method not implemented in Problem"
         raise NotImplementedError(msg)
 
 

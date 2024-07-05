@@ -12,7 +12,9 @@
 
 from abc import ABC, abstractmethod
 from collections.abc import Sequence
-from typing import Mapping, Optional, Tuple
+from typing import Mapping
+
+import numpy as np
 
 from digneapy.core.instance import Instance
 from digneapy.core.problem import Problem
@@ -21,15 +23,22 @@ from digneapy.core.problem import Problem
 class Domain(ABC):
     def __init__(
         self,
+        dimension: int,
+        bounds: Sequence[tuple],
+        dtype=np.float64,
         name: str = "Domain",
-        dimension: int = 0,
-        bounds: Optional[Sequence[Tuple]] = None,
         *args,
         **kwargs,
     ):
         self.name = name
-        self.dimension = dimension
-        self.bounds = bounds if bounds else [(0.0, 0.0)]
+        self.__name__ = name
+        self._dimension = dimension
+        self._bounds = bounds
+        self._dtype = dtype
+        if len(self._bounds) != 0:
+            ranges = list(zip(*bounds))
+            self._lbs = np.array(ranges[0], dtype=dtype)
+            self._ubs = np.array(ranges[1], dtype=dtype)
 
     @abstractmethod
     def generate_instance(self) -> Instance:
@@ -42,7 +51,7 @@ class Domain(ABC):
         raise NotImplementedError(msg)
 
     @abstractmethod
-    def extract_features(self, instance: Instance) -> Tuple:
+    def extract_features(self, instances: Instance) -> tuple:
         """Extract the features of the instance based on the domain
 
         Args:
@@ -74,17 +83,20 @@ class Domain(ABC):
         msg = "from_instance is not implemented in Domain class."
         raise NotImplementedError(msg)
 
+    @property
+    def bounds(self):
+        return self._bounds
+
+    def get_bounds_at(self, i: int) -> tuple:
+        if i < 0 or i > len(self._bounds):
+            raise ValueError(
+                f"Index {i} out-of-range. The bounds are 0-{len(self._bounds)} "
+            )
+        return (self._lbs[i], self._ubs[i])
+
+    @property
+    def dimension(self):
+        return self._dimension
+
     def __len__(self):
-        return self.dimension
-
-    def lower_i(self, i):
-        if i < 0 or i > len(self.bounds):
-            msg = f"index {i} is out of bounds. Valid values are [0-{len(self.bounds)}]"
-            raise AttributeError(msg)
-        return self.bounds[i][0]
-
-    def upper_i(self, i):
-        if i < 0 or i > len(self.bounds):
-            msg = f"index {i} is out of bounds. Valid values are [0-{len(self.bounds)}]"
-            raise AttributeError(msg)
-        return self.bounds[i][1]
+        return self._dimension

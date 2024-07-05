@@ -18,7 +18,7 @@ from digneapy.generators._perf_metrics import (
 from digneapy.generators._perf_metrics import (
     pisinger_performance_metric as pis_perf_metric,
 )
-from digneapy.generators._utils import plot_generator_logbook
+from digneapy.generators._utils import plot_generator_logbook, plot_map_elites_logbook
 
 from ._map_elites_gen import MElitGen
 
@@ -29,4 +29,5 @@ __all__ = [
     "def_perf_metric",
     "pis_perf_metric",
     "plot_generator_logbook",
+    "plot_map_elites_logbook",
 ]

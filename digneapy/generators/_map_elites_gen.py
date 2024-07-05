@@ -10,6 +10,7 @@
 @Desc    :   None
 """
 
+import copy
 import random
 from collections.abc import Iterable
 from operator import attrgetter
@@ -23,10 +24,10 @@ from digneapy.core.problem import P
 from digneapy.core.solver import SupportsSolve
 from digneapy.generators._perf_metrics import PerformanceFn, default_performance_metric
 from digneapy.operators import mutation
-from digneapy.qd import MapElites, descriptor_strategies
+from digneapy.qd import descriptor_strategies
 
 
-class MElitGen(MapElites):
+class MElitGen:
     def __init__(
         self,
         domain: Domain,
@@ -39,33 +40,34 @@ class MElitGen(MapElites):
         strategy: str,
         performance_function: PerformanceFn = default_performance_metric,
     ):
-        super().__init__(archive, mutation, domain.bounds)
+        self._domain = domain
+        self._portfolio = list(portfolio)
+        self._init_pop_size = initial_pop_size
+        self._generations = generations
+        self._archive = archive
+        self._mutation = mutation
+        self._repetitions = repetitions
+        self._performance_fn = performance_function
 
         if strategy not in descriptor_strategies:
             msg = f"strategy {strategy} not available in {self.__class__.__name__}.__init__. Set to features by default"
             print(msg)
-            self._descriptor_strategy = descriptor_strategies["features"]
-            self._descriptor = "features"
-        else:
-            self._descriptor_strategy = descriptor_strategies[strategy]
-            self._descriptor = strategy
+            strategy = "features"
 
-        self._portfolio = portfolio
-        self._init_pop_size = initial_pop_size
-        self._generations = generations
-        self._repetitions = repetitions
-        self._performance_fn = performance_function
+        self._descriptor = strategy
+        match strategy:
+            case "features":
+                self._descriptor_strategy = self._domain.extract_features
+            case _:
+                self._descriptor_strategy = descriptor_strategies[strategy]
 
-        self._domain = domain
-
-        self._stats_fitness = tools.Statistics(key=lambda ind: ind.fitness)
+        self._stats_fitness = tools.Statistics(key=attrgetter("fitness"))
         self._stats_fitness.register("avg", np.mean)
         self._stats_fitness.register("std", np.std)
         self._stats_fitness.register("min", np.min)
         self._stats_fitness.register("max", np.max)
-
         self._logbook = tools.Logbook()
-        self._logbook.header = "gen", "min", "avg", "std", "max"
+        self._logbook.header = ("gen", "min", "avg", "std", "max")
 
     @property
     def archive(self):
@@ -75,18 +77,22 @@ class MElitGen(MapElites):
     def log(self) -> tools.Logbook:
         return self._logbook
 
-    def __str__(self):
-        return "MapElites()"
+    def __str__(self) -> str:
+        port_names = [s.__name__ for s in self._portfolio]
+        domain_name = self._domain.name if self._domain is not None else "None"
+        return f"MapElites(descriptor={self._descriptor},pop_size={self._init_pop_size},gen={self._generations},domain={domain_name},portfolio={port_names!r})"
 
     def __repr__(self) -> str:
-        return "MapElites<>"
+        port_names = [s.__name__ for s in self._portfolio]
+        domain_name = self._domain.name if self._domain is not None else "None"
+        return f"MapElites<descriptor={self._descriptor},pop_size={self._init_pop_size},gen={self._generations},domain={domain_name},portfolio={port_names!r}>"
 
     def _populate_archive(self):
         instances = [
             self._domain.generate_instance() for _ in range(self._init_pop_size)
         ]
         instances = self._evaluate_population(instances)
-        self.archive.extend(instances)
+        self._archive.extend(instances)
 
     def _evaluate_population(self, population: Iterable[Instance]):
         """Evaluates the population of instances using the portfolio of solvers.
@@ -116,37 +122,39 @@ class MElitGen(MapElites):
             individual.portfolio_scores = tuple(solvers_scores)
             individual.p = self._performance_fn(avg_p_solver)
             individual.fitness = individual.p
-
-            if self._descriptor == "features":
-                individual.descriptor = self._domain.extract_features(individual)
-            else:
-                individual.descriptor = self._descriptor_strategy(individual)
+            individual.descriptor = tuple(self._descriptor_strategy(individual))
 
         return population
 
     def _run(self, verbose: bool = False):
         self._populate_archive()
-        performed_gens = 0
-        while performed_gens < self._generations:
-            instances = list(self._archive.instances)
-            offspring = random.choices(instances, k=self._init_pop_size)
+
+        record = self._stats_fitness.compile(self._archive)
+        self._logbook.record(gen=0, **record)
+
+        for generation in range(self._generations):
+            parents = [
+                copy.deepcopy(p)
+                for p in random.choices(self._archive.instances, k=self._init_pop_size)
+            ]
             offspring = list(
                 map(
-                    lambda i: self._mutation(ind=i, bounds=self._domain.bounds),
-                    offspring,
+                    lambda ind: self._mutation(ind, self._domain.bounds),
+                    parents,
                 )
             )
-            offspring = self._evaluate_population(instances)
-            self.archive.extend(offspring)
+
+            offspring = self._evaluate_population(offspring)
+
+            self._archive.extend(offspring)
+
             # Record the stats and update the performed gens
-            record = self._stats_fitness.compile(self.archive.instances)
-            self._logbook.record(gen=performed_gens, **record)
+            record = self._stats_fitness.compile(self._archive)
+            self._logbook.record(gen=generation + 1, **record)
 
             if verbose:
-                status = f"\rGeneration {performed_gens}/{self._generations} completed"
+                status = f"\rGeneration {generation}/{self._generations} completed"
                 print(status, flush=True, end="")
-
-            performed_gens += 1
 
         if verbose:
             # Clear the terminal

@@ -89,8 +89,8 @@ class EIG(NS):
         self.replacement = replacement
         self.performance_function = performance_function
 
-        self._stats_s = tools.Statistics(key=lambda ind: ind.s)
-        self._stats_p = tools.Statistics(key=lambda ind: ind.p)
+        self._stats_s = tools.Statistics(key=attrgetter("s"))
+        self._stats_p = tools.Statistics(key=attrgetter("p"))
         self._stats = tools.MultiStatistics(s=self._stats_s, p=self._stats_p)
         self._stats.register("avg", np.mean)
         self._stats.register("std", np.std)

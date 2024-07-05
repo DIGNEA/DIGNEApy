@@ -13,6 +13,7 @@
 import copy
 import json
 from collections.abc import Iterable, Sequence
+from operator import attrgetter
 from typing import Dict, Optional, Tuple
 
 import numpy as np
@@ -68,10 +69,11 @@ class GridArchive(Archive):
         if len(ranges) == 0 or len(dimensions) == 0:
             raise ValueError("dimensions or ranges must have length >= 1")
         if len(ranges) != len(dimensions):
-            raise ValueError("len(dimensions) != len(ranges) in GridArchive.__init__()")
+            raise ValueError(
+                f"len(dimensions) = {len(dimensions)} != len(ranges) = {len(ranges)} in GridArchive.__init__()"
+            )
 
         self._dimensions = np.asarray(dimensions)
-
         ranges = list(zip(*ranges))
         self._lower_bounds = np.array(ranges[0], dtype=dtype)
         self._upper_bounds = np.array(ranges[1], dtype=dtype)
@@ -87,6 +89,7 @@ class GridArchive(Archive):
             _bounds.append(np.linspace(l_b, u_b, dimension))
 
         self._boundaries = np.asarray(_bounds)
+
         if instances is not None:
             self.extend(instances)
 
@@ -131,7 +134,7 @@ class GridArchive(Archive):
 
     @property
     def filled_cells(self):
-        return list(self._grid.keys())
+        return len(self._grid)
 
     @property
     def instances(self):
@@ -209,19 +212,19 @@ class GridArchive(Archive):
             raise ValueError(msg)
         return self._upper_bounds[i]
 
-    def append(self, i: Instance):
+    def append(self, instance: Instance):
         """Inserts an Instance into the Grid
 
         Args:
-            i (Instance): Instace to be inserted
+            instance (Instance): Instace to be inserted
 
         Raises:
             TypeError: ``instance`` is not a instance of the class Instance.
         """
-        if isinstance(i, Instance):
-            index = self.index_of(np.asarray(i.descriptor))
-            if index not in self._grid or i.fitness > self._grid[index].fitness:
-                self._grid[index] = i
+        if isinstance(instance, Instance):
+            index = self.index_of(np.asarray(instance.descriptor))
+            if index not in self._grid or instance > self._grid[index]:
+                self._grid[index] = copy.deepcopy(instance)
 
         else:
             msg = "Only objects of type Instance can be inserted into a GridArchive"
@@ -272,9 +275,10 @@ class GridArchive(Archive):
             (self._dimensions * (descriptors - self._lower_bounds) + self._eps)
             / self._interval
         ).astype(int)
+
         # Clip the indexes to make sure they are in the expected range for each dimension
-        grid_indices = np.clip(grid_indices, 0, self._dimensions - 1)
-        return self._grid_to_int_index(grid_indices)
+        clipped = np.clip(grid_indices, 0, self._dimensions - 1)
+        return self._grid_to_int_index(clipped)
 
     def _grid_to_int_index(self, grid_indices) -> np.ndarray:
         grid_indices = np.asarray(grid_indices)

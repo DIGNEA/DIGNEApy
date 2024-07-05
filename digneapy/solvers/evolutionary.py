@@ -11,6 +11,7 @@
 """
 
 import multiprocessing
+from operator import attrgetter
 
 import numpy as np
 from deap import algorithms, base, creator, tools
@@ -92,7 +93,7 @@ class EA(Solver, SupportsSolve[P]):
         self._toolbox.register("mutate", mut, low=min_g, up=max_g, indpb=(1.0 / dim))
         self._toolbox.register("select", tools.selTournament, tournsize=2)
 
-        self._stats = tools.Statistics(lambda ind: ind.fitness.values)
+        self._stats = tools.Statistics(key=attrgetter("fitness"))
         self._stats.register("avg", np.mean)
         self._stats.register("std", np.std)
         self._stats.register("min", np.min)

@@ -10,6 +10,7 @@
 @Desc    :   None
 """
 
+import copy
 import random
 from collections.abc import Iterable
 from operator import attrgetter
@@ -52,6 +53,7 @@ class MElitGen:
             msg = f"strategy {strategy} not available in {self.__class__.__name__}.__init__. Set to features by default"
             print(msg)
             strategy = "features"
+
         self._descriptor = strategy
         match strategy:
             case "features":
@@ -59,13 +61,13 @@ class MElitGen:
             case _:
                 self._descriptor_strategy = descriptor_strategies[strategy]
 
-        self._stats_fitness = tools.Statistics(key=lambda ind: ind.fitness)
+        self._stats_fitness = tools.Statistics(key=attrgetter("fitness"))
         self._stats_fitness.register("avg", np.mean)
         self._stats_fitness.register("std", np.std)
         self._stats_fitness.register("min", np.min)
         self._stats_fitness.register("max", np.max)
         self._logbook = tools.Logbook()
-        self._logbook.header = "gen", "min", "avg", "std", "max"
+        self._logbook.header = ("gen", "min", "avg", "std", "max")
 
     @property
     def archive(self):
@@ -91,8 +93,6 @@ class MElitGen:
         ]
         instances = self._evaluate_population(instances)
         self._archive.extend(instances)
-        record = self._stats_fitness.compile(self._archive.instances)
-        self._logbook.record(gen=0, **record)
 
     def _evaluate_population(self, population: Iterable[Instance]):
         """Evaluates the population of instances using the portfolio of solvers.
@@ -128,28 +128,33 @@ class MElitGen:
 
     def _run(self, verbose: bool = False):
         self._populate_archive()
-        performed_gens = 0
-        while performed_gens < self._generations:
-            selected = random.choices(self._archive.instances, k=self._init_pop_size)
+
+        record = self._stats_fitness.compile(self._archive)
+        self._logbook.record(gen=0, **record)
+
+        for generation in range(self._generations):
+            parents = [
+                copy.deepcopy(p)
+                for p in random.choices(self._archive.instances, k=self._init_pop_size)
+            ]
             offspring = list(
                 map(
-                    lambda ind: self._mutation(ind, bounds=self._domain.bounds),
-                    selected,
+                    lambda ind: self._mutation(ind, self._domain.bounds),
+                    parents,
                 )
             )
 
             offspring = self._evaluate_population(offspring)
+
             self._archive.extend(offspring)
 
             # Record the stats and update the performed gens
-            record = self._stats_fitness.compile(self._archive.instances)
-            self._logbook.record(gen=performed_gens + 1, **record)
+            record = self._stats_fitness.compile(self._archive)
+            self._logbook.record(gen=generation + 1, **record)
 
             if verbose:
-                status = f"\rGeneration {performed_gens}/{self._generations} completed"
+                status = f"\rGeneration {generation}/{self._generations} completed"
                 print(status, flush=True, end="")
-
-            performed_gens += 1
 
         if verbose:
             # Clear the terminal

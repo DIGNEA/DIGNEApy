@@ -202,11 +202,11 @@ class KPDomain(Domain):
         Returns:
             Tuple[float]: Values of each feature
         """
-        vars = instance._variables[1:]
+        vars = instance.variables[1:]
         weights = vars[0::2]
         profits = vars[1::2]
         avg_eff = sum([p / w for p, w in zip(profits, weights)]) / len(vars)
-        capacity = int(instance._variables[0])
+        capacity = int(instance.variables[0])
         # Sets the capacity according to the method
         match self.capacity_approach:
             case "percentage":
@@ -241,7 +241,7 @@ class KPDomain(Domain):
         return {k: v for k, v in zip(names.split(","), features)}
 
     def from_instance(self, instance: Instance) -> Knapsack:
-        variables = instance._variables
+        variables = instance.variables
         weights = []
         profits = []
         capacity = int(variables[0])
@@ -256,6 +256,6 @@ class KPDomain(Domain):
             case "fixed":
                 capacity = self.max_capacity
         # The KP capacity must be updated JIC
-        instance._variables[0] = capacity
+        instance.variables[0] = capacity
 
         return Knapsack(profits=profits, weights=weights, capacity=int(capacity))

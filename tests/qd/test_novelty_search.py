@@ -85,6 +85,8 @@ def random_population():
 def test_run_nsf(nsf, random_population):
     assert nsf._describe_by == "features"
     assert all(len(instance.descriptor) != 0 for instance in random_population)
+    for instance in random_population:
+        instance.features = np.random.randn(8)
     sparseness = nsf.sparseness(random_population)
     assert len(sparseness) == len(random_population)
 

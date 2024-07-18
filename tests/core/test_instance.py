@@ -44,7 +44,7 @@ def test_default_instance_attrs(default_instance):
     default_instance.p = 5.0
     assert (
         default_instance.__repr__()
-        == "Instance<f=100.0,p=5.0,s=10.0,vars=0,descriptor=3,performance=3>"
+        == "Instance<f=100.0,p=5.0,s=10.0,vars=0,features=0,descriptor=3,performance=3>"
     )
     assert (
         format(default_instance, "p")
@@ -130,7 +130,7 @@ def test_boolean(initialised_instance, default_instance):
 
 def test_str():
     instance = Instance(fitness=100, p=10.0, s=3.0)
-    expected = "Instance(f=100.0,p=10.0,s=3.0,descriptor=(),performance=())"
+    expected = "Instance(f=100.0,p=10.0,s=3.0,features=0,descriptor=(),performance=())"
     assert str(instance) == expected
 
 

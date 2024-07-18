@@ -21,7 +21,7 @@ import numpy as np
 
 
 class Instance:
-    __slots__ = ("_vars", "_fit", "_p", "_s", "_desc", "_pscores")
+    __slots__ = ("_vars", "_fit", "_p", "_s", "_features", "_desc", "_pscores")
 
     def __init__(
         self,
@@ -29,6 +29,7 @@ class Instance:
         fitness: float = 0.0,
         p: float = 0.0,
         s: float = 0.0,
+        features: Optional[tuple[float]] = None,
         descriptor: Optional[tuple[float]] = None,
         portfolio_scores: Optional[tuple[float]] = None,
     ):
@@ -44,6 +45,7 @@ class Instance:
         self._fit = fitness
         self._p = p
         self._s = s
+        self._features = tuple(features) if features else tuple()
         self._pscores = tuple(portfolio_scores) if portfolio_scores else tuple()
         self._desc = tuple(descriptor) if descriptor else tuple()
 
@@ -95,6 +97,14 @@ class Instance:
         self._fit = f
 
     @property
+    def features(self) -> tuple:
+        return self._features
+
+    @features.setter
+    def features(self, features: tuple):
+        self._features = features
+
+    @property
     def descriptor(self) -> tuple:
         return self._desc
 
@@ -111,13 +121,13 @@ class Instance:
         self._pscores = tuple(p)
 
     def __repr__(self):
-        return f"Instance<f={self.fitness},p={self.p},s={self.s},vars={len(self._vars)},descriptor={len(self.descriptor)},performance={len(self.portfolio_scores)}>"
+        return f"Instance<f={self.fitness},p={self.p},s={self.s},vars={len(self._vars)},features={len(self.features)},descriptor={len(self.descriptor)},performance={len(self.portfolio_scores)}>"
 
     def __str__(self):
         descriptor = reprlib.repr(self.descriptor)
         performance = reprlib.repr(self.portfolio_scores)
         performance = performance[performance.find("(") : performance.rfind(")") + 1]
-        return f"Instance(f={self.fitness},p={self.p},s={self.s},descriptor={descriptor},performance={performance})"
+        return f"Instance(f={self.fitness},p={self.p},s={self.s},features={len(self.features)},descriptor={descriptor},performance={performance})"
 
     def __iter__(self):
         return iter(self._vars)
@@ -188,6 +198,7 @@ class Instance:
             "p": self.p,
             "portfolio": self.portfolio_scores,
             "variables": self._vars.tolist(),
+            "features": self.features,
             "descriptor": self.descriptor,
         }
         return json.dumps(data, sort_keys=True, indent=4)

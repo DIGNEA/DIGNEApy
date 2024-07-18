@@ -208,7 +208,7 @@ class EIG(NS):
                 p_2 = self.selection(self.population)
                 off = self._reproduce(p_1, p_2)
                 if self._describe_by == "features":
-                    off.descriptor = self.domain.extract_features(off)
+                    off.features = self.domain.extract_features(off)
                 offspring.append(off)
 
             self._evaluate_population(offspring)

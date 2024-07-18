@@ -19,7 +19,8 @@ from sklearn.neighbors import NearestNeighbors
 
 from digneapy.archives import Archive
 from digneapy.core import Instance
-from digneapy.qd._desc_strategies import descriptor_strategies, features_strategy
+from digneapy.qd._desc_strategies import (descriptor_strategies,
+                                          features_strategy)
 from digneapy.transformers import SupportsTransform
 
 

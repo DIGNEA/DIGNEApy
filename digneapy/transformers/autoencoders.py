@@ -34,7 +34,7 @@ class KPAE(Transformer):
 
     _MODELS_PATH = os.path.dirname(os.path.abspath(__file__)) + "/models/"
 
-    def __init__(self, name: str = "KP_AE", encoding: int = 2):
+    def __init__(self, name: str = "KP_AE", encoding: int = 2, padding: bool = False):
         super().__init__(name)
 
         if encoding not in KPAE._ENCODINGS:
@@ -43,6 +43,7 @@ class KPAE(Transformer):
             )
 
         self._encoding = encoding
+        self._pad = padding
         if self._encoding == 2:
             self.ae_path = KPAE._2D_AE
             self.enc_path = KPAE._2D_ENC
@@ -62,18 +63,20 @@ class KPAE(Transformer):
     def _preprocess(self, X: npt.NDArray) -> np.ndarray:
         # Scale and pad the instances before using AE
         # We pad the data to maximum allowed length
-        X_padded = pad_sequences(
-            X, padding="post", dtype="float32", maxlen=KPAE._MAX_LENGTH
-        )
-        X_padded = self._scaler.transform(X_padded)
-        return X_padded
+        _X = X
+        if self._pad:
+            _X = pad_sequences(
+                _X, padding="post", dtype="float32", maxlen=KPAE._MAX_LENGTH
+            )
+        _X = self._scaler.transform(_X)
+        return _X
 
     def encode(self, X: npt.NDArray) -> np.ndarray:
         # Gets an array of instances
         # Scale and pad the instances
         # Encode them
-        X_padded = self._preprocess(X)
-        return self._encoder.predict(X_padded, verbose=0)
+        _X = self._preprocess(X)
+        return self._encoder.predict(_X, verbose=0)
 
     def decode(self, X: npt.NDArray) -> np.ndarray:
         # Gets an array of encoded instances
@@ -85,3 +88,12 @@ class KPAE(Transformer):
 
     def __call__(self, X: npt.NDArray) -> np.ndarray:
         return self.encode(X)
+
+class KPAE50(KPAE):
+    def __init__(self):
+        super().__init__("KPAE50", 2, False)
+        self._model = keras.models.load_model(f"{KPAE._MODELS_PATH}N_50_2D_encoding/best_kp_ae_N_50_2D_lr_one_cycle_training.keras")
+        self._encoder = keras.models.load_model(f"{KPAE._MODELS_PATH}N_50_2D_encoding/best_kp_ae_N_50_2D_lr_one_cycle_training_encoder.keras")
+        self._decoder = keras.models.load_model(f"{KPAE._MODELS_PATH}N_50_2D_encoding/best_kp_ae_N_50_2D_lr_one_cycle_training_decoder.keras")
+        with open(f"{KPAE._MODELS_PATH}kp_scaler_N_50.pkl", "rb") as f:
+            self._scaler = pickle.load(f)

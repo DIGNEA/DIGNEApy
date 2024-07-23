@@ -17,6 +17,8 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/bin)
 set(CMAKE_CXX_OUTPUT_EXTENSION_REPLACE ON)
 
 include(GNUInstallDirs)
+include_directories(./)
+link_directories(./)
 
 # Libraries for compiling dignea
 find_package(pybind11 REQUIRED)
@@ -25,6 +27,11 @@ find_package(OpenMP COMPONENTS C CXX REQUIRED)
 # Set compiler flags for OpenMP
 if(OPENMP_FOUND)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
+
+    if(APPLE)
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}=-Xpreprocessor -fopenmp -lomp -I/usr/local/opt/libomp/include")
+        set(CMAKE_CXX_FLAGS "{CMAKE_CXX_FLAGS} -OpenMP_CXX_LIB_NAMES=omp -OpenMP_omp_LIBRARY=/usr/local/opt/libomp/lib/libomp.dylib")
+    endif()
 endif()
 
 # Always run with the optimisation flags

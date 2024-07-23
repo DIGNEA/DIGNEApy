@@ -18,6 +18,7 @@ from typing import Dict, Optional, Tuple
 import numpy as np
 
 from digneapy.core import Instance
+from digneapy.qd._desc_strategies import descriptor_strategies
 
 from ._base_archive import Archive
 
@@ -37,6 +38,7 @@ class GridArchive(Archive):
         self,
         dimensions: Sequence[int],
         ranges: Sequence[Tuple[float, float]],
+        attribute: str = "features",
         instances: Optional[Iterable[Instance]] = None,
         eps: float = 1e-6,
         dtype=np.float64,
@@ -55,6 +57,7 @@ class GridArchive(Archive):
             :math:`[-2,2]` (inclusive). ``ranges`` should be the same length as
             ``dims``.
             instances (Optional[Iterable[Instance]], optional): Instances to pre-initialise the archive. Defaults to None.
+            attribute: str = Attribute of the Instances to compute the diversity.
             eps (float, optional): Due to floating point precision errors, we add a small
             epsilon when computing the archive indices in the :meth:`index_of`
             method -- refer to the implementation `here. Defaults to 1e-6.
@@ -73,6 +76,16 @@ class GridArchive(Archive):
             )
 
         self._dimensions = np.asarray(dimensions)
+        self._inst_attrs = attribute
+        if attribute not in descriptor_strategies:
+            msg = f"describe_by {attribute} not available in {self.__class__.__name__}.__init__. Set to features by default"
+            print(msg)
+            self._inst_attrs = "features"
+            self._descriptor_strategy = descriptor_strategies["features"]
+        else:
+            self._inst_attrs = attribute
+            self._descriptor_strategy = descriptor_strategies[attribute]
+
         ranges = list(zip(*ranges))
         self._lower_bounds = np.array(ranges[0], dtype=dtype)
         self._upper_bounds = np.array(ranges[1], dtype=dtype)
@@ -221,7 +234,7 @@ class GridArchive(Archive):
             TypeError: ``instance`` is not a instance of the class Instance.
         """
         if isinstance(instance, Instance):
-            index = self.index_of(np.asarray(instance.descriptor))
+            index = self.index_of(self._descriptor_strategy([instance]))
             if index not in self._grid or instance > self._grid[index]:
                 self._grid[index] = copy.deepcopy(instance)
 
@@ -239,7 +252,7 @@ class GridArchive(Archive):
             msg = "Only objects of type Instance can be inserted into a GridArchive"
             raise TypeError(msg)
 
-        indeces = self.index_of([inst.descriptor for inst in iterable])
+        indeces = self.index_of(self._descriptor_strategy(iterable))
         for idx, instance in zip(indeces, iterable, strict=True):
             if idx not in self._grid or instance.fitness > self._grid[idx].fitness:
                 self._grid[idx] = copy.deepcopy(instance)

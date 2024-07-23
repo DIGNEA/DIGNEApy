@@ -19,8 +19,7 @@ from sklearn.neighbors import NearestNeighbors
 
 from digneapy.archives import Archive
 from digneapy.core import Instance
-from digneapy.qd._desc_strategies import (descriptor_strategies,
-                                          features_strategy)
+from digneapy.qd._desc_strategies import descriptor_strategies
 from digneapy.transformers import SupportsTransform
 
 
@@ -54,7 +53,7 @@ class NS:
             msg = f"describe_by {descriptor} not available in {self.__class__.__name__}.__init__. Set to features by default"
             print(msg)
             self._describe_by = "features"
-            self._descriptor_strategy = features_strategy
+            self._descriptor_strategy = descriptor_strategies["features"]
         else:
             self._describe_by = descriptor
             self._descriptor_strategy = descriptor_strategies[descriptor]

@@ -12,7 +12,6 @@
 
 import copy
 from collections import deque
-from typing import Optional
 
 import pandas as pd
 

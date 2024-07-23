@@ -54,7 +54,7 @@ def __property_strategy(attr: str):
         np.ndarray: Array of the feature descriptors of each instance
     """
     try:
-        if attr not in ("features", "descriptor"):
+        if attr not in ("features", "transformed"):
             raise AttributeError()
     except AttributeError:
         raise ValueError(
@@ -96,11 +96,11 @@ def instance_strategy(iterable: Iterable[Instance]) -> np.ndarray:
     - features --> Creates a np.ndarray with all the features of the instances.
     - performance --> Creates a np.ndarray with the mean performance score of each solver over the instances.
     - instance --> Creates a np.ndarray with the whole instance as its self descriptor.
-    - descriptor --> Creates a np.ndarray with all the transformed descriptors of the instances. Only when using a Transformer.
+    - transformed --> Creates a np.ndarray with all the transformed descriptors of the instances. Only when using a Transformer.
 """
 descriptor_strategies: MutableMapping[str, DescStrategy] = {
     "features": __property_strategy(attr="features"),
     "performance": performance_strategy,
     "instance": instance_strategy,
-    "descriptor": __property_strategy(attr="descriptor"),
+    "transformed": __property_strategy(attr="transformed"),
 }

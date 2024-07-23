@@ -143,7 +143,7 @@ class Archive:
                                              Defaults to filtering by sparseness.
         """
         if not all(isinstance(i, Instance) for i in iterable):
-            msg = f"Only objects of type {Instance.__class__.__name__} can be inserted into an archive"
+            msg = "Only objects of type Instance can be inserted into an archive"
             raise TypeError(msg)
 
         default_filter = self.__default_filter

@@ -58,7 +58,7 @@ def test_map_elites_domain(
         initial_pop_size=5,
         mutation=uniform_one_mutation,
         generations=1000,
-        strategy="features",
+        descriptor="features",
         repetitions=1,
     )
     archive = map_elites()

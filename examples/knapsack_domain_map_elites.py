@@ -40,7 +40,7 @@ def map_elites_knapsack():
         initial_pop_size=10,
         mutation=uniform_one_mutation,
         generations=1000,
-        strategy="features",
+        descriptor="features",
         repetitions=1,
     )
     assert archive.filled_cells == len(archive.instances)

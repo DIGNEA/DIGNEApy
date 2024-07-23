@@ -38,7 +38,7 @@ class GridArchive(Archive):
         self,
         dimensions: Sequence[int],
         ranges: Sequence[Tuple[float, float]],
-        attribute: str = "features",
+        descriptor: str = "features",
         instances: Optional[Iterable[Instance]] = None,
         eps: float = 1e-6,
         dtype=np.float64,
@@ -57,7 +57,7 @@ class GridArchive(Archive):
             :math:`[-2,2]` (inclusive). ``ranges`` should be the same length as
             ``dims``.
             instances (Optional[Iterable[Instance]], optional): Instances to pre-initialise the archive. Defaults to None.
-            attribute: str = Attribute of the Instances to compute the diversity.
+            descriptor: str = Descriptor of the Instances to compute the diversity.
             eps (float, optional): Due to floating point precision errors, we add a small
             epsilon when computing the archive indices in the :meth:`index_of`
             method -- refer to the implementation `here. Defaults to 1e-6.
@@ -76,15 +76,15 @@ class GridArchive(Archive):
             )
 
         self._dimensions = np.asarray(dimensions)
-        self._inst_attrs = attribute
-        if attribute not in descriptor_strategies:
-            msg = f"describe_by {attribute} not available in {self.__class__.__name__}.__init__. Set to features by default"
+        self._inst_attrs = descriptor
+        if descriptor not in descriptor_strategies:
+            msg = f"describe_by {descriptor} not available in {self.__class__.__name__}.__init__. Set to features by default"
             print(msg)
             self._inst_attrs = "features"
             self._descriptor_strategy = descriptor_strategies["features"]
         else:
-            self._inst_attrs = attribute
-            self._descriptor_strategy = descriptor_strategies[attribute]
+            self._inst_attrs = descriptor
+            self._descriptor_strategy = descriptor_strategies[descriptor]
 
         ranges = list(zip(*ranges))
         self._lower_bounds = np.array(ranges[0], dtype=dtype)

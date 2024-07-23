@@ -46,7 +46,7 @@ class NSEval:
     This must be called for each transformed at every generation of the CMA-ES algorithm.
     """
 
-    def __init__(self, features_info, resolution: int = 20):
+    def __init__(self, features_info, resolution: int = 10):
         self.resolution = resolution
         self.features_info = features_info
         self.kp_domain = KPDomain(dimension=50, capacity_approach="percentage")
@@ -106,7 +106,7 @@ class NSEval:
 
 
 def main():
-    R = 20  # Resolution/Number of bins for each of the 8 features
+    R = 10  # Resolution/Number of bins for each of the 8 features
     dimension = 46  # Number of weights of the NN for KP
     nn = TorchNN(
         name="NN_transformer_kp_domain.keras",
@@ -115,16 +115,26 @@ def main():
         output_size=2,
     )
 
-    # # KP Features information extracted from previously generated instances
+    # KP Features information extracted from previously generated instances
+    # features_info = [
+    #     (711, 30000),
+    #     (890, 1000),
+    #     (860, 1000.0),
+    #     (1.0, 200),
+    #     (1.0, 230.0),
+    #     (0.10, 12.0),
+    #     (400, 610),
+    #     (240, 330),
+    # ]
     features_info = [
-        (711, 30000),
-        (890, 1000),
-        (860, 1000.0),
-        (1.0, 200),
-        (1.0, 230.0),
-        (0.10, 12.0),
-        (400, 610),
-        (240, 330),
+        (1, 30000),  # Capacity
+        (1, 1000),  # Max Profit
+        (1, 1000),  # Max Weight
+        (1, 1000),  # Min Profit
+        (1, 1000),  # Min Weight
+        (0.0, 100.0),  # Average Efficiency
+        (0.0, 1000),  # Mean of vars
+        (0.0, 500.0),  # Std
     ]
     # NSEval is the evaluation/fitness function used to measure the NNs in CMA-Es
     ns_eval = NSEval(features_info, resolution=R)

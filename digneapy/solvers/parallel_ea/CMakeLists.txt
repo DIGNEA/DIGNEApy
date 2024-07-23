@@ -20,7 +20,7 @@ include(GNUInstallDirs)
 
 # Libraries for compiling dignea
 find_package(pybind11 REQUIRED)
-find_package(OpenMP REQUIRED)
+find_package(OpenMP COMPONENTS C CXX REQUIRED)
 
 # Set compiler flags for OpenMP
 if(OPENMP_FOUND)
@@ -28,7 +28,7 @@ if(OPENMP_FOUND)
 endif()
 
 # Always run with the optimisation flags
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++20 -isystem -fPIC -fpermissive -lstdc++fs -O3 -ffast-math -Wall -march=native -mtune=native")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++20 -isystem -fPIC -fpermissive -O3 -ffast-math -Wall -march=native -mtune=native")
 
-pybind11_add_module(parallel_ea src/par_ea_kp.cpp src/PseudoRandom.h src/PseudoRandom.cpp src/RandomGenerator.h src/RandomGenerator.cpp)
+pybind11_add_module(parallel_ea src/parallel_ea.cpp)
 target_link_libraries(parallel_ea PUBLIC OpenMP::OpenMP_CXX)

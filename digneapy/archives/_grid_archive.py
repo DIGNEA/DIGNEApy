@@ -18,7 +18,6 @@ from typing import Dict, Optional, Tuple
 import numpy as np
 
 from digneapy.core import Instance
-from digneapy.qd._desc_strategies import descriptor_strategies
 
 from ._base_archive import Archive
 
@@ -38,7 +37,7 @@ class GridArchive(Archive):
         self,
         dimensions: Sequence[int],
         ranges: Sequence[Tuple[float, float]],
-        descriptor: str = "features",
+        descriptor: str,
         instances: Optional[Iterable[Instance]] = None,
         eps: float = 1e-6,
         dtype=np.float64,
@@ -76,15 +75,11 @@ class GridArchive(Archive):
             )
 
         self._dimensions = np.asarray(dimensions)
-        self._inst_attrs = descriptor
-        if descriptor not in descriptor_strategies:
-            msg = f"describe_by {descriptor} not available in {self.__class__.__name__}.__init__. Set to features by default"
-            print(msg)
-            self._inst_attrs = "features"
-            self._descriptor_strategy = descriptor_strategies["features"]
-        else:
-            self._inst_attrs = descriptor
-            self._descriptor_strategy = descriptor_strategies[descriptor]
+        if descriptor == "":
+            raise ValueError(
+                "The descriptor must be one property available in the Instance class."
+            )
+        self._inst_attr = descriptor
 
         ranges = list(zip(*ranges))
         self._lower_bounds = np.array(ranges[0], dtype=dtype)
@@ -234,7 +229,7 @@ class GridArchive(Archive):
             TypeError: ``instance`` is not a instance of the class Instance.
         """
         if isinstance(instance, Instance):
-            index = self.index_of(self._descriptor_strategy([instance]))
+            index = self.index_of(getattr(instance, self._inst_attr))
             if index not in self._grid or instance > self._grid[index]:
                 self._grid[index] = copy.deepcopy(instance)
 
@@ -252,7 +247,7 @@ class GridArchive(Archive):
             msg = "Only objects of type Instance can be inserted into a GridArchive"
             raise TypeError(msg)
 
-        indeces = self.index_of(self._descriptor_strategy(iterable))
+        indeces = self.index_of([getattr(i, self._inst_attr) for i in iterable])
         for idx, instance in zip(indeces, iterable, strict=True):
             if idx not in self._grid or instance.fitness > self._grid[idx].fitness:
                 self._grid[idx] = copy.deepcopy(instance)

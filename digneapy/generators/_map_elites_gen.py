@@ -122,8 +122,9 @@ class MElitGen:
             individual.portfolio_scores = tuple(solvers_scores)
             individual.p = self._performance_fn(avg_p_solver)
             individual.fitness = individual.p
-            individual.descriptor = tuple(self._descriptor_strategy(individual))
-
+            ind_features = tuple(self._descriptor_strategy(individual))
+            individual.features = ind_features
+            individual.descriptor = ind_features
         return population
 
     def _run(self, verbose: bool = False):

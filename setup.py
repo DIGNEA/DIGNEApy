@@ -62,13 +62,14 @@ ext_modules = [
 setup(
     author="Alejandro Marrero",
     author_email="amarrerd@ull.edu.es",
-    python_requires=">=3.12",
+    python_requires=">=3.11",
     classifiers=[
         "Development Status :: 2 - Pre-Alpha",
         "Intended Audience :: Developers",
         "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
         "Natural Language :: English",
         "Programming Language :: Python :: 3",
+        "Programming Language :: Python :: 3.11",
         "Programming Language :: Python :: 3.12",
     ],
     description="Python version of the DIGNEA code for instance generation",

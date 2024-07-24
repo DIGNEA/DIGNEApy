@@ -17,18 +17,25 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/bin)
 set(CMAKE_CXX_OUTPUT_EXTENSION_REPLACE ON)
 
 include(GNUInstallDirs)
+include_directories(./)
+link_directories(./)
 
 # Libraries for compiling dignea
 find_package(pybind11 REQUIRED)
-find_package(OpenMP REQUIRED)
+find_package(OpenMP COMPONENTS C CXX REQUIRED)
 
 # Set compiler flags for OpenMP
 if(OPENMP_FOUND)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
+
+    if(APPLE)
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}=-Xpreprocessor -fopenmp -lomp -I/usr/local/opt/libomp/include")
+        set(CMAKE_CXX_FLAGS "{CMAKE_CXX_FLAGS} -OpenMP_CXX_LIB_NAMES=omp -OpenMP_omp_LIBRARY=/usr/local/opt/libomp/lib/libomp.dylib")
+    endif()
 endif()
 
 # Always run with the optimisation flags
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++20 -isystem -fPIC -fpermissive -lstdc++fs -O3 -ffast-math -Wall -march=native -mtune=native")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++20 -isystem -fPIC -fpermissive -O3 -ffast-math -Wall -march=native -mtune=native")
 
-pybind11_add_module(parallel_ea src/par_ea_kp.cpp src/PseudoRandom.h src/PseudoRandom.cpp src/RandomGenerator.h src/RandomGenerator.cpp)
+pybind11_add_module(parallel_ea src/parallel_ea.cpp)
 target_link_libraries(parallel_ea PUBLIC OpenMP::OpenMP_CXX)

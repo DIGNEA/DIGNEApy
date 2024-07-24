@@ -32,9 +32,8 @@ class get_pybind_include(object):
         return pybind11.get_include(self.user)
 
 
-compile_args = ["-fopenmp"]
-link_args = ["-fopenmp"]
-
+compile_args = ["-std=c++11"]
+linked_args = ["-fopenmp"]
 ext_modules = [
     Extension(
         "pisinger_cpp",
@@ -44,6 +43,7 @@ ext_modules = [
             get_pybind_include(),
             get_pybind_include(user=True),
         ],
+        extra_compile_args=compile_args,
         language="c++",
     ),
     Extension(
@@ -55,7 +55,6 @@ ext_modules = [
             get_pybind_include(user=True),
         ],
         extra_compile_args=compile_args,
-        extra_link_args=link_args,
         language="c++",
     ),
 ]

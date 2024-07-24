@@ -47,7 +47,11 @@ def test_map_elites_domain(
     domain_cls, portfolio, desc_size, expected_str, expected_repr
 ):
     dimension = 100
-    archive = GridArchive(dimensions=(10,) * desc_size, ranges=[(0, 1e4)] * desc_size)
+    archive = GridArchive(
+        dimensions=(10,) * desc_size,
+        ranges=[(0, 1e4)] * desc_size,
+        descriptor="features",
+    )
     domain = domain_cls(dimension=dimension)
     assert domain.dimension == dimension
 
@@ -58,7 +62,7 @@ def test_map_elites_domain(
         initial_pop_size=5,
         mutation=uniform_one_mutation,
         generations=1000,
-        strategy="features",
+        descriptor="features",
         repetitions=1,
     )
     archive = map_elites()

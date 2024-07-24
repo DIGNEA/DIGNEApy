@@ -47,7 +47,6 @@
 
 #include <float.h>
 #include <limits.h>
-#include <malloc.h>
 #include <math.h>
 #include <pybind11/pybind11.h>
 #include <stdarg.h>

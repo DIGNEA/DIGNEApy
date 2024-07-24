@@ -44,8 +44,8 @@ def rdstrat(key: str, verbose: bool = False):
     return decorate
 
 
-def features_strategy(iterable: Iterable[Instance]) -> np.ndarray:
-    """It generates the feature descriptor of an instance
+def __property_strategy(attr: str):
+    """Returns a np.ndarray with the information required of the instances
 
     Args:
         iterable (Iterable[Instance]): Instances to describe
@@ -53,7 +53,18 @@ def features_strategy(iterable: Iterable[Instance]) -> np.ndarray:
     Returns:
         np.ndarray: Array of the feature descriptors of each instance
     """
-    return np.asarray([i.features for i in iterable])
+    try:
+        if attr not in ("features", "transformed"):
+            raise AttributeError()
+    except AttributeError:
+        raise ValueError(
+            f"Object of class Instance does not have a property named {attr}"
+        )
+
+    def strategy(iterable: Iterable[Instance]) -> np.ndarray:
+        return np.asarray([getattr(i, attr) for i in iterable])
+
+    return strategy
 
 
 def performance_strategy(iterable: Iterable[Instance]) -> np.ndarray:
@@ -85,9 +96,11 @@ def instance_strategy(iterable: Iterable[Instance]) -> np.ndarray:
     - features --> Creates a np.ndarray with all the features of the instances.
     - performance --> Creates a np.ndarray with the mean performance score of each solver over the instances.
     - instance --> Creates a np.ndarray with the whole instance as its self descriptor.
+    - transformed --> Creates a np.ndarray with all the transformed descriptors of the instances. Only when using a Transformer.
 """
 descriptor_strategies: MutableMapping[str, DescStrategy] = {
-    "features": features_strategy,
+    "features": __property_strategy(attr="features"),
     "performance": performance_strategy,
     "instance": instance_strategy,
+    "transformed": __property_strategy(attr="transformed"),
 }

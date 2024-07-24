@@ -37,7 +37,7 @@ class MElitGen:
         archive: GridArchive,
         mutation: mutation.Mutation,
         repetitions: int,
-        strategy: str,
+        descriptor: str,
         performance_function: PerformanceFn = default_performance_metric,
     ):
         self._domain = domain
@@ -49,17 +49,17 @@ class MElitGen:
         self._repetitions = repetitions
         self._performance_fn = performance_function
 
-        if strategy not in descriptor_strategies:
-            msg = f"strategy {strategy} not available in {self.__class__.__name__}.__init__. Set to features by default"
+        if descriptor not in descriptor_strategies:
+            msg = f"descriptor {descriptor} not available in {self.__class__.__name__}.__init__. Set to features by default"
             print(msg)
-            strategy = "features"
+            descriptor = "features"
 
-        self._descriptor = strategy
-        match strategy:
+        self._descriptor = descriptor
+        match descriptor:
             case "features":
                 self._descriptor_strategy = self._domain.extract_features
             case _:
-                self._descriptor_strategy = descriptor_strategies[strategy]
+                self._descriptor_strategy = descriptor_strategies[descriptor]
 
         self._stats_fitness = tools.Statistics(key=attrgetter("fitness"))
         self._stats_fitness.register("avg", np.mean)
@@ -122,8 +122,9 @@ class MElitGen:
             individual.portfolio_scores = tuple(solvers_scores)
             individual.p = self._performance_fn(avg_p_solver)
             individual.fitness = individual.p
-            individual.descriptor = tuple(self._descriptor_strategy(individual))
-
+            ind_features = tuple(self._descriptor_strategy(individual))
+            individual.features = ind_features
+            individual.descriptor = ind_features
         return population
 
     def _run(self, verbose: bool = False):

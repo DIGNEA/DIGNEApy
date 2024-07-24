@@ -23,10 +23,307 @@
 #include <tuple>
 #include <vector>
 
-#include "PseudoRandom.h"
 #include "pybind11/numpy.h"
 namespace py = pybind11;
 using namespace std;
+
+#include <cstdlib>
+#include <ctime>
+#include <iostream>
+
+/**
+ *  This class is based on the random geneartor provided in the source
+ *  code of Deb's implementation of NSGA-II.
+ *  That implementation can be found in:
+ *  http://www.iitk.ac.in/kangal/codes/nsga2/nsga2-v1.1.tar
+ **/
+
+class RandomGenerator {
+   private:
+    double seed_;
+    double oldrand_[55];
+    int jrand_;
+
+    void randomize();
+
+    void warmup_random(double seed);
+
+    void advance_random();
+
+    double randomperc();
+
+   public:
+    RandomGenerator(void);
+
+    virtual ~RandomGenerator(void) = default;
+
+    int rnd(int low, int high);
+
+    double rndreal(double low, double high);
+
+};  // RandomGenerator
+
+/**
+ *  This class is based on the random geneartor provided in the source
+ *  code of Deb's implementation of NSGA-II.
+ *  That implementation can be found in:
+ *  http://www.iitk.ac.in/kangal/codes/nsga2/nsga2-v1.1.tar
+ **/
+
+RandomGenerator::RandomGenerator() : seed_(0.0), oldrand_(), jrand_() {
+    srand(time(NULL));
+    // srand(0);
+    // cout << (unsigned)time(0) << endl;
+    seed_ = ((double)rand() / (double)(RAND_MAX));
+    // cout << "Seed value is: " << seed_ << endl;
+
+    // seed_ = RAND_MAX;
+    // cout << "Seed value is: " << seed_ << endl;
+
+    // seed_ = (double) ((float) (float) seed_ / (float) RAND_MAX);
+    // cout << "Seed value is: " << seed_ << endl;
+
+    randomize();
+}  // RandomGenerator
+
+int RandomGenerator::rnd(int low, int high) {
+    int res;
+    if (low >= high) {
+        res = low;
+    } else {
+        res = low + (int)(randomperc() * (high - low + 1));
+        if (res > high) {
+            res = high;
+        }
+    }
+    return (res);
+}
+
+double RandomGenerator::rndreal(double low, double high) {
+    return (low + (high - low) * randomperc());
+}
+
+void RandomGenerator::randomize() {
+    int j1;
+
+    for (j1 = 0; j1 <= 54; j1++) {
+        oldrand_[j1] = .0;
+    }  // for
+
+    jrand_ = 0;
+    warmup_random(seed_);
+}
+
+void RandomGenerator::warmup_random(double seed) {
+    int j1, i1;
+    double new_random, prev_random;
+    oldrand_[54] = seed;
+    new_random = 0.000000001;
+    prev_random = seed;
+
+    for (j1 = 1; j1 <= 54; j1++) {
+        i1 = (21 * j1) % 54;
+        oldrand_[i1] = new_random;
+        new_random = prev_random - new_random;
+
+        if (new_random < 0.0) {
+            new_random += 1.0;
+        }
+
+        prev_random = oldrand_[i1];
+    }
+
+    advance_random();
+    advance_random();
+    advance_random();
+    jrand_ = 0;
+
+    return;
+}
+
+void RandomGenerator::advance_random() {
+    int j1;
+    double new_random;
+    for (j1 = 0; j1 < 24; j1++) {
+        new_random = oldrand_[j1] - oldrand_[j1 + 31];
+        if (new_random < 0.0) {
+            new_random = new_random + 1.0;
+        }
+        oldrand_[j1] = new_random;
+    }
+    for (j1 = 24; j1 < 55; j1++) {
+        new_random = oldrand_[j1] - oldrand_[j1 - 24];
+        if (new_random < 0.0) {
+            new_random = new_random + 1.0;
+        }
+        oldrand_[j1] = new_random;
+    }
+}
+
+double RandomGenerator::randomperc() {
+    jrand_++;
+    if (jrand_ >= 55) {
+        jrand_ = 1;
+        advance_random();
+    }
+    return oldrand_[jrand_];
+}
+
+#include <math.h>
+
+#include <iostream>
+
+/**
+ * @brief This is the interface for the random number generator in dignea.
+ * The idea is that all the random numbers will be generated using a single
+ * random generator which will be accesible throug this interface.
+ **/
+class PseudoRandom {
+   public:
+    static RandomGenerator *randomGenerator_;
+
+    PseudoRandom();
+
+   public:
+    /**
+     * @brief Generates a random double value between 0.0 and 1.0
+     *
+     * @return double
+     */
+    static double randDouble();  //    static int randInt();
+    /**
+     * @brief Returns a random integer int the range [minBound, maxBound]
+     *
+     * @param minBound
+     * @param maxBound
+     * @return int
+     */
+    static int randInt(int minBound, int maxBound);
+    /**
+     * @brief Returns a random double in the range [minBound, maxBound]
+     *
+     * @param minBound
+     * @param maxBound
+     * @return double
+     */
+    static double randDouble(double minBound, double maxBound);
+    /**
+     * @brief Returns a random value extracted from a Normal Distribution with
+     * mean and standardDeviation
+     *
+     * @param mean
+     * @param standardDeviation
+     * @return double
+     */
+    static double randNormal(double mean, double standardDeviation);
+    /**
+     * @brief Get random points from an hypersphere (center = 0, radius = 1)
+     * Code taken from Maurice Clerc's implementations
+     *
+     * @param dimension
+     * @return double*
+     */
+    static double *randSphere(int dimension);
+};
+
+/**
+ * This file is aimed at defining the interface for the random generator.
+ * The idea is that all the random numbers will be generated using a single
+ * random generator which will be accesible throug this interface.
+ **/
+
+RandomGenerator *PseudoRandom::randomGenerator_ = nullptr;
+
+PseudoRandom::PseudoRandom() {
+    // randomGenerator_ = nullptr ;
+    if (PseudoRandom::randomGenerator_ == nullptr) {
+        PseudoRandom::randomGenerator_ = new RandomGenerator();
+    }
+}
+
+// static int PseudoRandom::randInt() {
+//     if (randomGenerator_ == nullptr) {
+//         new PseudoRandom();
+//     }
+//     return randomGenerator_->rando
+// }
+
+double PseudoRandom::randDouble() {
+    if (PseudoRandom::randomGenerator_ == nullptr) {
+        PseudoRandom::randomGenerator_ = new RandomGenerator();
+    }
+    return PseudoRandom::randomGenerator_->rndreal(0.0, 1.0);
+}
+
+int PseudoRandom::randInt(int minBound, int maxBound) {
+    if (PseudoRandom::randomGenerator_ == nullptr) {
+        PseudoRandom::randomGenerator_ = new RandomGenerator();
+    }
+    return PseudoRandom::randomGenerator_->rnd(minBound, maxBound);
+}
+
+double PseudoRandom::randDouble(double minBound, double maxBound) {
+    if (PseudoRandom::randomGenerator_ == nullptr) {
+        PseudoRandom::randomGenerator_ = new RandomGenerator();
+    }
+    return PseudoRandom::randomGenerator_->rndreal(minBound, maxBound);
+}
+
+/**
+ * Use the polar form of the Box-Muller transformation to obtain
+ * a pseudo random number from a Gaussian distribution
+ * Code taken from Maurice Clerc's implementation
+ * @param mean
+ * @param standardDeviation
+ * @return A pseudo random number
+ */
+double PseudoRandom::randNormal(double mean, double standardDeviation) {
+    double x1, x2, w, y1;
+
+    do {
+        x1 = 2.0 * randDouble() - 1.0;
+        x2 = 2.0 * randDouble() - 1.0;
+        w = x1 * x1 + x2 * x2;
+    } while (w >= 1.0);
+
+    w = sqrt((-2.0 * log(w)) / w);
+    y1 = x1 * w;
+    y1 = y1 * standardDeviation + mean;
+    return y1;
+}
+
+/**
+ * Get a random point from an hypersphere (center = 0, radius = 1)
+ * Code taken from Maurice Clerc's implementation
+ * @param dimension
+ * @return A pseudo random point
+ */
+double *PseudoRandom::randSphere(int dimension) {
+    int D = dimension;
+    double *x = new double[dimension];
+
+    double length = 0;
+    for (int i = 0; i < dimension; i++) x[i] = 0.0;
+
+    // --------- Step 1. Direction
+
+    for (int i = 0; i < D; i++) {
+        x[i] = randNormal(0, 1);
+        length += length + x[i] * x[i];
+    }
+
+    length = sqrt(length);
+
+    // --------- Step 2. Random radius
+
+    double r = randDouble(0, 1);
+
+    for (int i = 0; i < D; i++) {
+        x[i] = r * x[i] / length;
+    }
+
+    return x;
+}
 
 /**
  * @brief Individual structure for a solution of the KP

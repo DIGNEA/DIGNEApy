@@ -28,8 +28,6 @@ classifiers = [
     "Programming Language :: Python :: 3.12",
     'Topic :: Scientific/Engineering',
     'Typing :: Typed',
-    'Operating System :: Microsoft :: Windows',
-    'Operating System :: POSIX',
     'Operating System :: Unix',
     'Operating System :: MacOS',
 ]
@@ -44,7 +42,12 @@ test = ["pytest>=3"]
 
 
 [tool.cibuildwheel]
-build = ["cp311-manylinux_x86_64", "cp312-manylinux_x86_64"]
+build = [
+    "cp311-manylinux_x86_64",
+    "cp312-manylinux_x86_64",
+    "cp311-macosx_x86_64",
+    "cp312-macosx_x86_64",
+]
 before-test = "python -m pip install -r requirements.txt"
 test-requires = "pytest"
 test-command = "pytest --doctest-modules {project}/tests"

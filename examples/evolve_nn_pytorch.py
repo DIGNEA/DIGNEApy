@@ -10,14 +10,13 @@
 @Desc    :   None
 """
 
+import copy
 from collections import deque
-from typing import Optional
 
-import numpy as np
 import pandas as pd
 
 from digneapy import Direction
-from digneapy.archives import Archive
+from digneapy.archives import Archive, GridArchive
 from digneapy.domains.knapsack import KPDomain
 from digneapy.generators import EIG
 from digneapy.operators.replacement import first_improve_replacement
@@ -47,41 +46,13 @@ class NSEval:
     This must be called for each transformed at every generation of the CMA-ES algorithm.
     """
 
-    def __init__(self, features_info, resolution: int = 20):
+    def __init__(self, features_info, resolution: int = 10):
         self.resolution = resolution
         self.features_info = features_info
-        self.hypercube = [
-            np.linspace(start, stop, self.resolution) for start, stop in features_info
-        ]
         self.kp_domain = KPDomain(dimension=50, capacity_approach="percentage")
         self.portfolio = deque([default_kp, map_kp, miw_kp, mpw_kp])
 
-    def __save_instances(self, filename, generated_instances):
-        """Writes the generated instances into a CSV file
-
-        Args:
-            filename (str): Filename
-            generated_instances (iterable): Iterable of instances
-        """
-        features = [
-            "target",
-            "capacity",
-            "max_p",
-            "max_w",
-            "min_p",
-            "min_w",
-            "avg_eff",
-            "mean",
-            "std",
-        ]
-        with open(filename, "w") as file:
-            file.write(",".join(features) + "\n")
-            for solver, descriptors in generated_instances.items():
-                for desc in descriptors:
-                    content = solver + "," + ",".join(str(f) for f in desc) + "\n"
-                    file.write(content)
-
-    def __call__(self, transformer: TorchNN, filename: Optional[str] = None):
+    def __call__(self, transformer: TorchNN):
         """This method runs the Novelty Search using a NN as a transformer
         for searching novelty. It generates KP instances for each of the solvers in
         the portfolio [Default, MaP, MiW, MPW] and calculates how many bins of the
@@ -89,15 +60,20 @@ class NSEval:
 
         Args:
             transformer (TorchNN): Transformer to reduce a 8D feature vector into a 2D vector.
-            filename (str, optional): Filename to store the instances. Defaults to None.
 
         Returns:
             int: Number of bins occupied. The maximum value if 8 x R.
         """
-        gen_instances = {s.__name__: [] for s in self.portfolio}
+        gen_instances = {
+            s.__name__: GridArchive(
+                dimensions=(self.resolution,) * 8,
+                ranges=self.features_info,
+                attribute="features",
+            )
+            for s in self.portfolio
+        }
         for i in range(len(self.portfolio)):
             self.portfolio.rotate(i)  # This allow us to change the target on the fly
-
             eig = EIG(
                 pop_size=10,
                 generations=1000,
@@ -111,28 +87,26 @@ class NSEval:
                 replacement=first_improve_replacement,
                 transformer=transformer,
             )
-            archive, solution_set = eig()
-            descriptors = [list(i.descriptor) for i in solution_set]
-            gen_instances[self.portfolio[0].__name__].extend(descriptors)
-        if any(len(sequence) != 0 for sequence in gen_instances.values()):
-            self.__save_instances(filename, gen_instances)
+            _, solution_set = eig()
+            print(solution_set)
+            if len(solution_set) != 0:
+                gen_instances[self.portfolio[0].__name__].extend(
+                    copy.deepcopy(solution_set)
+                )
 
-        # Here we gather all the instances together to calculate the metric
-        coverage = {k: set() for k in range(8)}
-        for (
-            solver,
-            descriptors,
-        ) in gen_instances.items():  # For each set of instances
-            for desc in descriptors:  # For each descriptor in the set
-                for i, f in enumerate(desc):  # Location of the ith feature
-                    coverage[i].add(np.digitize(f, self.hypercube[i]))
+        for solver, hypercube in gen_instances.items():
+            print(f"Solver {solver} -> {hypercube.coverage}")
 
-        f = sum(len(s) for s in coverage.values())
-        return f
+        combined_coverage = [
+            list(hypercube.filled_cells) for hypercube in gen_instances.values()
+        ]
+
+        print(combined_coverage)
+        return 0
 
 
 def main():
-    R = 20  # Resolution/Number of bins for each of the 8 features
+    R = 10  # Resolution/Number of bins for each of the 8 features
     dimension = 46  # Number of weights of the NN for KP
     nn = TorchNN(
         name="NN_transformer_kp_domain.keras",
@@ -141,16 +115,26 @@ def main():
         output_size=2,
     )
 
-    # # KP Features information extracted from previously generated instances
+    # KP Features information extracted from previously generated instances
+    # features_info = [
+    #     (711, 30000),
+    #     (890, 1000),
+    #     (860, 1000.0),
+    #     (1.0, 200),
+    #     (1.0, 230.0),
+    #     (0.10, 12.0),
+    #     (400, 610),
+    #     (240, 330),
+    # ]
     features_info = [
-        (711, 30000),
-        (890, 1000),
-        (860, 1000.0),
-        (1.0, 200),
-        (1.0, 230.0),
-        (0.10, 12.0),
-        (400, 610),
-        (240, 330),
+        (1, 30000),  # Capacity
+        (1, 1000),  # Max Profit
+        (1, 1000),  # Max Weight
+        (1, 1000),  # Min Profit
+        (1, 1000),  # Min Weight
+        (0.0, 100.0),  # Average Efficiency
+        (0.0, 1000),  # Mean of vars
+        (0.0, 500.0),  # Std
     ]
     # NSEval is the evaluation/fitness function used to measure the NNs in CMA-Es
     ns_eval = NSEval(features_info, resolution=R)

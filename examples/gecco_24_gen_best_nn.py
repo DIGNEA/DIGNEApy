@@ -11,8 +11,9 @@
 """
 
 import copy
-from collections import deque
-from typing import Dict
+import itertools
+import sys
+from typing import Optional
 
 import numpy as np
 
@@ -20,94 +21,86 @@ from digneapy.archives import Archive
 from digneapy.domains.knapsack import KPDomain
 from digneapy.generators import EIG
 from digneapy.operators.replacement import first_improve_replacement
-from digneapy.solvers import default_kp, map_kp, miw_kp, mpw_kp
+from digneapy.solvers import default_kp, map_kp, miw_kp
 from digneapy.transformers.keras_nn import KerasNN
 
 
-class NSEval:
-    def __init__(
-        self, features_info: Dict, resolution: int = 20, output_dir: str = None
-    ):
-        self.resolution = resolution
-        self.features_info = features_info
-        self.hypercube = [
-            np.linspace(start, stop, self.resolution) for start, stop in features_info
-        ]
-        self.kp_domain = KPDomain(dimension=50, capacity_approach="percentage")
-        self.portfolio = deque([default_kp, map_kp, miw_kp, mpw_kp])
-        self.out_dir = output_dir
+def save_instances(filename, generated_instances):
+    """Writes the generated instances into a CSV file
 
-    def __save_instances(self, filename, generated_instances):
-        """Writes the generated instances into a CSV file
+    Args:
+        filename (str): Filename
+        generated_instances (iterable): Iterable of instances
+    """
+    features = [
+        "capacity",
+        "max_p",
+        "max_w",
+        "min_p",
+        "min_w",
+        "avg_eff",
+        "mean",
+        "std",
+    ]
+    header = (
+        ["target"]
+        + ["x_0", "x_1"]
+        + features
+        + list(itertools.chain.from_iterable([(f"w_{i}", f"p_{i}") for i in range(50)]))
+    )
 
-        Args:
-            filename (str): Filename
-            generated_instances (iterable): Iterable of instances
-        """
-        features = [
-            "target",
-            "capacity",
-            "max_p",
-            "max_w",
-            "min_p",
-            "min_w",
-            "avg_eff",
-            "mean",
-            "std",
-        ]
-        with open(filename, "w") as file:
-            file.write(",".join(features) + "\n")
-            for solver, instances in generated_instances.items():
-                for inst in instances:
-                    content = (
-                        solver + "," + ",".join(str(f) for f in inst.descriptor) + "\n"
-                    )
-                    file.write(content)
-
-    def __call__(self, transformer: KerasNN, filename: str = None):
-        """This method runs the Novelty Search using a NN as a transformer
-        for searching novelty. It generates KP instances for each of the solvers in
-        the portfolio [Default, MaP, MiW, MPW] and calculates how many bins of the
-        8D-feature hypercube are occupied.
-
-        Args:
-            transformer (KerasNN): Transformer to reduce a 8D feature vector into a 2D vector.
-            filename (str, optional): Filename to store the instances. Defaults to None.
-
-        Returns:
-            int: Number of bins occupied. The maximum value if 8 x R.
-        """
-        coverage = [set() for _ in range(8)]
-        instances = {}
-        for i in range(len(self.portfolio)):
-            self.portfolio.rotate(i)  # This allow us to change the target on the fly
-            eig = EIG(
-                pop_size=10,
-                generations=1000,
-                domain=self.kp_domain,
-                portfolio=self.portfolio,
-                archive=Archive(threshold=0.5),
-                s_set=Archive(threshold=0.05),
-                k=3,
-                repetitions=1,
-                descriptor="features",
-                replacement=first_improve_replacement,
-                transformer=transformer,
-            )
-            _, solution_set = eig()
-            instances[self.portfolio[0].__name__] = copy.copy(solution_set)
-
-            for instance in solution_set:  # For each set of instances
-                for i, f in enumerate(instance.descriptor):
-                    coverage[i].add(np.digitize(f, self.hypercube[i]))
-
-        f = sum(len(s) for s in coverage)
-        self.__save_instances(filename, instances)
-        return f
+    with open(filename, "w") as file:
+        file.write(",".join(header) + "\n")
+        for solver, instances in generated_instances.items():
+            for inst in instances:
+                content = [solver, inst.descriptor, inst.features, inst[1:]]
+                file.write(
+                    ",".join(str(x) for x in itertools.chain.from_iterable(content))
+                    + "\n"
+                )
 
 
-def main():
-    R = 20  # Resolution/Number of bins for each of the 8 features
+def generate_instances(transformer: KerasNN):
+    """This method runs the Novelty Search using a NN as a transformer
+    for searching novelty. It generates KP instances for each of the solvers in
+    the portfolio [Default, MaP, MiW, MPW] and calculates how many bins of the
+    8D-feature hypercube are occupied.
+
+    Args:
+        transformer (KerasNN): Transformer to reduce a 8D feature vector into a 2D vector.
+        filename (str, optional): Filename to store the instances. Defaults to None.
+
+    Returns:
+        int: Number of bins occupied. The maximum value if 8 x R.
+    """
+    kp_domain = KPDomain(dimension=50, capacity_approach="percentage")
+    portfolios = [
+        [default_kp, map_kp, miw_kp],
+        [map_kp, default_kp, miw_kp],
+        [miw_kp, default_kp, map_kp],
+    ]
+    instances = {}
+    for portfolio in portfolios:
+        eig = EIG(
+            pop_size=10,
+            generations=1000,
+            domain=kp_domain,
+            portfolio=portfolio,
+            archive=Archive(threshold=0.5),
+            s_set=Archive(threshold=0.05),
+            k=3,
+            repetitions=1,
+            descriptor="features",
+            replacement=first_improve_replacement,
+            transformer=transformer,
+        )
+        _, solution_set = eig()
+        instances[portfolio[0].__name__] = copy.copy(solution_set)
+
+    return instances
+
+
+def main(repetition: int = 0):
     nn = KerasNN(
         name="NN_transformer_kp_domain.keras",
         input_shape=[8],
@@ -164,25 +157,17 @@ def main():
         13.515364805172545,
     ]
     nn.update_weights(weights_113)
-    # KP Features information extracted from previously generated instances
-    features_info = [
-        (711, 30000),
-        (890, 1000),
-        (860, 1000.0),
-        (1.0, 200),
-        (1.0, 230.0),
-        (0.10, 12.0),
-        (400, 610),
-        (240, 330),
-    ]
-    # NSEval is the evaluation/fitness function used to measure the NNs in CMA-Es
-    ns_eval = NSEval(features_info, resolution=R)
 
-    for r in range(10):
-        exp_filename = f"instances_nn_best_found_113_cells_rep_{r}.csv"
-        print(f"Running repetition: {exp_filename}")
-        ns_eval(nn, exp_filename)
+    exp_filename = f"instances_best_NN_gecco_24_f_and_e_rep_{repetition}.csv"
+    print(f"Running repetition: {repetition}")
+    instances = generate_instances(nn)
+    save_instances(exp_filename, instances)
 
 
 if __name__ == "__main__":
-    main()
+    if len(sys.argv) != 2:
+        print(
+            f"Error expected a repetition number.\n\tpython3 gecco_24_gen_best_nn.py <repetition_idx>"
+        )
+    rep = int(sys.argv[1])
+    main(rep)

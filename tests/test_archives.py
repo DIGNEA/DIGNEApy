@@ -180,14 +180,13 @@ def grid_5d():
             (-1.0, 1.0),
             (-1.0, 1.0),
         ],
-        descriptor="features",
     )
 
 
 def test_grid_archive_raises():
     # Raises ValueError when dimension < 1
     with pytest.raises(ValueError):
-        _ = GridArchive(dimensions=[], ranges=[], descriptor="features")
+        _ = GridArchive(dimensions=[], ranges=[])
 
     # Raises because instances are not of type Instance
     with pytest.raises(TypeError):
@@ -196,50 +195,37 @@ def test_grid_archive_raises():
             dimensions=(2, 2),
             ranges=[(0, 10), (0, 10)],
             instances=instances,
-            descriptor="features",
         )
 
     # Raises because instance is not of type Instance
     with pytest.raises(TypeError):
         instance = np.random.randint(low=0, high=10, size=2)
-        archive = GridArchive(
-            dimensions=(2, 2), ranges=[(0, 10), (0, 10)], descriptor="features"
-        )
+        archive = GridArchive(dimensions=(2, 2), ranges=[(0, 10), (0, 10)])
         archive.append(instance)
 
     # Raises out-of lower bound
     with pytest.raises(ValueError):
-        archive = GridArchive(
-            dimensions=(2, 2), ranges=[(0, 10), (0, 10)], descriptor="features"
-        )
+        archive = GridArchive(dimensions=(2, 2), ranges=[(0, 10), (0, 10)])
         _ = archive.lower_i(-1)
 
     # Raises out-of lower bound
     with pytest.raises(ValueError):
-        archive = GridArchive(
-            dimensions=(2, 2), ranges=[(0, 10), (0, 10)], descriptor="features"
-        )
+        archive = GridArchive(dimensions=(2, 2), ranges=[(0, 10), (0, 10)])
         _ = archive.lower_i(100)
 
     # Raises out-of upper bound
     with pytest.raises(ValueError):
-        archive = GridArchive(
-            dimensions=(2, 2), ranges=[(0, 10), (0, 10)], descriptor="features"
-        )
+        archive = GridArchive(dimensions=(2, 2), ranges=[(0, 10), (0, 10)])
         _ = archive.upper_i(-1)
 
     # Raises out-of upper bound
     with pytest.raises(ValueError):
-        archive = GridArchive(
-            dimensions=(2, 2), ranges=[(0, 10), (0, 10)], descriptor="features"
-        )
+        archive = GridArchive(dimensions=(2, 2), ranges=[(0, 10), (0, 10)])
         _ = archive.upper_i(100)
 
     # Raises index shape is not valid
     with pytest.raises(ValueError):
-        archive = GridArchive(
-            dimensions=(2, 2), ranges=[(0, 10), (0, 10)], descriptor="features"
-        )
+        archive = GridArchive(dimensions=(2, 2), ranges=[(0, 10), (0, 10)])
         descriptors = np.random.randint(low=0, high=10, size=(10, 10))
         _ = archive.index_of(descriptors)
 
@@ -249,12 +235,12 @@ def test_grid_archive_populated():
     for _ in range(10):
         instance = Instance()
         instance.features = np.random.randint(low=0, high=10, size=2)
+        instance.descriptor = tuple(instance.features)
         instances.append(instance)
     archive = GridArchive(
         dimensions=(2, 2),
         ranges=[(0, 10), (0, 10)],
         instances=instances,
-        descriptor="features",
     )
     assert len(archive) != 0
     assert all(archive.lower_i(i) == 0 for i in range(len(archive.bounds)))
@@ -286,6 +272,7 @@ def test_grid_5d_storage(grid_5d):
             [], fitness=0.0, p=np.random.randint(0, 100), s=np.random.random()
         )
         inst.features = tuple(np.random.random(size=5))
+        inst.descriptor = inst.features
         instances.append(inst)
 
     assert len(grid_5d) == 0
@@ -294,6 +281,7 @@ def test_grid_5d_storage(grid_5d):
 
     instance = Instance()
     instance.features = tuple(np.random.random(size=5))
+    instance.descriptor = instance.features
     grid_5d.append(instance)
     assert len(grid_5d) == len(instances) + 1
 
@@ -303,7 +291,6 @@ def test_grid_limits():
         dimensions=(5, 5),
         ranges=[(0, 100), (0, 100)],
         dtype=np.int32,
-        descriptor="features",
     )
 
     assert archive.coverage == 0.0  # Empty archive
@@ -316,6 +303,7 @@ def test_grid_limits():
             [], fitness=0.0, p=np.random.randint(0, 100), s=np.random.random()
         )
         inst.features = tuple(np.random.randint(low=0, high=100, size=2))
+        inst.descriptor = inst.features
         instances.append(inst)
 
     assert len(archive) == 0
@@ -330,7 +318,6 @@ def test_grid_extend_outside_bounds():
         dimensions=(5, 5),
         ranges=[(0, 100), (0, 100)],
         dtype=np.int32,
-        descriptor="features",
     )
     instances = []
     max_allowed = 25
@@ -343,6 +330,7 @@ def test_grid_extend_outside_bounds():
             s=np.random.random(),
         )
         inst.features = tuple(np.random.randint(low=1000, high=10000, size=2))
+        inst.descriptor = inst.features
         instances.append(inst)
 
     assert len(archive) == 0
@@ -359,7 +347,6 @@ def test_grid_extend_under_bounds():
         dimensions=(5, 5),
         ranges=[(100, 1000), (100, 1000)],
         dtype=np.int32,
-        descriptor="features",
     )
     instances = []
     max_allowed = 25
@@ -372,6 +359,7 @@ def test_grid_extend_under_bounds():
             s=np.random.random(),
         )
         inst.features = tuple(np.random.randint(low=1, high=99, size=2))
+        inst.descriptor = inst.features
         instances.append(inst)
 
     assert len(archive) == 0
@@ -396,13 +384,13 @@ def test_grid_with_kp_instances():
             (400, 610),
             (240, 330),
         ],
-        descriptor="features",
     )
     n_instances = 1_000
     domain = KPDomain(dimension=50, capacity_approach="percentage")
     instances = [domain.generate_instance() for _ in range(n_instances)]
     for instance in instances:
         instance.features = domain.extract_features(instance)
+        instance.descriptor = instance.features
 
     assert len(archive) == 0
     assert archive.n_cells == np.prod(np.array((20,) * 8))
@@ -416,13 +404,13 @@ def test_grid_archive_getitem():
     for _ in range(1000):
         instance = Instance()
         instance.features = np.random.randint(low=0, high=10, size=2)
+        instance.descriptor = instance.features
         instances.append(instance)
 
     archive = GridArchive(
         dimensions=(10, 10),
         ranges=[(0, 10), (0, 10)],
         instances=instances,
-        descriptor="features",
     )
     results = archive[[0, 11], [0, 5]]
     assert isinstance(results, dict)

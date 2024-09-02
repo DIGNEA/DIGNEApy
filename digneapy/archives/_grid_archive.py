@@ -37,7 +37,6 @@ class GridArchive(Archive):
         self,
         dimensions: Sequence[int],
         ranges: Sequence[Tuple[float, float]],
-        descriptor: str,
         instances: Optional[Iterable[Instance]] = None,
         eps: float = 1e-6,
         dtype=np.float64,
@@ -56,7 +55,6 @@ class GridArchive(Archive):
             :math:`[-2,2]` (inclusive). ``ranges`` should be the same length as
             ``dims``.
             instances (Optional[Iterable[Instance]], optional): Instances to pre-initialise the archive. Defaults to None.
-            descriptor: str = Descriptor of the Instances to compute the diversity.
             eps (float, optional): Due to floating point precision errors, we add a small
             epsilon when computing the archive indices in the :meth:`index_of`
             method -- refer to the implementation `here. Defaults to 1e-6.
@@ -75,12 +73,6 @@ class GridArchive(Archive):
             )
 
         self._dimensions = np.asarray(dimensions)
-        if descriptor == "":
-            raise ValueError(
-                "The descriptor must be one property available in the Instance class."
-            )
-        self._inst_attr = descriptor
-
         ranges = list(zip(*ranges))
         self._lower_bounds = np.array(ranges[0], dtype=dtype)
         self._upper_bounds = np.array(ranges[1], dtype=dtype)

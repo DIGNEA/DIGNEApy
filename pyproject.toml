@@ -52,7 +52,8 @@ before-test = "python -m pip install -r requirements.txt"
 test-requires = "pytest"
 test-command = "pytest --doctest-modules {project}/tests"
 build-verbosity = 1
-
+[tool.pytest.init_options]
+filterwarnings = ["ignore::DeprecationWarning:THIRD_PARTY_NAME.*:"]
 
 [tool.ruff]
 # Exclude a variety of commonly ignored directories.

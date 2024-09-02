@@ -47,11 +47,7 @@ def test_map_elites_domain(
     domain_cls, portfolio, desc_size, expected_str, expected_repr
 ):
     dimension = 100
-    archive = GridArchive(
-        dimensions=(10,) * desc_size,
-        ranges=[(0, 1e4)] * desc_size,
-        descriptor="features",
-    )
+    archive = GridArchive(dimensions=(10,) * desc_size, ranges=[(0, 1e4)] * desc_size)
     domain = domain_cls(dimension=dimension)
     assert domain.dimension == dimension
 

@@ -40,8 +40,12 @@ class NNTuner:
             raise TypeError(
                 "transformer must be a subclass of KerasNN or TorchNN object to run MetaEA"
             )
-    
+
         self.transformer = transformer
+        if eval_fn is None:
+            raise ValueError(
+                "eval_fn cannot be None in NNTuner. Please give a valid evaluation function."
+            )
         self.eval_fn = eval_fn
 
         self.dimension = dimension
@@ -109,6 +113,5 @@ class NNTuner:
             stats=self.stats,
             halloffame=self.hof,
             verbose=True,
-
         )
         return (self.hof[0], population, logbook)

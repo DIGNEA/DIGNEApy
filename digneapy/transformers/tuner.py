@@ -40,9 +40,7 @@ class NNTuner:
             raise TypeError(
                 "transformer must be a subclass of KerasNN or TorchNN object to run MetaEA"
             )
-        if eval_fn is None:
-            raise ValueError("experiment_work must be a callable object to run MetaEA")
-
+    
         self.transformer = transformer
         self.eval_fn = eval_fn
 
@@ -110,5 +108,7 @@ class NNTuner:
             ngen=self.generations,
             stats=self.stats,
             halloffame=self.hof,
+            verbose=True,
+
         )
         return (self.hof[0], population, logbook)

@@ -229,7 +229,7 @@ class GridArchive(Archive):
             TypeError: ``instance`` is not a instance of the class Instance.
         """
         if isinstance(instance, Instance):
-            index = self.index_of(getattr(instance, self._inst_attr))
+            index = self.index_of(np.asarray(instance.descriptor))
             if index not in self._grid or instance > self._grid[index]:
                 self._grid[index] = copy.deepcopy(instance)
 
@@ -247,7 +247,7 @@ class GridArchive(Archive):
             msg = "Only objects of type Instance can be inserted into a GridArchive"
             raise TypeError(msg)
 
-        indeces = self.index_of([getattr(i, self._inst_attr) for i in iterable])
+        indeces = self.index_of([i.descriptor for i in iterable])
         for idx, instance in zip(indeces, iterable, strict=True):
             if idx not in self._grid or instance.fitness > self._grid[idx].fitness:
                 self._grid[idx] = copy.deepcopy(instance)

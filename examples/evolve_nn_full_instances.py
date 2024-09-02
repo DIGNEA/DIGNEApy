@@ -1,18 +1,17 @@
 #!/usr/bin/env python
 # -*-coding:utf-8 -*-
-"""
-@File    :   nn_transformer_gecco_23.py
-@Time    :   2023/11/10 14:09:41
-@Author  :   Alejandro Marrero
+'''
+@File    :   evolve_nn_full_instances.py
+@Time    :   2024/07/24 10:34:49
+@Author  :   Alejandro Marrero 
 @Version :   1.0
 @Contact :   amarrerd@ull.edu.es
-@License :   (C)Copyright 2023, Alejandro Marrero
+@License :   (C)Copyright 2024, Alejandro Marrero
 @Desc    :   None
-"""
+'''
+
 
 import copy
-import itertools
-from collections import deque
 
 import numpy as np
 import pandas as pd
@@ -41,49 +40,47 @@ def save_best_nn_results(filename, best_nn):
         f.write(f"{chromosome}")
 
 
-class NSEval:
-    """Experiment Code for the Novelty Search with NN transformed space paper for GECCO 2024.
-    It receives a iterable of features tuples with the minimum and maximum values for each, an a
-    resolution value R to define how many bins per feature we'll be creating.
-    This must be called for each transformed at every generation of the CMA-ES algorithm.
-    """
-
-    def __init__(self, features_info, resolution: int = 20):
+class EvalNN:
+    def __init__(self, ranges, resolution: int = 20):
         self.resolution = resolution
-        self.features_info = features_info
+        self.ranges = ranges
         
         self.kp_domain = KPDomain(dimension=50, capacity_approach="percentage")
-        self.portfolio = deque([default_kp, map_kp, miw_kp])
 
     def __call__(self, transformer: KerasNN):
         """This method runs the Novelty Search using a KerasNN as a transformer
         for searching novelty. It generates KP instances for each of the solvers in
-        the portfolio [Default, MaP, MiW, MPW] and calculates how many bins of the
-        8D-feature hypercube are occupied.
+        the portfolio [Default, MaP, MiW].
+        Evolves the instances using the FULL instance as its own descriptor and then
+        calculate the transformed descriptor using the ``transformer'' KerasNN object
+        which takes a 101 array of numbers and produces a 2D floating point number descriptor.
+        The coverage is measure into a 2D Hypercube defined by the AE from our previous work.
 
         Args:
             transformer (KerasNN): Transformer to reduce a 8D feature vector into a 2D vector.
-            filename (str, optional): Filename to store the instances. Defaults to None.
 
         Returns:
-            int: Number of bins occupied. The maximum value if 8 x R.
+            int: Number of cells occupied
         """
         hypercube = GridArchive(dimensions=(self.resolution,) * 8,
-                ranges=self.features_info,
+                ranges=self.ranges,
                 descriptor="features")
-        
-        for i in range(len(self.portfolio)):
-            self.portfolio.rotate(i)  # This allow us to change the target on the fly
+        portfolios = [
+        [default_kp, map_kp, miw_kp],
+        [map_kp, default_kp, miw_kp],
+        [miw_kp, default_kp, map_kp],
+    ]
+        for portfolio in portfolios:
             eig = EIG(
                 pop_size=10,
                 generations=1000,
                 domain=self.kp_domain,
-                portfolio=self.portfolio,
+                portfolio=portfolio,
                 archive=Archive(threshold=0.5),
                 s_set=Archive(threshold=0.05),
                 k=3,
                 repetitions=1,
-                descriptor="features",
+                descriptor="instance",
                 replacement=generational,
                 transformer=transformer,
             )
@@ -96,52 +93,42 @@ class NSEval:
 
 def main():
     R = 20  # Resolution/Number of bins for each of the 8 features
-    dimension = 118  # Number of weights of the NN for KP
+    dimension = 5202  # Number of weights of the NN for this architecture
     nn = KerasNN(
-        name="NN_transformer_kp_domain.keras",
-        input_shape=(8,),
+        name="NN_transformer_for_N_50_to_2D_kp_domain.keras",
+        input_shape=(101,),
         shape=(
-            8,
-            4,
-            2,
+           50, 2
         ),
         activations=("relu", "relu", None),
     )
-    # KP Features information extracted from previously generated instances
-    features_info = [
-        (711, 30000),
-        (890, 1000),
-        (860, 1000.0),
-        (1.0, 200),
-        (1.0, 230.0),
-        (0.10, 12.0),
-        (400, 610),
-        (240, 330),
-    ]
-    # NSEval is the evaluation/fitness function used to measure the NNs in CMA-Es
-    ns_eval = NSEval(features_info, resolution=R)
+    # Hypercube boundaries based on the results from AE
+    # https://colab.research.google.com/drive/1b392jz3syTJiehSCt_Tf72_D0OkmVVe5?hl=es
+    ranges = [(0.0, 25.0), (0.0, 60.0)]
+    # EvalNN is the evaluation/fitness function used to measure the NNs in CMA-Es
+    ns_eval = EvalNN(ranges, resolution=R)
     # Custom CMA-ES derived from DEAP to evolve NNs weights
     cma_es = NNTuner(
         dimension=dimension,
         direction=Direction.MAXIMISE,
         lambda_=64,
-        generations=250,
+        generations=1000,
         transformer=nn,
         eval_fn=ns_eval,
     )
     best_nn, population, logbook = cma_es()
     # Save the scores and the weights
-    save_best_nn_results("NN_best_score_and_weights.csv", best_nn)
+    save_best_nn_results("NN_transformer_for_N_50_to_2D_kp_domain_best_score_and_weights.csv", best_nn)
     # Save the model itself
     nn.update_weights(best_nn)
-    nn.save("NN_best_transformer_found_kp_domain.keras")
+    nn.save("NN_best_transformer_found_for_N_50_to_2D_kp_domain.keras")
     for i, ind in enumerate(population):
         nn.update_weights(ind)
-        nn.save(f"NN_final_population_{i}_transformer_kp_domain.keras")
+        nn.save(f"NN_final_population_{i}_transformer_found_for_N_50_to_2D_kp_domain.keras")
 
     # Saving logbook to CSV
     df = pd.DataFrame(logbook)
-    df.to_csv("CMAES_logbook_for_NN_transformers.csv", index=False)
+    df.to_csv("CMAES_logbook_for_NN_transformers_for_N_50_to_2D_kp_domain.csv", index=False)
 
 
 if __name__ == "__main__":

@@ -68,7 +68,7 @@ class NSEval:
             s.__name__: GridArchive(
                 dimensions=(self.resolution,) * 8,
                 ranges=self.features_info,
-                attribute="features",
+                descriptor="features",
             )
             for s in self.portfolio
         }

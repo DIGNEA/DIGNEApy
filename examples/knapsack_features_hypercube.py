@@ -61,7 +61,6 @@ def calculate_coverage():
         (63.30284857571215, 149746.5024986119),
         (41.07985038925373, 4314244.913937186),
     ]
-    archive = GridArchive(dimensions=(20,) * 8, ranges=features_ranges)
     # print(archive.n_cells)
     # print(archive.bounds, archive.bounds.shape)
     df = dd.read_csv(

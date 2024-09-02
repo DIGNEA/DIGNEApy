@@ -51,7 +51,7 @@ class NSEval:
     def __init__(self, features_info, resolution: int = 20):
         self.resolution = resolution
         self.features_info = features_info
-        
+
         self.kp_domain = KPDomain(dimension=50, capacity_approach="percentage")
         self.portfolio = deque([default_kp, map_kp, miw_kp])
 
@@ -68,10 +68,10 @@ class NSEval:
         Returns:
             int: Number of bins occupied. The maximum value if 8 x R.
         """
-        hypercube = GridArchive(dimensions=(self.resolution,) * 8,
-                ranges=self.features_info,
-                descriptor="features")
-        
+        hypercube = GridArchive(
+            dimensions=(self.resolution,) * 8, ranges=self.features_info
+        )
+
         for i in range(len(self.portfolio)):
             self.portfolio.rotate(i)  # This allow us to change the target on the fly
             eig = EIG(

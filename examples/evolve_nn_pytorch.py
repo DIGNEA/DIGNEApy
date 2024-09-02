@@ -66,9 +66,7 @@ class NSEval:
         """
         gen_instances = {
             s.__name__: GridArchive(
-                dimensions=(self.resolution,) * 8,
-                ranges=self.features_info,
-                descriptor="features",
+                dimensions=(self.resolution,) * 8, ranges=self.features_info
             )
             for s in self.portfolio
         }

@@ -1,15 +1,14 @@
 #!/usr/bin/env python
 # -*-coding:utf-8 -*-
-'''
+"""
 @File    :   evolve_nn_full_instances.py
 @Time    :   2024/07/24 10:34:49
-@Author  :   Alejandro Marrero 
+@Author  :   Alejandro Marrero
 @Version :   1.0
 @Contact :   amarrerd@ull.edu.es
 @License :   (C)Copyright 2024, Alejandro Marrero
 @Desc    :   None
-'''
-
+"""
 
 import copy
 
@@ -44,7 +43,7 @@ class EvalNN:
     def __init__(self, ranges, resolution: int = 20):
         self.resolution = resolution
         self.ranges = ranges
-        
+
         self.kp_domain = KPDomain(dimension=50, capacity_approach="percentage")
 
     def __call__(self, transformer: KerasNN):
@@ -62,14 +61,12 @@ class EvalNN:
         Returns:
             int: Number of cells occupied
         """
-        hypercube = GridArchive(dimensions=(self.resolution,) * 8,
-                ranges=self.ranges,
-                descriptor="features")
+        hypercube = GridArchive(dimensions=(self.resolution,) * 8, ranges=self.ranges)
         portfolios = [
-        [default_kp, map_kp, miw_kp],
-        [map_kp, default_kp, miw_kp],
-        [miw_kp, default_kp, map_kp],
-    ]
+            [default_kp, map_kp, miw_kp],
+            [map_kp, default_kp, miw_kp],
+            [miw_kp, default_kp, map_kp],
+        ]
         for portfolio in portfolios:
             eig = EIG(
                 pop_size=10,
@@ -97,9 +94,7 @@ def main():
     nn = KerasNN(
         name="NN_transformer_for_N_50_to_2D_kp_domain.keras",
         input_shape=(101,),
-        shape=(
-           50, 2
-        ),
+        shape=(50, 2),
         activations=("relu", "relu", None),
     )
     # Hypercube boundaries based on the results from AE
@@ -118,17 +113,23 @@ def main():
     )
     best_nn, population, logbook = cma_es()
     # Save the scores and the weights
-    save_best_nn_results("NN_transformer_for_N_50_to_2D_kp_domain_best_score_and_weights.csv", best_nn)
+    save_best_nn_results(
+        "NN_transformer_for_N_50_to_2D_kp_domain_best_score_and_weights.csv", best_nn
+    )
     # Save the model itself
     nn.update_weights(best_nn)
     nn.save("NN_best_transformer_found_for_N_50_to_2D_kp_domain.keras")
     for i, ind in enumerate(population):
         nn.update_weights(ind)
-        nn.save(f"NN_final_population_{i}_transformer_found_for_N_50_to_2D_kp_domain.keras")
+        nn.save(
+            f"NN_final_population_{i}_transformer_found_for_N_50_to_2D_kp_domain.keras"
+        )
 
     # Saving logbook to CSV
     df = pd.DataFrame(logbook)
-    df.to_csv("CMAES_logbook_for_NN_transformers_for_N_50_to_2D_kp_domain.csv", index=False)
+    df.to_csv(
+        "CMAES_logbook_for_NN_transformers_for_N_50_to_2D_kp_domain.csv", index=False
+    )
 
 
 if __name__ == "__main__":

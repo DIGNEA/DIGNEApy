@@ -13,9 +13,6 @@
 import copy
 import itertools
 import sys
-from typing import Optional
-
-import numpy as np
 
 from digneapy.archives import Archive
 from digneapy.domains.knapsack import KPDomain

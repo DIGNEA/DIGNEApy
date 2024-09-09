@@ -7,12 +7,9 @@ on:
 
 jobs:
   build_wheels:
-    name: Build wheels on ${{ matrix.os }}
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        # macos-13 is an intel runner, macos-14 is apple silicon
-        os: [ubuntu-latest, macos-13, macos-14]
+    name: Build wheels on Linux System
+    runs-on: ubuntu-latest
+
 
     steps:
       - uses: actions/checkout@v4
@@ -22,7 +19,7 @@ jobs:
 
       - uses: actions/upload-artifact@v4
         with:
-          name: cibw-wheels-${{ matrix.os }}-${{ strategy.job-index }}
+          name: cibw-wheels-ubuntu-latest
           path: ./wheelhouse/*.whl
 
   build_sdist:

@@ -7,8 +7,6 @@ from glob import glob
 from setuptools import Extension, find_packages, setup
 from setuptools.command.build_ext import build_ext
 
-import digneapy
-
 with open("README.md") as readme_file:
     readme = readme_file.read()
 
@@ -92,7 +90,7 @@ setup(
     test_suite="tests",
     tests_require=test_requirements,
     url="https://github.com/dignea/digneapy",
-    version=digneapy.__version__,
+    version="0.2.1",
     ext_modules=ext_modules,
     cmdclass={"build_ext": build_ext},
     zip_safe=False,

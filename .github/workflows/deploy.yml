@@ -1,6 +1,9 @@
-name: Build and upload to PyPI
+name: Publish Python 🐍 distribution 📦 to PyPI
 
 on:
+  push:
+    branches:
+      - main
   release:
     types:
       - published
@@ -10,17 +13,29 @@ jobs:
     name: Build wheels on Linux System
     runs-on: ubuntu-latest
 
-
     steps:
       - uses: actions/checkout@v4
 
-      - name: Build wheels
-        uses: pypa/cibuildwheel@v2.20.0
-
-      - uses: actions/upload-artifact@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
         with:
-          name: cibw-wheels-ubuntu-latest
-          path: ./wheelhouse/*.whl
+          python-version: "3.12"
+
+      - name: Install pypa/build
+        run: >-
+          python3 -m
+          pip install
+          build
+          --user
+
+      - name: Build a binary wheel and a source tarball
+        run: python3 -m build 
+
+      - name: Store the wheel artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: py-package-dist
+          path: dist/
 
   build_sdist:
     name: Build source distribution
@@ -31,7 +46,8 @@ jobs:
       - name: Build sdist
         run: python3 -m build --sdist
 
-      - uses: actions/upload-artifact@v4
+      - name: Upload sdist
+        uses: actions/upload-artifact@v4
         with:
           name: cibw-sdist
           path: dist/*.tar.gz
@@ -49,15 +65,12 @@ jobs:
     # if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
     steps:
       
-      - uses: actions/download-artifact@v4
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
         with:
           # unpacks all CIBW artifacts into dist/
-          pattern: cibw-*
-          path: dist
-          merge-multiple: true
-      - name: Generate artifact attestations
-        uses: actions/attest-build-provenance@v1.4.1
-        with:
-          subject-path: "dist/*"
+          pattern: py-package-dist*
+          path: dist/
 
-      - uses: pypa/gh-action-pypi-publish@release/v1
+      - name: Publish distribution 📦 to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1

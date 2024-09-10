@@ -11,7 +11,6 @@
 '''
 
 
-import copy
 
 import numpy as np
 import pandas as pd
@@ -47,7 +46,7 @@ class EvalNN:
         
         self.kp_domain = KPDomain(dimension=50, capacity_approach="percentage")
 
-    def __call__(self, transformer: KerasNN):
+    def __call__(self, transformer: KerasNN, filename: str = ''):
         """This method runs the Novelty Search using a KerasNN as a transformer
         for searching novelty. It generates KP instances for each of the solvers in
         the portfolio [Default, MaP, MiW].
@@ -62,9 +61,9 @@ class EvalNN:
         Returns:
             int: Number of cells occupied
         """
-        hypercube = GridArchive(dimensions=(self.resolution,) * 8,
+        hypercube = GridArchive(dimensions=(self.resolution,) * 2,
                 ranges=self.ranges,
-                descriptor="features")
+                descriptor="descriptor")
         portfolios = [
         [default_kp, map_kp, miw_kp],
         [map_kp, default_kp, miw_kp],
@@ -84,24 +83,25 @@ class EvalNN:
                 replacement=generational,
                 transformer=transformer,
             )
-            _, solution_set = eig()
+            _, solution_set = eig(verbose=True)
             if len(solution_set) != 0:
-                hypercube.extend(copy.deepcopy(solution_set))
+                hypercube.extend(solution_set)
 
         return len(hypercube)
 
 
 def main():
     R = 20  # Resolution/Number of bins for each of the 8 features
-    dimension = 5202  # Number of weights of the NN for this architecture
+    dimension = 15_504  # Number of weights of the NN for this architecture
     nn = KerasNN(
         name="NN_transformer_for_N_50_to_2D_kp_domain.keras",
-        input_shape=(101,),
+        input_shape=[101],
         shape=(
-           50, 2
+           101, 50, 2
         ),
         activations=("relu", "relu", None),
     )
+    print(f'Model:\n{nn}')
     # Hypercube boundaries based on the results from AE
     # https://colab.research.google.com/drive/1b392jz3syTJiehSCt_Tf72_D0OkmVVe5?hl=es
     ranges = [(0.0, 25.0), (0.0, 60.0)]
@@ -111,8 +111,8 @@ def main():
     cma_es = NNTuner(
         dimension=dimension,
         direction=Direction.MAXIMISE,
-        lambda_=64,
-        generations=1000,
+        lambda_=32,
+        generations=500,
         transformer=nn,
         eval_fn=ns_eval,
     )

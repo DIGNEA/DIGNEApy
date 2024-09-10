@@ -12,7 +12,7 @@
 
 import itertools
 from collections.abc import Sequence
-from typing import Mapping, Self
+from typing import Mapping
 
 import numpy as np
 
@@ -94,7 +94,7 @@ class Knapsack(Problem):
             file.write(content)
 
     @classmethod
-    def from_file(cls, filename: str) -> Self:
+    def from_file(cls, filename: str) :
         content = np.loadtxt(filename, dtype=int)
         capacity = content[0][1]
         weights, profits = content[1:, 0], content[1:, 1]

@@ -12,7 +12,7 @@
 
 from abc import ABC, abstractmethod
 from collections.abc import Sequence
-from typing import Self, Tuple, TypeVar
+from typing import Tuple, TypeVar
 
 import numpy as np
 
@@ -90,7 +90,7 @@ class Problem(ABC):
         raise NotImplementedError(msg)
 
     @classmethod
-    def from_file(cls, filename: str) -> Self:
+    def from_file(cls, filename: str) :
         msg = "from_file method not implemented in Problem"
         raise NotImplementedError(msg)
 

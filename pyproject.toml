@@ -46,8 +46,8 @@ classifiers = [
 ]
 
 [project.urls]
-homepage = "https://github.com/dignea/digneapy"
-source = "https://github.com/dignea/digneapy"
+homepage = "https://github.com/dignea/DIGNEApy"
+source = "https://github.com/dignea/DIGNEApy"
 issues = "https://github.com/DIGNEA/DIGNEApy/issues"
 
 [project.optional-dependencies]
@@ -65,6 +65,14 @@ before-test = "python -m pip install -r requirements.txt"
 test-requires = "pytest"
 test-command = "pytest --doctest-modules {project}/tests"
 build-verbosity = 1
+
+[tool.cibuildwheel.linux]
+repair-wheel-command = "auditwheel repair -w {dest_dir} {wheel}"
+
+[tool.cibuildwheel.macos]
+repair-wheel-command = "delocate-wheel --require-archs {delocate_archs} -w {dest_dir} -v {wheel}"
+
+
 [tool.pytest.init_options]
 filterwarnings = ["ignore::DeprecationWarning:THIRD_PARTY_NAME.*:"]
 

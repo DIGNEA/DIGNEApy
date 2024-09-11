@@ -89,11 +89,19 @@ class KPAE(Transformer):
     def __call__(self, X: npt.NDArray) -> np.ndarray:
         return self.encode(X)
 
+
 class KPAE50(KPAE):
     def __init__(self):
         super().__init__("KPAE50", 2, False)
-        self._model = keras.models.load_model(f"{KPAE._MODELS_PATH}N_50_2D_encoding/best_kp_ae_N_50_2D_lr_one_cycle_training.keras")
-        self._encoder = keras.models.load_model(f"{KPAE._MODELS_PATH}N_50_2D_encoding/best_kp_ae_N_50_2D_lr_one_cycle_training_encoder.keras")
-        self._decoder = keras.models.load_model(f"{KPAE._MODELS_PATH}N_50_2D_encoding/best_kp_ae_N_50_2D_lr_one_cycle_training_decoder.keras")
+
+        self._model = keras.models.load_model(
+            f"{KPAE._MODELS_PATH}N_50_2D_encoding/best_kp_ae_N_50_2D_lr_one_cycle_training.keras"
+        )
+        self._encoder = keras.models.load_model(
+            f"{KPAE._MODELS_PATH}N_50_2D_encoding/best_kp_ae_N_50_2D_lr_one_cycle_training_encoder.keras"
+        )
+        self._decoder = keras.models.load_model(
+            f"{KPAE._MODELS_PATH}N_50_2D_encoding/best_kp_ae_N_50_2D_lr_one_cycle_training_decoder.keras"
+        )
         with open(f"{KPAE._MODELS_PATH}kp_scaler_N_50.pkl", "rb") as f:
             self._scaler = pickle.load(f)

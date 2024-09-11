@@ -12,12 +12,20 @@
 
 import os
 
+os.environ["KERAS_BACKEND"] = "torch"
+
 from digneapy.transformers.autoencoders import KPAE, KPAE50
 from digneapy.transformers.base import SupportsTransform, Transformer
 from digneapy.transformers.keras_nn import KerasNN
 from digneapy.transformers.torch_nn import TorchNN
 from digneapy.transformers.tuner import NNTuner
 
-os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
-
-__all__ = ["Transformer", "SupportsTransform", "KerasNN", "TorchNN", "NNTuner", "KPAE", "KPAE50"]
+__all__ = [
+    "Transformer",
+    "SupportsTransform",
+    "KerasNN",
+    "TorchNN",
+    "NNTuner",
+    "KPAE",
+    "KPAE50",
+]

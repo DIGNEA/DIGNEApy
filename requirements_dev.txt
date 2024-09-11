@@ -3,7 +3,7 @@ virtualenv>=20.26.2
 build==1.2.1
 cibuildwheel>=2.18.1
 bump2version==0.5.11
-ruff==0.4.8
+ruff>=0.4.8
 coverage==4.5.4
 Sphinx>=5.0.0
 sphinx-rtd-theme

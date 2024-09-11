@@ -30,7 +30,7 @@ class KerasNN(Transformer):
         activations: Sequence[Optional[str]],
         scale: bool = True,
     ):
-        """Neural Network used to transform a space into another. This class uses a Tensorflow and Keras backend.
+        """Neural Network used to transform a space into another. This class uses a Keras backend.
 
         Args:
             name (str): Name of the model to be saved with. Expected a .keras extension.
@@ -48,6 +48,7 @@ class KerasNN(Transformer):
             name = name + ".keras"
 
         super().__init__(name)
+
         self.input_shape = input_shape
         self._shape = shape
         self._activations = activations

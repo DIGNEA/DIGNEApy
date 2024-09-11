@@ -11,7 +11,7 @@
 """
 
 from collections.abc import Iterable, Sequence
-from typing import Mapping, Self
+from typing import Mapping
 
 import numpy as np
 
@@ -88,7 +88,7 @@ class BPP(Problem):
             file.write(content)
 
     @classmethod
-    def from_file(cls, filename: str) -> Self:
+    def from_file(cls, filename: str):
         with open(filename) as f:
             lines = f.readlines()
             lines = [line.rstrip() for line in lines]

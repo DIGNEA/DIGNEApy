@@ -2,6 +2,21 @@
 requires = ["setuptools>=70", "cmake>=3.16.3", "wheel", "pybind11>=2.12.0"]
 build-backend = "setuptools.build_meta"
 
+[tool.setuptools]
+py-modules = ["digneapy"]
+ext-modules = [
+    { name = "pisinger_cpp", sources = [
+        "digneapy/solvers/pisinger/src/combo.cpp",
+        "digneapy/solvers/pisinger/src/expknap.cpp",
+        "digneapy/solvers/pisinger/src/minknap.cpp",
+        "digneapy/solvers/pisinger/src/pisinger.cpp",
+    ] },
+    { name = "parallel_ea", sources = [
+        "digneapy/solvers/parallel_ea/src/parallel_ea.cpp",
+
+    ] },
+]
+
 [project]
 dependencies = [
     "keras>=2.14.0",
@@ -21,7 +36,7 @@ dynamic = ["version"]
 description = "Python version of the DIGNEA code for instance generation"
 authors = [{ name = "Alejandro Marrero", email = "amarrerd@ull.edu.es" }]
 readme = "README.md"
-requires-python = ">=3.11"
+requires-python = ">=3.10"
 license = { file = "LICENSE" }
 keywords = [
     "dignea",
@@ -37,6 +52,7 @@ classifiers = [
     "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
     "Natural Language :: English",
     "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     'Topic :: Scientific/Engineering',
@@ -56,8 +72,10 @@ test = ["pytest>=3"]
 
 [tool.cibuildwheel]
 build = [
+    "cp310-manylinux_x86_64",
     "cp311-manylinux_x86_64",
     "cp312-manylinux_x86_64",
+    "cp310-macosx_x86_64",
     "cp311-macosx_x86_64",
     "cp312-macosx_x86_64",
 ]

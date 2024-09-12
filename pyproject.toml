@@ -70,7 +70,7 @@ build = [
 ]
 before-test = "python -m pip install -r requirements.txt"
 test-requires = "pytest"
-test-command = "pytest --doctest-modules {project}/tests"
+test-command = "pytest --doctest-modules -W ignore::ImportWarning -W ignore::DeprecationWarning -W ignore::UserWarning {project}/tests"
 build-verbosity = 1
 
 [tool.cibuildwheel.linux]

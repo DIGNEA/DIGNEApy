@@ -68,7 +68,7 @@ class Archive:
     def __repr__(self):
         return f"Archive(threshold={self._threshold},data=(|{len(self)}|))"
 
-    def __array__(self) -> np.ndarray:
+    def __array__(self, dtype=None) -> np.ndarray:
         """Creates a ndarray with the descriptors
 
         >>> import numpy as np
@@ -78,7 +78,7 @@ class Archive:
         >>> assert len(np_archive) == len(archive)
         >>> assert type(np_archive) == type(np.zeros(1))
         """
-        return np.array(self._instances)
+        return np.array(self._instances, dtype=Instance)
 
     def __eq__(self, other):
         """Compares whether to Archives are equal

@@ -3,12 +3,13 @@
 """
 @File    :   kp_ae_example.py
 @Time    :   2024/05/28 10:23:57
-@Author  :   Alejandro Marrero 
+@Author  :   Alejandro Marrero
 @Version :   1.0
 @Contact :   amarrerd@ull.edu.es
 @License :   (C)Copyright 2024, Alejandro Marrero
 @Desc    :   None
 """
+
 import os
 
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
@@ -22,7 +23,7 @@ from digneapy.domains.knapsack import KPDomain
 from digneapy.generators import EIG
 from digneapy.operators.replacement import generational
 from digneapy.solvers import default_kp, map_kp, miw_kp
-from digneapy.transformers.autoencoders import KPAE
+from digneapy.transformers._autoencoders import KPAE
 
 
 def save_instances(filename, generated_instances, dimension):
@@ -33,16 +34,16 @@ def save_instances(filename, generated_instances, dimension):
         generated_instances (iterable): Iterable of instances
     """
     features = [
-            "target",
-            "capacity",
-            "max_p",
-            "max_w",
-            "min_p",
-            "min_w",
-            "avg_eff",
-            "mean",
-            "std",
-        ]
+        "target",
+        "capacity",
+        "max_p",
+        "max_w",
+        "min_p",
+        "min_w",
+        "avg_eff",
+        "mean",
+        "std",
+    ]
     header = (
         ["target", "N"]
         + features
@@ -71,9 +72,7 @@ def generate_instances_heuristics_nsf(
     tss: float = 1e-6,
 ):
     print(
-        "=" * 40
-        + f" Generating KP instances of N = {dim} for Heuristics "
-        + "=" * 40
+        "=" * 40 + f" Generating KP instances of N = {dim} for Heuristics " + "=" * 40
     )
     kp_domain = KPDomain(dimension=dim, capacity_approach="percentage")
     portfolios = [
@@ -99,6 +98,7 @@ def generate_instances_heuristics_nsf(
         instances[portfolio[0].__name__] = copy.deepcopy(solution_set)
 
     return instances
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(

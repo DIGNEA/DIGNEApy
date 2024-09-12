@@ -18,9 +18,9 @@ import numpy as np
 from deap import algorithms, base, cma, creator, tools
 
 from .._constants import Direction
-from .base import Transformer
-from .keras_nn import KerasNN
-from .torch_nn import TorchNN
+from ._base import Transformer
+from ._keras_nn import KerasNN
+from ._torch_nn import TorchNN
 
 
 class NNTuner:

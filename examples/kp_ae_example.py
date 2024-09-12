@@ -3,12 +3,13 @@
 """
 @File    :   kp_ae_example.py
 @Time    :   2024/05/28 10:23:57
-@Author  :   Alejandro Marrero 
+@Author  :   Alejandro Marrero
 @Version :   1.0
 @Contact :   amarrerd@ull.edu.es
 @License :   (C)Copyright 2024, Alejandro Marrero
 @Desc    :   None
 """
+
 import os
 
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
@@ -23,7 +24,7 @@ from digneapy.domains.knapsack import KPDomain
 from digneapy.generators import EIG
 from digneapy.operators.replacement import generational
 from digneapy.solvers import default_kp, map_kp, miw_kp
-from digneapy.transformers.autoencoders import KPAE50
+from digneapy.transformers._autoencoders import KPAE50
 
 
 def save_instances(filename, generated_instances, dimension, encoding):
@@ -95,6 +96,7 @@ def generate_instances_heuristics(
 
     return instances
 
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         prog="kp_ae_example", description="Novelty Search for KP instances with AE."
@@ -121,7 +123,9 @@ if __name__ == "__main__":
     dimension = args.dimension
     encoding = args.encoding
     # dimensions = [50, 250, 500, 1000]
-    generated_instances = generate_instances_heuristics(dim=dimension, encoding=encoding)
+    generated_instances = generate_instances_heuristics(
+        dim=dimension, encoding=encoding
+    )
 
     save_instances(
         f"kp_ns_KPAE50_gr_heuristics_{n_run}.csv",

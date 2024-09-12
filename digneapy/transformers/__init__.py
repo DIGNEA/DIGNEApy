@@ -14,11 +14,11 @@ import os
 
 os.environ["KERAS_BACKEND"] = "torch"
 
-from digneapy.transformers.autoencoders import KPAE, KPAE50
-from digneapy.transformers.base import SupportsTransform, Transformer
-from digneapy.transformers.keras_nn import KerasNN
-from digneapy.transformers.torch_nn import TorchNN
-from digneapy.transformers.tuner import NNTuner
+from digneapy.transformers._autoencoders import KPAE, KPAE50
+from digneapy.transformers._base import SupportsTransform, Transformer
+from digneapy.transformers._keras_nn import KerasNN
+from digneapy.transformers._torch_nn import TorchNN
+from digneapy.transformers._tuner import NNTuner
 
 __all__ = [
     "Transformer",

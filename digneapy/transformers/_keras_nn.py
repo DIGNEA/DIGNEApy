@@ -18,7 +18,7 @@ import numpy as np
 import numpy.typing as npt
 from sklearn.preprocessing import StandardScaler
 
-from .base import Transformer
+from ._base import Transformer
 
 
 class KerasNN(Transformer):

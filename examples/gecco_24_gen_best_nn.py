@@ -19,7 +19,7 @@ from digneapy.domains.knapsack import KPDomain
 from digneapy.generators import EIG
 from digneapy.operators.replacement import first_improve_replacement
 from digneapy.solvers import default_kp, map_kp, miw_kp
-from digneapy.transformers.keras_nn import KerasNN
+from digneapy.transformers._keras_nn import KerasNN
 
 
 def save_instances(filename, generated_instances):

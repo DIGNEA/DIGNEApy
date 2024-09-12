@@ -24,6 +24,8 @@
 #include <vector>
 
 #include "pybind11/numpy.h"
+#define NPY_TARGET_VERSION NPY_1_22_API_VERSION
+
 namespace py = pybind11;
 using namespace std;
 

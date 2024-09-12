@@ -18,7 +18,7 @@ import numpy as np
 import numpy.typing as npt
 from keras.utils import pad_sequences
 
-from digneapy.transformers.base import Transformer
+from digneapy.transformers._base import Transformer
 
 
 class KPAE(Transformer):

@@ -18,7 +18,7 @@ import numpy.typing as npt
 import torch
 from sklearn.preprocessing import StandardScaler
 
-from .base import Transformer
+from ._base import Transformer
 
 
 class TorchNN(Transformer, torch.nn.Module):

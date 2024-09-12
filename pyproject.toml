@@ -26,7 +26,7 @@ version = "0.2.3"
 description = "Python version of the DIGNEA code for instance generation"
 authors = [{ name = "Alejandro Marrero", email = "amarrerd@ull.edu.es" }]
 readme = "README.md"
-requires-python = ">=3.11"
+requires-python = ">=3.10"
 license = { file = "LICENSE" }
 keywords = [
     "dignea",
@@ -61,8 +61,10 @@ test = ["pytest>=3"]
 
 [tool.cibuildwheel]
 build = [
+    "cp310-manylinux_x86_64",
     "cp311-manylinux_x86_64",
     "cp312-manylinux_x86_64",
+    "cp310-macosx_x86_64",
     "cp311-macosx_x86_64",
     "cp312-macosx_x86_64",
 ]
@@ -79,7 +81,11 @@ repair-wheel-command = "delocate-wheel --require-archs {delocate_archs} -w {dest
 
 
 [tool.pytest.init_options]
-filterwarnings = ["ignore::DeprecationWarning:THIRD_PARTY_NAME.*:"]
+filterwarnings = [
+    "ignore::DeprecationWarning",
+    "ignore::UserWarning",
+    "ignore::InconsistentVersionWarning",
+]
 
 [tool.ruff]
 # Exclude a variety of commonly ignored directories.

@@ -16,8 +16,8 @@ from typing import Mapping
 
 import numpy as np
 
-from digneapy.core.instance import Instance
-from digneapy.core.problem import Problem
+from digneapy._core._instance import Instance
+from digneapy._core._problem import Problem
 
 
 class Domain(ABC):

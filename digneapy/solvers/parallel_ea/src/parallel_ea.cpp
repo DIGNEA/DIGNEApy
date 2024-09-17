@@ -535,8 +535,7 @@ void ParallelGeneticAlgorithm::reproduction(Individual &child1,
 
 PYBIND11_MODULE(parallel_ea, m) {
     m.doc() = "Parallel EA for Knapsack Problems";
-    m.def("get_max_threads", &omp_get_max_threads,
-          "Returns max number of threads");
+    m.def("get_max_threads", &omp_get_max_threads, "Returns max number of threads");
     m.def("set_num_threads", &omp_set_num_threads, "Set number of threads");
     py::class_<ParallelGeneticAlgorithm>(m, "_ParEACpp")
         .def(py::init<int, int, double, double, int>(),

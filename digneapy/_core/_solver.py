@@ -13,8 +13,8 @@
 from abc import ABC, abstractmethod
 from typing import Protocol
 
-from digneapy.core.problem import P
-from digneapy.core.solution import Solution
+from digneapy._core._problem import P
+from digneapy._core._solution import Solution
 
 
 class SupportsSolve(Protocol[P]):

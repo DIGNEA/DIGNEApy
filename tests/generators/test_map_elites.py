@@ -14,10 +14,10 @@ import os
 
 import pytest
 
+from digneapy._core import Instance
 from digneapy.archives import GridArchive
-from digneapy.core import Instance
-from digneapy.domains.bin_packing import BPPDomain
-from digneapy.domains.knapsack import KPDomain
+from digneapy.domains.bpp import BPPDomain
+from digneapy.domains.kp import KPDomain
 from digneapy.generators import MElitGen, plot_map_elites_logbook
 from digneapy.operators.mutation import uniform_one_mutation
 from digneapy.solvers import best_fit, default_kp, first_fit, map_kp, miw_kp, worst_fit

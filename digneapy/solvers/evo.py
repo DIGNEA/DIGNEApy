@@ -10,16 +10,17 @@
 @Desc    :   None
 """
 
+__all__ = ["EA"]
+
 import multiprocessing
-from operator import attrgetter
 
 import numpy as np
 from deap import algorithms, base, creator, tools
 
-from digneapy._constants import Direction
-from digneapy.core import Solution, Solver
-from digneapy.core.problem import P
-from digneapy.core.solver import SupportsSolve
+from digneapy._core import Solution, Solver
+from digneapy._core._constants import Direction
+from digneapy._core._problem import P
+from digneapy._core._solver import SupportsSolve
 
 
 def _gen_dignea_ind(icls, size: int, min_value, max_value):

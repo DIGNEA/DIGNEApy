@@ -10,22 +10,33 @@
 @Desc    :   None
 """
 
-import os
-
-os.environ["KERAS_BACKEND"] = "torch"
-
-from digneapy.transformers._autoencoders import KPAE, KPAE50
 from digneapy.transformers._base import SupportsTransform, Transformer
-from digneapy.transformers._keras_nn import KerasNN
-from digneapy.transformers._torch_nn import TorchNN
-from digneapy.transformers._tuner import NNTuner
+
+# __all__ = [
+#     "Transformer",
+#     "SupportsTransform",
+#     "nettrans",
+#     "NNTuner",
+# ]
 
 __all__ = [
     "Transformer",
     "SupportsTransform",
-    "KerasNN",
-    "TorchNN",
-    "NNTuner",
-    "KPAE",
-    "KPAE50",
 ]
+
+
+# def __getattr__(attr):
+#     if attr == "nettrans":
+#         import digneapy.transformers._neural_networks as nettrans
+
+#         return nettrans
+
+#     if attr == "autoencoders":
+#         import digneapy.transformers._autoencoders as autoencoders
+
+#         return autoencoders
+
+#     if attr == "tuner":
+#         import digneapy.transformers._tuner as tuner
+
+#         return tuner

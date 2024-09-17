@@ -10,13 +10,15 @@
 @Desc    :   None
 """
 
+__all__ = ["Knapsack", "KPDomain"]
+
 import itertools
 from collections.abc import Sequence
 from typing import Mapping
 
 import numpy as np
 
-from digneapy.core import Domain, Instance, Problem, Solution
+from digneapy._core import Domain, Instance, Problem, Solution
 
 
 class Knapsack(Problem):

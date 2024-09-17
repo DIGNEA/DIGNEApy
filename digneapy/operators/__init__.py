@@ -10,11 +10,30 @@
 @Desc    :   None
 """
 
-from digneapy.operators import crossover, mutation, replacement, selection
-
 __all__ = [
     "crossover",
     "mutation",
     "selection",
     "replacement",
 ]
+
+
+def __getattr__(attr):
+    if attr == "crossover":
+        import digneapy.operators.crossover as crossover
+
+        return crossover
+    if attr == "mutation":
+        import digneapy.operators.mutation as mutation
+
+        return mutation
+
+    if attr == "selection":
+        import digneapy.operators.selection as selection
+
+        return selection
+
+    if attr == "replacement":
+        import digneapy.operators.replacement as replacement
+
+        return replacement

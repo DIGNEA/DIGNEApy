@@ -16,7 +16,7 @@ from typing import Tuple, TypeVar
 
 import numpy as np
 
-from .solution import Solution
+from ._solution import Solution
 
 
 class Problem(ABC):

@@ -10,12 +10,14 @@
 @Desc    :   None
 """
 
+__all__ = ["one_point_crossover", "uniform_crossover"]
+
 import copy
 from collections.abc import Callable
 
 import numpy as np
 
-from ..core import IndType
+from .._core import IndType
 
 Crossover = Callable[
     [IndType, IndType],

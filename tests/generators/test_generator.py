@@ -16,7 +16,7 @@ from collections import deque
 import pytest
 
 from digneapy.archives import Archive
-from digneapy.domains.knapsack import KPDomain
+from digneapy.domains.kp import KPDomain
 from digneapy.generators import (
     EIG,
     def_perf_metric,

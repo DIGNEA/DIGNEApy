@@ -18,11 +18,11 @@ from operator import attrgetter
 import numpy as np
 from deap import tools
 
+from digneapy._core import Domain, Instance
+from digneapy._core._perf_metrics import PerformanceFn, default_performance_metric
+from digneapy._core._problem import P
+from digneapy._core._solver import SupportsSolve
 from digneapy.archives import GridArchive
-from digneapy.core import Domain, Instance
-from digneapy.core.problem import P
-from digneapy.core.solver import SupportsSolve
-from digneapy.generators._perf_metrics import PerformanceFn, default_performance_metric
 from digneapy.operators import mutation
 from digneapy.qd import descriptor_strategies
 

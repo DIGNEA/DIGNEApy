@@ -10,6 +10,19 @@
 @Desc    :   None
 """
 
-from ._timers import clock
 
-__all__ = ["clock"]
+def __getattr__(name):
+    if name == "clock":
+        from ._timers import clock as clock
+
+        return clock
+
+    if name == "plot_generator_logbook":
+        from ._plots import plot_generator_logbook as pgl
+
+        return pgl
+
+    if name == "plot_map_elites_logbook":
+        from ._plots import plot_map_elites_logbook as pml
+
+        return pml

@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 # -*-coding:utf-8 -*-
 """
-@File    :   core.py
-@Time    :   2024/05/29 11:16:49
+@File    :   __init__.py
+@Time    :   2024/05/29 11:14:50
 @Author  :   Alejandro Marrero
 @Version :   1.0
 @Contact :   amarrerd@ull.edu.es
@@ -10,13 +10,15 @@
 @Desc    :   None
 """
 
+__all__ = ["minknap", "combo", "expknap"]
+
 from typing import List
 
 import numpy as np
 from pisinger_cpp import combo_cpp, expknap_cpp, minknap_cpp
 
-from digneapy.core import Solution
-from digneapy.domains.knapsack import Knapsack
+from digneapy._core import Solution
+from digneapy.domains.kp import Knapsack
 
 
 def minknap(problem: Knapsack = None, only_time: bool = True) -> List[Solution]:

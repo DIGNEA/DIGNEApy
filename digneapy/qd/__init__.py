@@ -10,22 +10,18 @@
 @Desc    :   None
 """
 
-from digneapy.qd._cma_me import CMA_ME
-from digneapy.qd._desc_strategies import (
-    DescStrategy,
-    descriptor_strategies,
-    instance_strategy,
-    performance_strategy,
-    rdstrat,
-)
-from digneapy.qd._novelty_search import NS
+# from digneapy.qd._cma_me import CMA_ME
+# from digneapy.qd._desc_strategies import (
+#     DescStrategy,
+#     descriptor_strategies,
+#     instance_strategy,
+#     performance_strategy,
+#     rdstrat,
+# )
 
-__all__ = [
-    "NS",
-    "CMA_ME",
-    "performance_strategy",
-    "instance_strategy",
-    "descriptor_strategies",
-    "rdstrat",
-    "DescStrategy",
-]
+
+def __getattr__(name):
+    if name == "cma_me":
+        import digneapy.qd._cma_me as cmae_me
+
+        return cmae_me

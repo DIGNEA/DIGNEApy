@@ -10,14 +10,9 @@
 @Desc    :   None
 """
 
-import json
 import operator
-import reprlib
 from collections.abc import Iterable
-from functools import reduce
 from typing import Optional
-
-import numpy as np
 
 
 class Instance:
@@ -41,6 +36,8 @@ class Instance:
             raise ValueError(
                 "The fitness, p and s parameters must be convertible to float"
             )
+        import numpy as np
+
         self._vars = np.asarray(variables) if variables is not None else np.empty(0)
         self._fit = fitness
         self._p = p
@@ -124,6 +121,8 @@ class Instance:
         return f"Instance<f={self.fitness},p={self.p},s={self.s},vars={len(self._vars)},features={len(self.features)},descriptor={len(self.descriptor)},performance={len(self.portfolio_scores)}>"
 
     def __str__(self):
+        import reprlib
+
         descriptor = reprlib.repr(self.descriptor)
         performance = reprlib.repr(self.portfolio_scores)
         performance = performance[performance.find("(") : performance.rfind(")") + 1]
@@ -170,6 +169,8 @@ class Instance:
         return self.fitness >= other.fitness
 
     def __hash__(self):
+        from functools import reduce
+
         hashes = (hash(x) for x in self)
         return reduce(operator.or_, hashes, 0)
 
@@ -192,6 +193,8 @@ class Instance:
         return msg
 
     def to_json(self):
+        import json
+
         data = {
             "fitness": self.fitness,
             "s": self.s,

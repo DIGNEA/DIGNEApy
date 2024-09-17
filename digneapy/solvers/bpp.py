@@ -10,10 +10,12 @@
 @Desc    :   None
 """
 
+__all__ = ["best_fit", "next_fit", "worst_fit", "first_fit"]
+
 import numpy as np
 
-from digneapy.core import Solution
-from digneapy.domains.bin_packing import BPP
+from digneapy._core import Solution
+from digneapy.domains.bpp import BPP
 
 
 def best_fit(problem: BPP, *args, **kwargs) -> list[Solution]:

@@ -10,6 +10,8 @@
 @Desc    :   None
 """
 
+__all__ = ["NNTuner"]
+
 from collections.abc import Callable, Sequence
 from multiprocessing.pool import ThreadPool as Pool
 from typing import Optional
@@ -17,10 +19,9 @@ from typing import Optional
 import numpy as np
 from deap import algorithms, base, cma, creator, tools
 
-from .._constants import Direction
+from .._core._constants import Direction
 from ._base import Transformer
-from ._keras_nn import KerasNN
-from ._torch_nn import TorchNN
+from ._neural_networks import KerasNN, TorchNN
 
 
 class NNTuner:

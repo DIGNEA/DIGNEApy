@@ -10,12 +10,14 @@
 @Desc    :   None
 """
 
+__all__ = ["uniform_one_mutation"]
+
 from collections.abc import Callable, Sequence
 from typing import Tuple
 
 import numpy as np
 
-from ..core import IndType
+from .._core import IndType
 
 Mutation = Callable[[IndType, Sequence[Tuple]], IndType]
 

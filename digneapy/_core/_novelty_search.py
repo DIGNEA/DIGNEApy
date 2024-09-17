@@ -17,9 +17,9 @@ from typing import Optional
 import numpy as np
 from sklearn.neighbors import NearestNeighbors
 
+from digneapy._core import Instance
+from digneapy._core._desc_strategies import descriptor_strategies
 from digneapy.archives import Archive
-from digneapy.core import Instance
-from digneapy.qd._desc_strategies import descriptor_strategies
 from digneapy.transformers import SupportsTransform
 
 

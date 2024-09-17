@@ -14,7 +14,7 @@ from collections.abc import Callable, Iterable, MutableMapping
 
 import numpy as np
 
-from digneapy.core import Instance
+from digneapy._core import Instance
 
 """ DescStrategy defines the type for a Descriptor Strategy.
     A descriptor strategy is any callable able to extract the

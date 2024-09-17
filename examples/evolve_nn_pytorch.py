@@ -17,7 +17,7 @@ import pandas as pd
 
 from digneapy import Direction
 from digneapy.archives import Archive, GridArchive
-from digneapy.domains.knapsack import KPDomain
+from digneapy.domains.kp import KPDomain
 from digneapy.generators import EIG
 from digneapy.operators.replacement import first_improve_replacement
 from digneapy.solvers import default_kp, map_kp, miw_kp, mpw_kp

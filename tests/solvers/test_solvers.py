@@ -15,8 +15,8 @@ import pytest
 from deap import benchmarks
 
 from digneapy import Direction
-from digneapy.core import Solution
-from digneapy.domains import knapsack
+from digneapy._core import Solution
+from digneapy.domains import kp
 from digneapy.solvers import EA, default_kp, map_kp, miw_kp, mpw_kp
 from digneapy.solvers.parallel_ea import ParEAKP
 from digneapy.solvers.pisinger import combo, expknap, minknap
@@ -27,7 +27,7 @@ def default_instance():
     p = list(range(1, 101))
     w = list(range(1, 101))
     q = 50
-    return knapsack.Knapsack(p, w, q)
+    return kp.Knapsack(p, w, q)
 
 
 @pytest.fixture
@@ -35,7 +35,7 @@ def default_large_knap():
     c = np.random.randint(1e3, 1e5)
     w = np.random.randint(1000, 5000, size=1000, dtype=np.int32)
     p = np.random.randint(1000, 5000, size=1000, dtype=np.int32)
-    kp = knapsack.Knapsack(profits=p, weights=w, capacity=c)
+    kp = kp.Knapsack(profits=p, weights=w, capacity=c)
     return kp
 
 

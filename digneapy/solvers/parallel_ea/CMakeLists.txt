@@ -35,7 +35,7 @@ if(OPENMP_FOUND)
 endif()
 
 # Always run with the optimisation flags
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++20 -isystem -fPIC -fpermissive -O3 -ffast-math -Wall -march=native -mtune=native")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++20 -isystem -fPIC -fpermissive -O3 -ffast-math -Wall -march=native -mtune=native -fopenmp")
 
 pybind11_add_module(parallel_ea src/parallel_ea.cpp)
 target_link_libraries(parallel_ea PUBLIC OpenMP::OpenMP_CXX)

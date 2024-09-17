@@ -10,18 +10,17 @@
 @Desc    :   None
 """
 
-from digneapy.solvers._bpp_heuristics import best_fit, first_fit, next_fit, worst_fit
-from digneapy.solvers._kp_heuristics import default_kp, map_kp, miw_kp, mpw_kp
-from digneapy.solvers.evolutionary import EA
+from . import bpp as bpp
+from . import evo as evo
+from . import kp as kp
+from . import pisinger
 
-__all__ = [
-    "EA",
-    "default_kp",
-    "map_kp",
-    "miw_kp",
-    "mpw_kp",
-    "best_fit",
-    "first_fit",
-    "next_fit",
-    "worst_fit",
-]
+__all__ = ["evo", "bpp", "kp", "pisinger"]
+
+
+# def __getattr__(attr_name):
+#     ret_mod = None
+
+#     if ret_mod is None:
+#         raise AttributeError(f"module 'digneapy.solvers' has no attribute {attr_name}")
+#     return ret_mod

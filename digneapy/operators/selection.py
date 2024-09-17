@@ -10,12 +10,14 @@
 @Desc    :   None
 """
 
+__all__ = ["binary_tournament_selection"]
+
 import copy
 from collections.abc import Callable, Sequence
 
 import numpy as np
 
-from ..core import IndType
+from .._core import IndType
 
 Selection = Callable[[Sequence[IndType]], IndType]
 

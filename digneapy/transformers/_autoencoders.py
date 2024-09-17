@@ -10,6 +10,8 @@
 @Desc    :   None
 """
 
+__all__ = ["KPAE", "KPAE50"]
+
 import os
 import pickle
 

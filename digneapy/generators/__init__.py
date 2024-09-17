@@ -10,24 +10,16 @@
 @Desc    :   None
 """
 
-from digneapy.generators._eig import EIG
-from digneapy.generators._perf_metrics import PerformanceFn
-from digneapy.generators._perf_metrics import (
-    default_performance_metric as def_perf_metric,
-)
-from digneapy.generators._perf_metrics import (
-    pisinger_performance_metric as pis_perf_metric,
-)
-from digneapy.generators._utils import plot_generator_logbook, plot_map_elites_logbook
+__all__ = ["EIG", "MElitGen"]
 
-from ._map_elites_gen import MElitGen
 
-__all__ = [
-    "EIG",
-    "MElitGen",
-    "PerformanceFn",
-    "def_perf_metric",
-    "pis_perf_metric",
-    "plot_generator_logbook",
-    "plot_map_elites_logbook",
-]
+def __getattr__(name):
+    if name == "EIG":
+        from digneapy.generators._eig import EIG as EIG
+
+        return EIG
+
+    if name == "MElitGen":
+        from digneapy.generators._map_elites_gen import MElitGen as MElitGen
+
+        return MElitGen

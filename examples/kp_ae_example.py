@@ -20,7 +20,7 @@ import itertools
 from collections.abc import Sequence
 
 from digneapy.archives import Archive
-from digneapy.domains.knapsack import KPDomain
+from digneapy.domains.kp import KPDomain
 from digneapy.generators import EIG
 from digneapy.operators.replacement import generational
 from digneapy.solvers import default_kp, map_kp, miw_kp

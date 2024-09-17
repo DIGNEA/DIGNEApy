@@ -10,12 +10,14 @@
 @Desc    :   None
 """
 
+__all__ = ["BPP", "BPPDomain"]
+
 from collections.abc import Iterable, Sequence
 from typing import Mapping
 
 import numpy as np
 
-from digneapy.core import Domain, Instance, Problem, Solution
+from digneapy._core import Domain, Instance, Problem, Solution
 
 
 class BPP(Problem):

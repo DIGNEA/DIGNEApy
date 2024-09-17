@@ -13,12 +13,11 @@
 import json
 import operator
 from collections.abc import Callable, Iterable
-from functools import reduce
 from typing import Optional
 
 import numpy as np
 
-from digneapy.core import Instance
+from digneapy._core import Instance
 
 
 class Archive:
@@ -96,6 +95,8 @@ class Archive:
         return len(self) == len(other) and all(a == b for a, b in zip(self, other))
 
     def __hash__(self):
+        from functools import reduce
+
         hashes = (hash(i) for i in self.instances)
         return reduce(lambda a, b: a ^ b, hashes, 0)
 

@@ -12,7 +12,7 @@
 
 import pytest
 
-from digneapy.domains import knapsack
+from digneapy.domains import kp
 from digneapy.transformers._autoencoders import KPAE
 
 encodings = [2, 8]
@@ -23,7 +23,7 @@ def test_autoencoder(encoding):
     dimension = 1000
     n_instances = 100
     autoencoder = KPAE(encoding=encoding)
-    domain = knapsack.KPDomain(dimension=dimension)
+    domain = kp.KPDomain(dimension=dimension)
     instances = [domain.generate_instance() for _ in range(n_instances)]
 
     assert isinstance(autoencoder, KPAE)

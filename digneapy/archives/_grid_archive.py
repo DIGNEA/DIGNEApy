@@ -17,7 +17,7 @@ from typing import Dict, Optional, Tuple
 
 import numpy as np
 
-from digneapy.core import Instance
+from digneapy._core import Instance
 
 from ._base_archive import Archive
 

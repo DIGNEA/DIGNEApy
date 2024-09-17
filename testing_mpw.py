@@ -10,15 +10,15 @@
 @Desc    :   None
 """
 
-from digneapy.domains import knapsack
-from digneapy.solvers import mpw_kp
+from digneapy.domains import kp
+from digneapy.solvers.kp import mpw_kp
 
 
 def generate_instance():
     p = list(range(1, 101))
     w = list(range(1, 101))
     q = 50
-    return knapsack.Knapsack(p, w, q)
+    return kp.Knapsack(p, w, q)
 
 
 def test_mpw_kp_heuristic(default_instance):

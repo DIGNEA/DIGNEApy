@@ -6,10 +6,10 @@ build-backend = "setuptools.build_meta"
 py-modules = ["digneapy"]
 ext-modules = [
     { name = "pisinger_cpp", sources = [
-        "digneapy/solvers/pisinger/src/combo.cpp",
-        "digneapy/solvers/pisinger/src/expknap.cpp",
-        "digneapy/solvers/pisinger/src/minknap.cpp",
-        "digneapy/solvers/pisinger/src/pisinger.cpp",
+        "digneapy/solvers/_pisinger/src/combo.cpp",
+        "digneapy/solvers/_pisinger/src/expknap.cpp",
+        "digneapy/solvers/_pisinger/src/minknap.cpp",
+        "digneapy/solvers/_pisinger/src/pisinger.cpp",
     ] },
     { name = "parallel_ea", sources = [
         "digneapy/solvers/parallel_ea/src/parallel_ea.cpp",

@@ -13,7 +13,7 @@
 import numpy as np
 
 from digneapy import Direction
-from digneapy.domains import knapsack
+from digneapy.domains import kp
 from digneapy.solvers import EA
 from digneapy.solvers.parallel_ea import ParEAKP
 from digneapy.utils import clock
@@ -29,7 +29,7 @@ def main():
     p = list(np.random.randint(1, 100 + 1, size=N))
     w = list(np.random.randint(1, 100 + 1, size=N))
     q = np.random.randint(0, high=250)
-    kp = knapsack.Knapsack(profits=p, weights=w, capacity=q)
+    kp = kp.Knapsack(profits=p, weights=w, capacity=q)
     solver = EA(
         direction=Direction.MAXIMISE,
         dim=N,

@@ -10,10 +10,12 @@
 @Desc    :   None
 """
 
+__all__ = ["default_kp", "map_kp", "miw_kp", "mpw_kp"]
+
 import numpy as np
 
-from digneapy.core import Solution
-from digneapy.domains.knapsack import Knapsack
+from digneapy._core import Solution
+from digneapy.domains.kp import Knapsack
 
 
 def default_kp(problem: Knapsack, *args, **kwargs) -> list[Solution]:

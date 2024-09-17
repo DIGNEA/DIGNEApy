@@ -10,6 +10,13 @@
 @Desc    :   None
 """
 
-from .__main__ import ParEAKP
+from ._solver import ParEAKP
 
 __all__ = ["ParEAKP"]
+
+
+def __getattr__(name):
+    if name == "ParEAKP":
+        from ._solver import ParEAKP as ParEAKP
+
+        return ParEAKP

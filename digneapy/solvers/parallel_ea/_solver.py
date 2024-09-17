@@ -12,8 +12,8 @@
 
 from parallel_ea import _ParEACpp
 
-from digneapy.core import Solution
-from digneapy.domains.knapsack import Knapsack
+from digneapy._core import Solution
+from digneapy.domains.kp import Knapsack
 
 
 class ParEAKP(_ParEACpp):

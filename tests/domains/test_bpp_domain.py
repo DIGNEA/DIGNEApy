@@ -15,7 +15,7 @@ import os
 import numpy as np
 import pytest
 
-from digneapy.core import Instance
+from digneapy._core import Instance
 from digneapy.domains import BPP, BPPDomain
 
 

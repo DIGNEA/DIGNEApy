@@ -10,12 +10,14 @@
 @Desc    :   None
 """
 
+__all__ = ["generational", "first_improve_replacement", "elitist_replacement"]
+
 import copy
 import itertools
 from collections.abc import Callable, Sequence
 from operator import attrgetter
 
-from ..core import IndType
+from .._core import IndType
 
 Replacement = Callable[
     [

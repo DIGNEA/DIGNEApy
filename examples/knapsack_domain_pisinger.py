@@ -13,7 +13,7 @@
 from collections import deque
 
 from digneapy.archives import Archive
-from digneapy.domains.knapsack import KPDomain
+from digneapy.domains.kp import KPDomain
 from digneapy.generators import EIG, pis_perf_metric
 from digneapy.operators.replacement import first_improve_replacement
 from digneapy.solvers.pisinger import combo, expknap, minknap

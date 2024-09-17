@@ -23,11 +23,11 @@ class get_pybind_include(object):
         return pybind11.get_include(self.user)
 
 
-compile_args = ["-std=c++11"]
+compile_args = ["-std=c++11", "-fopenmp"]
 ext_modules = [
     Extension(
         "pisinger_cpp",
-        sorted(glob("digneapy/solvers/pisinger/src/*.cpp")),
+        sorted(glob("digneapy/solvers/_pisinger/src/*.cpp")),
         include_dirs=[
             # Path to pybind11 headers
             get_pybind_include(),

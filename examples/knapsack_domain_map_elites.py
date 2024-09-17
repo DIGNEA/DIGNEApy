@@ -11,7 +11,7 @@
 """
 
 from digneapy.archives import GridArchive
-from digneapy.domains.knapsack import KPDomain
+from digneapy.domains.kp import KPDomain
 from digneapy.generators import MElitGen, plot_map_elites_logbook
 from digneapy.operators.mutation import uniform_one_mutation
 from digneapy.solvers import default_kp, map_kp, miw_kp

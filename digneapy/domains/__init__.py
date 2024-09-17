@@ -10,7 +10,18 @@
 @Desc    :   None
 """
 
-from digneapy.domains.bin_packing import BPP, BPPDomain
-from digneapy.domains.knapsack import Knapsack, KPDomain
+# from digneapy.domains.bin_packing import BPP, BPPDomain
+# from digneapy.domains.knapsack import Knapsack, KPDomain
 
-__all__ = ["Knapsack", "KPDomain", "BPP", "BPPDomain"]
+
+def __getattr__(attr_name):
+    if attr_name == "kp":
+        import digneapy.domains.kp as kp
+
+        return kp
+    elif attr_name == "bpp":
+        import digneapy.domains.bpp as bpp
+
+        return bpp
+    else:
+        raise ImportError(f"module 'digneapy.domains' has no attribute {attr_name}")

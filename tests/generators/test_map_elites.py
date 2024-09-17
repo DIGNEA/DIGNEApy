@@ -18,9 +18,11 @@ from digneapy._core import Instance
 from digneapy.archives import GridArchive
 from digneapy.domains.bpp import BPPDomain
 from digneapy.domains.kp import KPDomain
-from digneapy.generators import MElitGen, plot_map_elites_logbook
+from digneapy.generators import MElitGen
 from digneapy.operators.mutation import uniform_one_mutation
-from digneapy.solvers import best_fit, default_kp, first_fit, map_kp, miw_kp, worst_fit
+from digneapy.solvers.bpp import best_fit, first_fit, worst_fit
+from digneapy.solvers.kp import default_kp, map_kp, miw_kp
+from digneapy.utils import plot_map_elites_logbook
 
 test_data = [
     (

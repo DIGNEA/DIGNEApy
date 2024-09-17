@@ -10,12 +10,21 @@ from digneapy._core import (
     Domain,
     IndType,
     Instance,
+    P,
     Problem,
     Solution,
     Solver,
+    SupportsSolve,
 )
 from digneapy.archives import Archive, GridArchive
 from digneapy.operators import crossover, mutation, replacement, selection
+
+from .descriptors import DescStrategy, descriptor_strategies, rdstrat
+from .metrics import (
+    PerformanceFn,
+    default_performance_metric,
+    pisinger_performance_metric,
+)
 
 __dignea_submodules = {"utils", "domains", "generators", "solvers"}
 
@@ -25,6 +34,8 @@ __all__ = list(
     | set(_core.__all__)
     | set(operators.__all__)
     | set(archives.__all__)
+    | set(metrics.__all__)
+    | set(descriptors.__all__)
 )
 
 

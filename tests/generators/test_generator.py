@@ -15,22 +15,18 @@ from collections import deque
 
 import pytest
 
-from digneapy.archives import Archive
+from digneapy import Archive, default_performance_metric, pisinger_performance_metric
 from digneapy.domains.kp import KPDomain
-from digneapy.generators import (
-    EIG,
-    def_perf_metric,
-    pis_perf_metric,
-    plot_generator_logbook,
-)
+from digneapy.generators import EIG
 from digneapy.operators import crossover, mutation, replacement, selection
-from digneapy.solvers import (
+from digneapy.solvers.kp import (
     default_kp,
     map_kp,
     miw_kp,
     mpw_kp,
 )
 from digneapy.solvers.pisinger import combo, expknap, minknap
+from digneapy.utils import plot_generator_logbook
 
 
 def test_default_generator():
@@ -51,7 +47,7 @@ def test_default_generator():
     assert eig.replacement == replacement.generational
     assert eig.phi == 0.85
     assert eig.performance_function is not None
-    assert eig.performance_function == def_perf_metric
+    assert eig.performance_function == default_performance_metric
 
     assert (
         eig.__str__()
@@ -236,7 +232,7 @@ def test_eig_gen_kp_perf_descriptor_with_pisinger():
         repetitions=1,
         descriptor="performance",
         replacement=replacement.generational,
-        performance_function=pis_perf_metric,
+        performance_function=pisinger_performance_metric,
     )
     archive, solution_set = eig()
     # They could be empty

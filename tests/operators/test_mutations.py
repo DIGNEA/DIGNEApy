@@ -15,7 +15,7 @@ import copy
 import numpy as np
 import pytest
 
-from digneapy._core import Instance, Solution
+from digneapy import Instance, Solution
 from digneapy.operators import mutation
 
 

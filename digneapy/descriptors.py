@@ -10,11 +10,17 @@
 @Desc    :   Descriptors Strategies for Instance Generation
 """
 
+__all__ = [
+    "DescStrategy",
+    "rdstrat",
+    "descriptor_strategies",
+]
+
 from collections.abc import Callable, Iterable, MutableMapping
 
 import numpy as np
 
-from digneapy._core import Instance
+from ._core._instance import Instance
 
 """ DescStrategy defines the type for a Descriptor Strategy.
     A descriptor strategy is any callable able to extract the

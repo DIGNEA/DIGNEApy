@@ -19,8 +19,8 @@ import pytest
 from sklearn.metrics import mean_squared_error
 
 from digneapy import Direction
-from digneapy.transformers._keras_nn import KerasNN
-from digneapy.transformers._tuner import NNTuner
+from digneapy.transformers.neural import KerasNN
+from digneapy.transformers.tuner import NNTuner
 
 dir, _ = os.path.split(__file__)
 

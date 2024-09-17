@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 # -*-coding:utf-8 -*-
 """
-@File    :   perf_metrics.py
-@Time    :   2024/06/07 14:24:19
+@File    :   metrics.py
+@Time    :   2024/09/17 14:51:11
 @Author  :   Alejandro Marrero
 @Version :   1.0
 @Contact :   amarrerd@ull.edu.es
@@ -10,7 +10,7 @@
 @Desc    :   None
 """
 
-__all__ = ["default_performance_metric", "pisinger_performance_metric"]
+__all__ = ["PerformanceFn", "default_performance_metric", "pisinger_performance_metric"]
 
 from collections.abc import Callable, Sequence
 

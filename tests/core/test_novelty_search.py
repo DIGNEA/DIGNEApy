@@ -5,8 +5,7 @@
 import numpy as np
 import pytest
 
-from digneapy._core import Instance
-from digneapy.qd import NS
+from digneapy import NS, Instance
 
 
 def transformer(sequence):

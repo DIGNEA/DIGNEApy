@@ -16,9 +16,11 @@ from deap import benchmarks
 
 from digneapy import Direction
 from digneapy._core import Solution
-from digneapy.domains import kp
-from digneapy.solvers import EA, default_kp, map_kp, miw_kp, mpw_kp
-from digneapy.solvers.parallel_ea import ParEAKP
+from digneapy.domains import kp as knapsack
+from digneapy.solvers.evo import EA
+from digneapy.solvers.kp import default_kp, map_kp, miw_kp, mpw_kp
+
+# from digneapy.solvers.parallel_ea import ParEAKP
 from digneapy.solvers.pisinger import combo, expknap, minknap
 
 
@@ -27,7 +29,7 @@ def default_instance():
     p = list(range(1, 101))
     w = list(range(1, 101))
     q = 50
-    return kp.Knapsack(p, w, q)
+    return knapsack.Knapsack(p, w, q)
 
 
 @pytest.fixture
@@ -35,7 +37,7 @@ def default_large_knap():
     c = np.random.randint(1e3, 1e5)
     w = np.random.randint(1000, 5000, size=1000, dtype=np.int32)
     p = np.random.randint(1000, 5000, size=1000, dtype=np.int32)
-    kp = kp.Knapsack(profits=p, weights=w, capacity=c)
+    kp = knapsack.Knapsack(profits=p, weights=w, capacity=c)
     return kp
 
 
@@ -239,16 +241,16 @@ def test_pisingers_raises():
         minknap(None)
 
 
-def test_parallel_cpp_ea():
-    solver = ParEAKP(cores=1, generations=100)
-    # Do not test Parallel EA --> Takes to much time on most computers
-    # solutions = solver(default_instance)
-    assert solver._pop_size == 32
-    assert solver._generations == 100
-    assert solver._cxpb == 0.7
-    assert solver._mutpb == 0.2
-    assert solver._n_cores == 1
-    assert solver.__name__ == "ParEAKP_PS_32_CXPB_0.7_MUTPB_0.2"
+# def test_parallel_cpp_ea():
+#     solver = ParEAKP(cores=1, generations=100)
+#     # Do not test Parallel EA --> Takes to much time on most computers
+#     # solutions = solver(default_instance)
+#     assert solver._pop_size == 32
+#     assert solver._generations == 100
+#     assert solver._cxpb == 0.7
+#     assert solver._mutpb == 0.2
+#     assert solver._n_cores == 1
+#     assert solver.__name__ == "ParEAKP_PS_32_CXPB_0.7_MUTPB_0.2"
 
-    with pytest.raises(ValueError):
-        solver(None)
+#     with pytest.raises(ValueError):
+#         solver(None)

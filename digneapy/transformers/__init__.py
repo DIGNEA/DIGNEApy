@@ -12,31 +12,28 @@
 
 from digneapy.transformers._base import SupportsTransform, Transformer
 
-# __all__ = [
-#     "Transformer",
-#     "SupportsTransform",
-#     "nettrans",
-#     "NNTuner",
-# ]
+# from ._nnets import KerasNN, TorchNN
+# from ._tuner import NNTuner
 
-__all__ = [
-    "Transformer",
-    "SupportsTransform",
-]
+__all__ = ["Transformer", "SupportsTransform"]
 
 
-# def __getattr__(attr):
-#     if attr == "nettrans":
-#         import digneapy.transformers._neural_networks as nettrans
+def __getattr__(attr_name):
+    if attr_name == "neural":
+        import digneapy.transformers.neural as neural
 
-#         return nettrans
+        return neural
 
-#     if attr == "autoencoders":
-#         import digneapy.transformers._autoencoders as autoencoders
+    elif attr_name == "autoencoders":
+        import digneapy.transformers.autoencoders as autoencoders
 
-#         return autoencoders
+        return autoencoders
 
-#     if attr == "tuner":
-#         import digneapy.transformers._tuner as tuner
+    elif attr_name == "tuner":
+        import digneapy.transformers.tuner as tuner
 
-#         return tuner
+        return tuner
+    else:
+        raise ImportError(
+            f"module 'digneapy.solvers.transformers' has no attribute {attr_name}"
+        )

@@ -12,7 +12,7 @@
 
 import pytest
 
-from digneapy._core import Problem, Solution, Solver
+from digneapy import Problem, Solution, Solver
 
 
 class SampleSolver(Solver):

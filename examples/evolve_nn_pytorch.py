@@ -22,7 +22,7 @@ from digneapy.generators import EIG
 from digneapy.operators.replacement import first_improve_replacement
 from digneapy.solvers import default_kp, map_kp, miw_kp, mpw_kp
 from digneapy.transformers._torch_nn import TorchNN
-from digneapy.transformers._tuner import NNTuner
+from digneapy.transformers.tuner import NNTuner
 
 
 def save_best_nn_results(filename, best_nn):

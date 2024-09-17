@@ -15,9 +15,8 @@ import copy
 import numpy as np
 import pytest
 
-from digneapy._core import Instance
-from digneapy.archives import Archive, GridArchive
-from digneapy.domains import KPDomain
+from digneapy import Archive, GridArchive, Instance
+from digneapy.domains.kp import KPDomain
 
 
 @pytest.fixture

@@ -13,7 +13,7 @@
 import pytest
 
 from digneapy.domains import kp
-from digneapy.transformers._autoencoders import KPAE
+from digneapy.transformers.autoencoders import KPAE
 
 encodings = [2, 8]
 

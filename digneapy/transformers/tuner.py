@@ -21,7 +21,7 @@ from deap import algorithms, base, cma, creator, tools
 
 from .._core._constants import Direction
 from ._base import Transformer
-from ._neural_networks import KerasNN, TorchNN
+from .neural import KerasNN, TorchNN
 
 
 class NNTuner:

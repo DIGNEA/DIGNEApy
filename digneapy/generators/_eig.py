@@ -18,11 +18,16 @@ from typing import Optional
 import numpy as np
 from deap import tools
 
-from digneapy._core import NS, Domain, Instance
-from digneapy._core._perf_metrics import PerformanceFn, default_performance_metric
-from digneapy._core._problem import P
-from digneapy._core._solver import SupportsSolve
-from digneapy.archives import Archive
+from digneapy import (
+    NS,
+    Archive,
+    Domain,
+    Instance,
+    P,
+    PerformanceFn,
+    SupportsSolve,
+    default_performance_metric,
+)
 from digneapy.operators import crossover, mutation, replacement, selection
 from digneapy.transformers import SupportsTransform
 

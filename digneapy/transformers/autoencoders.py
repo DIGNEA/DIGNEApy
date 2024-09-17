@@ -13,6 +13,9 @@
 __all__ = ["KPAE", "KPAE50"]
 
 import os
+
+os.environ["KERAS_BACKEND"] = "torch"
+
 import pickle
 
 import keras

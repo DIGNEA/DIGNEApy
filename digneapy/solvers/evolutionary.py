@@ -12,11 +12,10 @@
 
 __all__ = ["EA", "ParEAKP"]
 
-import multiprocessing
+from concurrent.futures import ThreadPoolExecutor
 
 import numpy as np
 from deap import algorithms, base, creator, tools
-from parallel_ea import _ParEACpp
 
 from digneapy._core import Direction, P, Solution, Solver, SupportsSolve
 from digneapy.domains import Knapsack
@@ -106,7 +105,7 @@ class EA(Solver, SupportsSolve[P]):
         self.__name__ = self._name
 
         if self._n_cores > 1:
-            self._pool = multiprocessing.Pool(processes=self._n_cores)
+            self._pool = ThreadPoolExecutor(max_workers=self._n_cores)
             self._toolbox.register("map", self._pool.map)
 
     def __call__(self, problem: P, *args, **kwargs) -> list[Solution]:
@@ -154,7 +153,7 @@ class EA(Solver, SupportsSolve[P]):
         return [self._best_found, *cast_pop]
 
 
-class ParEAKP(_ParEACpp):
+class ParEAKP:
     """Parallel Evolutionary Algorithm for Knapsack Problems
     It uses Uniform One Mutation and Uniform Mutation as mating operators.
     The replacement is based on a Greedy strategy. The parent and offspring
@@ -179,7 +178,8 @@ class ParEAKP(_ParEACpp):
             cxpb (float, optional): Probability of crossover between two individuals. Defaults to 0.7.
             cores (int, optional): Number of cores to use. Defaults to 1.
         """
-        super().__init__(pop_size, generations, mutpb, cxpb, cores)
+        from parallel_ea import _ParEACpp
+
         self._pop_size = pop_size
         self._generations = generations
         self._mutpb = mutpb
@@ -187,6 +187,9 @@ class ParEAKP(_ParEACpp):
         self._n_cores = cores
         self.__name__ = (
             f"ParEAKP_PS_{self._pop_size}_CXPB_{self._cxpb}_MUTPB_{self._mutpb}"
+        )
+        self._runner = _ParEACpp(
+            self._pop_size, self._generations, self._mutpb, self._cxpb, self._n_cores
         )
 
     def __call__(self, problem: Knapsack, *args, **kwargs) -> list[Solution]:
@@ -204,7 +207,8 @@ class ParEAKP(_ParEACpp):
         if problem is None:
             msg = "Knapsack Problem is None in ParEAKP.__call__(). Expected a Knapsack instance."
             raise ValueError(msg)
-        x, fitness = self.run(
+
+        x, fitness = self._runner.run(
             len(problem), problem.weights, problem.profits, problem.capacity
         )
         return [Solution(chromosome=x, objectives=(fitness,), fitness=fitness)]

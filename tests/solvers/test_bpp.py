@@ -13,7 +13,7 @@
 import pytest
 
 from digneapy.domains.bpp import BPP
-from digneapy.solvers.bpp import *
+from digneapy.solvers import best_fit, first_fit, next_fit, worst_fit
 
 
 @pytest.fixture

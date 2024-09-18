@@ -22,7 +22,7 @@ def best_fit(problem: BPP, *args, **kwargs) -> list[Solution]:
     if problem is None:
         raise ValueError("No problem found in best_fit heuristic")
     assignment = np.zeros(len(problem), dtype=int)
-    bin_capacities = []
+    bin_capacities: list[int] = []
     items = problem._items
     # Starts the algorithm
     # It keeps a list of open bins, which is initially empty.
@@ -53,7 +53,7 @@ def first_fit(problem: BPP, *args, **kwargs) -> list[Solution]:
     if problem is None:
         raise ValueError("No problem found in first_fit heuristic")
     assignment = np.zeros(len(problem), dtype=int)
-    open_bins = []
+    open_bins: list[int] = []
     items = problem._items
 
     for i, item in enumerate(items):

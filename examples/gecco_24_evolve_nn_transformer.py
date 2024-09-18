@@ -17,10 +17,10 @@ import pandas as pd
 
 from digneapy import Direction
 from digneapy.archives import Archive, GridArchive
-from digneapy.domains.kp import KPDomain
+from digneapy.domains import KnapsackDomain
 from digneapy.generators import EAGenerator
-from digneapy.operators.replacement import generational
-from digneapy.solvers.kp import default_kp, map_kp, miw_kp
+from digneapy.operators import generational_replacement
+from digneapy.solvers import default_kp, map_kp, miw_kp
 from digneapy.transformers.neural import KerasNN
 from digneapy.transformers.tuner import NNTuner
 
@@ -50,7 +50,7 @@ class NSEval:
         self.resolution = resolution
         self.features_info = features_info
 
-        self.kp_domain = KPDomain(dimension=50, capacity_approach="percentage")
+        self.kp_domain = KnapsackDomain(dimension=50, capacity_approach="percentage")
         self.portfolio = deque([default_kp, map_kp, miw_kp])
 
     def __call__(self, transformer: KerasNN):
@@ -82,7 +82,7 @@ class NSEval:
                 k=3,
                 repetitions=1,
                 descriptor="features",
-                replacement=generational,
+                replacement=generational_replacement,
                 transformer=transformer,
             )
             _, solution_set = eig()

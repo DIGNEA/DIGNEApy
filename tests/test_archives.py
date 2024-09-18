@@ -16,7 +16,7 @@ import numpy as np
 import pytest
 
 from digneapy import Archive, GridArchive, Instance
-from digneapy.domains.kp import KPDomain
+from digneapy.domains.kp import KnapsackDomain
 
 
 @pytest.fixture
@@ -385,7 +385,7 @@ def test_grid_with_kp_instances():
         ],
     )
     n_instances = 1_000
-    domain = KPDomain(dimension=50, capacity_approach="percentage")
+    domain = KnapsackDomain(dimension=50, capacity_approach="percentage")
     instances = [domain.generate_instance() for _ in range(n_instances)]
     for instance in instances:
         instance.features = domain.extract_features(instance)

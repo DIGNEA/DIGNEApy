@@ -15,10 +15,10 @@ import copy
 import pandas as pd
 
 from digneapy import Archive, Direction, GridArchive
-from digneapy.domains.kp import KPDomain
+from digneapy.domains import KnapsackDomain
 from digneapy.generators import EAGenerator
-from digneapy.operators.replacement import generational
-from digneapy.solvers.kp import default_kp, map_kp, miw_kp
+from digneapy.operators import generational_replacement
+from digneapy.solvers import default_kp, map_kp, miw_kp
 from digneapy.transformers.neural import KerasNN
 from digneapy.transformers.tuner import NNTuner
 
@@ -42,7 +42,7 @@ class EvalNN:
         self.resolution = resolution
         self.ranges = ranges
 
-        self.kp_domain = KPDomain(dimension=50, capacity_approach="percentage")
+        self.kp_domain = KnapsackDomain(dimension=50, capacity_approach="percentage")
 
     def __call__(self, transformer: KerasNN):
         """This method runs the Novelty Search using a KerasNN as a transformer
@@ -76,7 +76,7 @@ class EvalNN:
                 k=3,
                 repetitions=1,
                 descriptor="instance",
-                replacement=generational,
+                replacement=generational_replacement,
                 transformer=transformer,
             )
             _, solution_set = eig()

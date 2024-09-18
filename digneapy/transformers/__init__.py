@@ -29,6 +29,4 @@ def __getattr__(attr_name):
         return submodule
 
     else:
-        raise ImportError(
-            f"module digneapy.solvers.transformers has no attribute {attr_name}"
-        )
+        raise ImportError(f"module digneapy.transformers has no attribute {attr_name}")

@@ -12,7 +12,7 @@ ext-modules = [
         "digneapy/solvers/_pisinger/src/pisinger.cpp",
     ] },
     { name = "parallel_ea", sources = [
-        "digneapy/solvers/parallel_ea/src/parallel_ea.cpp",
+        "digneapy/solvers/_parallel_ea/src/parallel_ea.cpp",
 
     ] },
 ]

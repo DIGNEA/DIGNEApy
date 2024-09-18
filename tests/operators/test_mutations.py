@@ -16,7 +16,7 @@ import numpy as np
 import pytest
 
 from digneapy import Instance, Solution
-from digneapy.operators import mutation
+from digneapy.operators import uniform_one_mutation
 
 
 @pytest.fixture
@@ -54,7 +54,7 @@ def test_uniform_one_mutation_instances(initialised_instances):
     instance, _ = initialised_instances
     original = copy.deepcopy(instance)
 
-    new_instance = mutation.uniform_one_mutation(instance, bounds)
+    new_instance = uniform_one_mutation(instance, bounds)
     assert new_instance != original
     assert sum(1 for i, j in zip(original, new_instance) if i != j) == 1
 
@@ -64,7 +64,7 @@ def test_uniform_one_mutation_solutions(initialised_solutions):
     solution, _ = initialised_solutions
     original = copy.deepcopy(solution)
 
-    new_solution = mutation.uniform_one_mutation(solution, bounds)
+    new_solution = uniform_one_mutation(solution, bounds)
     assert new_solution != original
     assert sum(1 for i, j in zip(original, new_solution) if i != j) == 1
 
@@ -72,10 +72,10 @@ def test_uniform_one_mutation_solutions(initialised_solutions):
 def test_uniform_one_mutation_raises():
     bounds = [(0, 100) for _ in range(100)]
     with pytest.raises(Exception):
-        mutation.uniform_one_mutation(list(), bounds)
+        uniform_one_mutation(list(), bounds)
 
 
 def test_uniform_one_mutation_raises_bounds():
     bounds = [(0, 1, 2) for _ in range(100)]
     with pytest.raises(Exception):
-        mutation.uniform_one_mutation(list(range(100)), bounds)
+        uniform_one_mutation(list(range(100)), bounds)

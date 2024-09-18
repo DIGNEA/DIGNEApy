@@ -15,18 +15,26 @@ from collections import deque
 
 import pytest
 
-from digneapy import Archive, max_gap_target, runtime_score
-from digneapy.domains.kp import KPDomain
-from digneapy.generators import EAGenerator
-from digneapy.operators import crossover, mutation, replacement, selection
-from digneapy.solvers.kp import (
+from digneapy import Archive, GridArchive, Instance, max_gap_target, runtime_score
+from digneapy.domains import BPPDomain, KnapsackDomain
+from digneapy.generators import EAGenerator, MapElitesGenerator
+from digneapy.operators import (
+    binary_tournament_selection,
+    generational_replacement,
+    uniform_crossover,
+    uniform_one_mutation,
+)
+from digneapy.solvers import (
+    best_fit,
     default_kp,
+    first_fit,
     map_kp,
     miw_kp,
     mpw_kp,
+    worst_fit,
 )
 from digneapy.solvers.pisinger import combo, expknap, minknap
-from digneapy.visualize import ea_generator_evolution_plot
+from digneapy.visualize import ea_generator_evolution_plot, map_elites_evolution_plot
 
 
 def test_default_generator():
@@ -41,10 +49,10 @@ def test_default_generator():
     assert eig.repetitions == 1
     assert eig.cxrate == 0.5
     assert eig.mutrate == 0.8
-    assert eig.crossover == crossover.uniform_crossover
-    assert eig.mutation == mutation.uniform_one_mutation
-    assert eig.selection == selection.binary_tournament_selection
-    assert eig.replacement == replacement.generational
+    assert eig.crossover == uniform_crossover
+    assert eig.mutation == uniform_one_mutation
+    assert eig.selection == binary_tournament_selection
+    assert eig.replacement == generational_replacement
     assert eig.phi == 0.85
     assert eig.performance_function is not None
     assert eig.performance_function == max_gap_target
@@ -63,7 +71,7 @@ def test_default_generator():
         eig()
     assert e.value.args[0] == "You must specify a domain to run the generator."
 
-    eig.domain = KPDomain()
+    eig.domain = KnapsackDomain()
     with pytest.raises(ValueError) as e:
         eig()
     assert (
@@ -84,7 +92,7 @@ def test_default_generator():
 
 def test_eig_gen_kp_perf_descriptor():
     portfolio = deque([default_kp, map_kp, miw_kp, mpw_kp])
-    kp_domain = KPDomain(dimension=50, capacity_approach="evolved")
+    kp_domain = KnapsackDomain(dimension=50, capacity_approach="evolved")
     generations = 100
     k = 3
     eig = EAGenerator(
@@ -95,7 +103,7 @@ def test_eig_gen_kp_perf_descriptor():
         k=k,
         repetitions=1,
         descriptor="performance",
-        replacement=replacement.generational,
+        replacement=generational_replacement,
     )
     archive, solution_set = eig()
     # They could be empty
@@ -126,7 +134,7 @@ def test_eig_gen_kp_perf_descriptor():
 
 def test_eig_gen_kp_feat_descriptor():
     portfolio = deque([default_kp, map_kp, miw_kp, mpw_kp])
-    kp_domain = KPDomain(dimension=50, capacity_approach="evolved")
+    kp_domain = KnapsackDomain(dimension=50, capacity_approach="evolved")
     generations = 100
     k = 3
     eig = EAGenerator(
@@ -137,7 +145,7 @@ def test_eig_gen_kp_feat_descriptor():
         k=k,
         repetitions=1,
         descriptor="features",
-        replacement=replacement.generational,
+        replacement=generational_replacement,
     )
     archive, solution_set = eig()
     # They could be empty
@@ -176,7 +184,7 @@ def test_eig_gen_kp_feat_descriptor():
 
 def test_eig_gen_kp_inst_descriptor():
     portfolio = deque([map_kp, mpw_kp])
-    kp_domain = KPDomain(dimension=50, capacity_approach="evolved")
+    kp_domain = KnapsackDomain(dimension=50, capacity_approach="evolved")
     generations = 100
     k = 3
     eig = EAGenerator(
@@ -187,7 +195,7 @@ def test_eig_gen_kp_inst_descriptor():
         k=k,
         repetitions=1,
         descriptor="instance",
-        replacement=replacement.generational,
+        replacement=generational_replacement,
     )
     archive, solution_set = eig()
     # They could be empty
@@ -220,7 +228,7 @@ def test_eig_gen_kp_inst_descriptor():
 
 def test_eig_gen_kp_perf_descriptor_with_pisinger():
     portfolio = deque([combo, minknap, expknap])
-    kp_domain = KPDomain(dimension=50, capacity_approach="evolved")
+    kp_domain = KnapsackDomain(dimension=50, capacity_approach="evolved")
     generations = 100
     k = 3
     eig = EAGenerator(
@@ -231,7 +239,7 @@ def test_eig_gen_kp_perf_descriptor_with_pisinger():
         k=k,
         repetitions=1,
         descriptor="performance",
-        replacement=replacement.generational,
+        replacement=generational_replacement,
         performance_function=runtime_score,
     )
     archive, solution_set = eig()
@@ -261,3 +269,58 @@ def test_eig_gen_kp_perf_descriptor_with_pisinger():
         assert all(len(s.portfolio_scores) == len(portfolio) for s in solution_set)
         p_scores = [s.portfolio_scores for s in solution_set]
         assert all(min(p_scores[i]) == p_scores[i][0] for i in range(len(p_scores)))
+
+
+test_data = [
+    (
+        KnapsackDomain,
+        [default_kp, map_kp, miw_kp],
+        8,
+        "MapElites(descriptor=features,pop_size=5,gen=1000,domain=KP,portfolio=['default_kp', 'map_kp', 'miw_kp'])",
+        "MapElites<descriptor=features,pop_size=5,gen=1000,domain=KP,portfolio=['default_kp', 'map_kp', 'miw_kp']>",
+    ),
+    (
+        BPPDomain,
+        [best_fit, first_fit, worst_fit],
+        10,
+        "MapElites(descriptor=features,pop_size=5,gen=1000,domain=BPP,portfolio=['best_fit', 'first_fit', 'worst_fit'])",
+        "MapElites<descriptor=features,pop_size=5,gen=1000,domain=BPP,portfolio=['best_fit', 'first_fit', 'worst_fit']>",
+    ),
+]
+
+
+@pytest.mark.parametrize(
+    "domain_cls, portfolio, desc_size, expected_str, expected_repr", test_data
+)
+def test_map_elites_domain(
+    domain_cls, portfolio, desc_size, expected_str, expected_repr
+):
+    dimension = 100
+    archive = GridArchive(dimensions=(10,) * desc_size, ranges=[(0, 1e4)] * desc_size)
+    domain = domain_cls(dimension=dimension)
+    assert domain.dimension == dimension
+
+    map_elites = MapElitesGenerator(
+        domain,
+        portfolio=portfolio,
+        archive=archive,
+        initial_pop_size=5,
+        mutation=uniform_one_mutation,
+        generations=1000,
+        descriptor="features",
+        repetitions=1,
+    )
+    archive = map_elites()
+    assert map_elites.__str__() == expected_str
+    assert map_elites.__repr__() == expected_repr
+
+    assert len(archive) != 0
+    assert isinstance(archive, GridArchive)
+    assert all(isinstance(i, Instance) for i in archive)
+    assert len(map_elites.log) == 1001
+
+    # Is able to print the log
+    log = map_elites.log
+    map_elites_evolution_plot(log, "example.png")
+    assert os.path.exists("example.png")
+    os.remove("example.png")

@@ -10,7 +10,12 @@
 @Desc    :   None
 """
 
-__all__ = ["generational", "first_improve_replacement", "elitist_replacement"]
+__all__ = [
+    "generational_replacement",
+    "first_improve_replacement",
+    "elitist_replacement",
+    "Replacement",
+]
 
 import copy
 import itertools
@@ -28,7 +33,7 @@ Replacement = Callable[
 ]
 
 
-def generational(
+def generational_replacement(
     current_population: Sequence[IndType],
     offspring: Sequence[IndType],
 ) -> list[IndType]:

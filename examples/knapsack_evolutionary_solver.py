@@ -13,7 +13,7 @@
 import numpy as np
 
 from digneapy import Direction
-from digneapy.domains.kp import Knapsack
+from digneapy.domains import Knapsack
 from digneapy.solvers.evo import EA
 from digneapy.utils import clock
 

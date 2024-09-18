@@ -10,21 +10,20 @@
 @Desc    :   None
 """
 
-from digneapy.domains import kp
-from digneapy.solvers.kp import mpw_kp
+import digneapy as dpy
 
 
 def generate_instance():
     p = list(range(1, 101))
     w = list(range(1, 101))
     q = 50
-    return kp.Knapsack(p, w, q)
+    return dpy.domains.Knapsack(p, w, q)
 
 
 def test_mpw_kp_heuristic(default_instance):
     assert default_instance.capacity == 50
     assert len(default_instance) == 100
-    solution = mpw_kp(default_instance)[0]
+    solution = dpy.solvers.mpw_kp(default_instance)[0]
     expected_p = 50
     expected_chromosome = [0.0] * 49 + [1.0] + [0.0] * 50
     print(solution)

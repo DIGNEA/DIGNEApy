@@ -23,7 +23,7 @@ def test_autoencoder(encoding):
     dimension = 1000
     n_instances = 100
     autoencoder = KPAE(encoding=encoding)
-    domain = kp.KPDomain(dimension=dimension)
+    domain = kp.KnapsackDomain(dimension=dimension)
     instances = [domain.generate_instance() for _ in range(n_instances)]
 
     assert isinstance(autoencoder, KPAE)

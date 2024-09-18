@@ -19,10 +19,10 @@ import copy
 import itertools
 
 from digneapy import Archive
-from digneapy.domains.kp import KPDomain
+from digneapy.domains import KnapsackDomain
 from digneapy.generators import EAGenerator
-from digneapy.operators.replacement import generational
-from digneapy.solvers.kp import default_kp, map_kp, miw_kp
+from digneapy.operators import generational_replacement
+from digneapy.solvers import default_kp, map_kp, miw_kp
 from digneapy.transformers.autoencoders import KPAE50
 
 
@@ -68,7 +68,7 @@ def generate_instances_heuristics(
         + f" Generating KP instances of N = {dim} for Heuristics with encoding {encoding} "
         + "=" * 40
     )
-    kp_domain = KPDomain(dimension=dim, capacity_approach="percentage")
+    kp_domain = KnapsackDomain(dimension=dim, capacity_approach="percentage")
     autoencoder = KPAE50()
     portfolios = [
         [default_kp, map_kp, miw_kp],
@@ -87,7 +87,7 @@ def generate_instances_heuristics(
             k=3,
             repetitions=1,
             descriptor="instance",
-            replacement=generational,
+            replacement=generational_replacement,
             transformer=autoencoder,
         )
         _, solution_set = eig(verbose=True)

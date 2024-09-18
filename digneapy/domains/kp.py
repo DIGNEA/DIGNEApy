@@ -10,7 +10,7 @@
 @Desc    :   None
 """
 
-__all__ = ["Knapsack", "KPDomain"]
+__all__ = ["Knapsack", "KnapsackDomain"]
 
 import itertools
 from collections.abc import Sequence
@@ -109,7 +109,7 @@ class Knapsack(Problem):
         return Instance(variables=_vars)
 
 
-class KPDomain(Domain):
+class KnapsackDomain(Domain):
     __capacity_approaches = ("evolved", "percentage", "fixed")
 
     def __init__(

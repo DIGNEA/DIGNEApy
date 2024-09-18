@@ -10,7 +10,7 @@
 @Desc    :   None
 """
 
-__all__ = ["binary_tournament_selection"]
+__all__ = ["binary_tournament_selection", "Selection"]
 
 import copy
 from collections.abc import Callable, Sequence

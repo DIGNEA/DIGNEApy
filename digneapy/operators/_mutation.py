@@ -10,7 +10,7 @@
 @Desc    :   None
 """
 
-__all__ = ["uniform_one_mutation"]
+__all__ = ["uniform_one_mutation", "Mutation"]
 
 from collections.abc import Callable, Sequence
 from typing import Tuple

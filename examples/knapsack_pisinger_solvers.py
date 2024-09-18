@@ -12,7 +12,7 @@
 
 import numpy as np
 
-from digneapy.domains.kp import Knapsack
+from digneapy.domains import Knapsack
 from digneapy.solvers.pisinger import combo, expknap, minknap
 
 

@@ -15,10 +15,10 @@ import configparser
 from collections import deque
 
 from digneapy import Archive
-from digneapy.domains.kp import KPDomain
+from digneapy.domains import KnapsackDomain
 from digneapy.generators import EAGenerator
-from digneapy.operators.replacement import first_improve_replacement
-from digneapy.solvers.kp import default_kp, map_kp, miw_kp, mpw_kp
+from digneapy.operators import first_improve_replacement
+from digneapy.solvers import default_kp, map_kp, miw_kp, mpw_kp
 
 
 def main(default_args):
@@ -44,7 +44,7 @@ def main(default_args):
         descriptor = config["generator"]["descriptor"]
 
     portfolio = deque([default_kp, map_kp, miw_kp, mpw_kp])
-    kp_domain = KPDomain(dimension=dimension, capacity_approach=capacity_approach)
+    kp_domain = KnapsackDomain(dimension=dimension, capacity_approach=capacity_approach)
 
     for i in range(len(portfolio)):
         portfolio.rotate(i)

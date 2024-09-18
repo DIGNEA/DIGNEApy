@@ -26,7 +26,7 @@ find_package(OpenMP COMPONENTS C CXX REQUIRED)
 
 # Set compiler flags for OpenMP
 if(OPENMP_FOUND)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS} -fopenmp")
 
     if(APPLE)
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}=-Xpreprocessor -fopenmp -lomp -I/usr/local/opt/libomp/include")
@@ -35,7 +35,7 @@ if(OPENMP_FOUND)
 endif()
 
 # Always run with the optimisation flags
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++20 -isystem -fPIC -fpermissive -O3 -ffast-math -Wall -march=native -mtune=native -fopenmp")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++20 -isystem -fPIC -fpermissive -O3 -ffast-math -Wall -march=native -mtune=native")
 
 pybind11_add_module(parallel_ea src/parallel_ea.cpp)
 target_link_libraries(parallel_ea PUBLIC OpenMP::OpenMP_CXX)

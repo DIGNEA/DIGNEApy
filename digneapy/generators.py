@@ -31,7 +31,16 @@ from ._core import (
 from ._core.descriptors import DESCRIPTORS
 from ._core.scores import PerformanceFn, max_gap_target
 from .archives import Archive, GridArchive
-from .operators import crossover, mutation, replacement, selection
+from .operators import (
+    Crossover,
+    Mutation,
+    Replacement,
+    Selection,
+    binary_tournament_selection,
+    generational_replacement,
+    uniform_crossover,
+    uniform_one_mutation,
+)
 from .transformers import SupportsTransform
 
 
@@ -52,10 +61,10 @@ class EAGenerator(NS):
         repetitions: int = 1,
         cxrate: float = 0.5,
         mutrate: float = 0.8,
-        crossover: crossover.Crossover = crossover.uniform_crossover,
-        mutation: mutation.Mutation = mutation.uniform_one_mutation,
-        selection: selection.Selection = selection.binary_tournament_selection,
-        replacement: replacement.Replacement = replacement.generational,
+        crossover: Crossover = uniform_crossover,
+        mutation: Mutation = uniform_one_mutation,
+        selection: Selection = binary_tournament_selection,
+        replacement: Replacement = generational_replacement,
         performance_function: PerformanceFn = max_gap_target,
         phi: float = 0.85,
     ):
@@ -255,7 +264,7 @@ class MapElitesGenerator:
         initial_pop_size: int,
         generations: int,
         archive: GridArchive,
-        mutation: mutation.Mutation,
+        mutation: Mutation,
         repetitions: int,
         descriptor: str,
         performance_function: PerformanceFn = max_gap_target,

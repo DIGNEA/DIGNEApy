@@ -5,7 +5,7 @@ __email__ = "amarrerd@ull.edu.es"
 __version__ = "0.2.3"
 
 
-from . import _core, archives, operators
+from . import _core, archives, domains, operators
 from ._core import (
     NS,
     Direction,
@@ -23,9 +23,8 @@ from ._core import (
 from ._core.descriptors import DESCRIPTORS, DescStrategy, descriptor
 from ._core.scores import PerformanceFn, max_gap_target, runtime_score
 from .archives import Archive, GridArchive
-from .operators import crossover, mutation, replacement, selection
 
-__dignea_submodules = {"utils", "domains", "generators", "solvers", "visualize"}
+__dignea_submodules = {"utils", "generators", "solvers", "visualize"}
 
 
 __all__ = list(
@@ -35,6 +34,7 @@ __all__ = list(
     | set(archives.__all__)
     | set(descriptors.__all__)
     | set(scores.__all__)
+    | set(domains.__all__)
 )
 
 

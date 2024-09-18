@@ -38,13 +38,14 @@ ext_modules = [
     ),
     Extension(
         "parallel_ea",
-        sorted(glob("digneapy/solvers/parallel_ea/src/*.cpp")),
+        sorted(glob("digneapy/solvers/_parallel_ea/src/*.cpp")),
         include_dirs=[
             # Path to pybind11 headers
             get_pybind_include(),
             get_pybind_include(user=True),
         ],
         extra_compile_args=compile_args,
+        extra_link_args=["-fopenmp"],
         language="c++",
     ),
 ]

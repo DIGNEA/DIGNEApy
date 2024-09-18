@@ -11,10 +11,10 @@
 """
 
 from digneapy import GridArchive
-from digneapy.domains.kp import KPDomain
+from digneapy.domains import KnapsackDomain
 from digneapy.generators import MapElitesGenerator
-from digneapy.operators.mutation import uniform_one_mutation
-from digneapy.solvers.kp import default_kp, map_kp, miw_kp
+from digneapy.operators import uniform_one_mutation
+from digneapy.solvers import default_kp, map_kp, miw_kp
 from digneapy.visualize import map_elites_evolution_plot
 
 
@@ -24,7 +24,7 @@ def map_elites_knapsack():
         ranges=[(0.0, 10000), *[(1.0, 1000) for _ in range(100)]],
     )
 
-    domain = KPDomain(dimension=50, capacity_approach="evolved")
+    domain = KnapsackDomain(dimension=50, capacity_approach="evolved")
     map_elites = MapElitesGenerator(
         domain,
         portfolio=[map_kp, default_kp, miw_kp],

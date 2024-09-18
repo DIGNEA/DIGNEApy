@@ -10,7 +10,7 @@
 @Desc    :   None
 """
 
-__all__ = ["one_point_crossover", "uniform_crossover"]
+__all__ = ["one_point_crossover", "uniform_crossover", "Crossover"]
 
 import copy
 from collections.abc import Callable

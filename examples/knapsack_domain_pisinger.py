@@ -13,9 +13,9 @@
 from collections import deque
 
 from digneapy import Archive, runtime_score
-from digneapy.domains.kp import KPDomain
+from digneapy.domains import KnapsackDomain
 from digneapy.generators import EAGenerator
-from digneapy.operators.replacement import first_improve_replacement
+from digneapy.operators import first_improve_replacement
 from digneapy.solvers.pisinger import combo, expknap, minknap
 
 
@@ -28,7 +28,7 @@ def main():
     descriptor = "features"
 
     portfolio = deque([combo, minknap, expknap])
-    kp_domain = KPDomain(dimension=dimension, capacity_approach=capacity_approach)
+    kp_domain = KnapsackDomain(dimension=dimension, capacity_approach=capacity_approach)
 
     for i in range(len(portfolio) + 1):
         portfolio.rotate(i)

@@ -15,10 +15,10 @@ import itertools
 import sys
 
 from digneapy import Archive
-from digneapy.domains.kp import KPDomain
+from digneapy.domains import KnapsackDomain
 from digneapy.generators import EAGenerator
-from digneapy.operators.replacement import first_improve_replacement
-from digneapy.solvers.kp import default_kp, map_kp, miw_kp
+from digneapy.operators import first_improve_replacement
+from digneapy.solvers import default_kp, map_kp, miw_kp
 from digneapy.transformers.neural import KerasNN
 
 
@@ -70,7 +70,7 @@ def generate_instances(transformer: KerasNN):
     Returns:
         int: Number of bins occupied. The maximum value if 8 x R.
     """
-    kp_domain = KPDomain(dimension=50, capacity_approach="percentage")
+    kp_domain = KnapsackDomain(dimension=50, capacity_approach="percentage")
     portfolios = [
         [default_kp, map_kp, miw_kp],
         [map_kp, default_kp, miw_kp],

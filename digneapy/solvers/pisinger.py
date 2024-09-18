@@ -10,13 +10,51 @@
 @Desc    :   None
 """
 
+__all__ = ["minknap", "combo", "expknap"]
 
-def __getattr__(attr_name):
-    from digneapy.solvers import _pisinger
+from typing import List
 
-    ret_module = getattr(_pisinger, attr_name, None)
-    if ret_module is None:
-        raise ImportError(
-            f"module 'digneapy.solvers.pisinger' has no attribute {attr_name}"
-        )
-    return ret_module
+import numpy as np
+from pisinger_cpp import combo_cpp, expknap_cpp, minknap_cpp
+
+from digneapy._core import Solution
+from digneapy.domains.kp import Knapsack
+
+
+def minknap(problem: Knapsack = None, only_time: bool = True) -> List[Solution]:
+    if problem is None:
+        msg = "No problem found in args of minknap heuristic"
+        raise ValueError(msg)
+
+    x = np.zeros(len(problem))
+    time, best = minknap_cpp(
+        len(problem), problem.profits, problem.weights, x, problem.capacity
+    )
+    f = time if only_time else best
+    return [Solution(chromosome=x, objectives=(f,), fitness=f)]
+
+
+def expknap(problem: Knapsack = None, only_time: bool = True) -> List[Solution]:
+    if problem is None:
+        msg = "No problem found in args of expknap heuristic"
+        raise ValueError(msg)
+
+    x = np.zeros(len(problem))
+    time, best = expknap_cpp(
+        len(problem), problem.profits, problem.weights, x, problem.capacity
+    )
+    f = time if only_time else best
+    return [Solution(chromosome=x, objectives=(f,), fitness=f)]
+
+
+def combo(problem: Knapsack = None, only_time: bool = True) -> List[Solution]:
+    if problem is None:
+        msg = "No problem found in args of combo heuristic"
+        raise ValueError(msg)
+
+    x = np.zeros(len(problem))
+    time, best = combo_cpp(
+        len(problem), problem.profits, problem.weights, x, problem.capacity
+    )
+    f = time if only_time else best
+    return [Solution(chromosome=x, objectives=(f,), fitness=f)]

@@ -10,17 +10,25 @@
 @Desc    :   None
 """
 
-from . import bpp as bpp
-from . import evo as evo
-from . import kp as kp
-from . import pisinger
+from . import bpp, kp
+from .bpp import best_fit, first_fit, next_fit, worst_fit
+from .kp import default_kp, map_kp, miw_kp, mpw_kp
 
-__all__ = ["evo", "bpp", "kp", "pisinger"]
+__all__ = list(set(bpp.__all__) | set(kp.__all__))
+
+__solvers_modules = {"evo", "pisinger"}
 
 
-# def __getattr__(attr_name):
-#     ret_mod = None
+# Lazy import function
+def __getattr__(attr_name):
+    import importlib
+    import sys
 
-#     if ret_mod is None:
-#         raise AttributeError(f"module 'digneapy.solvers' has no attribute {attr_name}")
-#     return ret_mod
+    if attr_name in __solvers_modules:
+        full_name = f"digneapy.solvers.{attr_name}"
+        submodule = importlib.import_module(full_name)
+        sys.modules[full_name] = submodule
+        return submodule
+
+    else:
+        raise ImportError(f"module digneapy.solvers has no attribute {attr_name}")

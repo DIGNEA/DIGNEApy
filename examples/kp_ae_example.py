@@ -17,13 +17,12 @@ os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
 import argparse
 import copy
 import itertools
-from collections.abc import Sequence
 
-from digneapy.archives import Archive
+from digneapy import Archive
 from digneapy.domains.kp import KPDomain
-from digneapy.generators import EIG
+from digneapy.generators import EAGenerator
 from digneapy.operators.replacement import generational
-from digneapy.solvers import default_kp, map_kp, miw_kp
+from digneapy.solvers.kp import default_kp, map_kp, miw_kp
 from digneapy.transformers.autoencoders import KPAE50
 
 
@@ -78,7 +77,7 @@ def generate_instances_heuristics(
     ]
     instances = {}
     for portfolio in portfolios:
-        eig = EIG(
+        eig = EAGenerator(
             pop_size=10,
             generations=1000,
             domain=kp_domain,

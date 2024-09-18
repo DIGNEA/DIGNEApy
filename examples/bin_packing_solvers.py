@@ -14,12 +14,11 @@ import argparse
 import os
 
 import matplotlib.pyplot as plt
-import numpy as pd
 import pandas as pd
 import seaborn as sns
 
-from digneapy.domains import BPP
-from digneapy.solvers import best_fit, first_fit, next_fit, worst_fit
+from digneapy.domains.bpp import BPP
+from digneapy.solvers.bpp import best_fit, first_fit, next_fit, worst_fit
 
 sns.set_style("whitegrid")
 plt.rcParams["font.family"] = "serif"

@@ -15,13 +15,12 @@ from collections import deque
 
 import pandas as pd
 
-from digneapy import Direction
-from digneapy.archives import Archive, GridArchive
+from digneapy import Archive, Direction, GridArchive
 from digneapy.domains.kp import KPDomain
-from digneapy.generators import EIG
+from digneapy.generators import EAGenerator
 from digneapy.operators.replacement import first_improve_replacement
-from digneapy.solvers import default_kp, map_kp, miw_kp, mpw_kp
-from digneapy.transformers._torch_nn import TorchNN
+from digneapy.solvers.kp import default_kp, map_kp, miw_kp, mpw_kp
+from digneapy.transformers.neural import TorchNN
 from digneapy.transformers.tuner import NNTuner
 
 
@@ -72,7 +71,7 @@ class NSEval:
         }
         for i in range(len(self.portfolio)):
             self.portfolio.rotate(i)  # This allow us to change the target on the fly
-            eig = EIG(
+            eig = EAGenerator(
                 pop_size=10,
                 generations=1000,
                 domain=self.kp_domain,

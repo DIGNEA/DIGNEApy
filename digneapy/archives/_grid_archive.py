@@ -78,7 +78,7 @@ class GridArchive(Archive):
         self._upper_bounds = np.array(ranges[1], dtype=dtype)
         self._interval = self._upper_bounds - self._lower_bounds
         self._eps = eps
-        self._cells = np.prod(self._dimensions, dtype=int)
+        self._cells = np.prod(self._dimensions, dtype=object)
         self._grid: Dict[int, Instance] = {}
 
         _bounds = []
@@ -281,16 +281,37 @@ class GridArchive(Archive):
 
     def _grid_to_int_index(self, grid_indices) -> np.ndarray:
         grid_indices = np.asarray(grid_indices)
-        return np.ravel_multi_index(grid_indices.T, self._dimensions).astype(int)
+        if len(self._dimensions) > 64:
+            strides = np.cumprod((1,) + tuple(self._dimensions[::-1][:-1]))[::-1]
+            # Reshape strides to (1, num_dimensions) to make it broadcastable with grid_indices
+            strides = strides.reshape(1, -1)
+            flattened_indeces = np.sum(grid_indices * strides, axis=1, dtype=object)
+        else:
+            flattened_indeces = np.ravel_multi_index(
+                grid_indices.T, self._dimensions
+            ).astype(int)
+        return flattened_indeces
 
     def int_to_grid_index(self, int_indices) -> np.ndarray:
         int_indices = np.asarray(int_indices)
-        return np.asarray(
-            np.unravel_index(
-                int_indices,
-                self._dimensions,
-            )
-        ).T.astype(int)
+        if len(self._dimensions) > 64:
+            # Manually unravel the index for dimensions > 64
+            unravel_indices = []
+            remaining_indices = int_indices.astype(object)
+
+            for dim_size in self._dimensions[::-1]:
+                unravel_indices.append(remaining_indices % dim_size)
+                remaining_indices //= dim_size
+
+            unravel_indices = np.array(unravel_indices[::-1]).T
+        else:
+            unravel_indices = np.asarray(
+                np.unravel_index(
+                    int_indices,
+                    self._dimensions,
+                )
+            ).T.astype(int)
+        return unravel_indices
 
     def to_json(self):
         data = {

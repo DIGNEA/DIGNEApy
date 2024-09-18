@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 # -*-coding:utf-8 -*-
 """
-@File    :   metrics.py
-@Time    :   2024/09/17 14:51:11
+@File    :   scores.py
+@Time    :   2024/09/18 10:43:17
 @Author  :   Alejandro Marrero
 @Version :   1.0
 @Contact :   amarrerd@ull.edu.es
@@ -10,7 +10,7 @@
 @Desc    :   None
 """
 
-__all__ = ["PerformanceFn", "default_performance_metric", "pisinger_performance_metric"]
+__all__ = ["PerformanceFn", "max_gap_target", "runtime_score"]
 
 from collections.abc import Callable, Sequence
 
@@ -21,10 +21,11 @@ Returns:
 PerformanceFn = Callable[[Sequence], float]
 
 
-def default_performance_metric(scores: Sequence[float]) -> float:
-    """Default performace metric for the instances.
+def max_gap_target(scores: Sequence[float]) -> float:
+    """Maximum gap to target.
     It tries to maximise the gap between the target solver
     and the other solvers in the portfolio.
+    Use this metric to generate instances that are EASY to solve by the target algorithm
 
     Args:
         scores (Iterable[float]): Scores of each solver over an instance. It is expected
@@ -36,10 +37,11 @@ def default_performance_metric(scores: Sequence[float]) -> float:
     return scores[0] - max(scores[1:])
 
 
-def pisinger_performance_metric(scores: Sequence[float]) -> float:
-    """Pisinger Solvers performace metric for the instances.
+def runtime_score(scores: Sequence[float]) -> float:
+    """Runtime based metric.
     It tries to maximise the gap between the runing time of the target solver
-    and the other solvers in the portfolio.
+    and the other solvers in the portfolio. Use this metric with exact solvers
+    which provide the same objective values for an instance.
 
     Args:
         scores (Iterable[float]): Running time of each solver over an instance. It is expected

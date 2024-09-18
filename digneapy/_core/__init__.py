@@ -10,13 +10,13 @@
 @Desc    :   None
 """
 
-from digneapy._core._constants import Direction, IndType
-from digneapy._core._domain import Domain
-from digneapy._core._instance import Instance
-from digneapy._core._novelty_search import NS
-from digneapy._core._problem import P, Problem
-from digneapy._core._solution import Solution
-from digneapy._core._solver import Solver, SupportsSolve
+from ._constants import Direction, IndType
+from ._domain import Domain
+from ._instance import Instance
+from ._novelty_search import NS
+from ._problem import P, Problem
+from ._solution import Solution
+from ._solver import Solver, SupportsSolve
 
 __all__ = [
     "Domain",

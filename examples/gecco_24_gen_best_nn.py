@@ -14,12 +14,12 @@ import copy
 import itertools
 import sys
 
-from digneapy.archives import Archive
+from digneapy import Archive
 from digneapy.domains.kp import KPDomain
-from digneapy.generators import EIG
+from digneapy.generators import EAGenerator
 from digneapy.operators.replacement import first_improve_replacement
-from digneapy.solvers import default_kp, map_kp, miw_kp
-from digneapy.transformers._keras_nn import KerasNN
+from digneapy.solvers.kp import default_kp, map_kp, miw_kp
+from digneapy.transformers.neural import KerasNN
 
 
 def save_instances(filename, generated_instances):
@@ -78,7 +78,7 @@ def generate_instances(transformer: KerasNN):
     ]
     instances = {}
     for portfolio in portfolios:
-        eig = EIG(
+        eig = EAGenerator(
             pop_size=10,
             generations=1000,
             domain=kp_domain,

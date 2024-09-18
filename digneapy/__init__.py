@@ -4,7 +4,9 @@ __author__ = """Alejandro Marrero"""
 __email__ = "amarrerd@ull.edu.es"
 __version__ = "0.2.3"
 
-from digneapy._core import (
+
+from . import _core, archives, operators
+from ._core import (
     NS,
     Direction,
     Domain,
@@ -15,18 +17,15 @@ from digneapy._core import (
     Solution,
     Solver,
     SupportsSolve,
+    descriptors,
+    scores,
 )
-from digneapy.archives import Archive, GridArchive
-from digneapy.operators import crossover, mutation, replacement, selection
+from ._core.descriptors import DESCRIPTORS, DescStrategy, descriptor
+from ._core.scores import PerformanceFn, max_gap_target, runtime_score
+from .archives import Archive, GridArchive
+from .operators import crossover, mutation, replacement, selection
 
-from .descriptors import DescStrategy, descriptor_strategies, rdstrat
-from .metrics import (
-    PerformanceFn,
-    default_performance_metric,
-    pisinger_performance_metric,
-)
-
-__dignea_submodules = {"utils", "domains", "generators", "solvers"}
+__dignea_submodules = {"utils", "domains", "generators", "solvers", "visualize"}
 
 
 __all__ = list(
@@ -34,35 +33,21 @@ __all__ = list(
     | set(_core.__all__)
     | set(operators.__all__)
     | set(archives.__all__)
-    | set(metrics.__all__)
     | set(descriptors.__all__)
+    | set(scores.__all__)
 )
 
 
 # Lazy import function
-def __getattr__(name):
-    if name == "transformers":
-        import digneapy.transformers as transformers
+def __getattr__(attr_name):
+    import importlib
+    import sys
 
-        return transformers
-    elif name == "domains":
-        import digneapy.domains as domains
-
-        return domains
-    elif name == "generators":
-        import digneapy.generators as generators
-
-        return generators
-
-    elif name == "solvers":
-        import digneapy.solvers as solvers
-
-        return solvers
-
-    elif name == "utils":
-        import digneapy.utils as utils
-
-        return utils
+    if attr_name in __dignea_submodules:
+        full_name = f"digneapy.{attr_name}"
+        submodule = importlib.import_module(full_name)
+        sys.modules[full_name] = submodule
+        return submodule
 
     else:
-        raise ImportError(f"module {__name__} has no attribute {name}")
+        raise ImportError(f"module {__name__} has no attribute {attr_name}")

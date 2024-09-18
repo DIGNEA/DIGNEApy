@@ -12,16 +12,14 @@
 
 import copy
 
-import numpy as np
 import pandas as pd
 
-from digneapy import Direction
-from digneapy.archives import Archive, GridArchive
+from digneapy import Archive, Direction, GridArchive
 from digneapy.domains.kp import KPDomain
-from digneapy.generators import EIG
+from digneapy.generators import EAGenerator
 from digneapy.operators.replacement import generational
-from digneapy.solvers import default_kp, map_kp, miw_kp
-from digneapy.transformers._keras_nn import KerasNN
+from digneapy.solvers.kp import default_kp, map_kp, miw_kp
+from digneapy.transformers.neural import KerasNN
 from digneapy.transformers.tuner import NNTuner
 
 
@@ -68,7 +66,7 @@ class EvalNN:
             [miw_kp, default_kp, map_kp],
         ]
         for portfolio in portfolios:
-            eig = EIG(
+            eig = EAGenerator(
                 pop_size=10,
                 generations=1000,
                 domain=self.kp_domain,

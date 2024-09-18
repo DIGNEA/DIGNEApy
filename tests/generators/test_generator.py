@@ -15,9 +15,9 @@ from collections import deque
 
 import pytest
 
-from digneapy import Archive, default_performance_metric, pisinger_performance_metric
+from digneapy import Archive, max_gap_target, runtime_score
 from digneapy.domains.kp import KPDomain
-from digneapy.generators import EIG
+from digneapy.generators import EAGenerator
 from digneapy.operators import crossover, mutation, replacement, selection
 from digneapy.solvers.kp import (
     default_kp,
@@ -26,11 +26,11 @@ from digneapy.solvers.kp import (
     mpw_kp,
 )
 from digneapy.solvers.pisinger import combo, expknap, minknap
-from digneapy.utils import plot_generator_logbook
+from digneapy.visualize import ea_generator_evolution_plot
 
 
 def test_default_generator():
-    eig = EIG(domain=None, portfolio=[])
+    eig = EAGenerator(domain=None, portfolio=[])
     assert eig.pop_size == 100
     assert eig.generations == 1000
     assert eig.k == 15
@@ -47,16 +47,16 @@ def test_default_generator():
     assert eig.replacement == replacement.generational
     assert eig.phi == 0.85
     assert eig.performance_function is not None
-    assert eig.performance_function == default_performance_metric
+    assert eig.performance_function == max_gap_target
 
     assert (
         eig.__str__()
-        == "EIG(pop_size=100,gen=1000,domain=None,portfolio=[],NS(descriptor=features,k=15,A=(),S_S=()))"
+        == "EAGenerator(pop_size=100,gen=1000,domain=None,portfolio=[],NS(descriptor=features,k=15,A=(),S_S=()))"
     )
 
     assert (
         eig.__repr__()
-        == "EIG<pop_size=100,gen=1000,domain=None,portfolio=[],NS<descriptor=features,k=15,A=(),S_S=()>>"
+        == "EAGenerator<pop_size=100,gen=1000,domain=None,portfolio=[],NS<descriptor=features,k=15,A=(),S_S=()>>"
     )
 
     with pytest.raises(ValueError) as e:
@@ -72,13 +72,13 @@ def test_default_generator():
     )
 
     with pytest.raises(ValueError) as e:
-        eig = EIG(domain=None, portfolio=[], phi=-1.0)
+        eig = EAGenerator(domain=None, portfolio=[], phi=-1.0)
     assert (
         e.value.args[0]
         == "Phi must be a float number in the range [0.0-1.0]. Got: -1.0."
     )
     with pytest.raises(ValueError) as e:
-        eig = EIG(domain=None, portfolio=[], phi="hello")
+        eig = EAGenerator(domain=None, portfolio=[], phi="hello")
     assert e.value.args[0] == "Phi must be a float number in the range [0.0-1.0]."
 
 
@@ -87,7 +87,7 @@ def test_eig_gen_kp_perf_descriptor():
     kp_domain = KPDomain(dimension=50, capacity_approach="evolved")
     generations = 100
     k = 3
-    eig = EIG(
+    eig = EAGenerator(
         pop_size=10,
         generations=generations,
         domain=kp_domain,
@@ -129,7 +129,7 @@ def test_eig_gen_kp_feat_descriptor():
     kp_domain = KPDomain(dimension=50, capacity_approach="evolved")
     generations = 100
     k = 3
-    eig = EIG(
+    eig = EAGenerator(
         pop_size=10,
         generations=generations,
         domain=kp_domain,
@@ -169,7 +169,7 @@ def test_eig_gen_kp_feat_descriptor():
     log = eig._logbook
     assert len(log) == eig.generations
     filename = "test_evolution.png"
-    plot_generator_logbook(log, filename=filename)
+    ea_generator_evolution_plot(log, filename=filename)
     assert os.path.exists(filename)
     os.remove(filename)
 
@@ -179,7 +179,7 @@ def test_eig_gen_kp_inst_descriptor():
     kp_domain = KPDomain(dimension=50, capacity_approach="evolved")
     generations = 100
     k = 3
-    eig = EIG(
+    eig = EAGenerator(
         pop_size=10,
         generations=generations,
         domain=kp_domain,
@@ -223,7 +223,7 @@ def test_eig_gen_kp_perf_descriptor_with_pisinger():
     kp_domain = KPDomain(dimension=50, capacity_approach="evolved")
     generations = 100
     k = 3
-    eig = EIG(
+    eig = EAGenerator(
         pop_size=10,
         generations=generations,
         domain=kp_domain,
@@ -232,7 +232,7 @@ def test_eig_gen_kp_perf_descriptor_with_pisinger():
         repetitions=1,
         descriptor="performance",
         replacement=replacement.generational,
-        performance_function=pisinger_performance_metric,
+        performance_function=runtime_score,
     )
     archive, solution_set = eig()
     # They could be empty

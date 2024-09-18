@@ -14,12 +14,11 @@ import argparse
 import os
 
 import matplotlib.pyplot as plt
-import numpy as pd
 import pandas as pd
 import seaborn as sns
 
-from digneapy.domains import Knapsack
-from digneapy.solvers import default_kp, map_kp, miw_kp, mpw_kp
+from digneapy.domains.kp import Knapsack
+from digneapy.solvers.kp import default_kp, map_kp, miw_kp, mpw_kp
 
 sns.set_style("whitegrid")
 plt.rcParams["font.family"] = "serif"

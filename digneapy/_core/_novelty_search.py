@@ -17,10 +17,11 @@ from typing import Optional
 import numpy as np
 from sklearn.neighbors import NearestNeighbors
 
-from digneapy._core import Instance
 from digneapy.archives import Archive
-from digneapy.descriptors import descriptor_strategies
 from digneapy.transformers import SupportsTransform
+
+from ._instance import Instance
+from .descriptors import DESCRIPTORS
 
 
 class NS:
@@ -49,14 +50,14 @@ class NS:
         self._k = k
         self._transformer = transformer
 
-        if descriptor not in descriptor_strategies:
+        if descriptor not in DESCRIPTORS:
             msg = f"describe_by {descriptor} not available in {self.__class__.__name__}.__init__. Set to features by default"
             print(msg)
             self._describe_by = "features"
-            self._descriptor_strategy = descriptor_strategies["features"]
+            self._descriptor_strategy = DESCRIPTORS["features"]
         else:
             self._describe_by = descriptor
-            self._descriptor_strategy = descriptor_strategies[descriptor]
+            self._descriptor_strategy = DESCRIPTORS[descriptor]
 
     @property
     def archive(self):

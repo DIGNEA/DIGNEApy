@@ -14,11 +14,11 @@ import argparse
 import configparser
 from collections import deque
 
-from digneapy.archives import Archive
+from digneapy import Archive
 from digneapy.domains.kp import KPDomain
-from digneapy.generators import EIG
+from digneapy.generators import EAGenerator
 from digneapy.operators.replacement import first_improve_replacement
-from digneapy.solvers import default_kp, map_kp, miw_kp, mpw_kp
+from digneapy.solvers.kp import default_kp, map_kp, miw_kp, mpw_kp
 
 
 def main(default_args):
@@ -48,7 +48,7 @@ def main(default_args):
 
     for i in range(len(portfolio)):
         portfolio.rotate(i)
-        eig = EIG(
+        eig = EAGenerator(
             pop_size=population_size,
             generations=generations,
             domain=kp_domain,
@@ -61,7 +61,7 @@ def main(default_args):
             replacement=first_improve_replacement,
         )
         print(eig)
-        archive, solution_set = eig()
+        archive, solution_set = eig(verbose=True)
 
         print(f"The archive contains {len(archive)} instances.")
         print(f"The solution set contains {len(solution_set)} instances.")

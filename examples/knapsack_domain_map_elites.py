@@ -10,45 +10,37 @@
 @Desc    :   None
 """
 
-from digneapy.archives import GridArchive
+from digneapy import GridArchive
 from digneapy.domains.kp import KPDomain
-from digneapy.generators import MElitGen, plot_map_elites_logbook
+from digneapy.generators import MapElitesGenerator
 from digneapy.operators.mutation import uniform_one_mutation
-from digneapy.solvers import default_kp, map_kp, miw_kp
+from digneapy.solvers.kp import default_kp, map_kp, miw_kp
+from digneapy.visualize import map_elites_evolution_plot
 
 
 def map_elites_knapsack():
     archive = GridArchive(
-        dimensions=(2,) * 8,
-        ranges=[
-            (3.0, 188190307.0),
-            (10.0, 100099.0),
-            (300.0, 188190307.0),
-            (0.0, 100005.0),
-            (0.0, 1000.0),
-            (0.024096446510133377, 91415),
-            (63.30284857571215, 149746.5024986119),
-            (41.07985038925373, 4314244.913937186),
-        ],
+        dimensions=(10,) * 101,
+        ranges=[(0.0, 10000), *[(1.0, 1000) for _ in range(100)]],
     )
 
-    domain = KPDomain(dimension=10, capacity_approach="percentage")
-    map_elites = MElitGen(
+    domain = KPDomain(dimension=50, capacity_approach="evolved")
+    map_elites = MapElitesGenerator(
         domain,
         portfolio=[map_kp, default_kp, miw_kp],
         archive=archive,
-        initial_pop_size=10,
+        initial_pop_size=128,
         mutation=uniform_one_mutation,
-        generations=1000,
-        descriptor="features",
+        generations=100,
+        descriptor="instance",
         repetitions=1,
     )
-    assert archive.filled_cells == len(archive.instances)
+
     archive = map_elites(verbose=True)
     log = map_elites.log
-    print(archive.coverage, archive.filled_cells, archive.n_cells)
+    print(archive.coverage, archive.n_cells, len(archive))
 
-    plot_map_elites_logbook(log, "example.png")
+    map_elites_evolution_plot(log, "example.png")
 
 
 if __name__ == "__main__":

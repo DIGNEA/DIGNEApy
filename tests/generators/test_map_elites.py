@@ -18,11 +18,11 @@ from digneapy._core import Instance
 from digneapy.archives import GridArchive
 from digneapy.domains.bpp import BPPDomain
 from digneapy.domains.kp import KPDomain
-from digneapy.generators import MElitGen
+from digneapy.generators import MapElitesGenerator
 from digneapy.operators.mutation import uniform_one_mutation
 from digneapy.solvers.bpp import best_fit, first_fit, worst_fit
 from digneapy.solvers.kp import default_kp, map_kp, miw_kp
-from digneapy.utils import plot_map_elites_logbook
+from digneapy.visualize import map_elites_evolution_plot
 
 test_data = [
     (
@@ -53,7 +53,7 @@ def test_map_elites_domain(
     domain = domain_cls(dimension=dimension)
     assert domain.dimension == dimension
 
-    map_elites = MElitGen(
+    map_elites = MapElitesGenerator(
         domain,
         portfolio=portfolio,
         archive=archive,
@@ -74,6 +74,6 @@ def test_map_elites_domain(
 
     # Is able to print the log
     log = map_elites.log
-    plot_map_elites_logbook(log, "example.png")
+    map_elites_evolution_plot(log, "example.png")
     assert os.path.exists("example.png")
     os.remove("example.png")

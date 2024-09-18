@@ -12,15 +12,15 @@
 
 __all__ = [
     "DescStrategy",
-    "rdstrat",
-    "descriptor_strategies",
+    "descriptor",
+    "DESCRIPTORS",
 ]
 
 from collections.abc import Callable, Iterable, MutableMapping
 
 import numpy as np
 
-from ._core._instance import Instance
+from digneapy._core._instance import Instance
 
 """ DescStrategy defines the type for a Descriptor Strategy.
     A descriptor strategy is any callable able to extract the
@@ -33,7 +33,7 @@ from ._core._instance import Instance
 DescStrategy = Callable[[Iterable[Instance]], np.ndarray]
 
 
-def rdstrat(key: str, verbose: bool = False):
+def descriptor(key: str, verbose: bool = False):
     """Decorator to create new descriptor strategies
 
     Args:
@@ -44,7 +44,7 @@ def rdstrat(key: str, verbose: bool = False):
     def decorate(func: DescStrategy):
         if verbose:
             print(f"Registering descriptor function: {func.__name__} with key: {key}")
-        descriptor_strategies[key] = func
+        DESCRIPTORS[key] = func
         return func
 
     return decorate
@@ -104,7 +104,7 @@ def instance_strategy(iterable: Iterable[Instance]) -> np.ndarray:
     - instance --> Creates a np.ndarray with the whole instance as its self descriptor.
     - transformed --> Creates a np.ndarray with all the transformed descriptors of the instances. Only when using a Transformer.
 """
-descriptor_strategies: MutableMapping[str, DescStrategy] = {
+DESCRIPTORS: MutableMapping[str, DescStrategy] = {
     "features": __property_strategy(attr="features"),
     "performance": performance_strategy,
     "instance": instance_strategy,

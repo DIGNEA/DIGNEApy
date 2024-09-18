@@ -10,30 +10,25 @@
 @Desc    :   None
 """
 
-from digneapy.transformers._base import SupportsTransform, Transformer
+from ._base import SupportsTransform, Transformer
 
-# from ._nnets import KerasNN, TorchNN
-# from ._tuner import NNTuner
+__transformer_submodules = {"neural", "autoencoders", "tuner"}
 
 __all__ = ["Transformer", "SupportsTransform"]
 
 
+# Lazy import function
 def __getattr__(attr_name):
-    if attr_name == "neural":
-        import digneapy.transformers.neural as neural
+    import importlib
+    import sys
 
-        return neural
+    if attr_name in __transformer_submodules:
+        full_name = f"digneapy.transformers.{attr_name}"
+        submodule = importlib.import_module(full_name)
+        sys.modules[full_name] = submodule
+        return submodule
 
-    elif attr_name == "autoencoders":
-        import digneapy.transformers.autoencoders as autoencoders
-
-        return autoencoders
-
-    elif attr_name == "tuner":
-        import digneapy.transformers.tuner as tuner
-
-        return tuner
     else:
         raise ImportError(
-            f"module 'digneapy.solvers.transformers' has no attribute {attr_name}"
+            f"module digneapy.solvers.transformers has no attribute {attr_name}"
         )

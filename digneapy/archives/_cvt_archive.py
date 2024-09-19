@@ -232,7 +232,7 @@ class CVTArchive(Archive):
             msg = "Only objects of type Instance can be inserted into a GridArchive"
             raise TypeError(msg)
 
-    def extend(self, iterable: Iterable[Instance], *args, **kwargs):
+    def extend(self, iterable: Iterable[Instance]):
         """Includes all the instances in iterable into the Grid
 
         Args:
@@ -260,20 +260,23 @@ class CVTArchive(Archive):
             np.ndarray:  (batch_size, ) array of integer indices representing the flattened grid coordinates.
         """
         descriptors = np.asarray(descriptors)
+        if len(descriptors) == 0:
+            return np.empty(0)
         if (
             descriptors.ndim == 1
-            and descriptors.shape[0] != len(self._dimensions)
+            and descriptors.shape[0] != self._dimensions
             or descriptors.ndim == 2
-            and descriptors.shape[1] != len(self._dimensions)
+            and descriptors.shape[1] != self._dimensions
         ):
             raise ValueError(
                 f"Expected descriptors to be an array with shape "
                 f"(batch_size, dimensions) (i.e. shape "
-                f"(batch_size, {len(self._dimensions)})) but it had shape "
+                f"(batch_size, {self._dimensions})) but it had shape "
                 f"{descriptors.shape}"
             )
         indeces = self._kdtree.query(descriptors, return_distance=False)
-        return indeces.astype(np.int)
+        indeces = indeces[:, 0]
+        return indeces.astype(np.int32)
 
     def to_file(self, file_pattern: str = "CVTArchive"):
         """Saves the centroids and the samples of the CVTArchive to .npy files

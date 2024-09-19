@@ -256,6 +256,9 @@ class GridArchive(Archive):
         Returns:
             np.ndarray:  (batch_size, ) array of integer indices representing the flattened grid coordinates.
         """
+        if len(descriptors) == 0:
+            return np.empty(0)
+
         descriptors = np.asarray(descriptors)
         if (
             descriptors.ndim == 1

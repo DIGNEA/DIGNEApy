@@ -15,6 +15,7 @@ __all__ = ["EAGenerator", "MapElitesGenerator"]
 import copy
 import random
 from collections.abc import Iterable
+from functools import partial
 from operator import attrgetter
 from typing import Optional
 
@@ -30,7 +31,7 @@ from ._core import (
 )
 from ._core.descriptors import DESCRIPTORS
 from ._core.scores import PerformanceFn, max_gap_target
-from .archives import Archive, GridArchive
+from .archives import Archive, CVTArchive, GridArchive
 from .operators import (
     Crossover,
     Mutation,
@@ -42,6 +43,43 @@ from .operators import (
     uniform_one_mutation,
 )
 from .transformers import SupportsTransform
+
+
+def fitness_filter(instance: Instance) -> bool:
+    """Filter the instances that have a fitness greater than zero.
+
+    Args:
+        instance (Instance): Instance to evaluate
+
+    Returns:
+        bool: Whether the instance agrees the condition
+    """
+    return instance.fitness >= 0.0
+
+
+def performance_bias_filter(instance: Instance) -> bool:
+    """Filter the instances that have a performance score (p) greater than zero.
+
+    Args:
+        instance (Instance): Instance to evaluate
+
+    Returns:
+        bool: Whether the instance agrees the condition
+    """
+    return instance.p >= 0.0
+
+
+def diverse_and_performance_bias_filter(instance: Instance, threshold) -> bool:
+    """Filter the instances that has novelty score (s) >= threshold and performance score (p) >= 0
+
+    Args:
+        instance (Instance): Instance to evaluate
+        threshold (_type_): Minimum novelty score necessary to consider the instance
+
+    Returns:
+        bool: Whether the instance agrees the conditions
+    """
+    return instance.s >= threshold and instance.p >= 0.0
 
 
 class EAGenerator(NS):
@@ -117,6 +155,16 @@ class EAGenerator(NS):
         self._logbook.header = "gen", "s", "p"
         self._logbook.chapters["s"].header = "min", "avg", "std", "max"
         self._logbook.chapters["p"].header = "min", "avg", "std", "max"
+
+        self.__archive_filter = partial(
+            diverse_and_performance_bias_filter,
+            threshold=self.archive.threshold,
+        )
+
+        self.__sset_filter = partial(
+            diverse_and_performance_bias_filter,
+            threshold=self.solution_set.threshold,
+        )
 
         try:
             phi = float(phi)
@@ -199,9 +247,6 @@ class EAGenerator(NS):
         off = self.mutation(p_1, self.domain.bounds)
         return off
 
-    def __diverse_biased_filter(self, instance: Instance) -> bool:
-        return instance.s >= self.archive.threshold and instance.p >= 0.0
-
     def _run(self, verbose: bool = False):
         if self.domain is None:
             raise ValueError("You must specify a domain to run the generator.")
@@ -230,12 +275,9 @@ class EAGenerator(NS):
             self._evaluate_population(offspring)
             self.sparseness(offspring)
             self._compute_fitness(population=offspring)
-
-            self.archive.extend(offspring, self.__diverse_biased_filter)
-
+            self.archive.extend(offspring, self.__archive_filter)
             self.sparseness_solution_set(offspring)
-            self.solution_set.extend(offspring, self.__diverse_biased_filter)
-
+            self.solution_set.extend(offspring, self.__sset_filter)
             self.population = self.replacement(self.population, offspring)
 
             # Record the stats and update the performed gens
@@ -263,12 +305,17 @@ class MapElitesGenerator:
         portfolio: Iterable[SupportsSolve[P]],
         initial_pop_size: int,
         generations: int,
-        archive: GridArchive,
+        archive: GridArchive | CVTArchive,
         mutation: Mutation,
         repetitions: int,
         descriptor: str,
         performance_function: PerformanceFn = max_gap_target,
+        performance_bias: bool = True,
     ):
+        if not isinstance(archive, (GridArchive, CVTArchive)):
+            raise ValueError(
+                f"MapElitesGenerator expects an archive of class GridArchive or CVTArchive and got {archive.__class__.__name__}"
+            )
         self._domain = domain
         self._portfolio = list(portfolio)
         self._init_pop_size = initial_pop_size
@@ -277,6 +324,7 @@ class MapElitesGenerator:
         self._mutation = mutation
         self._repetitions = repetitions
         self._performance_fn = performance_function
+        self._performance_bias = performance_bias
 
         if descriptor not in DESCRIPTORS:
             msg = f"descriptor {descriptor} not available in {self.__class__.__name__}.__init__. Set to features by default"
@@ -321,6 +369,7 @@ class MapElitesGenerator:
             self._domain.generate_instance() for _ in range(self._init_pop_size)
         ]
         instances = self._evaluate_population(instances)
+        # Here we do not care for p >= 0. We are starting the archive
         self._archive.extend(instances)
 
     def _evaluate_population(self, population: Iterable[Instance]):
@@ -375,7 +424,9 @@ class MapElitesGenerator:
             )
 
             offspring = self._evaluate_population(offspring)
-
+            if self._performance_bias:
+                # Filter instances whose p > 0
+                offspring = filter(performance_bias_filter, offspring)
             self._archive.extend(offspring)
 
             # Record the stats and update the performed gens

@@ -15,7 +15,14 @@ from collections import deque
 
 import pytest
 
-from digneapy import Archive, GridArchive, Instance, max_gap_target, runtime_score
+from digneapy import (
+    Archive,
+    CVTArchive,
+    GridArchive,
+    Instance,
+    max_gap_target,
+    runtime_score,
+)
 from digneapy.domains import BPPDomain, KnapsackDomain
 from digneapy.generators import EAGenerator, MapElitesGenerator
 from digneapy.operators import (
@@ -244,8 +251,8 @@ def test_eig_gen_kp_perf_descriptor_with_pisinger():
     )
     archive, solution_set = eig()
     # They could be empty
-    assert type(archive) == Archive
-    assert type(solution_set) == Archive
+    assert isinstance(archive, Archive)
+    assert isinstance(solution_set, Archive)
     # If they're not empty
     if len(archive) != 0:
         assert all(len(s) == 101 for s in archive)
@@ -292,7 +299,7 @@ test_data = [
 @pytest.mark.parametrize(
     "domain_cls, portfolio, desc_size, expected_str, expected_repr", test_data
 )
-def test_map_elites_domain(
+def test_map_elites_domain_grid(
     domain_cls, portfolio, desc_size, expected_str, expected_repr
 ):
     dimension = 100
@@ -316,6 +323,52 @@ def test_map_elites_domain(
 
     assert len(archive) != 0
     assert isinstance(archive, GridArchive)
+    assert all(isinstance(i, Instance) for i in archive)
+    assert len(map_elites.log) == 1001
+
+    # Is able to print the log
+    log = map_elites.log
+    map_elites_evolution_plot(log, "example.png")
+    assert os.path.exists("example.png")
+    os.remove("example.png")
+
+
+test_data_cvt = [
+    (
+        KnapsackDomain,
+        [map_kp, default_kp, miw_kp],
+        [(1.0, 10_000), *[(1.0, 1_000) for _ in range(100)]],
+    ),
+    (
+        BPPDomain,
+        [best_fit, first_fit, worst_fit],
+        [(1.0, 10_000), *[(1.0, 1_000) for _ in range(50)]],
+    ),
+]
+
+
+@pytest.mark.parametrize("domain_cls, portfolio, ranges", test_data_cvt)
+def test_map_elites_domain_cvt(domain_cls, portfolio, ranges):
+    dimension = 50
+    archive = CVTArchive(k=100, ranges=ranges, n_samples=10_000)
+    domain = domain_cls(dimension=dimension)
+    assert domain.dimension == dimension
+
+    map_elites = MapElitesGenerator(
+        domain,
+        portfolio=portfolio,
+        archive=archive,
+        initial_pop_size=5,
+        mutation=uniform_one_mutation,
+        generations=1000,
+        descriptor="instance",
+        repetitions=1,
+    )
+    archive = map_elites()
+
+    assert len(archive) != 0
+    assert all(i.p >= 0 for i in archive)
+    assert isinstance(archive, CVTArchive)
     assert all(isinstance(i, Instance) for i in archive)
     assert len(map_elites.log) == 1001
 

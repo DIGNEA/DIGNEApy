@@ -64,9 +64,9 @@ class GridArchive(Archive):
         Raises:
             ValueError: ``dimensions`` and ``ranges`` are not the same length
         """
-        Archive.__init__(self, threshold=np.inf)
+        Archive.__init__(self, threshold=np.inf, dtype=dtype)
         if len(ranges) == 0 or len(dimensions) == 0:
-            raise ValueError("dimensions or ranges must have length >= 1")
+            raise ValueError("dimensions and ranges must have length >= 1")
         if len(ranges) != len(dimensions):
             raise ValueError(
                 f"len(dimensions) = {len(dimensions)} != len(ranges) = {len(ranges)} in GridArchive.__init__()"

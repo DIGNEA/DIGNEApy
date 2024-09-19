@@ -26,7 +26,10 @@ class Archive:
     """
 
     def __init__(
-        self, threshold: float, instances: Optional[Iterable[Instance]] = None
+        self,
+        threshold: float,
+        instances: Optional[Iterable[Instance]] = None,
+        dtype=np.float64,
     ):
         """Creates an instance of a Archive (unstructured) for QD algorithms
 
@@ -40,6 +43,7 @@ class Archive:
             self._instances = []
 
         self._threshold = threshold
+        self._dtype = dtype
 
     @property
     def instances(self):

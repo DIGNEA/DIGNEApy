@@ -229,7 +229,7 @@ class CVTArchive(Archive):
                 self._grid[index] = copy.deepcopy(instance)
 
         else:
-            msg = "Only objects of type Instance can be inserted into a GridArchive"
+            msg = "Only objects of type Instance can be inserted into a CVTArchive"
             raise TypeError(msg)
 
     def extend(self, iterable: Iterable[Instance]):
@@ -239,13 +239,24 @@ class CVTArchive(Archive):
             iterable (Iterable[Instance]): Iterable of instances
         """
         if not all(isinstance(i, Instance) for i in iterable):
-            msg = "Only objects of type Instance can be inserted into a GridArchive"
+            msg = "Only objects of type Instance can be inserted into a CVTArchive"
             raise TypeError(msg)
 
         indeces = self.index_of([i.descriptor for i in iterable])
         for idx, instance in zip(indeces, iterable, strict=True):
             if idx not in self._grid or instance.fitness > self._grid[idx].fitness:
                 self._grid[idx] = copy.deepcopy(instance)
+
+    def remove(self, iterable: Iterable[Instance]):
+        """Removes all the instances in iterable from the grid"""
+        if not all(isinstance(i, Instance) for i in iterable):
+            msg = "Only objects of type Instance can be removed from a CVTArchive"
+            raise TypeError(msg)
+
+        indeces_to_remove = self.index_of([i.descriptor for i in iterable])
+        for index in indeces_to_remove:
+            if index in self._grid:
+                del self._grid[index]
 
     def index_of(self, descriptors) -> np.ndarray:
         """Computes the indeces of a batch of descriptors.

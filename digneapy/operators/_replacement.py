@@ -29,7 +29,7 @@ Replacement = Callable[
         Sequence[IndType],
         Sequence[IndType],
     ],
-    Sequence,
+    list[IndType],
 ]
 
 

@@ -283,15 +283,15 @@ test_data = [
         KnapsackDomain,
         [default_kp, map_kp, miw_kp],
         8,
-        "MapElites(descriptor=features,pop_size=5,gen=1000,domain=KP,portfolio=['default_kp', 'map_kp', 'miw_kp'])",
-        "MapElites<descriptor=features,pop_size=5,gen=1000,domain=KP,portfolio=['default_kp', 'map_kp', 'miw_kp']>",
+        "MapElites(descriptor=features,pop_size=32,gen=1000,domain=KP,portfolio=['default_kp', 'map_kp', 'miw_kp'])",
+        "MapElites<descriptor=features,pop_size=32,gen=1000,domain=KP,portfolio=['default_kp', 'map_kp', 'miw_kp']>",
     ),
     (
         BPPDomain,
         [best_fit, first_fit, worst_fit],
         10,
-        "MapElites(descriptor=features,pop_size=5,gen=1000,domain=BPP,portfolio=['best_fit', 'first_fit', 'worst_fit'])",
-        "MapElites<descriptor=features,pop_size=5,gen=1000,domain=BPP,portfolio=['best_fit', 'first_fit', 'worst_fit']>",
+        "MapElites(descriptor=features,pop_size=32,gen=1000,domain=BPP,portfolio=['best_fit', 'first_fit', 'worst_fit'])",
+        "MapElites<descriptor=features,pop_size=32,gen=1000,domain=BPP,portfolio=['best_fit', 'first_fit', 'worst_fit']>",
     ),
 ]
 
@@ -302,7 +302,7 @@ test_data = [
 def test_map_elites_domain_grid(
     domain_cls, portfolio, desc_size, expected_str, expected_repr
 ):
-    dimension = 100
+    dimension = 50
     archive = GridArchive(dimensions=(10,) * desc_size, ranges=[(0, 1e4)] * desc_size)
     domain = domain_cls(dimension=dimension)
     assert domain.dimension == dimension
@@ -311,7 +311,7 @@ def test_map_elites_domain_grid(
         domain,
         portfolio=portfolio,
         archive=archive,
-        initial_pop_size=5,
+        initial_pop_size=32,
         mutation=uniform_one_mutation,
         generations=1000,
         descriptor="features",
@@ -350,7 +350,7 @@ test_data_cvt = [
 @pytest.mark.parametrize("domain_cls, portfolio, ranges", test_data_cvt)
 def test_map_elites_domain_cvt(domain_cls, portfolio, ranges):
     dimension = 50
-    archive = CVTArchive(k=100, ranges=ranges, n_samples=10_000)
+    archive = CVTArchive(k=1000, ranges=ranges, n_samples=10_000)
     domain = domain_cls(dimension=dimension)
     assert domain.dimension == dimension
 
@@ -358,7 +358,7 @@ def test_map_elites_domain_cvt(domain_cls, portfolio, ranges):
         domain,
         portfolio=portfolio,
         archive=archive,
-        initial_pop_size=5,
+        initial_pop_size=32,
         mutation=uniform_one_mutation,
         generations=1000,
         descriptor="instance",
@@ -368,6 +368,7 @@ def test_map_elites_domain_cvt(domain_cls, portfolio, ranges):
 
     assert len(archive) != 0
     assert all(i.p >= 0 for i in archive)
+    assert all(i.s == 0 for i in archive)
     assert isinstance(archive, CVTArchive)
     assert all(isinstance(i, Instance) for i in archive)
     assert len(map_elites.log) == 1001

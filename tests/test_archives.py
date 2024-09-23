@@ -95,8 +95,11 @@ def test_append_instance(empty_archive):
 
 def test_extend_iterable(empty_archive, default_archive):
     assert 0 == len(empty_archive)
-    d = default_archive.instances
-    empty_archive.extend(d)
+    instances = default_archive.instances
+    for i in instances:
+        i.s = 10.0
+
+    empty_archive.extend(instances)
     assert len(empty_archive) == len(default_archive)
     assert empty_archive == default_archive
 
@@ -145,48 +148,8 @@ def test_archive_extend(empty_archive):
         Instance([], fitness=0.0, p=0.0, s=np.random.random()) for _ in range(10)
     ]
 
-    def filter_fn(x):
-        return x.s >= empty_archive.threshold
-
-    expected = len(list(filter(filter_fn, instances)))
-    empty_archive.extend(instances, filter_fn=None)
-    assert len(empty_archive) == expected
-
-
-def test_archive_extend_with_s_and_p(empty_archive):
-    new_threshold = 1.0
-    empty_archive.threshold = new_threshold
-    instances = [
-        Instance([], fitness=0.0, p=np.random.randint(0, 100), s=np.random.random())
-        for _ in range(10)
-    ]
-
-    def filter_fn(x):
-        return x.s >= empty_archive.threshold and x.p >= 50.0
-
-    expected = len(list(filter(filter_fn, instances)))
-    empty_archive.extend(instances, filter_fn=filter_fn)
-    assert len(empty_archive) == expected
-
-
-def test_archive_extend_with_s_p_and_fitness(empty_archive):
-    new_threshold = 1.0
-    empty_archive.threshold = new_threshold
-    instances = [
-        Instance(
-            [],
-            fitness=np.random.random(),
-            p=np.random.randint(0, 100),
-            s=np.random.random(),
-        )
-        for _ in range(10)
-    ]
-
-    def filter_fn(x):
-        return x.s >= empty_archive.threshold and x.p >= 50.0 and x.fitness >= 0.5
-
-    expected = len(list(filter(filter_fn, instances)))
-    empty_archive.extend(instances, filter_fn=filter_fn)
+    expected = len(list(filter(lambda i: i.s >= empty_archive.threshold, instances)))
+    empty_archive.extend(instances)
     assert len(empty_archive) == expected
 
 

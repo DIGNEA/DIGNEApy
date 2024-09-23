@@ -12,7 +12,7 @@
 
 import json
 import operator
-from collections.abc import Callable, Iterable
+from collections.abc import Iterable
 from typing import Optional
 
 import numpy as np
@@ -133,29 +133,18 @@ class Archive:
             msg = f"Only objects of type {Instance.__class__.__name__} can be inserted into an archive"
             raise TypeError(msg)
 
-    def __default_filter(self, instance: Instance):
-        return instance.s >= self._threshold
-
-    def extend(
-        self, iterable: Iterable[Instance], filter_fn: Optional[Callable] = None
-    ):
+    def extend(self, iterable: Iterable[Instance]):
         """Extends the current archive with all the individuals inside iterable that have
         a sparseness value greater than the archive threshold.
 
         Args:
             iterable (Iterable[Instance]): Iterable of instances to be include in the archive.
-            filter_fn (Callable, optional): A function that takes an instance and returns a boolean.
-                                             Defaults to filtering by sparseness.
         """
         if not all(isinstance(i, Instance) for i in iterable):
             msg = "Only objects of type Instance can be inserted into an archive"
             raise TypeError(msg)
 
-        default_filter = self.__default_filter
-        actual_filter = filter_fn if filter_fn is not None else default_filter
-
-        for i in filter(actual_filter, iterable):
-            self.instances.append(i)
+        self.instances.extend(filter(lambda i: i.s > self.threshold, iterable))
 
     def __format__(self, fmt_spec=""):
         variables = self

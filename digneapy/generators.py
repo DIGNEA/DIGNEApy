@@ -15,7 +15,6 @@ __all__ = ["EAGenerator", "MapElitesGenerator"]
 import copy
 import random
 from collections.abc import Iterable
-from functools import partial
 from operator import attrgetter
 from typing import Optional
 
@@ -43,43 +42,6 @@ from .operators import (
     uniform_one_mutation,
 )
 from .transformers import SupportsTransform
-
-
-def fitness_filter(instance: Instance) -> bool:
-    """Filter the instances that have a fitness greater than zero.
-
-    Args:
-        instance (Instance): Instance to evaluate
-
-    Returns:
-        bool: Whether the instance agrees the condition
-    """
-    return instance.fitness >= 0.0
-
-
-def performance_bias_filter(instance: Instance) -> bool:
-    """Filter the instances that have a performance score (p) greater than zero.
-
-    Args:
-        instance (Instance): Instance to evaluate
-
-    Returns:
-        bool: Whether the instance agrees the condition
-    """
-    return instance.p >= 0.0
-
-
-def diverse_and_performance_bias_filter(instance: Instance, threshold) -> bool:
-    """Filter the instances that has novelty score (s) >= threshold and performance score (p) >= 0
-
-    Args:
-        instance (Instance): Instance to evaluate
-        threshold (_type_): Minimum novelty score necessary to consider the instance
-
-    Returns:
-        bool: Whether the instance agrees the conditions
-    """
-    return instance.s >= threshold and instance.p >= 0.0
 
 
 class EAGenerator(NS):
@@ -155,16 +117,6 @@ class EAGenerator(NS):
         self._logbook.header = "gen", "s", "p"
         self._logbook.chapters["s"].header = "min", "avg", "std", "max"
         self._logbook.chapters["p"].header = "min", "avg", "std", "max"
-
-        self.__archive_filter = partial(
-            diverse_and_performance_bias_filter,
-            threshold=self.archive.threshold,
-        )
-
-        self.__sset_filter = partial(
-            diverse_and_performance_bias_filter,
-            threshold=self.solution_set.threshold,
-        )
 
         try:
             phi = float(phi)
@@ -257,13 +209,10 @@ class EAGenerator(NS):
         self.population = [
             self.domain.generate_instance() for _ in range(self.pop_size)
         ]
-        # Filter function to update the archives
-        # It must consider the performance score
-
         self._evaluate_population(self.population)
         performed_gens = 0
         while performed_gens < self.generations:
-            offspring = []
+            offspring: list[Instance] = []
             for _ in range(self.pop_size):
                 p_1 = self.selection(self.population)
                 p_2 = self.selection(self.population)
@@ -275,9 +224,13 @@ class EAGenerator(NS):
             self._evaluate_population(offspring)
             self.sparseness(offspring)
             self._compute_fitness(population=offspring)
-            self.archive.extend(offspring, self.__archive_filter)
+            # Only the feasible instances are considered to be included
+            # in the archive and the solution set.
+            feasible_offspring = list(filter(lambda i: i.p >= 0, offspring))
+            self.archive.extend(feasible_offspring)
             self.sparseness_solution_set(offspring)
-            self.solution_set.extend(offspring, self.__sset_filter)
+            self.solution_set.extend(feasible_offspring)
+            # However the whole offspring population is used in the replacement operator
             self.population = self.replacement(self.population, offspring)
 
             # Record the stats and update the performed gens
@@ -310,7 +263,6 @@ class MapElitesGenerator:
         repetitions: int,
         descriptor: str,
         performance_function: PerformanceFn = max_gap_target,
-        performance_bias: bool = True,
     ):
         if not isinstance(archive, (GridArchive, CVTArchive)):
             raise ValueError(
@@ -324,7 +276,6 @@ class MapElitesGenerator:
         self._mutation = mutation
         self._repetitions = repetitions
         self._performance_fn = performance_function
-        self._performance_bias = performance_bias
 
         if descriptor not in DESCRIPTORS:
             msg = f"descriptor {descriptor} not available in {self.__class__.__name__}.__init__. Set to features by default"
@@ -370,6 +321,7 @@ class MapElitesGenerator:
         ]
         instances = self._evaluate_population(instances)
         # Here we do not care for p >= 0. We are starting the archive
+        # Must be removed later on
         self._archive.extend(instances)
 
     def _evaluate_population(self, population: Iterable[Instance]):
@@ -424,10 +376,11 @@ class MapElitesGenerator:
             )
 
             offspring = self._evaluate_population(offspring)
-            if self._performance_bias:
-                # Filter instances whose p > 0
-                offspring = filter(performance_bias_filter, offspring)
-            self._archive.extend(offspring)
+            # Only the feasible instances are considered to be included
+            # in the archive and the solution set.
+            feasible_offspring = list(filter(lambda i: i.p >= 0, offspring))
+
+            self._archive.extend(feasible_offspring)
 
             # Record the stats and update the performed gens
             record = self._stats_fitness.compile(self._archive)
@@ -441,6 +394,10 @@ class MapElitesGenerator:
             # Clear the terminal
             blank = " " * 80
             print(f"\r{blank}\r", end="")
+
+        unfeasible_instances = list(filter(lambda i: i.p < 0, self._archive))
+
+        self._archive.remove(unfeasible_instances)
         return self._archive
 
     def __call__(self, verbose: bool = False):

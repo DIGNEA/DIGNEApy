@@ -22,7 +22,7 @@ dependencies = { file = ["requirements.txt"] }
 [project]
 dynamic = ["dependencies"]
 name = "digneapy"
-version = "0.2.3"
+version = "0.2.4"
 description = "Python version of the DIGNEA code for instance generation"
 authors = [{ name = "Alejandro Marrero", email = "amarrerd@ull.edu.es" }]
 readme = "README.md"

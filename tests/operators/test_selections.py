@@ -86,7 +86,7 @@ def test_binary_selection_one_ind(initialised_solutions):
     population = [initialised_solutions[0]]
     expected = population[0]
     parent = binary_tournament_selection(population)
-    assert type(parent) == type(expected)
+    assert isinstance(parent, expected.__class__)
     assert parent == expected
     assert id(parent) != id(expected)
 

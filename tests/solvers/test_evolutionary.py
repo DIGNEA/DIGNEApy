@@ -57,7 +57,7 @@ def test_ea_with_def_kp(default_instance):
     assert len(ea._best_found) == len(default_instance)
     assert len(ea._population) == pop_size
 
-    assert all(type(i) == Solution for i in population)
+    assert all(isinstance(i, Solution) for i in population)
     assert isinstance(ea._best_found, Solution)
     assert ea._best_found.fitness <= 50  # 50 Is the optimal
     assert ea.__name__ == "EA_PS_10_CXPB_0.6_MUTPB_0.3"
@@ -83,7 +83,7 @@ def test_ea_solves_sphere():
     assert len(ea._logbook) == generations + 1
     assert len(ea._best_found) == 30
     assert len(ea._population) == pop_size
-    assert all(type(i) == Solution for i in ea._population)
+    assert all(isinstance(i, Solution) for i in ea._population)
     assert isinstance(ea._best_found, Solution)
 
 
@@ -105,7 +105,7 @@ def test_ea_supports_multiprocess():
     assert len(ea._logbook) == generations + 1
     assert len(ea._best_found) == 30
     assert len(ea._population) == pop_size
-    assert all(type(i) == Solution for i in ea._population)
+    assert all(isinstance(i, Solution) for i in ea._population)
     assert isinstance(ea._best_found, Solution)
     assert ea._n_cores == 4
 

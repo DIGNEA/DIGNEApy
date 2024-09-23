@@ -114,8 +114,8 @@ def test_eig_gen_kp_perf_descriptor():
     )
     archive, solution_set = eig()
     # They could be empty
-    assert type(archive) == Archive
-    assert type(solution_set) == Archive
+    assert isinstance(archive, Archive)
+    assert isinstance(solution_set, Archive)
     # If they're not empty
     if len(archive) != 0:
         assert all(len(s) == 101 for s in archive)
@@ -156,8 +156,8 @@ def test_eig_gen_kp_feat_descriptor():
     )
     archive, solution_set = eig()
     # They could be empty
-    assert type(archive) == Archive
-    assert type(solution_set) == Archive
+    assert isinstance(archive, Archive)
+    assert isinstance(solution_set, Archive)
     # If they're not empty
     if len(archive) != 0:
         assert all(len(s) == 101 for s in archive)
@@ -206,8 +206,8 @@ def test_eig_gen_kp_inst_descriptor():
     )
     archive, solution_set = eig()
     # They could be empty
-    assert type(archive) == Archive
-    assert type(solution_set) == Archive
+    assert isinstance(archive, Archive)
+    assert isinstance(solution_set, Archive)
     # If they're not empty
     if len(archive) != 0:
         assert all(len(s) == 101 for s in archive)

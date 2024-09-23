@@ -36,7 +36,7 @@ keywords = [
     "NS",
 ]
 classifiers = [
-    'Development Status :: 5 - Production/Stable',
+    'Development Status :: 2 - Pre-Alpha',
     "Intended Audience :: Science/Research",
     'Intended Audience :: Developers',
     "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
@@ -51,8 +51,8 @@ classifiers = [
 ]
 
 [project.urls]
-homepage = "https://github.com/dignea/DIGNEApy"
-source = "https://github.com/dignea/DIGNEApy"
+homepage = "https://github.com/DIGNEA/DIGNEApy"
+source = "https://github.com/DIGNEA/DIGNEApy"
 issues = "https://github.com/DIGNEA/DIGNEApy/issues"
 
 [project.optional-dependencies]

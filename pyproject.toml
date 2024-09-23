@@ -1,0 +1,165 @@
+[build-system]
+requires = ["setuptools>=70", "cmake>=3.16.3", "wheel", "pybind11>=2.12.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+py-modules = ["digneapy"]
+ext-modules = [
+    { name = "pisinger_cpp", sources = [
+        "digneapy/solvers/_pisinger/src/combo.cpp",
+        "digneapy/solvers/_pisinger/src/expknap.cpp",
+        "digneapy/solvers/_pisinger/src/minknap.cpp",
+        "digneapy/solvers/_pisinger/src/pisinger.cpp",
+    ] },
+    { name = "parallel_ea", sources = [
+        "digneapy/solvers/_parallel_ea/src/parallel_ea.cpp",
+
+    ] },
+]
+[tool.setuptools.dynamic]
+dependencies = { file = ["requirements.txt"] }
+
+[project]
+dynamic = ["dependencies"]
+name = "digneapy"
+version = "0.2.3"
+description = "Python version of the DIGNEA code for instance generation"
+authors = [{ name = "Alejandro Marrero", email = "amarrerd@ull.edu.es" }]
+readme = "README.md"
+requires-python = ">=3.10"
+license = { file = "LICENSE" }
+keywords = [
+    "dignea",
+    "optimization",
+    "instance generation",
+    "quality-diversity",
+    "NS",
+]
+classifiers = [
+    'Development Status :: 5 - Production/Stable',
+    "Intended Audience :: Science/Research",
+    'Intended Audience :: Developers',
+    "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
+    "Natural Language :: English",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    'Topic :: Scientific/Engineering',
+    'Typing :: Typed',
+    'Operating System :: Unix',
+    'Operating System :: MacOS',
+]
+
+[project.urls]
+homepage = "https://github.com/dignea/DIGNEApy"
+source = "https://github.com/dignea/DIGNEApy"
+issues = "https://github.com/DIGNEA/DIGNEApy/issues"
+
+[project.optional-dependencies]
+test = ["pytest>=3"]
+
+
+[tool.cibuildwheel]
+build = [
+    "cp310-manylinux_x86_64",
+    "cp311-manylinux_x86_64",
+    "cp312-manylinux_x86_64",
+    "cp310-macosx_x86_64",
+    "cp311-macosx_x86_64",
+    "cp312-macosx_x86_64",
+]
+before-test = "python -m pip install -r requirements.txt"
+test-requires = "pytest"
+test-command = "pytest --doctest-modules -W ignore::ImportWarning -W ignore::DeprecationWarning -W ignore::UserWarning {project}/tests"
+build-verbosity = 1
+
+[tool.cibuildwheel.linux]
+repair-wheel-command = "auditwheel repair -w {dest_dir} {wheel}"
+
+[tool.cibuildwheel.macos]
+repair-wheel-command = "delocate-wheel --require-archs {delocate_archs} -w {dest_dir} -v {wheel}"
+
+
+[tool.pytest.init_options]
+filterwarnings = [
+    "ignore::DeprecationWarning",
+    "ignore::UserWarning",
+    "ignore::InconsistentVersionWarning",
+]
+
+[tool.ruff]
+# Exclude a variety of commonly ignored directories.
+exclude = [
+    ".bzr",
+    ".direnv",
+    ".eggs",
+    ".git",
+    ".git-rewrite",
+    ".hg",
+    ".ipynb_checkpoints",
+    ".mypy_cache",
+    ".nox",
+    ".pants.d",
+    ".pyenv",
+    ".pytest_cache",
+    ".pytype",
+    ".ruff_cache",
+    ".svn",
+    ".tox",
+    ".venv",
+    ".vscode",
+    "__pypackages__",
+    "_build",
+    "buck-out",
+    "build",
+    "dist",
+    "node_modules",
+    "site-packages",
+    "venv",
+]
+# Same as Black.
+line-length = 88
+indent-width = 4
+# Assume Python 3.12
+target-version = "py312"
+
+[tool.ruff.lint]
+# Enable Pyflakes (`F`) and a subset of the pycodestyle (`E`)  codes by default.
+# Unlike Flake8, Ruff doesn't enable pycodestyle warnings (`W`) or
+# McCabe complexity (`C901`) by default.
+select = ["E4", "E7", "E9", "F", "I", "NPY201"]
+ignore = []
+
+# Allow fix for all enabled rules (when `--fix`) is provided.
+fixable = ["ALL"]
+unfixable = []
+
+# Allow unused variables when underscore-prefixed.
+dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
+
+[tool.ruff.format]
+# Like Black, use double quotes for strings.
+quote-style = "double"
+
+# Like Black, indent with spaces, rather than tabs.
+indent-style = "space"
+
+# Like Black, respect magic trailing commas.
+skip-magic-trailing-comma = false
+
+# Like Black, automatically detect the appropriate line ending.
+line-ending = "auto"
+
+# Enable auto-formatting of code examples in docstrings. Markdown,
+# reStructuredText code/literal blocks and doctests are all supported.
+#
+# This is currently disabled by default, but it is planned for this
+# to be opt-out in the future.
+docstring-code-format = false
+
+# Set the line length limit used when formatting code snippets in
+# docstrings.
+#
+# This only has an effect when the `docstring-code-format` setting is
+# enabled.
+docstring-code-line-length = "dynamic"

@@ -1,0 +1,33 @@
+# This workflow will install Python dependencies, run tests and lint with a single version of Python
+# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-python
+
+name: Build
+
+on:
+    push:
+        branches: "**" # push to any branch
+    pull_request:
+        branches: "**" # push to any branch
+
+permissions:
+    contents: read
+
+jobs:
+  build_wheels:
+    name: Build wheels Linux System
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build wheels
+        uses: pypa/cibuildwheel@v2.20.0
+        with:
+           package-dir: .
+           output-dir: wheelhouse
+           config-file: "{package}/pyproject.toml"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: cibw-wheels-ubuntu-latest
+          path: ./wheelhouse/*.whl

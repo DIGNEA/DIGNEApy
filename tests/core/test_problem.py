@@ -14,8 +14,7 @@ from typing import Sequence, Tuple
 
 import pytest
 
-from digneapy.core import Problem
-from digneapy.core.solution import Solution
+from digneapy import Problem, Solution
 
 
 class Sample(Problem):

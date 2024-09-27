@@ -11,6 +11,7 @@
 """
 
 from digneapy.archives._base_archive import Archive
+from digneapy.archives._cvt_archive import CVTArchive
 from digneapy.archives._grid_archive import GridArchive
 
-__all__ = ["Archive", "GridArchive"]
+__all__ = ["Archive", "GridArchive", "CVTArchive"]

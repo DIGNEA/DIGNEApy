@@ -10,6 +10,8 @@
 @Desc    :   None
 """
 
+__all__ = ["NNTuner"]
+
 from collections.abc import Callable, Sequence
 from multiprocessing.pool import ThreadPool as Pool
 from typing import Optional
@@ -17,10 +19,9 @@ from typing import Optional
 import numpy as np
 from deap import algorithms, base, cma, creator, tools
 
-from .._constants import Direction
-from .base import Transformer
-from .keras_nn import KerasNN
-from .torch_nn import TorchNN
+from .._core._constants import Direction
+from ._base import Transformer
+from .neural import KerasNN, TorchNN
 
 
 class NNTuner:
@@ -40,8 +41,12 @@ class NNTuner:
             raise TypeError(
                 "transformer must be a subclass of KerasNN or TorchNN object to run MetaEA"
             )
-    
+
         self.transformer = transformer
+        if eval_fn is None:
+            raise ValueError(
+                "eval_fn cannot be None in NNTuner. Please give a valid evaluation function."
+            )
         self.eval_fn = eval_fn
 
         self.dimension = dimension
@@ -109,6 +114,5 @@ class NNTuner:
             stats=self.stats,
             halloffame=self.hof,
             verbose=True,
-
         )
         return (self.hof[0], population, logbook)

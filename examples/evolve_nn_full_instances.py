@@ -1,27 +1,23 @@
 #!/usr/bin/env python
 # -*-coding:utf-8 -*-
-'''
+"""
 @File    :   evolve_nn_full_instances.py
 @Time    :   2024/07/24 10:34:49
-@Author  :   Alejandro Marrero 
+@Author  :   Alejandro Marrero
 @Version :   1.0
 @Contact :   amarrerd@ull.edu.es
 @License :   (C)Copyright 2024, Alejandro Marrero
 @Desc    :   None
-'''
+"""
 
-
-
-import numpy as np
 import pandas as pd
 
-from digneapy import Direction
-from digneapy.archives import Archive, GridArchive
-from digneapy.domains.knapsack import KPDomain
-from digneapy.generators import EIG
-from digneapy.operators.replacement import generational
+from digneapy import Archive, Direction, GridArchive
+from digneapy.domains import KnapsackDomain
+from digneapy.generators import EAGenerator
+from digneapy.operators import generational_replacement
 from digneapy.solvers import default_kp, map_kp, miw_kp
-from digneapy.transformers.keras_nn import KerasNN
+from digneapy.transformers.neural import KerasNN
 from digneapy.transformers.tuner import NNTuner
 
 
@@ -43,10 +39,10 @@ class EvalNN:
     def __init__(self, ranges, resolution: int = 20):
         self.resolution = resolution
         self.ranges = ranges
-        
-        self.kp_domain = KPDomain(dimension=50, capacity_approach="percentage")
 
-    def __call__(self, transformer: KerasNN, filename: str = ''):
+        self.kp_domain = KnapsackDomain(dimension=50, capacity_approach="percentage")
+
+    def __call__(self, transformer: KerasNN, filename: str = ""):
         """This method runs the Novelty Search using a KerasNN as a transformer
         for searching novelty. It generates KP instances for each of the solvers in
         the portfolio [Default, MaP, MiW].
@@ -61,16 +57,14 @@ class EvalNN:
         Returns:
             int: Number of cells occupied
         """
-        hypercube = GridArchive(dimensions=(self.resolution,) * 2,
-                ranges=self.ranges,
-                descriptor="descriptor")
+        hypercube = GridArchive(dimensions=(self.resolution,) * 8, ranges=self.ranges)
         portfolios = [
-        [default_kp, map_kp, miw_kp],
-        [map_kp, default_kp, miw_kp],
-        [miw_kp, default_kp, map_kp],
-    ]
+            [default_kp, map_kp, miw_kp],
+            [map_kp, default_kp, miw_kp],
+            [miw_kp, default_kp, map_kp],
+        ]
         for portfolio in portfolios:
-            eig = EIG(
+            eig = EAGenerator(
                 pop_size=10,
                 generations=1000,
                 domain=self.kp_domain,
@@ -80,7 +74,7 @@ class EvalNN:
                 k=3,
                 repetitions=1,
                 descriptor="instance",
-                replacement=generational,
+                replacement=generational_replacement,
                 transformer=transformer,
             )
             _, solution_set = eig(verbose=True)
@@ -95,13 +89,11 @@ def main():
     dimension = 15_504  # Number of weights of the NN for this architecture
     nn = KerasNN(
         name="NN_transformer_for_N_50_to_2D_kp_domain.keras",
-        input_shape=[101],
-        shape=(
-           101, 50, 2
-        ),
+        input_shape=(101,),
+        shape=(50, 2),
         activations=("relu", "relu", None),
     )
-    print(f'Model:\n{nn}')
+    print(f"Model:\n{nn}")
     # Hypercube boundaries based on the results from AE
     # https://colab.research.google.com/drive/1b392jz3syTJiehSCt_Tf72_D0OkmVVe5?hl=es
     ranges = [(0.0, 25.0), (0.0, 60.0)]
@@ -118,17 +110,23 @@ def main():
     )
     best_nn, population, logbook = cma_es()
     # Save the scores and the weights
-    save_best_nn_results("NN_transformer_for_N_50_to_2D_kp_domain_best_score_and_weights.csv", best_nn)
+    save_best_nn_results(
+        "NN_transformer_for_N_50_to_2D_kp_domain_best_score_and_weights.csv", best_nn
+    )
     # Save the model itself
     nn.update_weights(best_nn)
     nn.save("NN_best_transformer_found_for_N_50_to_2D_kp_domain.keras")
     for i, ind in enumerate(population):
         nn.update_weights(ind)
-        nn.save(f"NN_final_population_{i}_transformer_found_for_N_50_to_2D_kp_domain.keras")
+        nn.save(
+            f"NN_final_population_{i}_transformer_found_for_N_50_to_2D_kp_domain.keras"
+        )
 
     # Saving logbook to CSV
     df = pd.DataFrame(logbook)
-    df.to_csv("CMAES_logbook_for_NN_transformers_for_N_50_to_2D_kp_domain.csv", index=False)
+    df.to_csv(
+        "CMAES_logbook_for_NN_transformers_for_N_50_to_2D_kp_domain.csv", index=False
+    )
 
 
 if __name__ == "__main__":

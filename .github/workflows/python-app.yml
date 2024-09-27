@@ -13,17 +13,21 @@ permissions:
     contents: read
 
 jobs:
-    build_wheels:
-        name: Build wheels on Linux Systems
-        runs-on: ubuntu-latest
+  build_wheels:
+    name: Build wheels Linux System
+    runs-on: ubuntu-latest
 
-        steps:
-            - uses: actions/checkout@v4
+    steps:
+      - uses: actions/checkout@v4
 
-            - name: Build wheels
-              uses: pypa/cibuildwheel@v2.18.1
+      - name: Build wheels
+        uses: pypa/cibuildwheel@v2.20.0
+        with:
+           package-dir: .
+           output-dir: wheelhouse
+           config-file: "{package}/pyproject.toml"
 
-            - uses: actions/upload-artifact@v4
-              with:
-                  name: cibw-wheels-ubuntu-latest
-                  path: ./wheelhouse/*.whl
+      - uses: actions/upload-artifact@v4
+        with:
+          name: cibw-wheels-ubuntu-latest
+          path: ./wheelhouse/*.whl

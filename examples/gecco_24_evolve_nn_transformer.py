@@ -11,19 +11,17 @@
 """
 
 import copy
-import itertools
 from collections import deque
 
-import numpy as np
 import pandas as pd
 
 from digneapy import Direction
 from digneapy.archives import Archive, GridArchive
-from digneapy.domains.knapsack import KPDomain
-from digneapy.generators import EIG
-from digneapy.operators.replacement import generational
+from digneapy.domains import KnapsackDomain
+from digneapy.generators import EAGenerator
+from digneapy.operators import generational_replacement
 from digneapy.solvers import default_kp, map_kp, miw_kp
-from digneapy.transformers.keras_nn import KerasNN
+from digneapy.transformers.neural import KerasNN
 from digneapy.transformers.tuner import NNTuner
 
 
@@ -51,8 +49,8 @@ class NSEval:
     def __init__(self, features_info, resolution: int = 20):
         self.resolution = resolution
         self.features_info = features_info
-        
-        self.kp_domain = KPDomain(dimension=50, capacity_approach="percentage")
+
+        self.kp_domain = KnapsackDomain(dimension=50, capacity_approach="percentage")
         self.portfolio = deque([default_kp, map_kp, miw_kp])
 
     def __call__(self, transformer: KerasNN):
@@ -68,13 +66,13 @@ class NSEval:
         Returns:
             int: Number of bins occupied. The maximum value if 8 x R.
         """
-        hypercube = GridArchive(dimensions=(self.resolution,) * 8,
-                ranges=self.features_info,
-                descriptor="features")
-        
+        hypercube = GridArchive(
+            dimensions=(self.resolution,) * 8, ranges=self.features_info
+        )
+
         for i in range(len(self.portfolio)):
             self.portfolio.rotate(i)  # This allow us to change the target on the fly
-            eig = EIG(
+            eig = EAGenerator(
                 pop_size=10,
                 generations=1000,
                 domain=self.kp_domain,
@@ -84,7 +82,7 @@ class NSEval:
                 k=3,
                 repetitions=1,
                 descriptor="features",
-                replacement=generational,
+                replacement=generational_replacement,
                 transformer=transformer,
             )
             _, solution_set = eig()

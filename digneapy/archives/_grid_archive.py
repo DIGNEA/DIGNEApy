@@ -17,7 +17,7 @@ from typing import Dict, Optional, Tuple
 
 import numpy as np
 
-from digneapy.core import Instance
+from digneapy._core import Instance
 
 from ._base_archive import Archive
 
@@ -37,7 +37,6 @@ class GridArchive(Archive):
         self,
         dimensions: Sequence[int],
         ranges: Sequence[Tuple[float, float]],
-        descriptor: str,
         instances: Optional[Iterable[Instance]] = None,
         eps: float = 1e-6,
         dtype=np.float64,
@@ -56,7 +55,6 @@ class GridArchive(Archive):
             :math:`[-2,2]` (inclusive). ``ranges`` should be the same length as
             ``dims``.
             instances (Optional[Iterable[Instance]], optional): Instances to pre-initialise the archive. Defaults to None.
-            descriptor: str = Descriptor of the Instances to compute the diversity.
             eps (float, optional): Due to floating point precision errors, we add a small
             epsilon when computing the archive indices in the :meth:`index_of`
             method -- refer to the implementation `here. Defaults to 1e-6.
@@ -66,27 +64,21 @@ class GridArchive(Archive):
         Raises:
             ValueError: ``dimensions`` and ``ranges`` are not the same length
         """
-        Archive.__init__(self, threshold=np.inf)
+        Archive.__init__(self, threshold=np.inf, dtype=dtype)
         if len(ranges) == 0 or len(dimensions) == 0:
-            raise ValueError("dimensions or ranges must have length >= 1")
+            raise ValueError("dimensions and ranges must have length >= 1")
         if len(ranges) != len(dimensions):
             raise ValueError(
                 f"len(dimensions) = {len(dimensions)} != len(ranges) = {len(ranges)} in GridArchive.__init__()"
             )
 
         self._dimensions = np.asarray(dimensions)
-        if descriptor == "":
-            raise ValueError(
-                "The descriptor must be one property available in the Instance class."
-            )
-        self._inst_attr = descriptor
-
         ranges = list(zip(*ranges))
         self._lower_bounds = np.array(ranges[0], dtype=dtype)
         self._upper_bounds = np.array(ranges[1], dtype=dtype)
         self._interval = self._upper_bounds - self._lower_bounds
         self._eps = eps
-        self._cells = np.prod(self._dimensions, dtype=int)
+        self._cells = np.prod(self._dimensions, dtype=object)
         self._grid: Dict[int, Instance] = {}
 
         _bounds = []
@@ -252,6 +244,17 @@ class GridArchive(Archive):
             if idx not in self._grid or instance.fitness > self._grid[idx].fitness:
                 self._grid[idx] = copy.deepcopy(instance)
 
+    def remove(self, iterable: Iterable[Instance]):
+        """Removes all the instances in iterable from the grid"""
+        if not all(isinstance(i, Instance) for i in iterable):
+            msg = "Only objects of type Instance can be removed from a CVTArchive"
+            raise TypeError(msg)
+
+        indeces_to_remove = self.index_of([i.descriptor for i in iterable])
+        for index in indeces_to_remove:
+            if index in self._grid:
+                del self._grid[index]
+
     def index_of(self, descriptors):
         """Computes the indeces of a batch of descriptors.
 
@@ -264,6 +267,9 @@ class GridArchive(Archive):
         Returns:
             np.ndarray:  (batch_size, ) array of integer indices representing the flattened grid coordinates.
         """
+        if len(descriptors) == 0:
+            return np.empty(0)
+
         descriptors = np.asarray(descriptors)
         if (
             descriptors.ndim == 1
@@ -289,16 +295,37 @@ class GridArchive(Archive):
 
     def _grid_to_int_index(self, grid_indices) -> np.ndarray:
         grid_indices = np.asarray(grid_indices)
-        return np.ravel_multi_index(grid_indices.T, self._dimensions).astype(int)
+        if len(self._dimensions) > 64:
+            strides = np.cumprod((1,) + tuple(self._dimensions[::-1][:-1]))[::-1]
+            # Reshape strides to (1, num_dimensions) to make it broadcastable with grid_indices
+            strides = strides.reshape(1, -1)
+            flattened_indeces = np.sum(grid_indices * strides, axis=1, dtype=object)
+        else:
+            flattened_indeces = np.ravel_multi_index(
+                grid_indices.T, self._dimensions
+            ).astype(int)
+        return flattened_indeces
 
     def int_to_grid_index(self, int_indices) -> np.ndarray:
         int_indices = np.asarray(int_indices)
-        return np.asarray(
-            np.unravel_index(
-                int_indices,
-                self._dimensions,
-            )
-        ).T.astype(int)
+        if len(self._dimensions) > 64:
+            # Manually unravel the index for dimensions > 64
+            unravel_indices = []
+            remaining_indices = int_indices.astype(object)
+
+            for dim_size in self._dimensions[::-1]:
+                unravel_indices.append(remaining_indices % dim_size)
+                remaining_indices //= dim_size
+
+            unravel_indices = np.array(unravel_indices[::-1]).T
+        else:
+            unravel_indices = np.asarray(
+                np.unravel_index(
+                    int_indices,
+                    self._dimensions,
+                )
+            ).T.astype(int)
+        return unravel_indices
 
     def to_json(self):
         data = {

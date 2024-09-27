@@ -16,8 +16,7 @@ Repository containing the Python version of DIGNEA, a Diverse Instance Generator
 - Sklearn
 - Pandas
 - Keras
-- DEAP
-- Tensorflow 
+- DEAP 
 - PyTorch
 - Pybind11
 - Seaborn

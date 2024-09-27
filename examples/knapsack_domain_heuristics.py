@@ -14,10 +14,10 @@ import argparse
 import configparser
 from collections import deque
 
-from digneapy.archives import Archive
-from digneapy.domains.knapsack import KPDomain
-from digneapy.generators import EIG
-from digneapy.operators.replacement import first_improve_replacement
+from digneapy import Archive
+from digneapy.domains import KnapsackDomain
+from digneapy.generators import EAGenerator
+from digneapy.operators import first_improve_replacement
 from digneapy.solvers import default_kp, map_kp, miw_kp, mpw_kp
 
 
@@ -44,11 +44,11 @@ def main(default_args):
         descriptor = config["generator"]["descriptor"]
 
     portfolio = deque([default_kp, map_kp, miw_kp, mpw_kp])
-    kp_domain = KPDomain(dimension=dimension, capacity_approach=capacity_approach)
+    kp_domain = KnapsackDomain(dimension=dimension, capacity_approach=capacity_approach)
 
     for i in range(len(portfolio)):
         portfolio.rotate(i)
-        eig = EIG(
+        eig = EAGenerator(
             pop_size=population_size,
             generations=generations,
             domain=kp_domain,
@@ -61,7 +61,7 @@ def main(default_args):
             replacement=first_improve_replacement,
         )
         print(eig)
-        archive, solution_set = eig()
+        archive, solution_set = eig(verbose=True)
 
         print(f"The archive contains {len(archive)} instances.")
         print(f"The solution set contains {len(solution_set)} instances.")

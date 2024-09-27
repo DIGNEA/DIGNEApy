@@ -16,8 +16,8 @@ import os
 import numpy as np
 import pytest
 
-from digneapy.core import Instance
-from digneapy.domains import knapsack
+from digneapy import Instance
+from digneapy.domains import kp
 
 
 @pytest.fixture
@@ -25,7 +25,7 @@ def default_kp():
     p = list(range(1, 101))
     w = list(range(1, 101))
     q = 50
-    return knapsack.Knapsack(p, w, q)
+    return kp.Knapsack(p, w, q)
 
 
 def test_default_kp_instance(default_kp):
@@ -63,7 +63,7 @@ def test_default_kp_instance(default_kp):
 
 def test_default_kp_domain():
     dimension = 100
-    domain = knapsack.KPDomain(dimension, capacity_approach="evolved")
+    domain = kp.KnapsackDomain(dimension, capacity_approach="evolved")
     assert len(domain) == dimension
     assert domain.capacity_approach == "evolved"
     assert domain.max_capacity == 1e4
@@ -79,7 +79,7 @@ def test_default_kp_domain():
 
 def test_default_kp_domain_wrong_args():
     dimension = 100
-    domain = knapsack.KPDomain(
+    domain = kp.KnapsackDomain(
         dimension, capacity_approach="random", capacity_ratio=-1.0
     )
     assert domain.capacity_approach == "evolved"
@@ -91,7 +91,7 @@ def test_default_kp_domain_wrong_args():
 
 def test_kp_domain_to_features():
     dimension = 100
-    domain = knapsack.KPDomain(dimension, capacity_approach="fixed")
+    domain = kp.KnapsackDomain(dimension, capacity_approach="fixed")
     instance = domain.generate_instance()
     features = domain.extract_features(instance)
 
@@ -117,7 +117,7 @@ def test_kp_domain_to_features():
 
 def test_kp_domain_to_features_dict():
     dimension = 100
-    domain = knapsack.KPDomain(dimension, capacity_approach="fixed")
+    domain = kp.KnapsackDomain(dimension, capacity_approach="fixed")
     instance = domain.generate_instance()
     features = domain.extract_features_as_dict(instance)
     assert isinstance(features, dict)
@@ -136,7 +136,7 @@ def test_kp_domain_to_instance():
     variables = np.random.randint(low=1, high=1000, size=201)
     instance = Instance(variables)
 
-    domain = knapsack.KPDomain(dimension, capacity_approach="fixed")
+    domain = kp.KnapsackDomain(dimension, capacity_approach="fixed")
     kp_instance = domain.from_instance(instance)
     assert len(kp_instance.weights) == dimension
     assert len(kp_instance.profits) == dimension

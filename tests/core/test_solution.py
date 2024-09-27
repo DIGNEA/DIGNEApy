@@ -15,7 +15,7 @@ import copy
 import numpy as np
 import pytest
 
-from digneapy.core import Solution
+from digneapy import Solution
 
 
 @pytest.fixture

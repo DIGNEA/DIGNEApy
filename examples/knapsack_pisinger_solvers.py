@@ -12,7 +12,7 @@
 
 import numpy as np
 
-from digneapy.domains import knapsack
+from digneapy.domains import Knapsack
 from digneapy.solvers.pisinger import combo, expknap, minknap
 
 
@@ -21,7 +21,7 @@ def main():
     c = np.random.randint(1e3, 1e5)
     w = np.random.randint(1000, 5000, size=n, dtype=np.int32)
     p = np.random.randint(1000, 5000, size=n, dtype=np.int32)
-    kp = knapsack.Knapsack(profits=p, weights=w, capacity=c)
+    kp = Knapsack(profits=p, weights=w, capacity=c)
     minknap_time = minknap(kp)
     combo_time = combo(kp)
     expknap_time = expknap(kp)

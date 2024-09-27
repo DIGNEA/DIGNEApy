@@ -3,12 +3,13 @@
 """
 @File    :   kp_ae_example.py
 @Time    :   2024/05/28 10:23:57
-@Author  :   Alejandro Marrero 
+@Author  :   Alejandro Marrero
 @Version :   1.0
 @Contact :   amarrerd@ull.edu.es
 @License :   (C)Copyright 2024, Alejandro Marrero
 @Desc    :   None
 """
+
 import os
 
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
@@ -16,14 +17,13 @@ os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
 import argparse
 import copy
 import itertools
-from collections.abc import Sequence
 
-from digneapy.archives import Archive
-from digneapy.domains.knapsack import KPDomain
-from digneapy.generators import EIG
-from digneapy.operators.replacement import generational
+from digneapy import Archive
+from digneapy.domains import KnapsackDomain
+from digneapy.generators import EAGenerator
+from digneapy.operators import generational_replacement
 from digneapy.solvers import default_kp, map_kp, miw_kp
-from digneapy.transformers.autoencoders import KPAE50
+from digneapy.transformers.autoencoders import KPEncoder
 
 
 def save_instances(filename, generated_instances, dimension, encoding):
@@ -68,8 +68,8 @@ def generate_instances_heuristics(
         + f" Generating KP instances of N = {dim} for Heuristics with encoding {encoding} "
         + "=" * 40
     )
-    kp_domain = KPDomain(dimension=dim, capacity_approach="percentage")
-    autoencoder = KPAE50()
+    kp_domain = KnapsackDomain(dimension=dim, capacity_approach="percentage")
+    autoencoder = KPEncoder(encoder=50)
     portfolios = [
         [default_kp, map_kp, miw_kp],
         [map_kp, default_kp, miw_kp],
@@ -77,7 +77,7 @@ def generate_instances_heuristics(
     ]
     instances = {}
     for portfolio in portfolios:
-        eig = EIG(
+        eig = EAGenerator(
             pop_size=10,
             generations=1000,
             domain=kp_domain,
@@ -87,13 +87,14 @@ def generate_instances_heuristics(
             k=3,
             repetitions=1,
             descriptor="instance",
-            replacement=generational,
+            replacement=generational_replacement,
             transformer=autoencoder,
         )
         _, solution_set = eig(verbose=True)
         instances[portfolio[0].__name__] = copy.deepcopy(solution_set)
 
     return instances
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
@@ -121,10 +122,12 @@ if __name__ == "__main__":
     dimension = args.dimension
     encoding = args.encoding
     # dimensions = [50, 250, 500, 1000]
-    generated_instances = generate_instances_heuristics(dim=dimension, encoding=encoding)
+    generated_instances = generate_instances_heuristics(
+        dim=dimension, encoding=encoding
+    )
 
     save_instances(
-        f"kp_ns_KPAE50_gr_heuristics_{n_run}.csv",
+        f"kp_ns_KPEncoder_50_gr_heuristics_{n_run}.csv",
         generated_instances,
         dimension=dimension,
         encoding=encoding,

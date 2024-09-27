@@ -13,8 +13,8 @@
 import numpy as np
 import pytest
 
-from digneapy.core import Instance, Solution
-from digneapy.operators import selection
+from digneapy import Instance, Solution
+from digneapy.operators import binary_tournament_selection
 
 
 @pytest.fixture
@@ -51,7 +51,7 @@ def test_binary_selection_solutions(initialised_solutions):
     population = list(initialised_solutions)
     population[0].fitness = 100
     population[1].fitness = 50
-    parent = selection.binary_tournament_selection(population)
+    parent = binary_tournament_selection(population)
     assert population[0] > population[1]
     assert len(parent) == len(population[0])
     assert id(parent) != id(population[0])
@@ -66,7 +66,7 @@ def test_binary_selection_instances(initialised_instances):
     population = list(initialised_instances)
     population[0].fitness = 100
     population[1].fitness = 50
-    parent = selection.binary_tournament_selection(population)
+    parent = binary_tournament_selection(population)
     assert population[0] > population[1]
     assert len(parent) == len(population[0])
     assert id(parent) != id(population[0])
@@ -79,14 +79,14 @@ def test_binary_selection_instances(initialised_instances):
 
 def test_binary_selection_solutions_raises_empty():
     with pytest.raises(Exception):
-        selection.binary_tournament_selection(None)
+        binary_tournament_selection(None)
 
 
 def test_binary_selection_one_ind(initialised_solutions):
     population = [initialised_solutions[0]]
     expected = population[0]
-    parent = selection.binary_tournament_selection(population)
-    assert type(parent) == type(expected)
+    parent = binary_tournament_selection(population)
+    assert isinstance(parent, expected.__class__)
     assert parent == expected
     assert id(parent) != id(expected)
 

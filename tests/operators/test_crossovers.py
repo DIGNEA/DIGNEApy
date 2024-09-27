@@ -13,8 +13,8 @@
 import numpy as np
 import pytest
 
-from digneapy.core import Instance, Solution
-from digneapy.operators import crossover
+from digneapy import Instance, Solution
+from digneapy.operators import one_point_crossover, uniform_crossover
 
 
 @pytest.fixture
@@ -50,7 +50,7 @@ def initialised_solutions():
 def test_uniform_crossover_solutions(initialised_solutions):
     solution_1, solution_2 = initialised_solutions
 
-    offspring = crossover.uniform_crossover(solution_1, solution_2)
+    offspring = uniform_crossover(solution_1, solution_2)
     assert offspring != solution_1
     assert offspring != solution_2
     assert len(offspring) == 100
@@ -59,7 +59,7 @@ def test_uniform_crossover_solutions(initialised_solutions):
 def test_one_point_crossover_solutions(initialised_solutions):
     solution_1, solution_2 = initialised_solutions
 
-    offspring = crossover.one_point_crossover(solution_1, solution_2)
+    offspring = one_point_crossover(solution_1, solution_2)
     assert offspring != solution_1
     assert offspring != solution_2
     assert len(offspring) == 100
@@ -68,7 +68,7 @@ def test_one_point_crossover_solutions(initialised_solutions):
 def test_uniform_crossover_instances(initialised_instances):
     solution_1, solution_2 = initialised_instances
 
-    offspring = crossover.uniform_crossover(solution_1, solution_2)
+    offspring = uniform_crossover(solution_1, solution_2)
     assert offspring != solution_1
     assert offspring != solution_2
     assert len(offspring) == 100
@@ -77,7 +77,7 @@ def test_uniform_crossover_instances(initialised_instances):
 def test_one_point_crossover_instances(initialised_instances):
     solution_1, solution_2 = initialised_instances
 
-    offspring = crossover.one_point_crossover(solution_1, solution_2)
+    offspring = one_point_crossover(solution_1, solution_2)
     assert offspring != solution_1
     assert offspring != solution_2
     assert len(offspring) == 100
@@ -91,7 +91,7 @@ def test_uniform_crossover_raises():
     instance_2 = Instance(chr_2)
 
     with pytest.raises(Exception):
-        crossover.uniform_crossover(instance_1, instance_2)
+        uniform_crossover(instance_1, instance_2)
 
 
 def test_one_point_crossover_raises():
@@ -102,4 +102,4 @@ def test_one_point_crossover_raises():
     instance_2 = Instance(chr_2)
 
     with pytest.raises(Exception):
-        crossover.one_point_crossover(instance_1, instance_2)
+        one_point_crossover(instance_1, instance_2)

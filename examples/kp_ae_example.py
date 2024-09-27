@@ -23,7 +23,7 @@ from digneapy.domains import KnapsackDomain
 from digneapy.generators import EAGenerator
 from digneapy.operators import generational_replacement
 from digneapy.solvers import default_kp, map_kp, miw_kp
-from digneapy.transformers.autoencoders import KPAE50
+from digneapy.transformers.autoencoders import KPEncoder
 
 
 def save_instances(filename, generated_instances, dimension, encoding):
@@ -69,7 +69,7 @@ def generate_instances_heuristics(
         + "=" * 40
     )
     kp_domain = KnapsackDomain(dimension=dim, capacity_approach="percentage")
-    autoencoder = KPAE50()
+    autoencoder = KPEncoder(encoder=50)
     portfolios = [
         [default_kp, map_kp, miw_kp],
         [map_kp, default_kp, miw_kp],
@@ -127,7 +127,7 @@ if __name__ == "__main__":
     )
 
     save_instances(
-        f"kp_ns_KPAE50_gr_heuristics_{n_run}.csv",
+        f"kp_ns_KPEncoder_50_gr_heuristics_{n_run}.csv",
         generated_instances,
         dimension=dimension,
         encoding=encoding,

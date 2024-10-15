@@ -59,17 +59,17 @@ def save_instances(filename, generated_instances, dimension, encoding):
 
 def generate_instances_heuristics(
     dim: int,
-    encoding: int,
+    encoder: int,
     ta: float = 1e-6,
     tss: float = 1e-6,
 ):
     print(
         "=" * 40
-        + f" Generating KP instances of N = {dim} for Heuristics with encoding {encoding} "
+        + f" Generating KP instances of N = {dim} for Heuristics with encoder {encoder} "
         + "=" * 40
     )
     kp_domain = KnapsackDomain(dimension=dim, capacity_approach="percentage")
-    autoencoder = KPEncoder(encoder=50)
+    autoencoder = KPEncoder(encoder=encoder)
     portfolios = [
         [default_kp, map_kp, miw_kp],
         [map_kp, default_kp, miw_kp],
@@ -77,6 +77,9 @@ def generate_instances_heuristics(
     ]
     instances = {}
     for portfolio in portfolios:
+        p_names = [s.__name__ for s in portfolio]
+        status = f"\rRunning portfolio: {p_names}"
+        print(status, end="")
         eig = EAGenerator(
             pop_size=10,
             generations=1000,
@@ -90,27 +93,27 @@ def generate_instances_heuristics(
             replacement=generational_replacement,
             transformer=autoencoder,
         )
-        _, solution_set = eig(verbose=True)
+        _, solution_set = eig(verbose=False)
         instances[portfolio[0].__name__] = copy.deepcopy(solution_set)
 
+        status = f"\rRunning portfolio: {p_names} completed ✅"
+        print(status, end="")
+    # When completed clear the terminal
+    blank = " " * 80
+    print(f"\r{blank}\r", end="")
     return instances
 
 
 if __name__ == "__main__":
+    expected_encoders = (50, 100, 250, 500, 1000, "var_2d", "var_8d", "var_best")
     parser = argparse.ArgumentParser(
         prog="kp_ae_example", description="Novelty Search for KP instances with AE."
     )
     parser.add_argument(
-        "dimension",
+        "encoder",
         choices=[50, 100, 250, 500, 1000],
         type=int,
-        help="Dimension of the KP instances",
-    )
-    parser.add_argument(
-        "encoding",
-        choices=[2, 8],
-        type=int,
-        help="Encoding dimension for the KP instances",
+        help="Encoder of the KP instances",
     )
     parser.add_argument(
         "repetition",
@@ -119,16 +122,13 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
     n_run = args.repetition
-    dimension = args.dimension
-    encoding = args.encoding
-    # dimensions = [50, 250, 500, 1000]
-    generated_instances = generate_instances_heuristics(
-        dim=dimension, encoding=encoding
-    )
+    encoder = args.encoder
+    dimension = encoder if encoder not in expected_encoders[-3:] else 1000
+    generated_instances = generate_instances_heuristics(dim=dimension, encoder=encoder)
 
     save_instances(
-        f"kp_ns_KPEncoder_50_gr_heuristics_{n_run}.csv",
+        f"kp_ns_KPEncoder_{encoder}_gr_heuristics_{n_run}.csv",
         generated_instances,
         dimension=dimension,
-        encoding=encoding,
+        encoding=encoder,
     )

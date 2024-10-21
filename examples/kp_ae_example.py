@@ -10,10 +10,6 @@
 @Desc    :   None
 """
 
-import os
-
-os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
-
 import argparse
 import copy
 import itertools
@@ -107,7 +103,8 @@ def generate_instances_heuristics(
 if __name__ == "__main__":
     expected_encoders = (50, 100, 250, 500, 1000, "var_2d", "var_8d", "var_best")
     parser = argparse.ArgumentParser(
-        prog="kp_ae_example", description="Novelty Search for KP instances with AE."
+        prog="kp_ae_example",
+        description="Novelty Search for KP instances with Autoencoders.",
     )
     parser.add_argument(
         "encoder",

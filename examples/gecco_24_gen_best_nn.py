@@ -17,7 +17,7 @@ import sys
 from digneapy import Archive
 from digneapy.domains import KnapsackDomain
 from digneapy.generators import EAGenerator
-from digneapy.operators import generational_replacement
+from digneapy.operators import first_improve_replacement, generational_replacement
 from digneapy.solvers import default_kp, map_kp, miw_kp, mpw_kp
 from digneapy.transformers.neural import KerasNN
 
@@ -39,7 +39,7 @@ def save_instances(filename, generated_instances):
         "mean",
         "std",
     ]
-    header = ["target", "x_0", "x_1", *features] + list(
+    header = ["target", *features] + list(
         itertools.chain.from_iterable([(f"w_{i}", f"p_{i}") for i in range(50)])
     )
 
@@ -47,10 +47,9 @@ def save_instances(filename, generated_instances):
         file.write(",".join(header) + "\n")
         for solver, instances in generated_instances.items():
             for instance in instances:
-                descriptor = ",".join(str(d_i) for d_i in instance.descriptor)
-                vars = ",".join(str(x) for x in instance)
-                features = ",".joint(str(f) for f in instance.features)
-                content = solver + "," + descriptor + "," + features + "," + vars + "\n"
+                vars = ",".join(str(x) for x in instance[1:])
+                features = ",".join(str(f) for f in instance.features)
+                content = solver + "," + features + "," + vars + "\n"
                 file.write(content)
 
 
@@ -85,8 +84,8 @@ def generate_instances(transformer: KerasNN):
             generations=1000,
             domain=kp_domain,
             portfolio=portfolio,
-            archive=Archive(threshold=1e-3),
-            s_set=Archive(threshold=1e-3),
+            archive=Archive(threshold=0.5),
+            s_set=Archive(threshold=0.5),
             k=3,
             repetitions=1,
             descriptor="features",
@@ -163,7 +162,7 @@ def main(repetition: int = 0):
     nn.update_weights(weights_113)
 
     exp_filename = f"instances_best_NN_gecco_24_{repetition}.csv"
-    print(f"Running repetition: {repetition}")
+    print(f"Running repetition: {repetition} 🚀")
     instances = generate_instances(nn)
     save_instances(exp_filename, instances)
 

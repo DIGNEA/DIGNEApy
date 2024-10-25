@@ -26,7 +26,7 @@ from digneapy.transformers._base import Transformer
 
 
 class KPEncoder(Transformer):
-    _AVAILABLE_ENCODERS = (50, 100, 250, 500, 1000, "var_2d", "var_8d", "var_best")
+    _AVAILABLE_ENCODERS = (50, 100, 500, 1000, "variable")
     _MAX_LENGTH = 2001
     _MODELS_PATH = os.path.dirname(os.path.abspath(__file__)) + "/models/"
 
@@ -35,21 +35,19 @@ class KPEncoder(Transformer):
 
         if encoder not in KPEncoder._AVAILABLE_ENCODERS:
             raise ValueError(
-                f"The encoding alternatives must be of type int or str and these are the only accepted values: {KPEncoder._AVAILABLE_ENCODERS}"
+                f"The encoding alternatives must be of: {KPEncoder._AVAILABLE_ENCODERS}"
             )
 
         self._encoder = encoder
-        self._pad = (
-            True if self._encoder in KPEncoder._AVAILABLE_ENCODERS[-3:] else False
-        )
+        self._pad = True if self._encoder == "variable" else False
         pipeline_fn = (
-            f"{KPEncoder._MODELS_PATH}pipeline_scaler_autoencoder_N_{self._encoder}.sav"
+            f"{KPEncoder._MODELS_PATH}pipeline_scaler_AE_N_{self._encoder}.sav"
         )
         self._pipeline = joblib.load(pipeline_fn)
 
     @property
     def encoding(self) -> int:
-        return 2 if self._encoder != "var_8d" else 8
+        return 2
 
     def encode(self, X: npt.NDArray) -> np.ndarray:
         # Gets an array of instances

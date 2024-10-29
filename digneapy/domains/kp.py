@@ -117,10 +117,10 @@ class KnapsackDomain(Domain):
         dimension: int = 50,
         min_p: int = 1,
         min_w: int = 1,
-        max_p: int = 1000,
-        max_w: int = 1000,
+        max_p: int = 1_000,
+        max_w: int = 1_000,
         capacity_approach: str = "evolved",
-        max_capacity: int = int(1e4),
+        max_capacity: int = int(1e7),
         capacity_ratio: float = 0.8,
     ):
         self.min_p = min_p

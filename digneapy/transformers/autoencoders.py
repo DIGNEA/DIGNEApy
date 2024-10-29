@@ -26,11 +26,11 @@ from digneapy.transformers._base import Transformer
 
 
 class KPEncoder(Transformer):
-    _AVAILABLE_ENCODERS = (50, 100, 500, 1000, "variable")
+    _AVAILABLE_ENCODERS = ("50", "100", "500", "1000", "variable")
     _MAX_LENGTH = 2001
     _MODELS_PATH = os.path.dirname(os.path.abspath(__file__)) + "/models/"
 
-    def __init__(self, name: str = "KPEncoder", encoder: str | int = 50):
+    def __init__(self, name: str = "KPEncoder", encoder: str = "variable"):
         super().__init__(name)
 
         if encoder not in KPEncoder._AVAILABLE_ENCODERS:
@@ -53,21 +53,12 @@ class KPEncoder(Transformer):
         # Gets an array of instances
         # Scale and pad the instances
         # Encode them
-        _X = X
+        _X = np.asarray(X)
         if self._pad:
             _X = pad_sequences(
                 _X, padding="post", dtype="float32", maxlen=KPEncoder._MAX_LENGTH
             )
         return self._pipeline.predict(_X, verbose=0)
-
-    def decode(self, X: npt.NDArray) -> np.ndarray:
-        # # Gets an array of encoded instances
-        # # Decode them
-        # # Use scaler.inverse_transform() to get the instance back
-        # X_decoded = self._decoder.predict(X, verbose=0)
-        # X_decoded = self._scaler.inverse_transform(X_decoded)
-        # return X_decoded
-        raise NotImplementedError("Not implemented in this version")
 
     def __call__(self, X: npt.NDArray) -> np.ndarray:
         return self.encode(X)

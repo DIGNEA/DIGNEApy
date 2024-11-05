@@ -14,6 +14,8 @@ import argparse
 import copy
 import itertools
 
+import numpy as np
+
 from digneapy import Archive
 from digneapy.domains import KnapsackDomain
 from digneapy.generators import EAGenerator
@@ -29,7 +31,7 @@ def save_instances(filename, generated_instances, dimension, encoding):
         filename (str): Filename
         generated_instances (iterable): Iterable of instances
     """
-    desc_header = list(f"x_{i}" for i in range(encoding))
+    desc_header = list(f"x_{i}" for i in range(2))
     header = (
         ["target", "N"]
         + desc_header
@@ -55,9 +57,9 @@ def save_instances(filename, generated_instances, dimension, encoding):
 
 def generate_instances_heuristics(
     dim: int,
-    encoder: int,
-    ta: float = 1e-6,
-    tss: float = 1e-6,
+    encoder: str,
+    ta: float = 1e-5,
+    tss: float = 1e-5,
 ):
     print(
         "=" * 40
@@ -66,6 +68,7 @@ def generate_instances_heuristics(
     )
     kp_domain = KnapsackDomain(dimension=dim, capacity_approach="percentage")
     autoencoder = KPEncoder(encoder=encoder)
+
     portfolios = [
         [default_kp, map_kp, miw_kp],
         [map_kp, default_kp, miw_kp],
@@ -81,19 +84,18 @@ def generate_instances_heuristics(
             generations=1000,
             domain=kp_domain,
             portfolio=portfolio,
-            archive=Archive(threshold=1e-3),
-            s_set=Archive(threshold=1e-3),
+            archive=Archive(threshold=ta),
+            s_set=Archive(threshold=tss),
             k=3,
             repetitions=1,
             descriptor="instance",
             replacement=generational_replacement,
             transformer=autoencoder,
         )
-        _, solution_set = eig(verbose=False)
+        archive, solution_set = eig(verbose=False)
         instances[portfolio[0].__name__] = copy.deepcopy(solution_set)
+        print(len(archive), print(len(solution_set)))
 
-        status = f"\rRunning portfolio: {p_names} completed ✅"
-        print(status, end="")
     # When completed clear the terminal
     blank = " " * 80
     print(f"\r{blank}\r", end="")
@@ -101,16 +103,17 @@ def generate_instances_heuristics(
 
 
 if __name__ == "__main__":
-    expected_encoders = (50, 100, 250, 500, 1000, "var_2d", "var_8d", "var_best")
+    expected_dimensions = (50, 100, 500, 1000)
+
     parser = argparse.ArgumentParser(
-        prog="kp_ae_example",
-        description="Novelty Search for KP instances with Autoencoders.",
+        prog="variable_autoencoder_kp",
+        description="Novelty Search for KP instances with variable size AE",
     )
     parser.add_argument(
-        "encoder",
-        choices=[50, 100, 250, 500, 1000],
+        "dimension",
+        choices=expected_dimensions,
         type=int,
-        help="Encoder of the KP instances",
+        help="dimension of the KP instances",
     )
     parser.add_argument(
         "repetition",
@@ -119,12 +122,14 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
     n_run = args.repetition
-    encoder = args.encoder
-    dimension = encoder if encoder not in expected_encoders[-3:] else 1000
-    generated_instances = generate_instances_heuristics(dim=dimension, encoder=encoder)
+    dimension = args.dimension
+    encoder = "variable"
+    generated_instances = generate_instances_heuristics(
+        dim=dimension, encoder=encoder, ta=1e-3, tss=1e-3
+    )
 
     save_instances(
-        f"kp_ns_KPEncoder_{encoder}_gr_heuristics_{n_run}.csv",
+        f"kp_ns_KPEncoder_{encoder}_N_{dimension}_gr_heuristics_{n_run}.csv",
         generated_instances,
         dimension=dimension,
         encoding=encoder,

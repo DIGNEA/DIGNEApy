@@ -17,7 +17,7 @@ import sys
 from digneapy import Archive
 from digneapy.domains import KnapsackDomain
 from digneapy.generators import EAGenerator
-from digneapy.operators import first_improve_replacement
+from digneapy.operators import generational_replacement
 from digneapy.solvers import default_kp, map_kp, miw_kp, mpw_kp
 
 
@@ -71,12 +71,12 @@ def generate_instances(dimension: int):
             generations=1000,
             domain=kp_domain,
             portfolio=portfolio,
-            archive=Archive(threshold=3),
-            s_set=Archive(threshold=3),
+            archive=Archive(threshold=1e-2),
+            s_set=Archive(threshold=1e-2),
             k=3,
             repetitions=1,
             descriptor="features",
-            replacement=first_improve_replacement,
+            replacement=generational_replacement,
         )
         _, solution_set = eig()
         instances[portfolio[0].__name__] = copy.deepcopy(solution_set)

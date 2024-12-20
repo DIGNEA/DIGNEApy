@@ -56,6 +56,7 @@ class NS:
         self._dist_metric = (
             dist_metric if dist_metric in NS._EXPECTED_METRICS else "minkowski"
         )
+        self._nbr_algorithm = "auto" if self._dist_metric == "cosine" else "ball_tree"
 
         if descriptor not in DESCRIPTORS:
             msg = f"describe_by {descriptor} not available in {self.__class__.__name__}.__init__. Set to features by default"
@@ -129,7 +130,9 @@ class NS:
             _desc_arr = self._transformer(_desc_arr)
 
         neighbourhood = NearestNeighbors(
-            n_neighbors=neighbours, algorithm="ball_tree", metric=self._dist_metric
+            n_neighbors=neighbours,
+            algorithm=self._nbr_algorithm,
+            metric=self._dist_metric,
         )
         neighbourhood.fit(_desc_arr)
         sparseness = []

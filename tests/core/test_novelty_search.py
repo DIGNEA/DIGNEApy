@@ -66,6 +66,22 @@ def __random_descriptors(n, size: int = 100):
     return [np.random.uniform(low=0, high=100, size=n) for _ in range(size)]
 
 
+def test_ns_distance_metric(nsf):
+    assert nsf._dist_metric == "minkowski"
+
+    ns = NS(k=10, dist_metric="euclidean")
+    assert ns._dist_metric == "euclidean"
+
+    ns = NS(k=10, dist_metric="cosine")
+    assert ns._dist_metric == "cosine"
+
+    ns = NS(k=10, dist_metric="manhattan")
+    assert ns._dist_metric == "manhattan"
+
+    ns = NS(k=10, dist_metric=None)
+    assert ns._dist_metric == "minkowski"
+
+
 @pytest.fixture
 def random_population():
     features = __random_descriptors(n=10)

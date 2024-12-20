@@ -29,6 +29,8 @@ class NS:
     The current version supports Features, Performance and Instance variations.
     """
 
+    _EXPECTED_METRICS = ("euclidean", "cosine", "manhattan")
+
     def __init__(
         self,
         archive: Optional[Archive] = None,
@@ -36,6 +38,7 @@ class NS:
         k: int = 15,
         descriptor: str = "features",
         transformer: Optional[SupportsTransform] = None,
+        dist_metric: Optional[str] = None,
     ):
         """Creates an instance of the NoveltySearch Algorithm
         Args:
@@ -49,6 +52,9 @@ class NS:
         self._solution_set = s_set if s_set is not None else Archive(threshold=0.001)
         self._k = k
         self._transformer = transformer
+        self._dist_metric = (
+            dist_metric if dist_metric in NS._EXPECTED_METRICS else "minkowski"
+        )
 
         if descriptor not in DESCRIPTORS:
             msg = f"describe_by {descriptor} not available in {self.__class__.__name__}.__init__. Set to features by default"
@@ -121,7 +127,9 @@ class NS:
             # Transform the descriptors if necessary
             _desc_arr = self._transformer(_desc_arr)
 
-        neighbourhood = NearestNeighbors(n_neighbors=neighbours, algorithm="ball_tree")
+        neighbourhood = NearestNeighbors(
+            n_neighbors=neighbours, algorithm="ball_tree", metric=self._dist_metric
+        )
         neighbourhood.fit(_desc_arr)
         sparseness = []
         # We're only interesed in the new instances

@@ -47,6 +47,7 @@ class NS:
             k (int, optional): Number of neighbours to calculate the sparseness. Defaults to 15.
             descriptor (str, optional): Descriptor to calculate the diversity. The options available are defined in the dictionary digneapy.qd.descriptor_strategies. Defaults to "features".
             transformer (callable, optional): Define a strategy to transform the high-dimensional descriptors to low-dimensional.Defaults to None.
+            dist_metric (str, optional): Defines the distance metric used by NearestNeighbor in the archives. Defaults to Euclidean.
         """
         self._archive = archive if archive is not None else Archive(threshold=0.001)
         self._solution_set = s_set if s_set is not None else Archive(threshold=0.001)

@@ -58,6 +58,7 @@ class EAGenerator(NS):
         k: int = 15,
         descriptor: str = "features",
         transformer: Optional[SupportsTransform] = None,
+        dist_metric: Optional[str] = None,
         repetitions: int = 1,
         cxrate: float = 0.5,
         mutrate: float = 0.8,
@@ -78,6 +79,7 @@ class EAGenerator(NS):
             k (int, optional): Number of neighbours to calculate the sparseness. Defaults to 15.
             descriptor (str, optional): Descriptor used to calculate the diversity. The options available are defined in the dictionary digneapy.qd.descriptor_strategies. Defaults to "features".
             transformer (callable, optional): Define a strategy to transform the high-dimensional descriptors to low-dimensional.Defaults to None.
+            dist_metric (str, optional): Defines the distance metric used by NearestNeighbor in the archives. Defaults to Euclidean.
             domain (Domain): Domain for which the instances are generated for.
             portfolio (Iterable[SupportSolve]): Iterable item of callable objects that can evaluate a instance.
             repetitions (int, optional): Number times a solver in the portfolio must be run over the same instance. Defaults to 1.
@@ -89,7 +91,9 @@ class EAGenerator(NS):
         Raises:
             ValueError: Raises error if phi is not in the range [0.0-1.0]
         """
-        super().__init__(archive, s_set, k, descriptor, transformer)
+        super().__init__(
+            archive, s_set, k, descriptor, transformer, dist_metric=dist_metric
+        )
         self.pop_size = pop_size
         self.generations = generations
         self.domain = domain

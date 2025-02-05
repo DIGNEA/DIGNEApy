@@ -26,7 +26,7 @@ from digneapy.transformers._base import Transformer
 
 
 class KPEncoder(Transformer):
-    _AVAILABLE_ENCODERS = ("50", "100", "500", "1000", "variable")
+    _AVAILABLE_ENCODERS = ("50", "100", "500", "1000", "2000", "5000", "variable")
     _MAX_LENGTH = 2001
     _MODELS_PATH = os.path.dirname(os.path.abspath(__file__)) + "/models/"
 

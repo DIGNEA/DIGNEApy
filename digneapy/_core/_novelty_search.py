@@ -202,3 +202,70 @@ class NS:
             raise ValueError(msg)
 
         return self.__compute_sparseness(instances, self.solution_set, neighbours=2)
+
+
+class DominatedNS:
+    """
+    Dominated Novelty Search (DNS)
+    Bahlous-Boldi, R., Faldor, M., Grillotti, L., Janmohamed, H., Coiffard, L., Spector, L., & Cully, A. (2025).
+    Dominated Novelty Search: Rethinking Local Competition in Quality-Diversity. 1.
+    https://arxiv.org/abs/2502.00593v1
+    Quality-Diversity algorithm that implements local competition through dynamic fitness transformations,
+    eliminating the need for predefined bounds or parameters. The competition fitness, also known as the dominated novelty score,
+    is calculated as the average distance to the k nearest neighbors with higher fitness.
+    The value is set in the ``p'' attribute of the Instance class.
+    """
+
+    def __init__(self, k: int = 15):
+        if k < 0:
+            raise ValueError(
+                f"{__name__} k must be a positive integer and less than the number of instances."
+            )
+        self._k = k
+
+    def __call__(self, instances: Sequence[Instance]) -> list:
+        """
+
+        The method returns a descending sorted list of instances by their competition fitness value (p).
+        Args:
+            instances (Sequence[Instance]): Instances to calculate their competition
+
+        Raises:
+            ValueError: If len(d) where d is the descriptor of each instance i differs from another
+            ValueError: If DNS.k >= len(instances)
+
+        Returns:
+            List[Instance]: Numpy array with the instances sorted by their competition fitness value (p). Descending order.
+        """
+        if self._k >= len(instances):
+            raise ValueError(
+                f"{__name__} k must be a positive integer and less than the number of instances. Trying to calculate competition with k({self._k}) > len(instances)({len(instances)})"
+            )
+        if len(instances) == 0 or any(len(d) == 0 for d in instances):
+            msg = (
+                f"{__name__} trying to calculate competition on an empty Instance list"
+            )
+            raise ValueError(msg)
+
+        for i, individual in enumerate(instances):
+            d_i = filter(
+                lambda j: instances[j].fitness > individual.fitness and i != j,
+                range(len(instances)),
+            )
+            distances = sorted(
+                [
+                    np.linalg.norm(
+                        np.array(instances[i].descriptor)
+                        - np.array(instances[j].descriptor)
+                    )
+                    for j in d_i
+                ]
+            )
+            ld = len(distances)
+            if ld > 0:
+                _neighbors = distances[: self._k] if ld >= self._k else distances
+                individual.p = 1.0 / self._k * sum(_neighbors)
+            else:
+                individual.p = np.inf
+
+        return list(sorted(instances, key=lambda x: x.p, reverse=True))

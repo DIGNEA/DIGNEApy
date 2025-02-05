@@ -91,10 +91,10 @@ def generate_instances_heuristics(
             descriptor="instance",
             replacement=generational_replacement,
             transformer=autoencoder,
+            dist_metric="cosine",
         )
-        archive, solution_set = eig(verbose=False)
+        _, solution_set = eig(verbose=False)
         instances[portfolio[0].__name__] = copy.deepcopy(solution_set)
-        print(len(archive), print(len(solution_set)))
 
     # When completed clear the terminal
     blank = " " * 80

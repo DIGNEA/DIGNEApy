@@ -91,10 +91,10 @@ def generate_instances_heuristics(
             descriptor="instance",
             replacement=generational_replacement,
             transformer=autoencoder,
+            dist_metric="cosine",
         )
-        archive, solution_set = eig(verbose=False)
+        _, solution_set = eig(verbose=False)
         instances[portfolio[0].__name__] = copy.deepcopy(solution_set)
-        print(len(archive), print(len(solution_set)))
 
     # When completed clear the terminal
     blank = " " * 80
@@ -129,7 +129,7 @@ if __name__ == "__main__":
     )
 
     save_instances(
-        f"kp_ns_KPEncoder_{encoder}_N_{dimension}_gr_heuristics_{n_run}.csv",
+        f"kp_ns_KPEncoder_{encoder}_cosine_N_{dimension}_gr_heuristics_{n_run}.csv",
         generated_instances,
         dimension=dimension,
         encoding=encoder,

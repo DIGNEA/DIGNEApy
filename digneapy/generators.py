@@ -10,7 +10,7 @@
 @Desc    :   None
 """
 
-__all__ = ["EAGenerator", "MapElitesGenerator"]
+__all__ = ["EAGenerator", "MapElitesGenerator", "DEAGenerator"]
 
 import copy
 import random
@@ -23,6 +23,7 @@ from deap import tools
 
 from ._core import (
     NS,
+    DominatedNS,
     Domain,
     Instance,
     P,
@@ -406,3 +407,189 @@ class MapElitesGenerator:
 
     def __call__(self, verbose: bool = False):
         return self._run(verbose)
+
+
+class DEAGenerator:
+    """
+    Object to generate instances based on a Evolutionary Algorithn with a Dominated Novelty Search approach
+    """
+
+    def __init__(
+        self,
+        domain: Domain,
+        portfolio: Iterable[SupportsSolve[P]],
+        pop_size: int = 128,
+        offspring_size: int = 128,
+        generations: int = 1000,
+        k: int = 15,
+        descriptor: str = "features",
+        transformer: Optional[SupportsTransform] = None,
+        repetitions: int = 1,
+        cxrate: float = 0.5,
+        mutrate: float = 0.8,
+        crossover: Crossover = uniform_crossover,
+        mutation: Mutation = uniform_one_mutation,
+        selection: Selection = binary_tournament_selection,
+        performance_function: PerformanceFn = max_gap_target,
+    ):
+        """Creates a Evolutionary Instance Generator based on Novelty Search
+
+        Args:
+            pop_size (int, optional): Number of instances in the population to evolve. Defaults to 128.
+            offspring_size (int, optional): Number of instances in the offspring population. Defaults to 128.
+            evaluations (int, optional): Number of total evaluations to perform. Defaults to 1000.
+
+            k (int, optional): Number of neighbours to calculate the sparseness. Defaults to 15.
+            descriptor (str, optional): Descriptor used to calculate the diversity. The options available are defined in the dictionary digneapy.qd.descriptor_strategies. Defaults to "features".
+            transformer (callable, optional): Define a strategy to transform the high-dimensional descriptors to low-dimensional.Defaults to None.
+            domain (Domain): Domain for which the instances are generated for.
+            portfolio (Iterable[SupportSolve]): Iterable item of callable objects that can evaluate a instance.
+            repetitions (int, optional): Number times a solver in the portfolio must be run over the same instance. Defaults to 1.
+            cxrate (float, optional): Crossover rate. Defaults to 0.5.
+            mutrate (float, optional): Mutation rate. Defaults to 0.8.
+
+        """
+        self._novelty_search_strategy = DominatedNS(k)
+        self.pop_size = pop_size
+        self.offspring_size = offspring_size
+        self.generations = generations
+        self.domain = domain
+        self.portfolio = tuple(portfolio) if portfolio else ()
+        self.population: list[Instance] = []
+        self.repetitions = repetitions
+        self.cxrate = cxrate
+        self.mutrate = mutrate
+
+        if descriptor not in DESCRIPTORS:
+            msg = f"describe_by {descriptor} not available in {self.__class__.__name__}.__init__. Set to instance by default"
+            print(msg)
+            self._describe_by = "instance"
+            self._descriptor_strategy = DESCRIPTORS["instance"]
+        else:
+            self._describe_by = descriptor
+            self._descriptor_strategy = DESCRIPTORS[descriptor]
+
+        self.crossover = crossover
+        self.mutation = mutation
+        self.selection = selection
+        self.performance_function = performance_function
+
+        self._stats_f = tools.Statistics(key=attrgetter("fitness"))
+        self._stats_p = tools.Statistics(key=attrgetter("p"))
+        self._stats = tools.MultiStatistics(f=self._stats_f, p=self._stats_p)
+        self._stats.register("avg", np.mean)
+        self._stats.register("std", np.std)
+        self._stats.register("min", np.min)
+        self._stats.register("max", np.max)
+
+        self._logbook = tools.Logbook()
+        self._logbook.header = "gen", "fitness", "p"
+        self._logbook.chapters["fitness"].header = "min", "avg", "std", "max"
+        self._logbook.chapters["p"].header = "min", "avg", "std", "max"
+
+    @property
+    def log(self) -> tools.Logbook:
+        return self._logbook
+
+    def __str__(self):
+        port_names = [s.__name__ for s in self.portfolio]
+        domain_name = self.domain.name if self.domain is not None else "None"
+        return f"DEAGenerator(pop_size={self.pop_size},gen={self.generations},domain={domain_name},portfolio={port_names!r})"
+
+    def __repr__(self) -> str:
+        port_names = [s.__name__ for s in self.portfolio]
+        domain_name = self.domain.name if self.domain is not None else "None"
+        return f"DEAGenerator<pop_size={self.pop_size},gen={self.generations},domain={domain_name},portfolio={port_names!r}>"
+
+    def __call__(self, verbose: bool = False):
+        return self._run(verbose)
+
+    def _evaluate_population(self, population: Iterable[Instance]):
+        """Evaluates the population of instances using the portfolio of solvers.
+
+        Args:
+            population (Iterable[Instance]): Population to evaluate
+        """
+        for individual in population:
+            avg_p_solver = np.zeros(len(self.portfolio))
+            solvers_scores = []
+            problem = self.domain.from_instance(individual)
+            for i, solver in enumerate(self.portfolio):
+                scores = []
+                for _ in range(self.repetitions):
+                    solutions = solver(problem)
+                    # There is no need to change anything in the evaluation code when using Pisinger solvers
+                    # because the algs. only return one solution per run (len(solutions) == 1)
+                    # The same happens with the simple KP heuristics. However, when using Pisinger solvers
+                    # the lower the running time the better they're considered to work an instance
+                    solutions = sorted(
+                        solutions, key=attrgetter("fitness"), reverse=True
+                    )
+                    scores.append(solutions[0].fitness)
+                solvers_scores.append(scores)
+                avg_p_solver[i] = np.mean(scores)
+
+            individual.portfolio_scores = tuple(solvers_scores)
+            individual.fitness = self.performance_function(avg_p_solver)
+            if self._describe_by == "features":
+                individual.features = self.domain.extract_features(individual)
+                individual.descriptor = individual.features
+            else:
+                individual.descriptor = self._descriptor_strategy(individual)
+
+    def _reproduce(self, p_1, p_2) -> Instance:
+        """Generates a new offspring instance from two parent instances
+
+        Args:
+            p_1 (Instance): First Parent
+            p_2 (Instance): Second Parent
+
+        Returns:
+            Instance: New offspring
+        """
+        off = copy.deepcopy(p_1)
+        if np.random.rand() < self.cxrate:
+            off = self.crossover(p_1, p_2)
+        off = self.mutation(p_1, self.domain.bounds)
+        return off
+
+    def _run(self, verbose: bool = False):
+        if self.domain is None:
+            raise ValueError("You must specify a domain to run the generator.")
+        if len(self.portfolio) == 0:
+            raise ValueError(
+                "The portfolio is empty. To run the generator you must provide a valid portfolio of solvers"
+            )
+        self.population = [
+            self.domain.generate_instance() for _ in range(self.pop_size)
+        ]
+        self._evaluate_population(self.population)
+        performed_gens = 0
+        while performed_gens < self.generations:
+            offspring: list[Instance] = []
+            for _ in range(self.offspring_size):
+                p_1 = self.selection(self.population)
+                p_2 = self.selection(self.population)
+                off = self._reproduce(p_1, p_2)
+                offspring.append(off)
+
+            self._evaluate_population(offspring)
+            combined_population = list(self.population) + list(offspring)
+            combined_population = self._novelty_search_strategy(combined_population)
+            # Both population and offspring are used in the replacement
+            self.population = list(combined_population[: self.pop_size])
+
+            # Record the stats and update the performed gens
+            record = self._stats.compile(self.population)
+            self._logbook.record(gen=performed_gens, **record)
+            performed_gens += 1
+
+            if verbose:
+                status = f"\rGeneration {performed_gens}/{self.generations} completed"
+                print(status, flush=True, end="")
+        if verbose:
+            # Clear the terminal
+            blank = " " * 80
+            print(f"\r{blank}\r", end="")
+
+        return self.population

@@ -45,8 +45,8 @@ from .operators import (
 from .transformers import SupportsTransform
 
 
-class EAGenerator(NS):
-    """Object to generate instances based on a Evolutionary Algorithn with a NS archive"""
+class EAGenerator:
+    """Object to generate instances based on a Evolutionary Algorithn with set of diverse solutions"""
 
     def __init__(
         self,
@@ -92,8 +92,7 @@ class EAGenerator(NS):
         Raises:
             ValueError: Raises error if phi is not in the range [0.0-1.0]
         """
-        super().__init__(
-            archive, s_set, k, descriptor, transformer, dist_metric=dist_metric
+        self._ns_approach = NS(archive, s_set, k, descriptor, transformer, dist_metric=dist_metric
         )
         self.pop_size = pop_size
         self.generations = generations
@@ -222,7 +221,7 @@ class EAGenerator(NS):
                 p_1 = self.selection(self.population)
                 p_2 = self.selection(self.population)
                 off = self._reproduce(p_1, p_2)
-                if self._describe_by == "features":
+                if self._ns_approach._describe_by == "features":
                     off.features = self.domain.extract_features(off)
                 offspring.append(off)
 
@@ -232,9 +231,9 @@ class EAGenerator(NS):
             # Only the feasible instances are considered to be included
             # in the archive and the solution set.
             feasible_offspring = list(filter(lambda i: i.p >= 0, offspring))
-            self.archive.extend(feasible_offspring)
+            self._ns_approach.archive.extend(feasible_offspring)
             self.sparseness_solution_set(offspring)
-            self.solution_set.extend(feasible_offspring)
+            self._ns_approach.solution_set.extend(feasible_offspring)
             # However the whole offspring population is used in the replacement operator
             self.population = self.replacement(self.population, offspring)
 
@@ -251,7 +250,7 @@ class EAGenerator(NS):
             blank = " " * 80
             print(f"\r{blank}\r", end="")
 
-        return (self.archive, self.solution_set)
+        return (self._ns_approach.archive, self._ns_approach.solution_set)
 
 
 class MapElitesGenerator:
@@ -449,7 +448,7 @@ class DEAGenerator:
             mutrate (float, optional): Mutation rate. Defaults to 0.8.
 
         """
-        self._novelty_search_strategy = DominatedNS(k)
+        self._novelty_search_strategy = DominatedNS(k, transformer)
         self.pop_size = pop_size
         self.offspring_size = offspring_size
         self.generations = generations

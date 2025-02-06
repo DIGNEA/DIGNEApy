@@ -216,12 +216,13 @@ class DominatedNS:
     The value is set in the ``p'' attribute of the Instance class.
     """
 
-    def __init__(self, k: int = 15):
+    def __init__(self, k: int = 15,  transformer: Optional[SupportsTransform] = None,):
         if k < 0:
             raise ValueError(
                 f"{__name__} k must be a positive integer and less than the number of instances."
             )
         self._k = k
+        self._transformer = transformer
 
     def __call__(self, instances: Sequence[Instance]) -> list:
         """
@@ -247,7 +248,8 @@ class DominatedNS:
             )
             raise ValueError(msg)
 
-        for i, individual in enumerate(instances):
+        for i, individual in enumerate(instances):         
+
             d_i = filter(
                 lambda j: instances[j].fitness > individual.fitness and i != j,
                 range(len(instances)),

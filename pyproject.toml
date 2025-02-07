@@ -94,6 +94,7 @@ exclude = [
     ".direnv",
     ".eggs",
     ".git",
+    ".csv",
     ".git-rewrite",
     ".hg",
     ".ipynb_checkpoints",

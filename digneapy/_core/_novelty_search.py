@@ -125,6 +125,7 @@ class NS:
         # from the archive and the new list of instances. The order is [instances, current_archive]
         # so we can easily calculate and update `s`
         _desc_arr = self._combined_archive_and_population(current_archive, instances)
+        # TODO: Move transformers away from the NS class
         if self._transformer is not None:
             # Transform the descriptors if necessary
             _desc_arr = self._transformer(_desc_arr)
@@ -216,7 +217,11 @@ class DominatedNS:
     The value is set in the ``p'' attribute of the Instance class.
     """
 
-    def __init__(self, k: int = 15,  transformer: Optional[SupportsTransform] = None,):
+    def __init__(
+        self,
+        k: int = 15,
+        transformer: Optional[SupportsTransform] = None,
+    ):
         if k < 0:
             raise ValueError(
                 f"{__name__} k must be a positive integer and less than the number of instances."
@@ -228,6 +233,10 @@ class DominatedNS:
         """
 
         The method returns a descending sorted list of instances by their competition fitness value (p).
+        For each instance ``i'' in the sequence, we calculate all the other instances that dominate it.
+        Then, we compute the distances between their descriptors using the norm of the difference for each dimension of the descriptors.
+        Novel instances will get a competition fitness of np.inf (assuring they will survive). Less novel instances will be selected by their competition fitness value.
+
         Args:
             instances (Sequence[Instance]): Instances to calculate their competition
 
@@ -248,26 +257,33 @@ class DominatedNS:
             )
             raise ValueError(msg)
 
-        for i, individual in enumerate(instances):         
-
-            d_i = filter(
-                lambda j: instances[j].fitness > individual.fitness and i != j,
+        for i, individual in enumerate(instances):
+            dominate_i = filter(
+                lambda j: instances[j].p > individual.p and i != j,
                 range(len(instances)),
             )
+            ind_descriptor = (
+                self._transformer(individual.descriptor)
+                if self._transformer is not None
+                else individual.descriptor
+            )
+            neighbors_descriptors = [
+                self._transformer(instances[j].descriptor)
+                if self._transformer is not None
+                else instances[j].descriptor
+                for j in dominate_i
+            ]
             distances = sorted(
                 [
-                    np.linalg.norm(
-                        np.array(instances[i].descriptor)
-                        - np.array(instances[j].descriptor)
-                    )
-                    for j in d_i
+                    np.linalg.norm(np.array(ind_descriptor) - np.array(nbr_desc))
+                    for nbr_desc in neighbors_descriptors
                 ]
             )
             ld = len(distances)
             if ld > 0:
                 _neighbors = distances[: self._k] if ld >= self._k else distances
-                individual.p = 1.0 / self._k * sum(_neighbors)
+                individual.fitness = 1.0 / self._k * sum(_neighbors)
             else:
-                individual.p = np.inf
+                individual.fitness = np.inf
 
-        return list(sorted(instances, key=lambda x: x.p, reverse=True))
+        return list(sorted(instances, key=lambda x: x.fitness, reverse=True))

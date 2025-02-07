@@ -45,8 +45,8 @@ from .operators import (
 from .transformers import SupportsTransform
 
 
-class EAGenerator:
-    """Object to generate instances based on a Evolutionary Algorithn with set of diverse solutions"""
+class EAGenerator(NS):
+    """Object to generate instances based on a Evolutionary Algorithn with a NS archive"""
 
     def __init__(
         self,
@@ -92,7 +92,7 @@ class EAGenerator:
         Raises:
             ValueError: Raises error if phi is not in the range [0.0-1.0]
         """
-        self._ns_approach = NS(
+        super().__init__(
             archive, s_set, k, descriptor, transformer, dist_metric=dist_metric
         )
         self.pop_size = pop_size
@@ -222,23 +222,19 @@ class EAGenerator:
                 p_1 = self.selection(self.population)
                 p_2 = self.selection(self.population)
                 off = self._reproduce(p_1, p_2)
-                if self._ns_approach._describe_by == "features":
+                if self._describe_by == "features":
                     off.features = self.domain.extract_features(off)
                 offspring.append(off)
 
             self._evaluate_population(offspring)
             self.sparseness(offspring)
-            self._compute_fitness(population=offspring)  # Computes Fitness (p and s)
-
+            self._compute_fitness(population=offspring)
             # Only the feasible instances are considered to be included
             # in the archive and the solution set.
-            feasible_off_archive = list(filter(lambda i: i.p >= 0, offspring))
-            self._ns_approach.archive.extend(feasible_off_archive)
-
+            feasible_offspring = list(filter(lambda i: i.p >= 0, offspring))
+            self.archive.extend(feasible_offspring)
             self.sparseness_solution_set(offspring)
-            feasible_off_sset = list(filter(lambda i: i.p >= 0, offspring))
-            self._ns_approach.solution_set.extend(feasible_off_sset)
-
+            self.solution_set.extend(feasible_offspring)
             # However the whole offspring population is used in the replacement operator
             self.population = self.replacement(self.population, offspring)
 
@@ -255,7 +251,7 @@ class EAGenerator:
             blank = " " * 80
             print(f"\r{blank}\r", end="")
 
-        return (self._ns_approach.archive, self._ns_approach.solution_set)
+        return (self.archive, self.solution_set)
 
 
 class MapElitesGenerator:
@@ -453,7 +449,7 @@ class DEAGenerator:
             mutrate (float, optional): Mutation rate. Defaults to 0.8.
 
         """
-        self._novelty_search_strategy = DominatedNS(k, transformer)
+        self._novelty_search_strategy = DominatedNS(k)
         self.pop_size = pop_size
         self.offspring_size = offspring_size
         self.generations = generations
@@ -534,10 +530,9 @@ class DEAGenerator:
                 avg_p_solver[i] = np.mean(scores)
 
             individual.portfolio_scores = tuple(solvers_scores)
-            individual.p = self.performance_function(avg_p_solver)
-            # TODO: Update after the experiment
-            individual.features = self.domain.extract_features(individual)
+            individual.fitness = self.performance_function(avg_p_solver)
             if self._describe_by == "features":
+                individual.features = self.domain.extract_features(individual)
                 individual.descriptor = individual.features
             else:
                 individual.descriptor = self._descriptor_strategy(individual)

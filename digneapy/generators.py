@@ -140,12 +140,12 @@ class EAGenerator:
     def __str__(self):
         port_names = [s.__name__ for s in self.portfolio]
         domain_name = self.domain.name if self.domain is not None else "None"
-        return f"EAGenerator(pop_size={self.pop_size},gen={self.generations},domain={domain_name},portfolio={port_names!r},{super().__str__()})"
+        return f"EAGenerator(pop_size={self.pop_size},gen={self.generations},domain={domain_name},portfolio={port_names!r},{self._ns_approach.__str__()})"
 
     def __repr__(self) -> str:
         port_names = [s.__name__ for s in self.portfolio]
         domain_name = self.domain.name if self.domain is not None else "None"
-        return f"EAGenerator<pop_size={self.pop_size},gen={self.generations},domain={domain_name},portfolio={port_names!r},{super().__repr__()}>"
+        return f"EAGenerator<pop_size={self.pop_size},gen={self.generations},domain={domain_name},portfolio={port_names!r},{self._ns_approach.__repr__()}>"
 
     def __call__(self, verbose: bool = False):
         return self._run(verbose)
@@ -227,7 +227,7 @@ class EAGenerator:
                 offspring.append(off)
 
             self._evaluate_population(offspring)
-            self.sparseness(offspring)
+            self._ns_approach.sparseness(offspring)
             self._compute_fitness(population=offspring)  # Computes Fitness (p and s)
 
             # Only the feasible instances are considered to be included
@@ -235,7 +235,7 @@ class EAGenerator:
             feasible_off_archive = list(filter(lambda i: i.p >= 0, offspring))
             self._ns_approach.archive.extend(feasible_off_archive)
 
-            self.sparseness_solution_set(offspring)
+            self._ns_approach.sparseness_solution_set(offspring)
             feasible_off_sset = list(filter(lambda i: i.p >= 0, offspring))
             self._ns_approach.solution_set.extend(feasible_off_sset)
 

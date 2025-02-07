@@ -66,13 +66,13 @@ def test_default_kp_domain():
     domain = kp.KnapsackDomain(dimension, capacity_approach="evolved")
     assert len(domain) == dimension
     assert domain.capacity_approach == "evolved"
-    assert domain.max_capacity == 1e4
+    assert domain.max_capacity == 1e7
     assert domain.capacity_ratio == 0.8
     assert domain.min_p == 1
     assert domain.min_w == 1
     assert domain.max_p == 1000
     assert domain.max_w == 1000
-    assert domain.bounds == [(1.0, 1e4)] + [
+    assert domain.bounds == [(1.0, 1e7)] + [
         (1, 1000) if i % 2 == 0 else (1, 1000) for i in range(2 * dimension)
     ]
 
@@ -96,7 +96,7 @@ def test_kp_domain_to_features():
     features = domain.extract_features(instance)
 
     assert isinstance(features, tuple)
-    assert features[0] == 1e4
+    assert features[0] == 1e7
     assert features[1] <= 1000
     assert features[2] <= 1000
     assert features[3] >= 1
@@ -121,7 +121,7 @@ def test_kp_domain_to_features_dict():
     instance = domain.generate_instance()
     features = domain.extract_features_as_dict(instance)
     assert isinstance(features, dict)
-    assert features["capacity"] == 1e4
+    assert features["capacity"] == 1e7
     assert features["max_p"] <= 1000
     assert features["max_w"] <= 1000
     assert features["min_w"] >= 1
@@ -140,7 +140,7 @@ def test_kp_domain_to_instance():
     kp_instance = domain.from_instance(instance)
     assert len(kp_instance.weights) == dimension
     assert len(kp_instance.profits) == dimension
-    assert kp_instance.capacity == 1e4
+    assert kp_instance.capacity == 1e7
 
     domain.capacity_approach = "evolved"
     kp_instance = domain.from_instance(instance)

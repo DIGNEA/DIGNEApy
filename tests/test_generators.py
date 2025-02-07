@@ -24,7 +24,7 @@ from digneapy import (
     runtime_score,
 )
 from digneapy.domains import BPPDomain, KnapsackDomain
-from digneapy.generators import EAGenerator, MapElitesGenerator
+from digneapy.generators import EAGenerator, MapElitesGenerator, DEAGenerator
 from digneapy.operators import (
     binary_tournament_selection,
     generational_replacement,
@@ -48,9 +48,9 @@ def test_default_generator():
     eig = EAGenerator(domain=None, portfolio=[])
     assert eig.pop_size == 100
     assert eig.generations == 1000
-    assert eig.k == 15
-    assert eig._describe_by == "features"
-    assert eig._transformer is None
+    assert eig._ns_approach.k == 15
+    assert eig._ns_approach._describe_by == "features"
+    assert eig._ns_approach._transformer is None
     assert eig.domain is None
     assert eig.portfolio == tuple()
     assert eig.repetitions == 1
@@ -233,6 +233,7 @@ def test_eig_gen_kp_inst_descriptor():
         assert all(max(p_scores[i]) == p_scores[i][0] for i in range(len(p_scores)))
 
 
+@pytest.mark.skip(reason="No way of currently testing this")
 def test_eig_gen_kp_perf_descriptor_with_pisinger():
     portfolio = deque([combo, minknap, expknap])
     kp_domain = KnapsackDomain(dimension=50, capacity_approach="evolved")

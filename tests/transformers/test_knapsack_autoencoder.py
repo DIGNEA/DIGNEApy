@@ -15,12 +15,13 @@ import pytest
 from digneapy.domains import kp
 from digneapy.transformers.autoencoders import KPEncoder
 
-encoders = (50, 100, 250, 500, 100, "var_2d", "var_8d", "var_best")
+encoders = ("50", "100", "500", "1000", "2000", "5000", "variable")
+
 
 
 @pytest.mark.parametrize("encoder", encoders)
 def test_autoencoder(encoder):
-    dimension = encoder if isinstance(encoder, int) else 1000
+    dimension = int(encoder) if encoder.isdigit() else 1000
     n_instances = 100
     autoencoder = KPEncoder(encoder=encoder)
     domain = kp.KnapsackDomain(dimension=dimension)

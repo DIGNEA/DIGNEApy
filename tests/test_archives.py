@@ -84,7 +84,7 @@ def test_equal_archives(default_archive):
 
 def test_append_instance(empty_archive):
     assert 0 == len(empty_archive)
-    instance = Instance(variables=list(range(100)))
+    instance = Instance(variables=list(range(100)), s=1.0)
     empty_archive.append(instance)
     assert 1 == len(empty_archive)
     assert [instance] == empty_archive.instances

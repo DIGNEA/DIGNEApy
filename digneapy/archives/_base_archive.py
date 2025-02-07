@@ -127,7 +127,7 @@ class Archive:
         return self.instances[index]
 
     def append(self, i: Instance):
-        if isinstance(i, Instance):
+        if isinstance(i, Instance) and i.s > self.threshold:
             self.instances.append(i)
         else:
             msg = f"Only objects of type {Instance.__class__.__name__} can be inserted into an archive"

@@ -113,12 +113,11 @@ class EAGenerator:
             raise ValueError(msg)
 
         self.phi = phi
-        self._novelty_search = NS(archive, k, transformer, dist_metric=dist_metric)
+        self._novelty_search = NS(archive, k, dist_metric=dist_metric)
         self._novelty_search_sset = None  # By default, only one Archive
+        self._transformer = transformer
         if solution_set is not None:
-            self._novelty_search_sset = NS(
-                solution_set, k=1, transformer=transformer, dist_metric=dist_metric
-            )
+            self._novelty_search_sset = NS(solution_set, k=1, dist_metric=dist_metric)
 
         self.pop_size = pop_size
         self.offspring_size = pop_size
@@ -201,6 +200,14 @@ class EAGenerator:
                 individual.descriptor = individual.features
             else:
                 individual.descriptor = self._descriptor_strategy(individual)
+
+        if self._transformer is not None:
+            # Transform the descriptors if necessary
+            _desc_arr = np.array([ind.descriptor for ind in population])
+            _desc_arr = self._transformer(_desc_arr)
+            for i in range(len(population)):
+                population[i].descriptor = _desc_arr[i]
+
         return population
 
     def _evaluate_population(self, population: Iterable[Instance]):
@@ -522,12 +529,11 @@ class DEAGenerator(EAGenerator):
             performance_function=performance_function,
         )
 
-        self._novelty_search = DominatedNS(k, transformer)
+        self._novelty_search = DominatedNS(k)
         self.offspring_size = offspring_size
         self._logbook.header = "gen", "fitness", "p"
         self._logbook.chapters["fitness"].header = "min", "avg", "max"
         self._logbook.chapters["p"].header = "min", "avg", "std", "max"
-
 
     @property
     def log(self) -> tools.Logbook:

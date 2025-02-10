@@ -18,8 +18,6 @@ import numpy as np
 from sklearn.neighbors import NearestNeighbors
 
 from digneapy.archives import Archive
-from digneapy.transformers import SupportsTransform
-
 from ._instance import Instance
 
 
@@ -34,7 +32,6 @@ class NS:
         self,
         archive: Optional[Archive] = None,
         k: int = 15,
-        transformer: Optional[SupportsTransform] = None,
         dist_metric: Optional[str] = None,
     ):
         """Creates an instance of the NoveltySearch Algorithm
@@ -45,11 +42,8 @@ class NS:
             dist_metric (str, optional): Defines the distance metric used by NearestNeighbor in the archives. Defaults to Euclidean.
         """
         self._archive = archive if archive is not None else Archive(threshold=0.001)
-        # self._solution_set = s_set if s_set is not None else Archive(threshold=0.001)
-        self._k = (
-            k + 1
-        )  # Add 1 to the number of neighbours because the first neighbour is the instance itself
-        self._transformer = transformer
+        # Set k+1 to nbr because the first neighbour is the instance itself
+        self._k = k + 1
         self._dist_metric = (
             dist_metric if dist_metric in NS._EXPECTED_METRICS else "minkowski"
         )
@@ -110,11 +104,6 @@ class NS:
         # from the archive and the new list of instances. The order is [instances, current_archive]
         # so we can easily calculate and update `s`
         _desc_arr = self._combined_archive_and_population(current_archive, instances)
-        # TODO: Move transformers away from the NS class
-        if self._transformer is not None:
-            # Transform the descriptors if necessary
-            _desc_arr = self._transformer(_desc_arr)
-
         neighbourhood = NearestNeighbors(
             n_neighbors=neighbours,
             algorithm=self._nbr_algorithm,
@@ -180,17 +169,12 @@ class DominatedNS:
     The value is set in the ``p'' attribute of the Instance class.
     """
 
-    def __init__(
-        self,
-        k: int = 15,
-        transformer: Optional[SupportsTransform] = None,
-    ):
+    def __init__(self, k: int = 15):
         if k < 0:
             raise ValueError(
                 f"{__name__} k must be a positive integer and less than the number of instances."
             )
         self._k = k
-        self._transformer = transformer
 
     def __call__(self, instances: Sequence[Instance]) -> list:
         """
@@ -224,21 +208,14 @@ class DominatedNS:
                 lambda j: instances[j].p > individual.p and i != j,
                 range(len(instances)),
             )
-            ind_descriptor = (
-                self._transformer(individual.descriptor)
-                if self._transformer is not None
-                else individual.descriptor
-            )
-            neighbors_descriptors = [
-                self._transformer(instances[j].descriptor)
-                if self._transformer is not None
-                else instances[j].descriptor
-                for j in dominate_i
-            ]
+
+            ind_descriptor = np.array(individual.descriptor)
             distances = sorted(
                 [
-                    np.linalg.norm(np.array(ind_descriptor) - np.array(nbr_desc))
-                    for nbr_desc in neighbors_descriptors
+                    np.linalg.norm(
+                        np.array(ind_descriptor) - np.array(instances[j].descriptor)
+                    )
+                    for j in dominate_i
                 ]
             )
             ld = len(distances)

@@ -12,7 +12,7 @@
 
 import itertools
 from collections.abc import Sequence
-from typing import Optional
+from typing import Optional, Tuple
 
 import numpy as np
 from sklearn.neighbors import NearestNeighbors
@@ -21,7 +21,6 @@ from digneapy.archives import Archive
 from digneapy.transformers import SupportsTransform
 
 from ._instance import Instance
-from .descriptors import DESCRIPTORS
 
 
 class NS:
@@ -34,56 +33,41 @@ class NS:
     def __init__(
         self,
         archive: Optional[Archive] = None,
-        s_set: Optional[Archive] = None,
         k: int = 15,
-        descriptor: str = "features",
         transformer: Optional[SupportsTransform] = None,
         dist_metric: Optional[str] = None,
     ):
         """Creates an instance of the NoveltySearch Algorithm
         Args:
-            archive (Archive, optional): Archive to store the instances to guide the evolution. Defaults to Archive(threshold=0.001)..
-            s_set (Archive, optional): Solution set to store the instances. Defaults to Archive(threshold=0.001).
+            archive (Archive, optional): Archive to store the instances to guide the evolution. Defaults to Archive(threshold=0.001).
             k (int, optional): Number of neighbours to calculate the sparseness. Defaults to 15.
-            descriptor (str, optional): Descriptor to calculate the diversity. The options available are defined in the dictionary digneapy.qd.descriptor_strategies. Defaults to "features".
             transformer (callable, optional): Define a strategy to transform the high-dimensional descriptors to low-dimensional.Defaults to None.
             dist_metric (str, optional): Defines the distance metric used by NearestNeighbor in the archives. Defaults to Euclidean.
         """
         self._archive = archive if archive is not None else Archive(threshold=0.001)
-        self._solution_set = s_set if s_set is not None else Archive(threshold=0.001)
-        self._k = k
+        # self._solution_set = s_set if s_set is not None else Archive(threshold=0.001)
+        self._k = (
+            k + 1
+        )  # Add 1 to the number of neighbours because the first neighbour is the instance itself
         self._transformer = transformer
         self._dist_metric = (
             dist_metric if dist_metric in NS._EXPECTED_METRICS else "minkowski"
         )
         self._nbr_algorithm = "auto" if self._dist_metric == "cosine" else "ball_tree"
 
-        if descriptor not in DESCRIPTORS:
-            msg = f"describe_by {descriptor} not available in {self.__class__.__name__}.__init__. Set to features by default"
-            print(msg)
-            self._describe_by = "features"
-            self._descriptor_strategy = DESCRIPTORS["features"]
-        else:
-            self._describe_by = descriptor
-            self._descriptor_strategy = DESCRIPTORS[descriptor]
-
     @property
     def archive(self):
         return self._archive
 
     @property
-    def solution_set(self):
-        return self._solution_set
-
-    @property
     def k(self):
-        return self._k
+        return self._k - 1
 
     def __str__(self):
-        return f"NS(descriptor={self._describe_by},k={self._k},A={self._archive},S_S={self._solution_set})"
+        return f"NS(k={self._k},A={self._archive})"
 
     def __repr__(self) -> str:
-        return f"NS<descriptor={self._describe_by},k={self._k},A={self._archive},S_S={self._solution_set}>"
+        return f"NS<k={self._k},A={self._archive}>"
 
     def _combined_archive_and_population(
         self, current_pop: Archive, instances: Sequence[Instance]
@@ -97,8 +81,9 @@ class NS:
         Returns:
             np.ndarray: Returns an ndarray of descriptors.
         """
-        components = self._descriptor_strategy(itertools.chain(instances, current_pop))
-        return np.vstack([components])
+        return np.vstack(
+            [ind.descriptor for ind in itertools.chain(instances, current_pop)]
+        )
 
     def __compute_sparseness(
         self,
@@ -149,10 +134,9 @@ class NS:
 
         return sparseness
 
-    def sparseness(
-        self,
-        instances: Sequence[Instance],
-    ) -> list[float]:
+    def __call__(
+        self, instances: Sequence[Instance]
+    ) -> Tuple[list[Instance], list[float]]:
         """Calculates the sparseness of the given instances against the individuals
         in the Archive.
 
@@ -165,7 +149,7 @@ class NS:
             ValueError: If NoveltySearch.k >= len(instances)
 
         Returns:
-            list[float]: List of sparseness values, one for each instance
+            Tuple(list[Instance], list[float]): Tuple with the instances and the list of sparseness values, one for each instance
         """
         if len(instances) == 0 or any(len(d) == 0 for d in instances):
             msg = f"{self.__class__.__name__} trying to calculate sparseness on an empty Instance list"
@@ -175,33 +159,12 @@ class NS:
             msg = f"{self.__class__.__name__} trying to calculate sparseness with k({self._k}) > len(instances)({len(instances)})"
             raise ValueError(msg)
 
-        return self.__compute_sparseness(
-            instances, self.archive, neighbours=self._k + 1
+        sparseness = self.__compute_sparseness(
+            instances, self.archive, neighbours=self._k
         )
+        return (instances, sparseness)
 
     def sparseness_solution_set(self, instances: Sequence[Instance]) -> list[float]:
-        """Calculates the sparseness of the given instances against the individuals
-        in the Solution Set.
-
-        Args:
-            instances (Sequence[Instance]): Instances to calculate their sparseness
-
-        Raises:
-            ValueError: If len(d) where d is the descriptor of each instance i differs from another
-            ValueError: If 2 >= len(instances)
-
-        Returns:
-            list[float]: List of sparseness values, one for each instance
-        """
-
-        if len(instances) == 0 or any(len(d) == 0 for d in instances):
-            msg = f"{self.__class__.__name__} trying to update the solution set with an empty instance list"
-            raise ValueError(msg)
-
-        if len(instances) <= 2:
-            msg = f"{self.__class__.__name__} trying to calculate sparseness_solution_set with k = 2 >= len(instances)({len(instances)})"
-            raise ValueError(msg)
-
         return self.__compute_sparseness(instances, self.solution_set, neighbours=2)
 
 
@@ -256,7 +219,6 @@ class DominatedNS:
                 f"{__name__} trying to calculate competition on an empty Instance list"
             )
             raise ValueError(msg)
-
         for i, individual in enumerate(instances):
             dominate_i = filter(
                 lambda j: instances[j].p > individual.p and i != j,
@@ -280,10 +242,12 @@ class DominatedNS:
                 ]
             )
             ld = len(distances)
+
             if ld > 0:
                 _neighbors = distances[: self._k] if ld >= self._k else distances
                 individual.fitness = 1.0 / self._k * sum(_neighbors)
             else:
                 individual.fitness = np.inf
 
-        return list(sorted(instances, key=lambda x: x.fitness, reverse=True))
+        instances = list(sorted(instances, key=lambda x: x.fitness, reverse=True))
+        return (instances, None)

@@ -14,11 +14,11 @@ import copy
 import itertools
 import sys
 
-from digneapy import Archive
+from digneapy import Archive, NS
 from digneapy.domains import KnapsackDomain
 from digneapy.generators import EAGenerator
 from digneapy.operators import generational_replacement
-from digneapy.solvers import default_kp, map_kp, miw_kp, mpw_kp
+from digneapy.solvers import default_kp, map_kp, miw_kp
 
 
 def save_instances(filename, generated_instances, dimension: int):
@@ -70,11 +70,10 @@ def generate_instances(dimension: int):
             generations=1000,
             domain=kp_domain,
             portfolio=portfolio,
-            archive=Archive(threshold=3),
-            s_set=Archive(threshold=3),
-            k=3,
+            novelty_approach=NS(Archive(threshold=3), k=3),
+            solution_set=NS(Archive(threshold=3), k=1),
             repetitions=1,
-            descriptor="features",
+            descriptor_strategy="features",
             replacement=generational_replacement,
         )
         _, solution_set = eig()

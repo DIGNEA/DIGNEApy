@@ -18,7 +18,6 @@ from digneapy.transformers.autoencoders import KPEncoder
 encoders = ("50", "100", "500", "1000", "2000", "5000", "variable")
 
 
-
 @pytest.mark.parametrize("encoder", encoders)
 def test_autoencoder(encoder):
     dimension = int(encoder) if encoder.isdigit() else 1000

@@ -18,6 +18,7 @@ import numpy as np
 from sklearn.neighbors import NearestNeighbors
 
 from digneapy.archives import Archive
+
 from ._instance import Instance
 
 
@@ -32,7 +33,7 @@ class NS:
         self,
         archive: Optional[Archive] = None,
         k: int = 15,
-        dist_metric: Optional[str] = None,
+        dist_metric: Optional[str] = "minkowski",
     ):
         """Creates an instance of the NoveltySearch Algorithm
         Args:
@@ -41,9 +42,13 @@ class NS:
             transformer (callable, optional): Define a strategy to transform the high-dimensional descriptors to low-dimensional.Defaults to None.
             dist_metric (str, optional): Defines the distance metric used by NearestNeighbor in the archives. Defaults to Euclidean.
         """
+        if k < 0:
+            raise ValueError(
+                f"{__name__} k must be a positive integer and less than the number of instances."
+            )
+        self._k = k + 1
         self._archive = archive if archive is not None else Archive(threshold=0.001)
         # Set k+1 to nbr because the first neighbour is the instance itself
-        self._k = k + 1
         self._dist_metric = (
             dist_metric if dist_metric in NS._EXPECTED_METRICS else "minkowski"
         )
@@ -58,10 +63,10 @@ class NS:
         return self._k - 1
 
     def __str__(self):
-        return f"NS(k={self._k},A={self._archive})"
+        return f"NS(k={self._k-1},A={self._archive})"
 
     def __repr__(self) -> str:
-        return f"NS<k={self._k},A={self._archive}>"
+        return f"NS<k={self._k-1},A={self._archive}>"
 
     def _combined_archive_and_population(
         self, current_pop: Archive, instances: Sequence[Instance]
@@ -153,11 +158,8 @@ class NS:
         )
         return (instances, sparseness)
 
-    def sparseness_solution_set(self, instances: Sequence[Instance]) -> list[float]:
-        return self.__compute_sparseness(instances, self.solution_set, neighbours=2)
 
-
-class DominatedNS:
+class DominatedNS(NS):
     """
     Dominated Novelty Search (DNS)
     Bahlous-Boldi, R., Faldor, M., Grillotti, L., Janmohamed, H., Coiffard, L., Spector, L., & Cully, A. (2025).
@@ -170,13 +172,12 @@ class DominatedNS:
     """
 
     def __init__(self, k: int = 15):
-        if k < 0:
-            raise ValueError(
-                f"{__name__} k must be a positive integer and less than the number of instances."
-            )
-        self._k = k
+        super().__init__(k=k)
+        self._archive = None
 
-    def __call__(self, instances: Sequence[Instance]) -> list:
+    def __call__(
+        self, instances: Sequence[Instance]
+    ) -> Tuple[list[Instance], list[float]]:
         """
 
         The method returns a descending sorted list of instances by their competition fitness value (p).
@@ -227,4 +228,4 @@ class DominatedNS:
                 individual.fitness = np.inf
 
         instances = list(sorted(instances, key=lambda x: x.fitness, reverse=True))
-        return (instances, None)
+        return (instances, [])

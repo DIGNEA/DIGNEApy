@@ -14,9 +14,7 @@ import argparse
 import copy
 import itertools
 
-import numpy as np
-
-from digneapy import Archive
+from digneapy import Archive, NS
 from digneapy.domains import KnapsackDomain
 from digneapy.generators import EAGenerator
 from digneapy.operators import generational_replacement
@@ -84,14 +82,12 @@ def generate_instances_heuristics(
             generations=1000,
             domain=kp_domain,
             portfolio=portfolio,
-            archive=Archive(threshold=ta),
-            s_set=Archive(threshold=tss),
-            k=3,
+            novelty_approach=NS(Archive(threshold=ta), k=3, dist_metric="cosine"),
+            solution_set=NS(Archive(threshold=tss), k=1, dist_metric='cosine'),
             repetitions=1,
-            descriptor="instance",
+            descriptor_strategy="instance",
             replacement=generational_replacement,
             transformer=autoencoder,
-            dist_metric="cosine",
         )
         _, solution_set = eig(verbose=False)
         instances[portfolio[0].__name__] = copy.deepcopy(solution_set)

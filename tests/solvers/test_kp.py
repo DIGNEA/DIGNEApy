@@ -12,9 +12,7 @@
 
 import numpy as np
 import pytest
-from deap import benchmarks
 
-from digneapy import Direction
 from digneapy._core import Solution
 from digneapy.domains import kp as knapsack
 from digneapy.solvers.kp import default_kp, map_kp, miw_kp, mpw_kp

@@ -14,7 +14,7 @@ import copy
 import itertools
 import sys
 
-from digneapy import Archive
+from digneapy import Archive, NS
 from digneapy.domains import KnapsackDomain
 from digneapy.generators import EAGenerator
 from digneapy.operators import generational_replacement
@@ -38,7 +38,7 @@ def save_instances(filename, generated_instances, dimension: int):
         for solver, instances in generated_instances.items():
             for instance in instances:
                 vars = ",".join(str(x) for x in instance)
-                content = solver  + "," + str(dimension) + "," + vars + "\n"
+                content = solver + "," + str(dimension) + "," + vars + "\n"
                 file.write(content)
 
 
@@ -60,11 +60,10 @@ def generate_instances(dimension: int):
             generations=1000,
             domain=kp_domain,
             portfolio=portfolio,
-            archive=Archive(threshold=3),
-            s_set=Archive(threshold=3),
-            k=3,
+            novelty_approach=NS(Archive(threshold=3), k=3),
+            solution_set=NS(Archive(threshold=3), k=1),
             repetitions=1,
-            descriptor="instance",
+            descriptor_strategy="instance",
             replacement=generational_replacement,
         )
         _, solution_set = eig()

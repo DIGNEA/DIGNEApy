@@ -23,13 +23,13 @@ from deap import tools
 
 from ._core import (
     NS,
-    DominatedNS,
     Domain,
+    DominatedNS,
     Instance,
     P,
     SupportsSolve,
 )
-from ._core.descriptors import DESCRIPTORS, DescStrategy
+from ._core.descriptors import DESCRIPTORS
 from ._core.scores import PerformanceFn, max_gap_target
 from .archives import Archive, CVTArchive, GridArchive
 from .operators import (
@@ -52,23 +52,21 @@ class EAGenerator:
         self,
         domain: Domain,
         portfolio: Iterable[SupportsSolve[P]],
-        archive: Archive,
-        pop_size: Optional[int] = 100,
-        generations: Optional[int] = 1000,
-        solution_set: Optional[Archive] = None,
-        k: Optional[int] = 15,
-        descriptor_strategy: Optional[str] = "features",
+        novelty_approach: NS,
+        pop_size: int = 100,
+        generations: int = 1000,
+        solution_set: Optional[NS] = None,
+        descriptor_strategy: str = "features",
         transformer: Optional[SupportsTransform] = None,
-        dist_metric: Optional[str] = None,
-        repetitions: Optional[int] = 1,
-        cxrate: Optional[float] = 0.5,
-        mutrate: Optional[float] = 0.8,
-        crossover: Optional[Crossover] = uniform_crossover,
-        mutation: Optional[Mutation] = uniform_one_mutation,
-        selection: Optional[Selection] = binary_tournament_selection,
-        replacement: Optional[Replacement] = generational_replacement,
-        performance_function: Optional[PerformanceFn] = max_gap_target,
-        phi: Optional[float] = 0.85,
+        repetitions: int = 1,
+        cxrate: float = 0.5,
+        mutrate: float = 0.8,
+        crossover: Crossover = uniform_crossover,
+        mutation: Mutation = uniform_one_mutation,
+        selection: Selection = binary_tournament_selection,
+        replacement: Replacement = generational_replacement,
+        performance_function: PerformanceFn = max_gap_target,
+        phi: float = 0.85,
     ):
         """Creates a Evolutionary Instance Generator based on Novelty Search
 
@@ -113,11 +111,9 @@ class EAGenerator:
             raise ValueError(msg)
 
         self.phi = phi
-        self._novelty_search = NS(archive, k, dist_metric=dist_metric)
-        self._novelty_search_sset = None  # By default, only one Archive
+        self._novelty_search = novelty_approach
+        self._ns_solution_set = solution_set  # By default, only one Archive
         self._transformer = transformer
-        if solution_set is not None:
-            self._novelty_search_sset = NS(solution_set, k=1, dist_metric=dist_metric)
 
         self.pop_size = pop_size
         self.offspring_size = pop_size
@@ -160,14 +156,16 @@ class EAGenerator:
     def __str__(self):
         port_names = [s.__name__ for s in self.portfolio]
         domain_name = self.domain.name if self.domain is not None else "None"
-        return f"EAGenerator(pop_size={self.pop_size},gen={self.generations},domain={domain_name},portfolio={port_names!r},{self._ns_approach.__str__()})"
+        return f"EAGenerator(pop_size={self.pop_size},gen={self.generations},domain={domain_name},portfolio={port_names!r},{self._novelty_search.__str__()})"
 
     def __repr__(self) -> str:
         port_names = [s.__name__ for s in self.portfolio]
         domain_name = self.domain.name if self.domain is not None else "None"
-        return f"EAGenerator<pop_size={self.pop_size},gen={self.generations},domain={domain_name},portfolio={port_names!r},{self._ns_approach.__repr__()}>"
+        return f"EAGenerator<pop_size={self.pop_size},gen={self.generations},domain={domain_name},portfolio={port_names!r},{self._novelty_search.__repr__()}>"
 
-    def __call__(self, verbose: Optional[bool] = False) -> Tuple[Archive, Archive]:
+    def __call__(
+        self, verbose: Optional[bool] = False
+    ) -> Tuple[Archive, Optional[Archive]]:
         return self._run(verbose)
 
     def _generate_offspring(self, offspring_size: int) -> list[Instance]:
@@ -193,20 +191,20 @@ class EAGenerator:
         Args:
             population (list[Instance]): Population of instances to update the descriptors.
         """
-        for individual in population:
-            if self._desc_key == "features":
-                # The extraction of features is a domain-dependent step.
-                individual.features = self.domain.extract_features(individual)
-                individual.descriptor = individual.features
-            else:
-                individual.descriptor = self._descriptor_strategy(individual)
+        _desc_arr = []
+        if self._desc_key == 'features':
+            _desc_arr = [self.domain.extract_features(ind) for ind in population]
+            for i in range(len(population)):
+                population[i].features = _desc_arr[i]
+        else:
+            _desc_arr = self._descriptor_strategy(population)
 
         if self._transformer is not None:
             # Transform the descriptors if necessary
-            _desc_arr = np.array([ind.descriptor for ind in population])
+            _desc_arr = np.array(_desc_arr)
             _desc_arr = self._transformer(_desc_arr)
-            for i in range(len(population)):
-                population[i].descriptor = _desc_arr[i]
+        for i in range(len(population)):
+            population[i].descriptor = _desc_arr[i]
 
         return population
 
@@ -266,7 +264,9 @@ class EAGenerator:
         off = self.mutation(p_1, self.domain.bounds)
         return off
 
-    def _run(self, verbose: Optional[bool] = False) -> Tuple[Archive, Archive]:
+    def _run(
+        self, verbose: Optional[bool] = False
+    ) -> Tuple[Archive, Optional[Archive]]:
         if self.domain is None:
             raise ValueError("You must specify a domain to run the generator.")
         if len(self.portfolio) == 0:
@@ -291,10 +291,10 @@ class EAGenerator:
             feasible_off_archive = list(filter(lambda i: i.p >= 0, offspring))
             self._novelty_search.archive.extend(feasible_off_archive)
 
-            if self._novelty_search_sset is not None:
-                offspring, offs_sparsenes_sset = self._novelty_search_sset(offspring)
+            if self._ns_solution_set is not None:
+                offspring, offs_sparsenes_sset = self._ns_solution_set(offspring)
                 feasible_off_sset = list(filter(lambda i: i.p >= 0, offspring))
-                self._novelty_search_sset.archive.extend(feasible_off_sset)
+                self._ns_solution_set.archive.extend(feasible_off_sset)
 
             # However the whole offspring population is used in the replacement operator
             self.population = self.replacement(self.population, offspring)
@@ -311,7 +311,12 @@ class EAGenerator:
             blank = " " * 80
             print(f"\r{blank}\r", end="")
 
-        return (self._novelty_search.archive, self._novelty_search_sset.archive)
+        return (
+            self._novelty_search.archive,
+            self._ns_solution_set.archive
+            if self._ns_solution_set is not None
+            else None,
+        )
 
 
 class MapElitesGenerator:
@@ -422,7 +427,7 @@ class MapElitesGenerator:
             individual.descriptor = ind_features
         return population
 
-    def _run(self, verbose: bool = False):
+    def _run(self, verbose: bool = False) -> Archive:
         self._populate_archive()
 
         record = self._stats_fitness.compile(self._archive)
@@ -452,8 +457,7 @@ class MapElitesGenerator:
             self._logbook.record(gen=generation + 1, **record)
 
             if verbose:
-                status = f"\rGeneration {generation}/{self._generations} completed"
-                print(status, flush=True, end="")
+                print(self._logbook.stream)
 
         if verbose:
             # Clear the terminal
@@ -461,11 +465,10 @@ class MapElitesGenerator:
             print(f"\r{blank}\r", end="")
 
         unfeasible_instances = list(filter(lambda i: i.p < 0, self._archive))
-
         self._archive.remove(unfeasible_instances)
         return self._archive
 
-    def __call__(self, verbose: bool = False):
+    def __call__(self, verbose: bool = False) -> Archive:
         return self._run(verbose)
 
 
@@ -479,19 +482,19 @@ class DEAGenerator(EAGenerator):
         self,
         domain: Domain,
         portfolio: Iterable[SupportsSolve[P]],
-        pop_size: Optional[int] = 128,
-        offspring_size: Optional[int] = 128,
-        generations: Optional[int] = 1000,
-        k: Optional[int] = 15,
-        descriptor_strategy: Optional[str] = "features",
+        pop_size: int = 128,
+        offspring_size: int = 128,
+        generations: int = 1000,
+        k: int = 15,
+        descriptor_strategy: str = "features",
         transformer: Optional[SupportsTransform] = None,
-        repetitions: Optional[int] = 1,
-        cxrate: Optional[float] = 0.5,
-        mutrate: Optional[float] = 0.8,
-        crossover: Optional[Crossover] = uniform_crossover,
-        mutation: Optional[Mutation] = uniform_one_mutation,
-        selection: Optional[Selection] = binary_tournament_selection,
-        performance_function: Optional[PerformanceFn] = max_gap_target,
+        repetitions: int = 1,
+        cxrate: float = 0.5,
+        mutrate: float = 0.8,
+        crossover: Crossover = uniform_crossover,
+        mutation: Mutation = uniform_one_mutation,
+        selection: Selection = binary_tournament_selection,
+        performance_function: PerformanceFn = max_gap_target,
     ):
         """Creates a Evolutionary Instance Generator based on Novelty Search
 
@@ -501,11 +504,9 @@ class DEAGenerator(EAGenerator):
             pop_size (int, optional): Number of instances in the population to evolve. Defaults to 128.
             offspring_size (int, optional): Number of instances in the offspring population. Defaults to 128.
             evaluations (int, optional): Number of total evaluations to perform. Defaults to 1000.
-
             k (int, optional): Number of neighbours to calculate the sparseness. Defaults to 15.
             descriptor_strategy (str, optional): Descriptor used to calculate the diversity. The options available are defined in the dictionary digneapy.qd.descriptor_strategies. Defaults to "features".
             transformer (callable, optional): Define a strategy to transform the high-dimensional descriptors to low-dimensional.Defaults to None.
-
             repetitions (int, optional): Number times a solver in the portfolio must be run over the same instance. Defaults to 1.
             cxrate (float, optional): Crossover rate. Defaults to 0.5.
             mutrate (float, optional): Mutation rate. Defaults to 0.8.
@@ -515,9 +516,8 @@ class DEAGenerator(EAGenerator):
             domain=domain,
             portfolio=portfolio,
             pop_size=pop_size,
-            archive=None,
+            novelty_approach=DominatedNS(k=k),
             generations=generations,
-            k=k,
             descriptor_strategy=descriptor_strategy,
             transformer=transformer,
             repetitions=repetitions,
@@ -528,8 +528,6 @@ class DEAGenerator(EAGenerator):
             selection=selection,
             performance_function=performance_function,
         )
-
-        self._novelty_search = DominatedNS(k)
         self.offspring_size = offspring_size
         self._logbook.header = "gen", "fitness", "p"
         self._logbook.chapters["fitness"].header = "min", "avg", "max"
@@ -549,10 +547,14 @@ class DEAGenerator(EAGenerator):
         domain_name = self.domain.name if self.domain is not None else "None"
         return f"DEAGenerator<pop_size={self.pop_size},gen={self.generations},domain={domain_name},portfolio={port_names!r}>"
 
-    def __call__(self, verbose: Optional[bool] = False) -> Tuple[Archive, Archive]:
+    def __call__(
+        self, verbose: Optional[bool] = False
+    ) -> Tuple[Archive, Optional[Archive]]:
         return self._run(verbose)
 
-    def _run(self, verbose: Optional[bool] = False) -> Tuple[Archive, Archive]:
+    def _run(
+        self, verbose: Optional[bool] = False
+    ) -> Tuple[Archive, Optional[Archive]]:
         if self.domain is None:
             raise ValueError("You must specify a domain to run the generator.")
         if len(self.portfolio) == 0:

@@ -13,11 +13,11 @@
 from ._constants import Direction, IndType
 from ._domain import Domain
 from ._instance import Instance
+from ._metrics import QDSCoreAUC, qd_score
 from ._novelty_search import NS, DominatedNS
 from ._problem import P, Problem
 from ._solution import Solution
 from ._solver import Solver, SupportsSolve
-from ._metrics import qd_score, QDSCoreAUC
 
 __all__ = [
     "Domain",

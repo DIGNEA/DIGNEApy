@@ -14,10 +14,10 @@ import copy
 import itertools
 import sys
 
-from digneapy import Archive
+from digneapy import Archive, NS
 from digneapy.domains import KnapsackDomain
 from digneapy.generators import EAGenerator
-from digneapy.operators import first_improve_replacement, generational_replacement
+from digneapy.operators import generational_replacement
 from digneapy.solvers import default_kp, map_kp, miw_kp, mpw_kp
 from digneapy.transformers.neural import KerasNN
 
@@ -84,11 +84,10 @@ def generate_instances(transformer: KerasNN):
             generations=1000,
             domain=kp_domain,
             portfolio=portfolio,
-            archive=Archive(threshold=0.5),
-            s_set=Archive(threshold=0.5),
-            k=3,
+            novelty_approach=NS(Archive(threshold=0.5), k=3),
+            solution_set=NS(Archive(threshold=0.5), k=1),
             repetitions=1,
-            descriptor="features",
+            descriptor_strategy="features",
             replacement=generational_replacement,
             transformer=transformer,
         )

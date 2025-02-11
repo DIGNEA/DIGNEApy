@@ -11,6 +11,7 @@
 """
 
 from typing import Sequence
+
 from ._instance import Instance
 
 

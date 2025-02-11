@@ -17,7 +17,6 @@ import os
 os.environ["KERAS_BACKEND"] = "torch"
 
 import joblib
-import keras
 import numpy as np
 import numpy.typing as npt
 from keras.utils import pad_sequences

@@ -12,7 +12,7 @@
 
 import pandas as pd
 
-from digneapy import Archive, Direction, GridArchive
+from digneapy import Archive, Direction, GridArchive, NS
 from digneapy.domains import KnapsackDomain
 from digneapy.generators import EAGenerator
 from digneapy.operators import generational_replacement
@@ -69,16 +69,15 @@ class EvalNN:
                 generations=1000,
                 domain=self.kp_domain,
                 portfolio=portfolio,
-                archive=Archive(threshold=0.5),
-                s_set=Archive(threshold=0.05),
-                k=3,
+                novelty_approach=NS(Archive(threshold=0.5), k=3),
+                solution_set=NS(Archive(threshold=0.05), k=1),
                 repetitions=1,
-                descriptor="instance",
+                descriptor_strategy="instance",
                 replacement=generational_replacement,
                 transformer=transformer,
             )
             _, solution_set = eig(verbose=True)
-            if len(solution_set) != 0:
+            if solution_set is not None and len(solution_set) != 0:
                 hypercube.extend(solution_set)
 
         return len(hypercube)

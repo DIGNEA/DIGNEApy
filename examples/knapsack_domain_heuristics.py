@@ -14,7 +14,7 @@ import argparse
 import configparser
 from collections import deque
 
-from digneapy import Archive
+from digneapy import Archive, NS
 from digneapy.domains import KnapsackDomain
 from digneapy.generators import EAGenerator
 from digneapy.operators import first_improve_replacement
@@ -53,11 +53,10 @@ def main(default_args):
             generations=generations,
             domain=kp_domain,
             portfolio=portfolio,
-            archive=Archive(threshold=t_a),
-            s_set=Archive(threshold=t_ss),
-            k=k,
+            novelty_approach=NS(Archive(threshold=t_a), k=k),
+            solution_set=NS(Archive(threshold=t_ss), k=1),
             repetitions=1,
-            descriptor=descriptor,
+            descriptor_strategy=descriptor,
             replacement=first_improve_replacement,
         )
         print(eig)
@@ -66,7 +65,7 @@ def main(default_args):
         print(f"The archive contains {len(archive)} instances.")
         print(f"The solution set contains {len(solution_set)} instances.")
         print("=" * 80 + " Solution Set Solutions " + "=" * 80)
-        for i, instance in enumerate(eig.solution_set):
+        for i, instance in enumerate(solution_set):
             filename = f"kp_instances_for_{portfolio[0].__name__}_{i}.kp"
             kp_domain.from_instance(instance).to_file(filename)
 

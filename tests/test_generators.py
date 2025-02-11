@@ -22,9 +22,10 @@ from digneapy import (
     Instance,
     max_gap_target,
     runtime_score,
+    NS,
 )
 from digneapy.domains import BPPDomain, KnapsackDomain
-from digneapy.generators import EAGenerator, MapElitesGenerator, DEAGenerator
+from digneapy.generators import EAGenerator, MapElitesGenerator
 from digneapy.operators import (
     binary_tournament_selection,
     generational_replacement,
@@ -45,12 +46,12 @@ from digneapy.visualize import ea_generator_evolution_plot, map_elites_evolution
 
 
 def test_default_generator():
-    eig = EAGenerator(domain=None, portfolio=[])
+    eig = EAGenerator(domain=None, portfolio=[], novelty_approach=NS(k=15))
     assert eig.pop_size == 100
     assert eig.generations == 1000
-    assert eig._ns_approach.k == 15
-    assert eig._ns_approach._describe_by == "features"
-    assert eig._ns_approach._transformer is None
+    assert eig._novelty_search.k == 15
+    assert eig._desc_key == "features"
+    assert eig._transformer is None
     assert eig.domain is None
     assert eig.portfolio == tuple()
     assert eig.repetitions == 1
@@ -66,12 +67,12 @@ def test_default_generator():
 
     assert (
         eig.__str__()
-        == "EAGenerator(pop_size=100,gen=1000,domain=None,portfolio=[],NS(descriptor=features,k=15,A=(),S_S=()))"
+        == "EAGenerator(pop_size=100,gen=1000,domain=None,portfolio=[],NS(k=15,A=()))"
     )
 
     assert (
         eig.__repr__()
-        == "EAGenerator<pop_size=100,gen=1000,domain=None,portfolio=[],NS<descriptor=features,k=15,A=(),S_S=()>>"
+        == "EAGenerator<pop_size=100,gen=1000,domain=None,portfolio=[],NS<k=15,A=()>>"
     )
 
     with pytest.raises(ValueError) as e:
@@ -87,13 +88,13 @@ def test_default_generator():
     )
 
     with pytest.raises(ValueError) as e:
-        eig = EAGenerator(domain=None, portfolio=[], phi=-1.0)
+        eig = EAGenerator(domain=None, portfolio=[], novelty_approach=NS(k=15), phi=-1.0)
     assert (
         e.value.args[0]
         == "Phi must be a float number in the range [0.0-1.0]. Got: -1.0."
     )
     with pytest.raises(ValueError) as e:
-        eig = EAGenerator(domain=None, portfolio=[], phi="hello")
+        eig = EAGenerator(domain=None, portfolio=[], novelty_approach=NS(k=15), phi="hello")
     assert e.value.args[0] == "Phi must be a float number in the range [0.0-1.0]."
 
 
@@ -106,10 +107,11 @@ def test_eig_gen_kp_perf_descriptor():
         pop_size=10,
         generations=generations,
         domain=kp_domain,
+        novelty_approach=NS(k=k),
+        solution_set=NS(k=1),
         portfolio=portfolio,
-        k=k,
         repetitions=1,
-        descriptor="performance",
+        descriptor_strategy="performance",
         replacement=generational_replacement,
     )
     archive, solution_set = eig()
@@ -149,9 +151,10 @@ def test_eig_gen_kp_feat_descriptor():
         generations=generations,
         domain=kp_domain,
         portfolio=portfolio,
-        k=k,
+        novelty_approach=NS(k=k),
+        solution_set=NS(k=1),
         repetitions=1,
-        descriptor="features",
+        descriptor_strategy="features",
         replacement=generational_replacement,
     )
     archive, solution_set = eig()
@@ -199,9 +202,10 @@ def test_eig_gen_kp_inst_descriptor():
         generations=generations,
         domain=kp_domain,
         portfolio=portfolio,
-        k=k,
+        novelty_approach=NS(k=k),
+        solution_set=NS(k=1),
         repetitions=1,
-        descriptor="instance",
+        descriptor_strategy="instance",
         replacement=generational_replacement,
     )
     archive, solution_set = eig()
@@ -244,9 +248,10 @@ def test_eig_gen_kp_perf_descriptor_with_pisinger():
         generations=generations,
         domain=kp_domain,
         portfolio=portfolio,
-        k=k,
+        novelty_approach=NS(k=k),
+        solution_set=NS(k=1),
         repetitions=1,
-        descriptor="performance",
+        descriptor_strategy="performance",
         replacement=generational_replacement,
         performance_function=runtime_score,
     )

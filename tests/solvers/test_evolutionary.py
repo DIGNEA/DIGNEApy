@@ -18,8 +18,6 @@ from digneapy import Direction
 from digneapy._core import Solution
 from digneapy.domains import kp as knapsack
 from digneapy.solvers.evolutionary import EA, ParEAKP
-from digneapy.solvers.kp import default_kp, map_kp, miw_kp, mpw_kp
-from digneapy.solvers.pisinger import combo, expknap, minknap
 
 
 @pytest.fixture

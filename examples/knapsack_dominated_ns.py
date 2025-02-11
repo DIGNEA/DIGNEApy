@@ -37,7 +37,7 @@ def main():
             portfolio=portfolio,
             k=k,
             repetitions=1,
-            descriptor=descriptor,
+            descriptor_strategy=descriptor,
         )
         print(eig)
         population = eig(verbose=True)

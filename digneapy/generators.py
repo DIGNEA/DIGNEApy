@@ -160,12 +160,12 @@ class EAGenerator:
     def __str__(self):
         port_names = [s.__name__ for s in self.portfolio]
         domain_name = self.domain.name if self.domain is not None else "None"
-        return f"EAGenerator(pop_size={self.pop_size},gen={self.generations},domain={domain_name},portfolio={port_names!r},{super().__str__()})"
+        return f"EAGenerator(pop_size={self.pop_size},gen={self.generations},domain={domain_name},portfolio={port_names!r},{self._ns_approach.__str__()})"
 
     def __repr__(self) -> str:
         port_names = [s.__name__ for s in self.portfolio]
         domain_name = self.domain.name if self.domain is not None else "None"
-        return f"EAGenerator<pop_size={self.pop_size},gen={self.generations},domain={domain_name},portfolio={port_names!r},{super().__repr__()}>"
+        return f"EAGenerator<pop_size={self.pop_size},gen={self.generations},domain={domain_name},portfolio={port_names!r},{self._ns_approach.__repr__()}>"
 
     def __call__(self, verbose: Optional[bool] = False) -> Tuple[Archive, Archive]:
         return self._run(verbose)

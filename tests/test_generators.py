@@ -16,13 +16,13 @@ from collections import deque
 import pytest
 
 from digneapy import (
+    NS,
     Archive,
     CVTArchive,
     GridArchive,
     Instance,
     max_gap_target,
     runtime_score,
-    NS,
 )
 from digneapy.domains import BPPDomain, KnapsackDomain
 from digneapy.generators import EAGenerator, MapElitesGenerator
@@ -88,13 +88,17 @@ def test_default_generator():
     )
 
     with pytest.raises(ValueError) as e:
-        eig = EAGenerator(domain=None, portfolio=[], novelty_approach=NS(k=15), phi=-1.0)
+        eig = EAGenerator(
+            domain=None, portfolio=[], novelty_approach=NS(k=15), phi=-1.0
+        )
     assert (
         e.value.args[0]
         == "Phi must be a float number in the range [0.0-1.0]. Got: -1.0."
     )
     with pytest.raises(ValueError) as e:
-        eig = EAGenerator(domain=None, portfolio=[], novelty_approach=NS(k=15), phi="hello")
+        eig = EAGenerator(
+            domain=None, portfolio=[], novelty_approach=NS(k=15), phi="hello"
+        )
     assert e.value.args[0] == "Phi must be a float number in the range [0.0-1.0]."
 
 

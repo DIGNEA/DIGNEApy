@@ -16,7 +16,7 @@ from collections import deque
 import pandas as pd
 
 from digneapy import Direction
-from digneapy.archives import Archive, GridArchive, NS
+from digneapy.archives import NS, Archive, GridArchive
 from digneapy.domains import KnapsackDomain
 from digneapy.generators import EAGenerator
 from digneapy.operators import generational_replacement

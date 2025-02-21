@@ -7,9 +7,11 @@ import pytest
 
 from digneapy import NS, DominatedNS, Instance
 
+
 @pytest.fixture
 def ns():
     return NS(k=3)
+
 
 @pytest.fixture
 def dns():
@@ -75,7 +77,6 @@ def test_run_ns(ns, random_population):
     # If len(pop) < k it should raise
     with pytest.raises(Exception):
         ns(random_population[:3])
-
 
 
 def test_run_dns(dns, random_population):

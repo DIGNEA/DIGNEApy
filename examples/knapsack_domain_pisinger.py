@@ -12,7 +12,7 @@
 
 from collections import deque
 
-from digneapy import Archive, runtime_score, NS
+from digneapy import NS, Archive, runtime_score
 from digneapy.domains import KnapsackDomain
 from digneapy.generators import EAGenerator
 from digneapy.operators import first_improve_replacement

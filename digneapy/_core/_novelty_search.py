@@ -63,10 +63,10 @@ class NS:
         return self._k - 1
 
     def __str__(self):
-        return f"NS(k={self._k-1},A={self._archive})"
+        return f"NS(k={self._k - 1},A={self._archive})"
 
     def __repr__(self) -> str:
-        return f"NS<k={self._k-1},A={self._archive}>"
+        return f"NS<k={self._k - 1},A={self._archive}>"
 
     def _combined_archive_and_population(
         self, current_pop: Archive, instances: Sequence[Instance]

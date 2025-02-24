@@ -192,7 +192,7 @@ class EAGenerator:
             population (list[Instance]): Population of instances to update the descriptors.
         """
         _desc_arr = []
-        if self._desc_key == 'features':
+        if self._desc_key == "features":
             _desc_arr = [self.domain.extract_features(ind) for ind in population]
             for i in range(len(population)):
                 population[i].features = _desc_arr[i]

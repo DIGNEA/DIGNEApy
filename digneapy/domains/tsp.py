@@ -10,12 +10,15 @@
 @Desc    :   None
 """
 
+from collections import Counter
 from collections.abc import Sequence
 from typing import Mapping, Self, Tuple
 
 import numpy as np
+from more_itertools import windowed
+from sklearn.cluster import DBSCAN
 
-from digneapy.core import Domain, Instance, Problem, Solution
+from digneapy._core import Domain, Instance, Problem, Solution
 
 
 class TSP(Problem):
@@ -28,18 +31,34 @@ class TSP(Problem):
     ):
         self._nodes = nodes
         self._coords = np.array(coords)
-
+        print(self._coords)
         x_min, y_min = np.min(self._coords, axis=0)
         x_max, y_max = np.max(self._coords, axis=0)
         bounds = list(((x_min, y_min), (x_max, y_max)) for _ in range(self._nodes))
         super().__init__(dimension=nodes, bounds=bounds, name="TSP")
+
+        self._distances = np.zeros((self._nodes, self._nodes))
+        for i in range(self._nodes):
+            for j in range(i + 1, self._nodes):
+                self._distances[i][j] = np.linalg.norm(
+                    self._coords[i] - self._coords[j]
+                )
+                self._distances[j][i] = self._distances[i][j]
+
+    def __evaluate_constraints(self, individual: Sequence | Solution) -> bool:
+        counter = Counter(individual)
+        if (individual[0] != 0 or individual[-1] != 0) or any(
+            counter[c] != 1 for c in counter if c != 0
+        ):
+            return False
+        return True
 
     def evaluate(self, individual: Sequence | Solution) -> tuple[float]:
         """Evaluates the candidate individual with the information of the Travelling Salesmas Problem.
 
         The fitness of the solution is the fraction of the sum of the distances of the tour
         defined as:
-            (x) = \\frac{\\sum_{k=1}^{N} \\left(\\frac{fill_k}{C}\\right)^2}{N}
+        # TODO: Update with the correct equation (x) = \\frac{\\sum_{k=1}^{N} \\left(\\frac{fill_k}{C}\\right)^2}{N}
 
         Args:
             individual (Sequence | Solution): Individual to evaluate
@@ -47,23 +66,25 @@ class TSP(Problem):
         Returns:
             Tuple[float]: Fitness
         """
-        if len(individual) != self._nodes:
-            msg = f"Mismatch between individual variables ({len(individual)}) and instance variables ({self._nodes}) in {self.__class__.__name__}"
+        if len(individual) != self._nodes + 1:
+            msg = f"Mismatch between individual variables ({len(individual)}) and instance variables ({self._nodes}) in {self.__class__.__name__}. A solution for the TSP must be a sequence of len {self._nodes + 1}"
             raise ValueError(msg)
 
-        used_bins = np.max(individual).astype(int) + 1
-        fill_i = np.zeros(used_bins)
+        distance = 0.0
+        penalty = 0.0
 
-        for item_idx, bin in enumerate(individual):
-            fill_i[bin] += self._items[item_idx]
+        if self.__evaluate_constraints(individual):
+            for a, b in windowed(individual, n=2):
+                distance += self._distances[a][b]
+        else:
+            distance = np.inf
+            penalty = np.inf
 
-        fitness = (
-            sum(((f_i / self._capacity) * (f_i / self._capacity)) for f_i in fill_i)
-            / used_bins
-        )
+        fitness = 1.0 / (distance + penalty)
         if isinstance(individual, Solution):
             individual.fitness = fitness
             individual.objectives = (fitness,)
+            individual.constraints = (penalty,)
 
         return (fitness,)
 
@@ -83,7 +104,7 @@ class TSP(Problem):
     def to_file(self, filename: str = "instance.tsp"):
         with open(filename, "w") as file:
             file.write(f"{len(self)}\n\n")
-            content = "\n".join(f"{x}\t{y}" for (x, y) in self.coords)
+            content = "\n".join(f"{x}\t{y}" for (x, y) in self._coords)
             file.write(content)
 
     @classmethod
@@ -161,25 +182,38 @@ class TSPDomain(Domain):
         Returns:
             Tuple[float]: Values of each feature
         """
-        capacity = instance.variables[0]
-        vars = np.asarray(instance.variables[1:])
-        vars_norm = vars / capacity
-        huge = sum(k > 0.5 for k in vars_norm) / self._dimension
-        large = sum(0.5 >= k > 1 / 3 for k in vars_norm) / self._dimension
-        medium = sum(1 / 3 >= k > 0.25 for k in vars_norm) / self._dimension
-        small = sum(0.25 >= k for k in vars_norm) / self._dimension
-        tiny = sum(0.1 >= k for k in vars_norm) / self._dimension
+
+        tsp = self.from_instance(instance)
+        xs = instance[0::2]
+        ys = instance[1::2]
+        area = (max(xs) - min(xs)) * (max(ys) - min(ys))
+        std_distances = np.std(tsp._distances)
+        centroid = (0.01 * np.sum(xs), 0.01 * np.sum(ys))
+        centroid_distance = [np.linalg.norm(city - centroid) for city in tsp._coords]
+        radius = np.mean(centroid_distance)
+        fraction = len(np.unique(tsp._distances)) / (len(tsp._distances) / 2)
+        variance_nnNds = 0
+        variation_nnNds = 0
+        dbscan = DBSCAN(eps=0.5, min_samples=5)
+        dbscan.fit(tsp._coords)
+        cluster_ratio = len(set(dbscan.labels_)) / self._nodes
+        outlier_ratio = 0
+        ratio_cities_edge = 0
+        mean_cluster_radius = 0
         return (
-            np.mean(vars_norm),
-            np.std(vars_norm),
-            np.median(vars_norm),
-            np.max(vars_norm),
-            np.min(vars_norm),
-            tiny,
-            small,
-            medium,
-            large,
-            huge,
+            self._nodes,
+            std_distances,
+            centroid[0],
+            centroid[1],
+            radius,
+            fraction,
+            area,
+            variance_nnNds,
+            variation_nnNds,
+            cluster_ratio,
+            outlier_ratio,
+            ratio_cities_edge,
+            mean_cluster_radius,
         )
 
     def extract_features_as_dict(self, instance: Instance) -> Mapping[str, float]:
@@ -193,11 +227,11 @@ class TSPDomain(Domain):
         Returns:
             Mapping[str, float]: Dictionary with the names/values of each feature
         """
-        names = ""  # TODO: Update with the correct names for TSP features
+        names = "size,std_distances,centroid_x,centroid_y,radius,fraction_distances,area,variance_nnNds,variation_nnNds,cluster_ratio,outlier_ratio,ratio_cities_edge,mean_cluster_radius"
         features = self.extract_features(instance)
         return {k: v for k, v in zip(names.split(","), features)}
 
     def from_instance(self, instance: Instance) -> TSP:
         n_nodes = len(instance) // 2
-        coords = (0,)
+        coords = tuple([*zip(instance[::2], instance[1::2])])
         return TSP(nodes=n_nodes, coords=coords)

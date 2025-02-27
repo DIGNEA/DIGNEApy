@@ -14,7 +14,7 @@ import copy
 import itertools
 import sys
 
-from digneapy import Archive, NS
+from digneapy import NS, Archive
 from digneapy.domains import KnapsackDomain
 from digneapy.generators import EAGenerator
 from digneapy.operators import generational_replacement

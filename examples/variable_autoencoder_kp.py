@@ -14,7 +14,7 @@ import argparse
 import copy
 import itertools
 
-from digneapy import Archive, NS
+from digneapy import NS, Archive
 from digneapy.domains import KnapsackDomain
 from digneapy.generators import EAGenerator
 from digneapy.operators import generational_replacement
@@ -83,7 +83,7 @@ def generate_instances_heuristics(
             domain=kp_domain,
             portfolio=portfolio,
             novelty_approach=NS(Archive(threshold=ta), k=3, dist_metric="cosine"),
-            solution_set=NS(Archive(threshold=tss), k=1, dist_metric='cosine'),
+            solution_set=NS(Archive(threshold=tss), k=1, dist_metric="cosine"),
             repetitions=1,
             descriptor_strategy="instance",
             replacement=generational_replacement,

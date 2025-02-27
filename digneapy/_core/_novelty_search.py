@@ -17,9 +17,8 @@ from typing import Optional, Tuple
 import numpy as np
 from sklearn.neighbors import NearestNeighbors
 
+from digneapy._core._instance import Instance
 from digneapy.archives import Archive
-
-from ._instance import Instance
 
 
 class NS:
@@ -183,7 +182,11 @@ class DominatedNS(NS):
         The method returns a descending sorted list of instances by their competition fitness value (p).
         For each instance ``i'' in the sequence, we calculate all the other instances that dominate it.
         Then, we compute the distances between their descriptors using the norm of the difference for each dimension of the descriptors.
-        Novel instances will get a competition fitness of np.inf (assuring they will survive). Less novel instances will be selected by their competition fitness value.
+        Novel instances will get a competition fitness of np.inf (assuring they will survive).
+        Less novel instances will be selected by their competition fitness value. This competition mechanism creates two complementary evolutionary
+        pressures: individuals must either improve their fitness or discover distinct behaviors that differ from better-performing
+        solutions. Solutions that have no fitter neighbors (D𝑖 = ∅) receive an infinite competition fitness, ensuring their preservation in the
+        population.
 
         Args:
             instances (Sequence[Instance]): Instances to calculate their competition
@@ -222,8 +225,9 @@ class DominatedNS(NS):
             ld = len(distances)
 
             if ld > 0:
+                # Smallest distances to solution i. If |D_i| < k, we use all available fitter solutions
                 _neighbors = distances[: self._k] if ld >= self._k else distances
-                individual.fitness = 1.0 / self._k * sum(_neighbors)
+                individual.fitness = (1.0 / self._k) * sum(_neighbors)
             else:
                 individual.fitness = np.inf
 

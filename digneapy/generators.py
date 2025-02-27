@@ -19,7 +19,6 @@ from operator import attrgetter
 from typing import Optional, Tuple
 
 import numpy as np
-from deap import tools
 
 from ._core import (
     NS,
@@ -29,6 +28,7 @@ from ._core import (
     P,
     SupportsSolve,
 )
+from ._core._metrics import Logbook
 from ._core.descriptors import DESCRIPTORS
 from ._core.scores import PerformanceFn, max_gap_target
 from .archives import Archive, CVTArchive, GridArchive
@@ -55,7 +55,7 @@ class EAGenerator:
         novelty_approach: NS,
         pop_size: int = 100,
         generations: int = 1000,
-        solution_set: Optional[NS] = None,
+        solution_set: Optional[Archive] = None,
         descriptor_strategy: str = "features",
         transformer: Optional[SupportsTransform] = None,
         repetitions: int = 1,
@@ -70,11 +70,11 @@ class EAGenerator:
     ):
         """Creates a Evolutionary Instance Generator based on Novelty Search
 
-        Args:
+        Args: TODO: Update the references
             pop_size (int, optional): Number of instances in the population to evolve. Defaults to 100.
             evaluations (int, optional): Number of total evaluations to perform. Defaults to 1000.
             archive (Archive): Archive to store the instances to guide the evolution.
-            solution_set (Archive, optional): Solution set to store the instances. Defaults to None.
+            solution_set (Archive): Solution set to store the instances. Defaults to None.
             k (int, optional): Number of neighbours to calculate the sparseness. Defaults to 15.
             descriptor_strategy (str, optional): Descriptor used to calculate the diversity. The options available are defined in the dictionary digneapy.qd.descriptor_strategies. Defaults to "features".
             transformer (callable, optional): Define a strategy to transform the high-dimensional descriptors to low-dimensional.Defaults to None.
@@ -112,9 +112,11 @@ class EAGenerator:
 
         self.phi = phi
         self._novelty_search = novelty_approach
-        self._ns_solution_set = solution_set  # By default, only one Archive
-        self._transformer = transformer
+        self._ns_solution_set = None  # By default there's not solution set
+        if solution_set is not None:
+            self._ns_solution_set = NS(solution_set, k=1)
 
+        self._transformer = transformer
         self.pop_size = pop_size
         self.offspring_size = pop_size
         self.generations = generations
@@ -131,26 +133,10 @@ class EAGenerator:
         self.replacement = replacement
         self.performance_function = performance_function
 
-        self._stats_s = tools.Statistics(key=attrgetter("s"))
-        self._stats_p = tools.Statistics(key=attrgetter("p"))
-        self._stats_f = tools.Statistics(key=attrgetter("fitness"))
-
-        self._stats = tools.MultiStatistics(
-            s=self._stats_s, p=self._stats_p, fitness=self._stats_f
-        )
-        self._stats.register("avg", np.mean)
-        self._stats.register("std", np.std)
-        self._stats.register("min", np.min)
-        self._stats.register("max", np.max)
-
-        self._logbook = tools.Logbook()
-        self._logbook.header = "gen", "fitness", "s", "p"
-        self._logbook.chapters["fitness"].header = "min", "avg", "std", "max"
-        self._logbook.chapters["s"].header = "min", "avg", "std", "max"
-        self._logbook.chapters["p"].header = "min", "avg", "std", "max"
+        self._logbook = Logbook(batch_size=self.offspring_size)
 
     @property
-    def log(self) -> tools.Logbook:
+    def log(self) -> Logbook:
         return self._logbook
 
     def __str__(self):
@@ -163,9 +149,7 @@ class EAGenerator:
         domain_name = self.domain.name if self.domain is not None else "None"
         return f"EAGenerator<pop_size={self.pop_size},gen={self.generations},domain={domain_name},portfolio={port_names!r},{self._novelty_search.__repr__()}>"
 
-    def __call__(
-        self, verbose: Optional[bool] = False
-    ) -> Tuple[Archive, Optional[Archive]]:
+    def __call__(self, verbose: bool = False) -> Tuple[Archive, Optional[Archive]]:
         return self._run(verbose)
 
     def _generate_offspring(self, offspring_size: int) -> list[Instance]:
@@ -264,9 +248,7 @@ class EAGenerator:
         off = self.mutation(p_1, self.domain.bounds)
         return off
 
-    def _run(
-        self, verbose: Optional[bool] = False
-    ) -> Tuple[Archive, Optional[Archive]]:
+    def _run(self, verbose: bool = False) -> Tuple[Archive, Optional[Archive]]:
         if self.domain is None:
             raise ValueError("You must specify a domain to run the generator.")
         if len(self.portfolio) == 0:
@@ -300,12 +282,10 @@ class EAGenerator:
             self.population = self.replacement(self.population, offspring)
 
             # Record the stats and update the performed gens
-            record = self._stats.compile(self.population)
-            self._logbook.record(gen=performed_gens, **record)
+            self._logbook.update(
+                generation=performed_gens, population=self.population, feedback=verbose
+            )
             performed_gens += 1
-
-            if verbose:
-                print(self._logbook.stream)
         if verbose:
             # Clear the terminal
             blank = " " * 80
@@ -359,20 +339,14 @@ class MapElitesGenerator:
             case _:
                 self._descriptor_strategy = DESCRIPTORS[descriptor]
 
-        self._stats_fitness = tools.Statistics(key=attrgetter("fitness"))
-        self._stats_fitness.register("avg", np.mean)
-        self._stats_fitness.register("std", np.std)
-        self._stats_fitness.register("min", np.min)
-        self._stats_fitness.register("max", np.max)
-        self._logbook = tools.Logbook()
-        self._logbook.header = ("gen", "min", "avg", "std", "max")
+        self._logbook = Logbook(batch_size=self._init_pop_size)
 
     @property
     def archive(self):
         return self._archive
 
     @property
-    def log(self) -> tools.Logbook:
+    def log(self) -> Logbook:
         return self._logbook
 
     def __str__(self) -> str:
@@ -430,9 +404,7 @@ class MapElitesGenerator:
     def _run(self, verbose: bool = False) -> Archive:
         self._populate_archive()
 
-        record = self._stats_fitness.compile(self._archive)
-        self._logbook.record(gen=0, **record)
-
+        self._logbook.update(generation=0, population=self._archive, feedback=verbose)
         for generation in range(self._generations):
             parents = [
                 copy.deepcopy(p)
@@ -453,11 +425,9 @@ class MapElitesGenerator:
             self._archive.extend(feasible_offspring)
 
             # Record the stats and update the performed gens
-            record = self._stats_fitness.compile(self._archive)
-            self._logbook.record(gen=generation + 1, **record)
-
-            if verbose:
-                print(self._logbook.stream)
+            self._logbook.update(
+                generation=generation + 1, population=self._archive, feedback=verbose
+            )
 
         if verbose:
             # Clear the terminal
@@ -529,13 +499,6 @@ class DEAGenerator(EAGenerator):
             performance_function=performance_function,
         )
         self.offspring_size = offspring_size
-        self._logbook.header = "gen", "fitness", "p"
-        self._logbook.chapters["fitness"].header = "min", "avg", "max"
-        self._logbook.chapters["p"].header = "min", "avg", "std", "max"
-
-    @property
-    def log(self) -> tools.Logbook:
-        return self._logbook
 
     def __str__(self):
         port_names = [s.__name__ for s in self.portfolio]
@@ -547,14 +510,10 @@ class DEAGenerator(EAGenerator):
         domain_name = self.domain.name if self.domain is not None else "None"
         return f"DEAGenerator<pop_size={self.pop_size},gen={self.generations},domain={domain_name},portfolio={port_names!r}>"
 
-    def __call__(
-        self, verbose: Optional[bool] = False
-    ) -> Tuple[Archive, Optional[Archive]]:
+    def __call__(self, verbose: bool = False) -> Tuple[Archive, Optional[Archive]]:
         return self._run(verbose)
 
-    def _run(
-        self, verbose: Optional[bool] = False
-    ) -> Tuple[Archive, Optional[Archive]]:
+    def _run(self, verbose: bool = False) -> Tuple[Archive, Optional[Archive]]:
         if self.domain is None:
             raise ValueError("You must specify a domain to run the generator.")
         if len(self.portfolio) == 0:
@@ -577,12 +536,11 @@ class DEAGenerator(EAGenerator):
             # Both population and offspring are used in the replacement
             self.population = list(combined_population[: self.pop_size])
             # Record the stats and update the performed gens
-            record = self._stats.compile(self.population)
-            self._logbook.record(gen=performed_gens, **record)
+            self._logbook.update(
+                generation=performed_gens, population=self.population, feedback=verbose
+            )
             performed_gens += 1
 
-            if verbose:
-                print(self._logbook.stream)
         if verbose:
             # Clear the terminal
             blank = " " * 80

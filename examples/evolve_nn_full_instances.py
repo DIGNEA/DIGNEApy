@@ -12,7 +12,7 @@
 
 import pandas as pd
 
-from digneapy import Archive, Direction, GridArchive, NS
+from digneapy import NS, Archive, Direction, GridArchive
 from digneapy.domains import KnapsackDomain
 from digneapy.generators import EAGenerator
 from digneapy.operators import generational_replacement

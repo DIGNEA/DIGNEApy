@@ -11,6 +11,7 @@
 """
 
 from collections import deque
+
 from digneapy.domains import KnapsackDomain
 from digneapy.generators import DEAGenerator
 from digneapy.solvers import default_kp, map_kp, miw_kp, mpw_kp

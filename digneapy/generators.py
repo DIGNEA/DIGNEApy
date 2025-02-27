@@ -55,7 +55,7 @@ class EAGenerator:
         novelty_approach: NS,
         pop_size: int = 100,
         generations: int = 1000,
-        solution_set: Optional[NS] = None,
+        solution_set: Optional[Archive] = None,
         descriptor_strategy: str = "features",
         transformer: Optional[SupportsTransform] = None,
         repetitions: int = 1,
@@ -70,11 +70,11 @@ class EAGenerator:
     ):
         """Creates a Evolutionary Instance Generator based on Novelty Search
 
-        Args:
+        Args: TODO: Update the references
             pop_size (int, optional): Number of instances in the population to evolve. Defaults to 100.
             evaluations (int, optional): Number of total evaluations to perform. Defaults to 1000.
             archive (Archive): Archive to store the instances to guide the evolution.
-            solution_set (Archive, optional): Solution set to store the instances. Defaults to None.
+            solution_set (Archive): Solution set to store the instances. Defaults to None.
             k (int, optional): Number of neighbours to calculate the sparseness. Defaults to 15.
             descriptor_strategy (str, optional): Descriptor used to calculate the diversity. The options available are defined in the dictionary digneapy.qd.descriptor_strategies. Defaults to "features".
             transformer (callable, optional): Define a strategy to transform the high-dimensional descriptors to low-dimensional.Defaults to None.
@@ -112,9 +112,11 @@ class EAGenerator:
 
         self.phi = phi
         self._novelty_search = novelty_approach
-        self._ns_solution_set = solution_set  # By default, only one Archive
-        self._transformer = transformer
+        self._ns_solution_set = None  # By default there's not solution set
+        if solution_set is not None:
+            self._ns_solution_set = NS(solution_set, k=1)
 
+        self._transformer = transformer
         self.pop_size = pop_size
         self.offspring_size = pop_size
         self.generations = generations

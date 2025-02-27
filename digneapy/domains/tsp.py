@@ -31,7 +31,6 @@ class TSP(Problem):
     ):
         self._nodes = nodes
         self._coords = np.array(coords)
-        print(self._coords)
         x_min, y_min = np.min(self._coords, axis=0)
         x_max, y_max = np.max(self._coords, axis=0)
         bounds = list(((x_min, y_min), (x_max, y_max)) for _ in range(self._nodes))
@@ -174,8 +173,16 @@ class TSPDomain(Domain):
     def extract_features(self, instance: Instance) -> tuple:
         """Extract the features of the instance based on the TSP domain.
            For the TSP the features are:
-           TODO: Update to the TSP case
-
+            - Size
+            - Standard deviation of the distances
+            - Centroid coordinates
+            - Radius of the instance
+            - Fraction of distinct instances
+            - Rectangular area
+            - Variance of the normalised nearest neighbours distances
+            - Coefficient of variantion of the nearest neighbours distances
+            - Cluster ratio
+            - Mean cluster radius
         Args:
             instance (Instance): Instance to extract the features from
 
@@ -188,18 +195,34 @@ class TSPDomain(Domain):
         ys = instance[1::2]
         area = (max(xs) - min(xs)) * (max(ys) - min(ys))
         std_distances = np.std(tsp._distances)
-        centroid = (0.01 * np.sum(xs), 0.01 * np.sum(ys))
+        centroid = (np.mean(xs), np.mean(ys))  # (0.01 * np.sum(xs), 0.01 * np.sum(ys))
+
         centroid_distance = [np.linalg.norm(city - centroid) for city in tsp._coords]
         radius = np.mean(centroid_distance)
+
         fraction = len(np.unique(tsp._distances)) / (len(tsp._distances) / 2)
-        variance_nnNds = 0
-        variation_nnNds = 0
-        dbscan = DBSCAN(eps=0.5, min_samples=5)
+        # Top five only
+        norm_distances = np.sort(tsp._distances)[::-1][:5] / np.max(tsp._distances)
+
+        variance_nnNds = np.var(norm_distances)
+        variation_nnNds = variance_nnNds / np.mean(norm_distances)
+
+        dbscan = DBSCAN()
         dbscan.fit(tsp._coords)
         cluster_ratio = len(set(dbscan.labels_)) / self._nodes
-        outlier_ratio = 0
-        ratio_cities_edge = 0
-        mean_cluster_radius = 0
+        # Cluster radius
+        mean_cluster_radius = 0.0
+        for label_id in dbscan.labels_:
+            points_in_cluster = tsp._coords[dbscan.labels_ == label_id]
+            cluster_centroid = (
+                np.mean(points_in_cluster[:, 0]),
+                np.mean(points_in_cluster[:, 1]),
+            )
+            mean_cluster_radius = np.mean(
+                [np.linalg.norm(city - cluster_centroid) for city in tsp._coords]
+            )
+        mean_cluster_radius /= len(set(dbscan.labels_))
+
         return (
             self._nodes,
             std_distances,
@@ -211,8 +234,6 @@ class TSPDomain(Domain):
             variance_nnNds,
             variation_nnNds,
             cluster_ratio,
-            outlier_ratio,
-            ratio_cities_edge,
             mean_cluster_radius,
         )
 
@@ -227,7 +248,7 @@ class TSPDomain(Domain):
         Returns:
             Mapping[str, float]: Dictionary with the names/values of each feature
         """
-        names = "size,std_distances,centroid_x,centroid_y,radius,fraction_distances,area,variance_nnNds,variation_nnNds,cluster_ratio,outlier_ratio,ratio_cities_edge,mean_cluster_radius"
+        names = "size,std_distances,centroid_x,centroid_y,radius,fraction_distances,area,variance_nnNds,variation_nnNds,cluster_ratio,mean_cluster_radius"
         features = self.extract_features(instance)
         return {k: v for k, v in zip(names.split(","), features)}
 

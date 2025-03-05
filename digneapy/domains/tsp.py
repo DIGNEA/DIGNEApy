@@ -22,6 +22,8 @@ from digneapy._core import Domain, Instance, Problem, Solution
 
 
 class TSP(Problem):
+    """Symmetric Travelling Salesman Problem"""
+
     def __init__(
         self,
         nodes: int,
@@ -29,6 +31,12 @@ class TSP(Problem):
         *args,
         **kwargs,
     ):
+        """Creates a new Symmetric Travelling Salesman Problem
+
+        Args:
+            nodes (int): Number of nodes/cities in the instance to solve
+            coords (Tuple[Tuple[int, int], ...]): Coordinates of each node/city.
+        """
         self._nodes = nodes
         self._coords = np.array(coords)
         x_min, y_min = np.min(self._coords, axis=0)
@@ -97,7 +105,7 @@ class TSP(Problem):
         return self._nodes
 
     def create_solution(self) -> Solution:
-        items = list(range(self._nodes))
+        items = [0] + list(range(1, self._nodes)) + [0]
         return Solution(chromosome=items)
 
     def to_file(self, filename: str = "instance.tsp"):
@@ -125,14 +133,28 @@ class TSP(Problem):
 
 
 class TSPDomain(Domain):
+    """Domain to generate instances for the Symmetric Travelling Salesman Problem."""
+
     def __init__(
         self,
-        nodes: int = 100,
+        dimension: int = 100,
         x_range: Tuple[int, int] = (0, 1000),
-        y_range: Tuple[int, int] = (0, 10000),
+        y_range: Tuple[int, int] = (0, 1000),
     ):
-        if nodes < 0:
-            raise ValueError(f"Expected dimension > 0 got {nodes}")
+        """Creates a new TSPDomain to generate instances for the Symmetric Travelling Salesman Problem
+
+        Args:
+            dimension (int, optional): Dimension of the instances to generate. Defaults to 100.
+            x_range (Tuple[int, int], optional): Ranges for the Xs coordinates of each node/city. Defaults to (0, 1000).
+            y_range (Tuple[int, int], optional): Ranges for the ys coordinates of each node/city. Defaults to (0, 1000).
+
+        Raises:
+            ValueError: If dimension is < 0
+            ValueError: If x_range OR y_range does not have 2 dimensions each
+            ValueError: If minimum ranges are greater than maximum ranges
+        """
+        if dimension < 0:
+            raise ValueError(f"Expected dimension > 0 got {dimension}")
         if len(x_range) != 2 or len(y_range) != 2:
             raise ValueError(
                 f"Expected x_range and y_range to be a tuple with only to integers. Got: x_range = {x_range} and y_range = {y_range}"
@@ -148,12 +170,11 @@ class TSPDomain(Domain):
                 f"Expected y_range to be (y_min, y_max) where y_min >= 0 and y_max > y_min. Got: y_range {y_range}"
             )
 
-        self._nodes = nodes
         self._x_range = x_range
         self._y_range = y_range
-        __bounds = [(self._x_range, self._y_range) for _ in range(self._nodes)]
+        __bounds = [(self._x_range, self._y_range) for _ in range(dimension)]
 
-        super().__init__(dimension=self._nodes, bounds=__bounds, name="TSP")
+        super().__init__(dimension=dimension, bounds=__bounds, name="TSP")
 
     def generate_instance(self) -> Instance:
         """Generates a new instances for the TSP domain
@@ -164,7 +185,7 @@ class TSPDomain(Domain):
         coords = np.random.randint(
             low=(self._x_range[0], self._y_range[0]),
             high=(self._x_range[1], self._y_range[1]),
-            size=(self._nodes, 2),
+            size=(self.dimension, 2),
             dtype=int,
         )
         coords = coords.flatten()
@@ -209,7 +230,7 @@ class TSPDomain(Domain):
 
         dbscan = DBSCAN()
         dbscan.fit(tsp._coords)
-        cluster_ratio = len(set(dbscan.labels_)) / self._nodes
+        cluster_ratio = len(set(dbscan.labels_)) / self.dimension
         # Cluster radius
         mean_cluster_radius = 0.0
         for label_id in dbscan.labels_:
@@ -224,7 +245,7 @@ class TSPDomain(Domain):
         mean_cluster_radius /= len(set(dbscan.labels_))
 
         return (
-            self._nodes,
+            self.dimension,
             std_distances,
             centroid[0],
             centroid[1],

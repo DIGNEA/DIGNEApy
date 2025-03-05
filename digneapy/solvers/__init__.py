@@ -10,11 +10,12 @@
 @Desc    :   None
 """
 
-from . import bpp, kp
+from . import bpp, kp, tsp
 from .bpp import best_fit, first_fit, next_fit, worst_fit
 from .kp import default_kp, map_kp, miw_kp, mpw_kp
+from .tsp import nneighbour, three_opt, two_opt
 
-__all__ = list(set(bpp.__all__) | set(kp.__all__))
+__all__ = list(set(bpp.__all__) | set(kp.__all__) | set(tsp.__all__))
 
 __solvers_modules = {"evo", "pisinger"}
 

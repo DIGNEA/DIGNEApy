@@ -14,7 +14,7 @@ import numpy as np
 import pytest
 
 from digneapy.domains.tsp import TSP
-from digneapy.solvers import nneighbour, two_opt
+from digneapy.solvers import nneighbour, two_opt, greedy
 
 
 @pytest.fixture
@@ -65,12 +65,31 @@ def test_nneighbour_is_deterministic(default_tsp_instance):
     assert all(x == solutions[0] for x in solutions)
 
 
+def test_greedy_solves_sample(default_tsp_instance):
+    solutions = greedy(default_tsp_instance)
+    assert len(solutions) == 1
+    assert len(solutions[0]) == len(default_tsp_instance) + 1
+    assert solutions[0].fitness != 0.0
+
+
+def test_greedy_raises_sample():
+    with pytest.raises(ValueError):
+        greedy(None)
+
+
+def test_greedy_is_deterministic(default_tsp_instance):
+    solutions = [greedy(default_tsp_instance)[0].fitness for _ in range(10)]
+    assert len(solutions) == 10
+    assert all(x == solutions[0] for x in solutions)
+
+
 def test_tsp_heuristics_provide_different_solutions(default_tsp_instance):
     two_opt_solutions = [two_opt(default_tsp_instance)[0].fitness for _ in range(10)]
     nneighbour_solutions = [
         nneighbour(default_tsp_instance)[0].fitness for _ in range(10)
     ]
-    all_solutions = [two_opt_solutions, nneighbour_solutions]
+    greedy_solutions = [greedy(default_tsp_instance)[0].fitness for _ in range(10)]
+    all_solutions = [two_opt_solutions, nneighbour_solutions, greedy_solutions]
     all_fs = [
         two_opt_solutions[0],
         nneighbour_solutions[0],

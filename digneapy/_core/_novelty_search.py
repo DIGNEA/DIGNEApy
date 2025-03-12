@@ -88,7 +88,7 @@ class NS:
         instances: Sequence[Instance],
         current_archive: Archive,
         neighbours: int,
-    ) -> list:
+    ) -> np.ndarray[float]:
         """This method does the calculation of sparseness either for the archive or the solution set.
         It gets called by 'sparssenes' and 'sparseness_solution_set'. Note that this method update the `s`
         attribute of each instances with the result of the computation. It also returns a list with all the
@@ -100,7 +100,7 @@ class NS:
             neighbours (int): Number of neighbours to calculate the KNN (K + 1 or 2). Always have to add 1.
 
         Returns:
-            list[float]: Sparseness values of each instance.
+            ndarray[float]: Sparseness values of each instance.
         """
         # We need to concatentate the archive to the given descriptors
         # and to set k+1 because it predicts n[0] == self descriptor
@@ -114,16 +114,16 @@ class NS:
             metric=self._dist_metric,
         )
         neighbourhood.fit(_desc_arr)
-        sparseness = []
+        sparseness = np.zeros(len(instances))
         # We're only interesed in the new instances
         frac = 1.0 / neighbours
-        for instance, descriptor in zip(instances, _desc_arr[: len(instances)]):
-            dist, ind = neighbourhood.kneighbors([descriptor])
-            dist, ind = dist[0][1:], ind[0][1:]
-            s = frac * sum(dist)
+        nn_distances, _ = neighbourhood.kneighbors(_desc_arr[: len(instances)])
+
+        for i, (instance, i_nn_dist) in enumerate(zip(instances, nn_distances)):
+            s = frac * sum(i_nn_dist[1:])
             instance.s = s
-            instance.descriptor = descriptor
-            sparseness.append(s)
+            instance.descriptor = _desc_arr[i]
+            sparseness[i] = s
 
         return sparseness
 

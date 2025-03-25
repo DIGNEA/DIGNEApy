@@ -243,8 +243,7 @@ class EAGenerator:
             population (Iterable[Instance]): Population to evaluate
         """
         for individual in population:
-            avg_p_solver = []
-            solvers_scores = []
+            solvers_scores = np.zeros((len(self.portfolio), self.repetitions))
             problem = self.domain.from_instance(individual)
 
             for i, solver in enumerate(self.portfolio):
@@ -255,14 +254,14 @@ class EAGenerator:
                     # because the algs. only return one solution per run (len(solutions) == 1)
                     # The same happens with the simple KP heuristics. However, when using Pisinger solvers
                     # the lower the running time the better they're considered to work an instance
+
                     best_solution = max(solutions, key=attrgetter("fitness"))
                     scores[r] = best_solution.fitness
 
-                solvers_scores.append(scores)
-                avg_p_solver.append(scores)
+                solvers_scores[i] = scores
 
-            individual.portfolio_scores = tuple(solvers_scores)
-            avg_p_solver = np.mean(avg_p_solver, axis=1)
+            individual.portfolio_scores = solvers_scores
+            avg_p_solver = np.mean(solvers_scores, axis=1)
             individual.p = self.performance_function(avg_p_solver)
 
         return population
@@ -371,35 +370,27 @@ class MapElitesGenerator:
             population (Iterable[Instance]): Population to evaluate
         """
         for individual in population:
-            avg_p_solver = np.zeros(len(self._portfolio))
-            solvers_scores = []
+            solvers_scores = np.zeros((len(self._portfolio), self._repetitions))
             problem = self._domain.from_instance(individual)
             for i, solver in enumerate(self._portfolio):
-                scores = []
-                for _ in range(self._repetitions):
+                scores = np.zeros(self._repetitions)
+                for r in range(self._repetitions):
                     solutions = solver(problem)
-                    # There is no need to change anything in the evaluation code when using Pisinger solvers
-                    # because the algs. only return one solution per run (len(solutions) == 1)
-                    # The same happens with the simple KP heuristics. However, when using Pisinger solvers
-                    # the lower the running time the better they're considered to work an instance
-                    solutions = sorted(
-                        solutions, key=attrgetter("fitness"), reverse=True
-                    )
-                    scores.append(solutions[0].fitness)
-                solvers_scores.append(scores)
-                avg_p_solver[i] = np.mean(scores)
+                    best_solution = max(solutions, key=attrgetter("fitness"))
+                    scores[r] = best_solution.fitness
 
-            individual.portfolio_scores = tuple(solvers_scores)
-            individual.p = self._performance_fn(avg_p_solver)
+                solvers_scores[i] = scores
+
+            individual.portfolio_scores = solvers_scores
+            individual.p = self._performance_fn(np.mean(solvers_scores, axis=1))
             individual.fitness = individual.p
-            ind_features = tuple(self._descriptor_strategy(individual))
-            individual.features = ind_features
-            individual.descriptor = ind_features
+            individual.features = self._descriptor_strategy(individual)
+            individual.descriptor = individual.features
+
         return population
 
-    def _run(self, verbose: bool = False) -> Archive:
+    def __call__(self, verbose: bool = False) -> Archive:
         self._populate_archive()
-
         self._logbook.update(generation=0, population=self._archive, feedback=verbose)
         for generation in range(self._generations):
             parents = [
@@ -433,9 +424,6 @@ class MapElitesGenerator:
         unfeasible_instances = list(filter(lambda i: i.p < 0, self._archive))
         self._archive.remove(unfeasible_instances)
         return self._archive
-
-    def __call__(self, verbose: bool = False) -> Archive:
-        return self._run(verbose)
 
 
 class DEAGenerator(EAGenerator):
@@ -507,9 +495,6 @@ class DEAGenerator(EAGenerator):
         return f"DEAGenerator<pop_size={self.pop_size},gen={self.generations},domain={domain_name},portfolio={port_names!r}>"
 
     def __call__(self, verbose: bool = False) -> Tuple[Archive, Optional[Archive]]:
-        return self._run(verbose)
-
-    def _run(self, verbose: bool = False) -> Tuple[Archive, Optional[Archive]]:
         if self.domain is None:
             raise ValueError("You must specify a domain to run the generator.")
         if len(self.portfolio) == 0:
@@ -525,8 +510,8 @@ class DEAGenerator(EAGenerator):
         for pgen in tqdm.tqdm(range(self.generations)):
             offspring: list[Instance] = self._generate_offspring(self.offspring_size)
             offspring = self._evaluate_population(offspring)
+            offspring = self._update_descriptors(offspring)
             combined_population = list(self.population) + list(offspring)
-            combined_population = self._update_descriptors(combined_population)
             combined_population, _ = self._novelty_search(combined_population)
             # Both population and offspring are used in the replacement
             self.population = list(combined_population[: self.pop_size])

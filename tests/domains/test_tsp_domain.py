@@ -61,7 +61,7 @@ def test_default_tsp_domain():
     assert domain._x_range == (0, 1000)
     assert domain._y_range == (0, 1000)
 
-    assert domain.bounds == [((0, 1000), (0, 1000)) for _ in range(dimension)]
+    assert domain.bounds == [(0, 1000) for _ in range(dimension * 2)]
 
     with pytest.raises(ValueError):
         TSPDomain(dimension=-1)

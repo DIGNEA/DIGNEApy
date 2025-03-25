@@ -26,7 +26,7 @@ version = "0.2.5"
 description = "Python version of the DIGNEA code for instance generation"
 authors = [{ name = "Alejandro Marrero", email = "amarrerd@ull.edu.es" }]
 readme = "README.md"
-requires-python = ">=3.10"
+requires-python = ">=3.12"
 license = { file = "LICENSE" }
 keywords = [
     "dignea",
@@ -42,7 +42,6 @@ classifiers = [
     "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
     "Natural Language :: English",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     'Topic :: Scientific/Engineering',
     'Typing :: Typed',

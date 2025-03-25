@@ -163,13 +163,12 @@ def greedy(problem: TSP, *args, **kwargs) -> list[Solution]:
     counter = Counter()
     selected: set[tuple[int, int]] = set()
 
-    ordered_edges = deque(
-        sorted([(distances[i][j], i, j) for i in range(N) for j in range(i + 1, N)])
+    ordered_edges = sorted(
+        [(distances[i][j], i, j) for i in range(N) for j in range(i + 1, N)]
     )
 
     length = 0.0
-    while len(selected) != N:
-        (dist, i, j) = ordered_edges.popleft()
+    for dist, i, j in ordered_edges:
         if (i, j) in selected or (j, i) in selected:
             continue
         if counter[i] >= 2 or counter[j] >= 2:
@@ -178,6 +177,8 @@ def greedy(problem: TSP, *args, **kwargs) -> list[Solution]:
         counter[i] += 1
         counter[j] += 1
         length += dist
+        if len(selected) == N:
+            break
 
     _fitness = 1.0 / length
 

@@ -172,7 +172,10 @@ class TSPDomain(Domain):
 
         self._x_range = x_range
         self._y_range = y_range
-        __bounds = [(self._x_range, self._y_range) for _ in range(dimension)]
+        __bounds = [
+            (x_min, x_max) if i % 2 == 0 else (y_min, y_max)
+            for i in range(dimension * 2)
+        ]
 
         super().__init__(dimension=dimension, bounds=__bounds, name="TSP")
 

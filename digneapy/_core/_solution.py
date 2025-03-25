@@ -34,9 +34,9 @@ class Solution:
 
     def clone(self) -> Self:
         return Solution(
-            chromosome=self.chromosome,
-            objectives=self.objectives,
-            constraints=self.constraints,
+            chromosome=list(self.chromosome),
+            objectives=list(self.objectives),
+            constraints=list(self.constraints),
             fitness=self.fitness,
         )
 

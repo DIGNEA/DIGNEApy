@@ -112,7 +112,7 @@ def test_eig_gen_kp_perf_descriptor():
         generations=generations,
         domain=kp_domain,
         novelty_approach=NS(k=k),
-        solution_set=NS(k=1),
+        solution_set=Archive(threshold=3),
         portfolio=portfolio,
         repetitions=1,
         descriptor_strategy="performance",
@@ -156,7 +156,7 @@ def test_eig_gen_kp_feat_descriptor():
         domain=kp_domain,
         portfolio=portfolio,
         novelty_approach=NS(k=k),
-        solution_set=NS(k=1),
+        solution_set=Archive(threshold=3),
         repetitions=1,
         descriptor_strategy="features",
         replacement=generational_replacement,
@@ -191,7 +191,7 @@ def test_eig_gen_kp_feat_descriptor():
     log = eig._logbook
     assert len(log) == eig.generations
     filename = "test_evolution.png"
-    ea_generator_evolution_plot(log, filename=filename)
+    ea_generator_evolution_plot(log.logbook, filename=filename)
     assert os.path.exists(filename)
     os.remove(filename)
 
@@ -207,7 +207,7 @@ def test_eig_gen_kp_inst_descriptor():
         domain=kp_domain,
         portfolio=portfolio,
         novelty_approach=NS(k=k),
-        solution_set=NS(k=1),
+        solution_set=Archive(threshold=3),
         repetitions=1,
         descriptor_strategy="instance",
         replacement=generational_replacement,
@@ -253,7 +253,7 @@ def test_eig_gen_kp_perf_descriptor_with_pisinger():
         domain=kp_domain,
         portfolio=portfolio,
         novelty_approach=NS(k=k),
-        solution_set=NS(k=1),
+        solution_set=Archive(threshold=3),
         repetitions=1,
         descriptor_strategy="performance",
         replacement=generational_replacement,
@@ -338,7 +338,7 @@ def test_map_elites_domain_grid(
 
     # Is able to print the log
     log = map_elites.log
-    map_elites_evolution_plot(log, "example.png")
+    map_elites_evolution_plot(log.logbook, "example.png")
     assert os.path.exists("example.png")
     os.remove("example.png")
 
@@ -385,6 +385,6 @@ def test_map_elites_domain_cvt(domain_cls, portfolio, ranges):
 
     # Is able to print the log
     log = map_elites.log
-    map_elites_evolution_plot(log, "example.png")
+    map_elites_evolution_plot(log.logbook, "example.png")
     assert os.path.exists("example.png")
     os.remove("example.png")

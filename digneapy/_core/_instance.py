@@ -51,13 +51,13 @@ class Instance:
 
     def clone(self) -> Self:
         return Instance(
-            self._vars[:],
+            list(self._vars),
             self._fit,
             self._p,
             self._s,
-            self._features,
-            self._pscores,
-            self._desc,
+            tuple(self._features),
+            tuple(self._pscores),
+            tuple(self._desc),
         )
 
     @property

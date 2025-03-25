@@ -118,6 +118,13 @@ class Logbook:
         self._logbook.chapters["s"].header = self._headers
         self._logbook.chapters["p"].header = self._headers
 
+    def __len__(self):
+        return len(self._logbook)
+
+    @property
+    def logbook(self):
+        return self._logbook
+
     def update(
         self, generation: int, population: Sequence[Instance], feedback: bool = False
     ):

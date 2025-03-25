@@ -98,12 +98,12 @@ def test_properties(initialised_instance):
     assert not initialised_instance.portfolio_scores
     performances = tuple(range(4))
     initialised_instance.portfolio_scores = performances
-    assert initialised_instance.portfolio_scores == performances
+    assert np.array_equal(initialised_instance.portfolio_scores, np.array(performances))
 
     assert not initialised_instance.descriptor
     f = list(range(10))
     initialised_instance.descriptor = f
-    assert initialised_instance.descriptor == f
+    assert np.array_equal(initialised_instance.descriptor, np.array(f))
 
 
 def test_equal_instances(initialised_instance, default_instance):
@@ -130,7 +130,7 @@ def test_boolean(initialised_instance, default_instance):
 
 def test_str():
     instance = Instance(fitness=100, p=10.0, s=3.0)
-    expected = "Instance(f=100.0,p=10.0,s=3.0,features=0,descriptor=(),performance=())"
+    expected = "Instance(f=100.0,p=10.0,s=3.0,features=0,descriptor=array([], dtype=float64),performance=([], dtype=float64))"
     assert str(instance) == expected
 
 

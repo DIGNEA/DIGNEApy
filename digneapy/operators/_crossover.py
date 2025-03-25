@@ -38,12 +38,12 @@ def one_point_crossover(ind: IndType, other: IndType) -> IndType:
         Instance or Solution: New individual
     """
     if len(ind) != len(other):
-        msg = f"Individual of different length in uniform_crossover. len(cindloned_ind) = {len(ind)} != len(ind_2) = {len(other)}"
+        msg = f"Individual of different length in uniform_crossover. len(ind) = {len(ind)} != len(other) = {len(other)}"
         raise ValueError(msg)
-
+    offspring = ind.clone()
     cross_point = np.random.randint(low=0, high=len(ind))
-    ind[cross_point:] = other[cross_point:]
-    return ind
+    offspring[cross_point:] = other[cross_point:]
+    return offspring
 
 
 def uniform_crossover(ind: IndType, other: IndType, cxpb: float = 0.5) -> IndType:
@@ -61,10 +61,11 @@ def uniform_crossover(ind: IndType, other: IndType, cxpb: float = 0.5) -> IndTyp
         Instance or Solution: New individual
     """
     if len(ind) != len(other):
-        msg = f"Individual of different length in uniform_crossover. len(ind_1) = {len(ind)} != len(ind_2) = {len(other)}"
+        msg = f"Individual of different length in uniform_crossover. len(ind) = {len(ind)} != len(other) = {len(other)}"
         raise ValueError(msg)
 
     probs = np.random.rand(len(ind))
     chromosome = [i if pb <= cxpb else j for pb, i, j in zip(probs, ind, other)]
-    ind[:] = chromosome
-    return ind
+    offspring = ind.clone()
+    offspring[:] = chromosome
+    return offspring

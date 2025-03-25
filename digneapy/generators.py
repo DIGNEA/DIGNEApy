@@ -287,11 +287,12 @@ class EAGenerator:
         Returns:
             Instance: New offspring
         """
-        off = p_1.clone()
         if np.random.rand() < self.cxrate:
             off = self.crossover(p_1, p_2)
-        off = self.mutation(off, self.domain.bounds)
-        return off
+            return self.mutation(off, self.domain.bounds)
+        else:
+            off = p_1.clone()
+            return self.mutation(off, self.domain.bounds)
 
 
 class MapElitesGenerator:

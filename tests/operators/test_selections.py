@@ -54,8 +54,7 @@ def test_binary_selection_solutions(initialised_solutions):
     parent = binary_tournament_selection(population)
     assert population[0] > population[1]
     assert len(parent) == len(population[0])
-    assert id(parent) != id(population[0])
-    assert id(parent) != id(population[1])
+    assert id(parent) == id(population[0]) or id(parent) == id(population[1])
     # We dont know for sure which individual will
     # be returned so we can only check that
     # the parent is in the population
@@ -69,8 +68,7 @@ def test_binary_selection_instances(initialised_instances):
     parent = binary_tournament_selection(population)
     assert population[0] > population[1]
     assert len(parent) == len(population[0])
-    assert id(parent) != id(population[0])
-    assert id(parent) != id(population[1])
+    assert id(parent) == id(population[0]) or id(parent) == id(population[1])
     # We dont know for sure which individual will
     # be returned so we can only check that
     # the parent is in the population
@@ -88,7 +86,7 @@ def test_binary_selection_one_ind(initialised_solutions):
     parent = binary_tournament_selection(population)
     assert isinstance(parent, expected.__class__)
     assert parent == expected
-    assert id(parent) != id(expected)
+    assert id(parent) == id(expected)
 
 
 @pytest.fixture

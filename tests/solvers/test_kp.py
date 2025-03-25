@@ -45,7 +45,7 @@ def test_default_kp_heuristic(default_instance):
     assert len(solution) == len(default_instance)
     assert solution.objectives[0] == expected_p
     assert solution.fitness == expected_p
-    assert solution.chromosome == expected_chromosome
+    assert np.array_equal(solution.chromosome, np.array(expected_chromosome))
 
     with pytest.raises(Exception):
         default_kp(None)
@@ -60,7 +60,7 @@ def test_map_kp_heuristic(default_instance):
     assert len(solution) == len(default_instance)
     assert solution.objectives[0] == expected_p
     assert solution.fitness == expected_p
-    assert solution.chromosome == expected_chromosome
+    assert np.array_equal(solution.chromosome, np.array(expected_chromosome))
 
     with pytest.raises(ValueError):
         map_kp(None)
@@ -78,7 +78,7 @@ def test_miw_kp_heuristic(default_instance):
     assert len(solution) == len(default_instance)
     assert solution.objectives[0] == expected_p
     assert solution.fitness == expected_p
-    assert solution.chromosome == expected_chromosome
+    assert np.array_equal(solution.chromosome, np.array(expected_chromosome))
 
     with pytest.raises(ValueError):
         miw_kp(None)
@@ -90,7 +90,7 @@ def test_mpw_kp_heuristic(default_instance):
     solution = mpw_kp(default_instance)[0]
     expected_p = 50
     expected_chromosome = [0.0] * 49 + [1.0] + [0.0] * 50
-    assert solution.chromosome == expected_chromosome
+    assert np.array_equal(solution.chromosome, np.array(expected_chromosome))
     assert len(solution) == len(default_instance)
     assert solution.fitness == expected_p
     assert solution.objectives == (expected_p,)

@@ -10,10 +10,11 @@
 @Desc    :   None
 """
 
+from operator import attrgetter
 import itertools
 from collections.abc import Sequence
 from typing import Optional, Tuple
-
+import heapq
 import numpy as np
 from sklearn.neighbors import NearestNeighbors
 
@@ -67,66 +68,6 @@ class NS:
     def __repr__(self) -> str:
         return f"NS<k={self._k - 1},A={self._archive}>"
 
-    def _combined_archive_and_population(
-        self, current_pop: Archive, instances: Sequence[Instance]
-    ) -> np.ndarray:
-        """Combines the archive and the given population before computing the sparseness
-
-        Args:
-            current_pop (Archive): Current archive of solution.
-            instances (Sequence[Instance]): Sequence of instances to evaluate.
-
-        Returns:
-            np.ndarray: Returns an ndarray of descriptors.
-        """
-        return np.vstack(
-            [ind.descriptor for ind in itertools.chain(instances, current_pop)]
-        )
-
-    def __compute_sparseness(
-        self,
-        instances: Sequence[Instance],
-        current_archive: Archive,
-        neighbours: int,
-    ) -> list:
-        """This method does the calculation of sparseness either for the archive or the solution set.
-        It gets called by 'sparssenes' and 'sparseness_solution_set'. Note that this method update the `s`
-        attribute of each instances with the result of the computation. It also returns a list with all the
-        values for further used if necessary.
-
-        Args:
-            instances (Sequence[Instance]): Instances to evaluate.
-            current_archive (Archive): Current archive/solutio set of instances.
-            neighbours (int): Number of neighbours to calculate the KNN (K + 1 or 2). Always have to add 1.
-
-        Returns:
-            list[float]: Sparseness values of each instance.
-        """
-        # We need to concatentate the archive to the given descriptors
-        # and to set k+1 because it predicts n[0] == self descriptor
-        # The _desc_arr is a ndarray which contains the descriptor of the instances
-        # from the archive and the new list of instances. The order is [instances, current_archive]
-        # so we can easily calculate and update `s`
-        _desc_arr = self._combined_archive_and_population(current_archive, instances)
-        neighbourhood = NearestNeighbors(
-            n_neighbors=neighbours,
-            algorithm=self._nbr_algorithm,
-            metric=self._dist_metric,
-        )
-        neighbourhood.fit(_desc_arr)
-        sparseness = []
-        # We're only interesed in the new instances
-        frac = 1.0 / neighbours
-        for instance, descriptor in zip(instances, _desc_arr[: len(instances)]):
-            dist, ind = neighbourhood.kneighbors([descriptor])
-            dist, ind = dist[0][1:], ind[0][1:]
-            s = frac * sum(dist)
-            instance.s = s
-            instance.descriptor = descriptor
-            sparseness.append(s)
-
-        return sparseness
-
     def __call__(
         self, instances: Sequence[Instance]
     ) -> Tuple[list[Instance], list[float]]:
@@ -152,9 +93,27 @@ class NS:
             msg = f"{self.__class__.__name__} trying to calculate sparseness with k({self._k}) > len(instances)({len(instances)})"
             raise ValueError(msg)
 
-        sparseness = self.__compute_sparseness(
-            instances, self.archive, neighbours=self._k
+        # We need to concatentate the archive to the given descriptors
+        # and to set k+1 because it predicts n[0] == self descriptor
+        # The _desc_arr is a ndarray which contains the descriptor of the instances
+        # from the archive and the new list of instances. The order is [instances, current_archive]
+        # so we can easily calculate and update `s`
+        _desc_arr = np.vstack(
+            [ind.descriptor for ind in itertools.chain(instances, self._archive)]
         )
+        neighbourhood = NearestNeighbors(
+            n_neighbors=self._k,
+            algorithm=self._nbr_algorithm,
+            metric=self._dist_metric,
+        )
+        neighbourhood.fit(_desc_arr)
+        sparseness = (
+            np.sum(neighbourhood.kneighbors(_desc_arr[: (len(instances))])[0], axis=1)
+            / self._k
+        )
+        for i in range(len(sparseness)):
+            instances[i].s = sparseness[i]
+
         return (instances, sparseness)
 
 
@@ -203,33 +162,29 @@ class DominatedNS(NS):
                 f"{__name__} k must be a positive integer and less than the number of instances. Trying to calculate competition with k({self._k}) > len(instances)({len(instances)})"
             )
         if len(instances) == 0 or any(len(d) == 0 for d in instances):
-            msg = (
-                f"{__name__} trying to calculate competition on an empty Instance list"
-            )
+            msg = f"{__name__} trying to calculate competition on an empty list"
             raise ValueError(msg)
-        for i, individual in enumerate(instances):
-            dominate_i = filter(
-                lambda j: instances[j].p > individual.p and i != j,
-                range(len(instances)),
-            )
 
-            ind_descriptor = np.array(individual.descriptor)
-            distances = sorted(
-                [
-                    np.linalg.norm(
-                        np.array(ind_descriptor) - np.array(instances[j].descriptor)
-                    )
-                    for j in dominate_i
-                ]
-            )
-            ld = len(distances)
-
-            if ld > 0:
-                # Smallest distances to solution i. If |D_i| < k, we use all available fitter solutions
-                _neighbors = distances[: self._k] if ld >= self._k else distances
-                individual.fitness = (1.0 / self._k) * sum(_neighbors)
+        perf_values = np.array([instance.p for instance in instances])
+        descriptors = np.array([instance.descriptor for instance in instances])
+        N = len(instances)
+        for i in range(N):
+            # Note: Here it is were we enforce the performance bias
+            current_perf = perf_values[i]
+            mask = (perf_values > current_perf) & np.ones(N, bool)
+            mask[i] = False
+            dominated_indices = np.where(mask)[0]
+            if len(dominated_indices) == 0:
+                instances[i].fitness = np.finfo(np.float32).max
             else:
-                individual.fitness = np.inf
+                differences = descriptors[i] - descriptors[dominated_indices]
+                distances = np.linalg.norm(differences, axis=1)
+                _neighbors = (
+                    heapq.nsmallest(self._k, distances)
+                    if len(distances) >= self._k
+                    else distances
+                )
+                instances[i].fitness = np.sum(_neighbors) / self._k
 
-        instances = list(sorted(instances, key=lambda x: x.fitness, reverse=True))
+        instances.sort(key=attrgetter("fitness"), reverse=True)
         return (instances, [])

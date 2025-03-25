@@ -84,8 +84,8 @@ class TSP(Problem):
             for a, b in windowed(individual, n=2):
                 distance += self._distances[a][b]
         else:
-            distance = np.inf
-            penalty = np.inf
+            distance = np.finfo(np.float32).max
+            penalty = np.finfo(np.float32).max
 
         fitness = 1.0 / (distance + penalty)
         if isinstance(individual, Solution):

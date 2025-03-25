@@ -12,12 +12,11 @@
 
 __all__ = ["EAGenerator", "MapElitesGenerator", "DEAGenerator"]
 
-import copy
 import random
 from collections.abc import Iterable
 from operator import attrgetter
 from typing import Optional, Tuple
-
+import tqdm
 import numpy as np
 
 from ._core import (
@@ -114,7 +113,7 @@ class EAGenerator:
         self._novelty_search = novelty_approach
         self._ns_solution_set = None  # By default there's not solution set
         if solution_set is not None:
-            self._ns_solution_set = NS(solution_set, k=1)
+            self._ns_solution_set = NS(archive=solution_set, k=1)
 
         self._transformer = transformer
         self.pop_size = pop_size
@@ -150,7 +149,52 @@ class EAGenerator:
         return f"EAGenerator<pop_size={self.pop_size},gen={self.generations},domain={domain_name},portfolio={port_names!r},{self._novelty_search.__repr__()}>"
 
     def __call__(self, verbose: bool = False) -> Tuple[Archive, Optional[Archive]]:
-        return self._run(verbose)
+        if self.domain is None:
+            raise ValueError("You must specify a domain to run the generator.")
+        if len(self.portfolio) == 0:
+            raise ValueError(
+                "The portfolio is empty. To run the generator you must provide a valid portfolio of solvers"
+            )
+        self.population = [
+            self.domain.generate_instance() for _ in range(self.pop_size)
+        ]
+        self.population = self._evaluate_population(self.population)
+        self.population = self._update_descriptors(self.population)
+        for pgen in tqdm.tqdm(range(self.generations)):
+            offspring: list[Instance] = self._generate_offspring(self.pop_size)
+            offspring = self._evaluate_population(offspring)
+            offspring = self._update_descriptors(offspring)
+            offspring, _ = self._novelty_search(offspring)
+            offspring = self._compute_fitness(population=offspring)  # Fitness = p&s
+
+            # Only the feasible instances are considered to be included
+            # in the archive and the solution set.
+            feasible_off_archive = list(filter(lambda i: i.p >= 0, offspring))
+            self._novelty_search.archive.extend(feasible_off_archive)
+
+            if self._ns_solution_set is not None:
+                offspring, offs_sparsenes_sset = self._ns_solution_set(offspring)
+                feasible_off_sset = list(filter(lambda i: i.p >= 0, offspring))
+                self._ns_solution_set.archive.extend(feasible_off_sset)
+
+            # However the whole offspring population is used in the replacement operator
+            self.population = self.replacement(self.population, offspring)
+
+            # Record the stats and update the performed gens
+            self._logbook.update(
+                generation=pgen, population=self.population, feedback=verbose
+            )
+        if verbose:
+            # Clear the terminal
+            blank = " " * 80
+            print(f"\r{blank}\r", end="")
+
+        return (
+            self._novelty_search.archive,
+            self._ns_solution_set.archive
+            if self._ns_solution_set is not None
+            else None,
+        )
 
     def _generate_offspring(self, offspring_size: int) -> list[Instance]:
         """Generates a offspring population of size |offspring_size| from the current population
@@ -175,17 +219,17 @@ class EAGenerator:
         Args:
             population (list[Instance]): Population of instances to update the descriptors.
         """
-        _desc_arr = []
+        _desc_arr = np.empty(len(population), dtype=object)
         if self._desc_key == "features":
-            _desc_arr = [self.domain.extract_features(ind) for ind in population]
             for i in range(len(population)):
-                population[i].features = _desc_arr[i]
+                descriptor = np.array(self.domain.extract_features(population[i]))
+                population[i].features = descriptor
+                _desc_arr[i] = descriptor
         else:
             _desc_arr = self._descriptor_strategy(population)
 
         if self._transformer is not None:
             # Transform the descriptors if necessary
-            _desc_arr = np.array(_desc_arr)
             _desc_arr = self._transformer(_desc_arr)
         for i in range(len(population)):
             population[i].descriptor = _desc_arr[i]
@@ -199,26 +243,28 @@ class EAGenerator:
             population (Iterable[Instance]): Population to evaluate
         """
         for individual in population:
-            avg_p_solver = np.zeros(len(self.portfolio))
+            avg_p_solver = []
             solvers_scores = []
             problem = self.domain.from_instance(individual)
+
             for i, solver in enumerate(self.portfolio):
-                scores = []
-                for _ in range(self.repetitions):
+                scores = np.zeros(self.repetitions)
+                for r in range(self.repetitions):
                     solutions = solver(problem)
                     # There is no need to change anything in the evaluation code when using Pisinger solvers
                     # because the algs. only return one solution per run (len(solutions) == 1)
                     # The same happens with the simple KP heuristics. However, when using Pisinger solvers
                     # the lower the running time the better they're considered to work an instance
-                    solutions = sorted(
-                        solutions, key=attrgetter("fitness"), reverse=True
-                    )
-                    scores.append(solutions[0].fitness)
+                    best_solution = max(solutions, key=attrgetter("fitness"))
+                    scores[r] = best_solution.fitness
+
                 solvers_scores.append(scores)
-                avg_p_solver[i] = np.mean(scores)
+                avg_p_solver.append(scores)
 
             individual.portfolio_scores = tuple(solvers_scores)
+            avg_p_solver = np.mean(avg_p_solver, axis=1)
             individual.p = self.performance_function(avg_p_solver)
+
         return population
 
     def _compute_fitness(self, population: Iterable[Instance]):
@@ -242,61 +288,11 @@ class EAGenerator:
         Returns:
             Instance: New offspring
         """
-        off = copy.deepcopy(p_1)
+        off = p_1.clone()
         if np.random.rand() < self.cxrate:
             off = self.crossover(p_1, p_2)
-        off = self.mutation(p_1, self.domain.bounds)
+        off = self.mutation(off, self.domain.bounds)
         return off
-
-    def _run(self, verbose: bool = False) -> Tuple[Archive, Optional[Archive]]:
-        if self.domain is None:
-            raise ValueError("You must specify a domain to run the generator.")
-        if len(self.portfolio) == 0:
-            raise ValueError(
-                "The portfolio is empty. To run the generator you must provide a valid portfolio of solvers"
-            )
-        self.population = [
-            self.domain.generate_instance() for _ in range(self.pop_size)
-        ]
-        self.population = self._evaluate_population(self.population)
-        self.population = self._update_descriptors(self.population)
-        performed_gens = 0
-        while performed_gens < self.generations:
-            offspring: list[Instance] = self._generate_offspring(self.pop_size)
-            offspring = self._evaluate_population(offspring)
-            offspring = self._update_descriptors(offspring)
-            offspring, offs_sparseness_archive = self._novelty_search(offspring)
-            offspring = self._compute_fitness(population=offspring)  # Fitness = p&s
-
-            # Only the feasible instances are considered to be included
-            # in the archive and the solution set.
-            feasible_off_archive = list(filter(lambda i: i.p >= 0, offspring))
-            self._novelty_search.archive.extend(feasible_off_archive)
-
-            if self._ns_solution_set is not None:
-                offspring, offs_sparsenes_sset = self._ns_solution_set(offspring)
-                feasible_off_sset = list(filter(lambda i: i.p >= 0, offspring))
-                self._ns_solution_set.archive.extend(feasible_off_sset)
-
-            # However the whole offspring population is used in the replacement operator
-            self.population = self.replacement(self.population, offspring)
-
-            # Record the stats and update the performed gens
-            self._logbook.update(
-                generation=performed_gens, population=self.population, feedback=verbose
-            )
-            performed_gens += 1
-        if verbose:
-            # Clear the terminal
-            blank = " " * 80
-            print(f"\r{blank}\r", end="")
-
-        return (
-            self._novelty_search.archive,
-            self._ns_solution_set.archive
-            if self._ns_solution_set is not None
-            else None,
-        )
 
 
 class MapElitesGenerator:
@@ -407,7 +403,7 @@ class MapElitesGenerator:
         self._logbook.update(generation=0, population=self._archive, feedback=verbose)
         for generation in range(self._generations):
             parents = [
-                copy.deepcopy(p)
+                p.clone()
                 for p in random.choices(self._archive.instances, k=self._init_pop_size)
             ]
             offspring = list(
@@ -525,9 +521,8 @@ class DEAGenerator(EAGenerator):
         ]
         self.population = self._evaluate_population(self.population)
         self.population = self._update_descriptors(self.population)
-        performed_gens = 0
 
-        while performed_gens < self.generations:
+        for pgen in tqdm.tqdm(range(self.generations)):
             offspring: list[Instance] = self._generate_offspring(self.offspring_size)
             offspring = self._evaluate_population(offspring)
             combined_population = list(self.population) + list(offspring)
@@ -537,9 +532,8 @@ class DEAGenerator(EAGenerator):
             self.population = list(combined_population[: self.pop_size])
             # Record the stats and update the performed gens
             self._logbook.update(
-                generation=performed_gens, population=self.population, feedback=verbose
+                generation=pgen, population=self.population, feedback=verbose
             )
-            performed_gens += 1
 
         if verbose:
             # Clear the terminal

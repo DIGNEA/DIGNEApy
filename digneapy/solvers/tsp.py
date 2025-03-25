@@ -81,7 +81,7 @@ def nneighbour(problem: TSP, *args, **kwargs) -> list[Solution]:
     length = 0.0
     while len(visited_nodes) != problem.dimension:
         next_node = 0
-        min_distance = np.inf
+        min_distance = np.finfo(np.float32).max
 
         for j in range(problem.dimension):
             if j not in visited_nodes and distances[current_node][j] < min_distance:

@@ -66,7 +66,7 @@ class CVTArchive(Archive):
             ValueError: If the centroids file cannot be loaded.
             ValueError: If given a centroids np.ndarray the number of centroids in the file is different from the number of regions (k).
         """
-        Archive.__init__(self, threshold=np.inf, dtype=dtype)
+        Archive.__init__(self, threshold=np.finfo(np.float32).max, dtype=dtype)
         if k <= 0:
             raise ValueError(f"The number of regions (k = {k}) must be >= 1")
 
@@ -226,7 +226,7 @@ class CVTArchive(Archive):
         if isinstance(instance, Instance):
             index = self.index_of(np.asarray(instance.descriptor))
             if index not in self._grid or instance > self._grid[index]:
-                self._grid[index] = copy.deepcopy(instance)
+                self._grid[index] = instance.clone()
 
         else:
             msg = "Only objects of type Instance can be inserted into a CVTArchive"
@@ -245,7 +245,7 @@ class CVTArchive(Archive):
         indeces = self.index_of([i.descriptor for i in iterable])
         for idx, instance in zip(indeces, iterable, strict=True):
             if idx not in self._grid or instance.fitness > self._grid[idx].fitness:
-                self._grid[idx] = copy.deepcopy(instance)
+                self._grid[idx] = instance.clone()
 
     def remove(self, iterable: Iterable[Instance]):
         """Removes all the instances in iterable from the grid"""

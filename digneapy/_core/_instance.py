@@ -11,8 +11,9 @@
 """
 
 import operator
-from collections.abc import Iterable
-from typing import Optional
+from typing import Optional, Self
+import numpy as np
+import numpy.typing as npt
 
 
 class Instance:
@@ -20,7 +21,7 @@ class Instance:
 
     def __init__(
         self,
-        variables: Optional[Iterable] = None,
+        variables: Optional[npt.ArrayLike] = None,
         fitness: float = 0.0,
         p: float = 0.0,
         s: float = 0.0,
@@ -38,13 +39,26 @@ class Instance:
             )
         import numpy as np
 
-        self._vars = np.asarray(variables) if variables is not None else np.empty(0)
+        self._vars = np.array(variables) if variables is not None else np.empty(0)
         self._fit = fitness
         self._p = p
         self._s = s
-        self._features = tuple(features) if features else tuple()
-        self._pscores = tuple(portfolio_scores) if portfolio_scores else tuple()
-        self._desc = tuple(descriptor) if descriptor else tuple()
+        self._features = np.array(features) if features is not None else np.empty(0)
+        self._pscores = (
+            np.array(portfolio_scores) if portfolio_scores is not None else np.empty(0)
+        )
+        self._desc = np.array(descriptor) if descriptor is not None else np.empty(0)
+
+    def clone(self) -> Self:
+        return Instance(
+            self._vars[:],
+            self._fit,
+            self._p,
+            self._s,
+            self._features,
+            self._pscores,
+            self._desc,
+        )
 
     @property
     def variables(self):
@@ -94,28 +108,28 @@ class Instance:
         self._fit = f
 
     @property
-    def features(self) -> tuple:
+    def features(self) -> np.ndarray:
         return self._features
 
     @features.setter
-    def features(self, features: tuple):
-        self._features = features
+    def features(self, features: npt.ArrayLike):
+        self._features = np.asarray(features)
 
     @property
-    def descriptor(self) -> tuple:
+    def descriptor(self) -> np.ndarray:
         return self._desc
 
     @descriptor.setter
-    def descriptor(self, desc: tuple):
-        self._desc = desc
+    def descriptor(self, desc: npt.ArrayLike):
+        self._desc = np.array(desc)
 
     @property
     def portfolio_scores(self):
         return self._pscores
 
     @portfolio_scores.setter
-    def portfolio_scores(self, p: tuple):
-        self._pscores = tuple(p)
+    def portfolio_scores(self, p: npt.ArrayLike):
+        self._pscores = np.asarray(p)
 
     def __repr__(self):
         return f"Instance<f={self.fitness},p={self.p},s={self.s},vars={len(self._vars)},features={len(self.features)},descriptor={len(self.descriptor)},performance={len(self.portfolio_scores)}>"
@@ -199,9 +213,9 @@ class Instance:
             "fitness": self.fitness,
             "s": self.s,
             "p": self.p,
-            "portfolio": self.portfolio_scores,
+            "portfolio": self.portfolio_scores.tolist(),
             "variables": self._vars.tolist(),
-            "features": self.features,
-            "descriptor": self.descriptor,
+            "features": self.features.tolist(),
+            "descriptor": self.descriptor.tolist(),
         }
         return json.dumps(data, sort_keys=True, indent=4)

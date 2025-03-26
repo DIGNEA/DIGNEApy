@@ -12,30 +12,32 @@ jobs:
     build_wheels:
         strategy:
             matrix:
-                python-version: ["3.11", "3.12"]
+                python-version: ["3.12", "3.13"]
 
         runs-on: ubuntu-latest
 
         name: Coverage Python ${{ matrix.python-version }}
         steps:
             - uses: actions/checkout@v4
-            - name: Set up Python ${{ matrix.python-version }}
-              uses: actions/setup-python@v5
+
+            - name: Install uv and set the Python version
+              uses: astral-sh/setup-uv@v5
               with:
-                  python-version: ${{ matrix.python-version }}
+                # Install a specific version of uv.
+                version: "0.6.10" 
+                python-version: ${{ matrix.python-version }}
 
             - name: Install dependencies
               run: |
-                  python -m pip install --upgrade pip setuptools>=70.0.0
-                  pip install pytest coverage coveralls
-                  pip install -r requirements.txt
+                  uv add -r requirements.txt
+                  uv add -r requirements_dev.txt
 
             - name: Build and install
-              run: pip install .
+              run: uv run pip install .
 
             - name: Run coverage and send to coveralls
               env:
                   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
               run: |
-                  coverage run --source=digneapy -m pytest tests/
+                  uv run coverage run --source=digneapy -m pytest tests/
                   coveralls --service=github

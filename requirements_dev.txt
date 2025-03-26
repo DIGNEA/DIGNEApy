@@ -13,6 +13,6 @@ sphinx_codeautolink
 myst_parser
 twine==5.1.1
 jinja2>=3.1.3
-pytest==6.2.4
+pytest>=8.3.5
 coveralls
 pybind11>=2.12.0   

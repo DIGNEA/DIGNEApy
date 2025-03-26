@@ -34,8 +34,8 @@ def test_default_instance_attrs(default_instance):
     assert default_instance.s == 0.0
     assert default_instance.fitness == 0.0
     np.testing.assert_array_equal(default_instance.variables, np.zeros(0))
-    assert not default_instance.descriptor
-    assert not default_instance.portfolio_scores
+    assert default_instance.descriptor.size == 0
+    assert default_instance.portfolio_scores.size == 0
 
     default_instance.descriptor = list(range(3))
     default_instance.portfolio_scores = [float(i) for i in range(3)]
@@ -90,17 +90,17 @@ def test_init_instance(initialised_instance):
     assert initialised_instance.fitness == 0.0
     expected = np.asarray(list(range(100)))
     np.testing.assert_array_equal(initialised_instance.variables, expected)
-    assert not initialised_instance.descriptor
-    assert not initialised_instance.portfolio_scores
+    assert initialised_instance.descriptor.size == 0
+    assert initialised_instance.portfolio_scores.size == 0
 
 
 def test_properties(initialised_instance):
-    assert not initialised_instance.portfolio_scores
+    assert initialised_instance.portfolio_scores.size == 0
     performances = tuple(range(4))
     initialised_instance.portfolio_scores = performances
     assert np.array_equal(initialised_instance.portfolio_scores, np.array(performances))
 
-    assert not initialised_instance.descriptor
+    assert initialised_instance.descriptor.size == 0
     f = list(range(10))
     initialised_instance.descriptor = f
     assert np.array_equal(initialised_instance.descriptor, np.array(f))

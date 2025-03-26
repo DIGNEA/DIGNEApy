@@ -14,7 +14,7 @@ import numpy as np
 import pytest
 
 from digneapy.domains.tsp import TSP
-from digneapy.solvers import nneighbour, two_opt, greedy
+from digneapy.solvers import greedy, nneighbour, two_opt
 
 
 @pytest.fixture

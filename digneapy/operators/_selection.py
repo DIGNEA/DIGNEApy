@@ -14,6 +14,7 @@ __all__ = ["binary_tournament_selection", "Selection"]
 
 from collections.abc import Callable, Sequence
 from operator import attrgetter
+
 import numpy as np
 
 from .._core import IndType
@@ -35,7 +36,7 @@ def binary_tournament_selection(
     Returns:
         Instance or Solution: New parent
     """
-    if not population:
+    if len(population) == 0:
         msg = "Trying to selection individuals in an empty population."
         raise RuntimeError(msg)
     if len(population) == 1:

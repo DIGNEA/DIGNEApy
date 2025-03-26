@@ -6,7 +6,7 @@ import seaborn as sns
 import tqdm
 
 from digneapy.domains import TSPDomain
-from digneapy.solvers import nneighbour, two_opt, greedy
+from digneapy.solvers import greedy, nneighbour, two_opt
 
 sns.set_style("whitegrid")
 plt.rcParams["font.family"] = "serif"

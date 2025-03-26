@@ -10,7 +10,6 @@
 @Desc    :   None
 """
 
-import copy
 import json
 from collections.abc import Iterable, Sequence
 from typing import Dict, Optional, Tuple

@@ -10,13 +10,12 @@
 @Desc    :   None
 """
 
-from operator import attrgetter
-import itertools
-from collections.abc import Sequence
-from typing import Optional, Tuple
 import heapq
+from collections.abc import Sequence
+from operator import attrgetter
+from typing import Optional, Tuple
+
 import numpy as np
-from sklearn.neighbors import NearestNeighbors
 
 from digneapy._core._instance import Instance
 from digneapy.archives import Archive
@@ -27,32 +26,29 @@ class NS:
     The current version supports Features, Performance and Instance variations.
     """
 
-    _EXPECTED_METRICS = ("euclidean", "cosine", "manhattan")
+    _EXPECTED_METRICS = "euclidean"
 
     def __init__(
         self,
         archive: Optional[Archive] = None,
-        k: int = 15,
-        dist_metric: Optional[str] = "minkowski",
+        k: Optional[int] = 15,
+        dist_metric: Optional[str] = "euclidean",
     ):
         """Creates an instance of the NoveltySearch Algorithm
         Args:
             archive (Archive, optional): Archive to store the instances to guide the evolution. Defaults to Archive(threshold=0.001).
             k (int, optional): Number of neighbours to calculate the sparseness. Defaults to 15.
-            transformer (callable, optional): Define a strategy to transform the high-dimensional descriptors to low-dimensional.Defaults to None.
-            dist_metric (str, optional): Defines the distance metric used by NearestNeighbor in the archives. Defaults to Euclidean.
+            dist_metric (str, optional): Defines the distance metric used by NearestNeighbor in the archives. Defaults to euclidean.
         """
         if k < 0:
             raise ValueError(
                 f"{__name__} k must be a positive integer and less than the number of instances."
             )
-        self._k = k + 1
+        self._k = k
         self._archive = archive if archive is not None else Archive(threshold=0.001)
-        # Set k+1 to nbr because the first neighbour is the instance itself
         self._dist_metric = (
-            dist_metric if dist_metric in NS._EXPECTED_METRICS else "minkowski"
+            dist_metric if dist_metric in NS._EXPECTED_METRICS else "euclidean"
         )
-        self._nbr_algorithm = "auto" if self._dist_metric == "cosine" else "ball_tree"
 
     @property
     def archive(self):
@@ -60,13 +56,13 @@ class NS:
 
     @property
     def k(self):
-        return self._k - 1
+        return self._k
 
     def __str__(self):
-        return f"NS(k={self._k - 1},A={self._archive})"
+        return f"NS(k={self._k },A={self._archive})"
 
     def __repr__(self) -> str:
-        return f"NS<k={self._k - 1},A={self._archive}>"
+        return f"NS<k={self._k },A={self._archive}>"
 
     def __call__(
         self, instances: Sequence[Instance]
@@ -93,28 +89,50 @@ class NS:
             msg = f"{self.__class__.__name__} trying to calculate sparseness with k({self._k}) > len(instances)({len(instances)})"
             raise ValueError(msg)
 
-        # We need to concatentate the archive to the given descriptors
-        # and to set k+1 because it predicts n[0] == self descriptor
-        # The _desc_arr is a ndarray which contains the descriptor of the instances
-        # from the archive and the new list of instances. The order is [instances, current_archive]
-        # so we can easily calculate and update `s`
-        _desc_arr = np.vstack(
-            [ind.descriptor for ind in itertools.chain(instances, self._archive)]
-        )
-        neighbourhood = NearestNeighbors(
-            n_neighbors=self._k,
-            algorithm=self._nbr_algorithm,
-            metric=self._dist_metric,
-        )
-        neighbourhood.fit(_desc_arr)
-        sparseness = (
-            np.sum(neighbourhood.kneighbors(_desc_arr[: (len(instances))])[0], axis=1)
-            / self._k
-        )
-        for i in range(len(sparseness)):
-            instances[i].s = sparseness[i]
+        num_instances = len(instances)
+        num_archive = len(self._archive)
+        descriptor_length = len(instances[0].descriptor)
+        _desc_arr = np.empty((num_instances + num_archive, descriptor_length))
+        for i, ind in enumerate(instances):
+            _desc_arr[i] = ind.descriptor
+        for i, ind in enumerate(self._archive):
+            _desc_arr[num_instances + i] = ind.descriptor
 
-        return (instances, sparseness)
+        sparseness = np.zeros(num_instances)
+        for i in range(num_instances):
+            mask = np.ones(num_instances, bool)
+            mask[i] = False
+            differences = _desc_arr[i] - _desc_arr[np.where(mask)[0]]
+            distances = np.linalg.norm(differences, axis=1)
+            _neighbors = heapq.nsmallest(self._k, distances)
+            s_ = np.sum(_neighbors) / self._k
+
+            instances[i].s = s_
+            sparseness[i] = s_
+        return instances, sparseness
+
+        # if descriptor_length > 50:
+        #     # Apply brute force
+        #     return self.__distance_brute_force(_desc_arr, instances, num_instances)
+        # elif (num_instances + num_archive) < 500:
+        #     # Apply brute force
+        #     return self.__distance_brute_force(_desc_arr, instances, num_instances)
+        # else:
+        # Fit NNs
+        # set k+1 because it predicts n[0] == self descriptor
+        # neighbourhood = NearestNeighbors(
+        #     n_neighbors=self._k + 1,
+        #     algorithm="ball_tree",
+        #     metric=self._dist_metric,
+        # )
+        # neighbourhood.fit(_desc_arr)
+        # sparseness = (
+        #     np.sum(neighbourhood.kneighbors(_desc_arr[: (len(instances))])[0], axis=1)
+        #     / self._k
+        # )
+        # for i in range(num_instances):
+        #     instances[i].s = sparseness[i]
+        # return (instances, sparseness)
 
 
 class DominatedNS(NS):
@@ -129,7 +147,7 @@ class DominatedNS(NS):
     The value is set in the ``p'' attribute of the Instance class.
     """
 
-    def __init__(self, k: int = 15):
+    def __init__(self, k: Optional[int] = 15):
         super().__init__(k=k)
         self._archive = None
 
@@ -169,7 +187,7 @@ class DominatedNS(NS):
         descriptors = np.array([instance.descriptor for instance in instances])
         N = len(instances)
         for i in range(N):
-            # Note: Here it is were we enforce the performance bias
+            # Note: Here it is where we enforce the performance bias
             current_perf = perf_values[i]
             mask = (perf_values > current_perf) & np.ones(N, bool)
             mask[i] = False

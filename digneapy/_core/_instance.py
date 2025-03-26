@@ -12,6 +12,7 @@
 
 import operator
 from typing import Optional, Self
+
 import numpy as np
 import numpy.typing as npt
 

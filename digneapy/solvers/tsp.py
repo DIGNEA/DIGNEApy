@@ -13,11 +13,12 @@
 __all__ = ["two_opt", "nneighbour", "three_opt", "greedy"]
 
 
+from collections import Counter
+
 import numpy as np
 
 from digneapy._core import Solution
 from digneapy.domains.tsp import TSP
-from collections import deque, Counter, defaultdict
 
 
 def two_opt(problem: TSP, *args, **kwargs) -> list[Solution]:

@@ -244,12 +244,12 @@ class KnapsackDomain(Domain):
 
     def from_instance(self, instance: Instance) -> Knapsack:
         variables = instance.variables
-        weights = []
-        profits = []
+        N = (len(variables) - 1) // 2
+        weights = np.zeros(N, dtype=np.int32)
+        profits = np.zeros(N, dtype=np.int32)
         capacity = int(variables[0])
-        for i in range(1, len(variables[1:]), 2):
-            weights.append(int(variables[i]))
-            profits.append(int(variables[i + 1]))
+        weights = variables[1::2]
+        profits = variables[2::2]
 
         # Sets the capacity according to the method
         match self.capacity_approach:

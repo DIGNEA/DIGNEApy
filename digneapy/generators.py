@@ -16,8 +16,9 @@ import random
 from collections.abc import Iterable
 from operator import attrgetter
 from typing import Optional, Tuple
-import tqdm
+
 import numpy as np
+import tqdm
 
 from ._core import (
     NS,
@@ -205,12 +206,12 @@ class EAGenerator:
         Returns:
             list[Instance]: Returns a list of instances, the offspring population.
         """
-        offspring: list[Instance] = []
-        for _ in range(offspring_size):
+        offspring = np.empty(offspring_size, dtype=object)
+        for i in range(offspring_size):
             p_1 = self.selection(self.population)
             p_2 = self.selection(self.population)
             off = self._reproduce(p_1, p_2)
-            offspring.append(off)
+            offspring[i] = off
         return offspring
 
     def _update_descriptors(self, population: list[Instance]):

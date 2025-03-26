@@ -13,6 +13,7 @@
 import operator
 from collections.abc import Iterable
 from typing import Optional, Self
+
 import numpy as np
 
 

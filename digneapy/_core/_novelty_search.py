@@ -14,7 +14,7 @@ import heapq
 from collections.abc import Sequence
 from operator import attrgetter
 from typing import Optional, Tuple
-
+import itertools
 import numpy as np
 
 from digneapy._core._instance import Instance
@@ -81,28 +81,29 @@ class NS:
         Returns:
             Tuple(list[Instance], list[float]): Tuple with the instances and the list of sparseness values, one for each instance
         """
-        if len(instances) == 0 or any(len(d) == 0 for d in instances):
-            msg = f"{self.__class__.__name__} trying to calculate sparseness on an empty Instance list"
-            raise ValueError(msg)
-
-        if self._k >= len(instances):
-            msg = f"{self.__class__.__name__} trying to calculate sparseness with k({self._k}) > len(instances)({len(instances)})"
-            raise ValueError(msg)
-
         num_instances = len(instances)
+        if num_instances <= self._k:
+            msg = f"{self.__class__.__name__} trying to calculate sparseness with k({self._k}) > len(instances)({num_instances})"
+            raise ValueError(msg)
+
         num_archive = len(self._archive)
-        descriptor_length = len(instances[0].descriptor)
-        _desc_arr = np.empty((num_instances + num_archive, descriptor_length))
-        for i, ind in enumerate(instances):
-            _desc_arr[i] = ind.descriptor
-        for i, ind in enumerate(self._archive):
-            _desc_arr[num_instances + i] = ind.descriptor
+        _instance_desc = np.array([instance.descriptor for instance in instances])
+        desc_array = (
+            _instance_desc
+            if num_archive == 0
+            else np.vstack(
+                [
+                    _instance_desc,
+                    np.array([instance.descriptor for instance in self._archive]),
+                ]
+            )
+        )
 
         sparseness = np.zeros(num_instances)
         for i in range(num_instances):
             mask = np.ones(num_instances, bool)
             mask[i] = False
-            differences = _desc_arr[i] - _desc_arr[np.where(mask)[0]]
+            differences = desc_array[i] - desc_array[np.where(mask)[0]]
             distances = np.linalg.norm(differences, axis=1)
             _neighbors = heapq.nsmallest(self._k, distances)
             s_ = np.sum(_neighbors) / self._k
@@ -110,29 +111,6 @@ class NS:
             instances[i].s = s_
             sparseness[i] = s_
         return instances, sparseness
-
-        # if descriptor_length > 50:
-        #     # Apply brute force
-        #     return self.__distance_brute_force(_desc_arr, instances, num_instances)
-        # elif (num_instances + num_archive) < 500:
-        #     # Apply brute force
-        #     return self.__distance_brute_force(_desc_arr, instances, num_instances)
-        # else:
-        # Fit NNs
-        # set k+1 because it predicts n[0] == self descriptor
-        # neighbourhood = NearestNeighbors(
-        #     n_neighbors=self._k + 1,
-        #     algorithm="ball_tree",
-        #     metric=self._dist_metric,
-        # )
-        # neighbourhood.fit(_desc_arr)
-        # sparseness = (
-        #     np.sum(neighbourhood.kneighbors(_desc_arr[: (len(instances))])[0], axis=1)
-        #     / self._k
-        # )
-        # for i in range(num_instances):
-        #     instances[i].s = sparseness[i]
-        # return (instances, sparseness)
 
 
 class DominatedNS(NS):
@@ -175,21 +153,17 @@ class DominatedNS(NS):
         Returns:
             List[Instance]: Numpy array with the instances sorted by their competition fitness value (p). Descending order.
         """
-        if self._k >= len(instances):
-            raise ValueError(
-                f"{__name__} k must be a positive integer and less than the number of instances. Trying to calculate competition with k({self._k}) > len(instances)({len(instances)})"
-            )
-        if len(instances) == 0 or any(len(d) == 0 for d in instances):
-            msg = f"{__name__} trying to calculate competition on an empty list"
+        num_instances = len(instances)
+        if num_instances <= self._k:
+            msg = f"{self.__class__.__name__} trying to calculate sparseness with k({self._k}) > len(instances)({num_instances})"
             raise ValueError(msg)
 
         perf_values = np.array([instance.p for instance in instances])
         descriptors = np.array([instance.descriptor for instance in instances])
-        N = len(instances)
-        for i in range(N):
+        for i in range(num_instances):
             # Note: Here it is where we enforce the performance bias
             current_perf = perf_values[i]
-            mask = (perf_values > current_perf) & np.ones(N, bool)
+            mask = (perf_values > current_perf) & np.ones(num_instances, bool)
             mask[i] = False
             dominated_indices = np.where(mask)[0]
             if len(dominated_indices) == 0:

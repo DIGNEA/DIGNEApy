@@ -75,7 +75,6 @@ dependencies = [
     "sphinx-rtd-theme>=3.0.2",
     "sphinx-toolbox>=3.9.0",
     "torch>=2.3.0",
-    "tqdm>=4.67.1",
     "twine==5.1.1",
     "virtualenv>=20.26.2",
 ]

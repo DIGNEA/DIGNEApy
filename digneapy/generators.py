@@ -18,7 +18,6 @@ from operator import attrgetter
 from typing import Optional, Tuple
 
 import numpy as np
-import tqdm
 
 from ._core import (
     NS,
@@ -161,10 +160,8 @@ class EAGenerator:
         ]
         self.population = self._evaluate_population(self.population)
         self.population = self._update_descriptors(self.population)
-        _range = range(self.generations)
-        if verbose:
-            _range = tqdm.tqdm(_range)
-        for pgen in _range:
+
+        for pgen in range(self.generations):
             offspring: list[Instance] = self._generate_offspring(self.pop_size)
             offspring = self._evaluate_population(offspring)
             offspring = self._update_descriptors(offspring)
@@ -397,10 +394,7 @@ class MapElitesGenerator:
     def __call__(self, verbose: bool = False) -> Archive:
         self._populate_archive()
         self._logbook.update(generation=0, population=self._archive, feedback=verbose)
-        _range = range(self._generations)
-        if verbose:
-            _range = tqdm.tqdm(_range)
-        for generation in _range:
+        for generation in range(self._generations):
             parents = [
                 p.clone()
                 for p in random.choices(self._archive.instances, k=self._init_pop_size)
@@ -514,10 +508,7 @@ class DEAGenerator(EAGenerator):
         ]
         self.population = self._evaluate_population(self.population)
         self.population = self._update_descriptors(self.population)
-        _range = range(self.generations)
-        if verbose:
-            _range = tqdm.tqdm(_range)
-        for pgen in _range:
+        for pgen in range(self.generations):
             offspring: list[Instance] = self._generate_offspring(self.offspring_size)
             offspring = self._evaluate_population(offspring)
             offspring = self._update_descriptors(offspring)

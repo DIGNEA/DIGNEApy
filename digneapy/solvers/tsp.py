@@ -35,14 +35,13 @@ def two_opt(problem: TSP, *args, **kwargs) -> list[Solution]:
     """
     if problem is None:
         raise ValueError("No problem found in two_opt heuristic")
-    tour = [0] + list(range(1, problem.dimension)) + [0]
-
+    tour = np.asarray([0] + list(range(1, problem.dimension)) + [0])
     distances = problem._distances
     improve = True
     while improve:
         improve = False
         for i in range(1, len(tour) - 2):
-            for j in range(i + 1, len(tour)):
+            for j in range(i + 2, len(tour)):
                 if j - i == 1:
                     continue
                 current = (
@@ -55,7 +54,6 @@ def two_opt(problem: TSP, *args, **kwargs) -> list[Solution]:
                 if newer < current:
                     tour[i:j] = tour[j - 1 : i - 1 : -1]
                     improve = True
-
     _fitness = problem.evaluate(tour)[0]
     return [Solution(chromosome=tour, objectives=(_fitness,), fitness=_fitness)]
 
@@ -78,8 +76,9 @@ def nneighbour(problem: TSP, *args, **kwargs) -> list[Solution]:
     distances = problem._distances
     current_node = 0
     visited_nodes: set[int] = set([current_node])
-    tour = [0]
-    length = 0.0
+    tour = np.zeros(problem.dimension + 1)
+    length = np.float32(0)
+    idx = 1
     while len(visited_nodes) != problem.dimension:
         next_node = 0
         min_distance = np.finfo(np.float32).max
@@ -90,10 +89,11 @@ def nneighbour(problem: TSP, *args, **kwargs) -> list[Solution]:
                 next_node = j
 
         visited_nodes.add(next_node)
-        tour.append(next_node)
+        tour[idx] = next_node
+        idx += 1
         length += min_distance
         current_node = next_node
-    tour.append(0)
+
     length += distances[current_node][0]
     length = 1.0 / length
     return [Solution(chromosome=tour, objectives=(length,), fitness=length)]
@@ -120,8 +120,8 @@ def three_opt(problem: TSP, *args, **kwargs) -> list[Solution]:
     while improve:
         improve = False
         for i in range(1, N - 2):
-            for j in range(i + 1, N - 1):
-                for k in range(j + 1, N):
+            for j in range(i + 2, N - 1):
+                for k in range(j + 2, N):
                     new_tour = tour[:i] + tour[j:k][::-1] + tour[i:j] + tour[k:]
 
                     current = (

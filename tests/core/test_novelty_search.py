@@ -5,12 +5,12 @@
 import numpy as np
 import pytest
 
-from digneapy import NS, DominatedNS, Instance
+from digneapy import NS, DominatedNS, Instance, Archive
 
 
 @pytest.fixture
 def ns():
-    return NS(k=3)
+    return NS(k=3, archive=Archive(threshold=0.0001))
 
 
 @pytest.fixture
@@ -49,7 +49,8 @@ def test_run_ns(ns, random_population):
     assert all(len(instance.descriptor) != 0 for instance in random_population)
     random_population, sparseness = ns(random_population)
     assert len(sparseness) == len(random_population)
-
+    print(sparseness)
+    print(random_population)
     # Here we check that the NS includes the novel_ta amount of
     # instances that are supposed to has a s >= t_a
     novel_ta = sum(1 for i in sparseness if i >= ns.archive.threshold)
@@ -66,7 +67,7 @@ def test_run_ns(ns, random_population):
 def test_run_dns(dns, random_population):
     assert all(len(instance.descriptor) != 0 for instance in random_population)
     random_population, sparseness = dns(random_population)
-    assert len(sparseness) == 0
+    assert len(sparseness) == len(random_population)
     assert dns.archive is None
 
     # If empty population it should raise

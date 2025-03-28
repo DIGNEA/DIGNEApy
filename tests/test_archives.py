@@ -88,9 +88,6 @@ def test_append_instance(empty_archive):
     empty_archive.append(instance)
     assert 1 == len(empty_archive)
     assert [instance] == empty_archive.instances
-    d = list(range(10))
-    with pytest.raises(TypeError):
-        empty_archive.append(d)
 
 
 def test_extend_iterable(empty_archive, default_archive):

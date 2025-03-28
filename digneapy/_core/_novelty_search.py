@@ -19,6 +19,7 @@ import numpy as np
 
 from digneapy._core._instance import Instance
 from digneapy.archives import Archive
+from digneapy._core._knn import sparseness
 
 
 class NS:
@@ -86,31 +87,8 @@ class NS:
             msg = f"{self.__class__.__name__} trying to calculate sparseness with k({self._k}) > len(instances)({num_instances})"
             raise ValueError(msg)
 
-        num_archive = len(self._archive)
-        _instance_desc = np.array([instance.descriptor for instance in instances])
-        desc_array = (
-            _instance_desc
-            if num_archive == 0
-            else np.vstack(
-                [
-                    _instance_desc,
-                    np.array([instance.descriptor for instance in self._archive]),
-                ]
-            )
-        )
-
-        sparseness = np.zeros(num_instances)
-        for i in range(num_instances):
-            mask = np.ones(num_instances, bool)
-            mask[i] = False
-            differences = desc_array[i] - desc_array[np.where(mask)[0]]
-            distances = np.linalg.norm(differences, axis=1)
-            _neighbors = heapq.nsmallest(self._k, distances)
-            s_ = np.sum(_neighbors) / self._k
-
-            instances[i].s = s_
-            sparseness[i] = s_
-        return instances, sparseness
+        results = sparseness(instances, self._archive, k=self._k)
+        return instances, results
 
 
 class DominatedNS(NS):
@@ -169,14 +147,13 @@ class DominatedNS(NS):
             if len(dominated_indices) == 0:
                 instances[i].fitness = np.finfo(np.float32).max
             else:
-                differences = descriptors[i] - descriptors[dominated_indices]
-                distances = np.linalg.norm(differences, axis=1)
-                _neighbors = (
-                    heapq.nsmallest(self._k, distances)
-                    if len(distances) >= self._k
-                    else distances
+                dist = np.linalg.norm(
+                    descriptors[i] - descriptors[dominated_indices], axis=1
                 )
-                instances[i].fitness = np.sum(_neighbors) / self._k
+                if len(dist) > self._k:
+                    dist = np.partition(dist, self._k)[self._k]
+
+                instances[i].fitness = np.sum(dist) / self._k
 
         instances.sort(key=attrgetter("fitness"), reverse=True)
         return (instances, [])

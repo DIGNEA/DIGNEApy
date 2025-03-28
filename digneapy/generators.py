@@ -170,13 +170,12 @@ class EAGenerator:
 
             # Only the feasible instances are considered to be included
             # in the archive and the solution set.
-            feasible_off_archive = list(filter(lambda i: i.p >= 0, offspring))
-            self._novelty_search.archive.extend(feasible_off_archive)
+            # feasible_off_archive = list(filter(lambda i: i.p >= 0, offspring))
+            self._novelty_search.archive.extend(i for i in offspring if i.p >= 0)
 
-            if self._ns_solution_set is not None:
-                offspring, offs_sparsenes_sset = self._ns_solution_set(offspring)
-                feasible_off_sset = list(filter(lambda i: i.p >= 0, offspring))
-                self._ns_solution_set.archive.extend(feasible_off_sset)
+            if self._ns_solution_set:
+                offspring, _ = self._ns_solution_set(offspring)
+                self._ns_solution_set.archive.extend(i for i in offspring if i.p >= 0)
 
             # However the whole offspring population is used in the replacement operator
             self.population = self.replacement(self.population, offspring)
@@ -192,9 +191,7 @@ class EAGenerator:
 
         return (
             self._novelty_search.archive,
-            self._ns_solution_set.archive
-            if self._ns_solution_set is not None
-            else None,
+            self._ns_solution_set.archive if self._ns_solution_set else None,
         )
 
     def _generate_offspring(self, offspring_size: int) -> list[Instance]:

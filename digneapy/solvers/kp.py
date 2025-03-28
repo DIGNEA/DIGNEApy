@@ -23,14 +23,11 @@ def default_kp(problem: Knapsack, *args, **kwargs) -> list[Solution]:
         msg = "No problem found in args of default_kp heuristic"
         raise ValueError(msg)
 
-    inside = 0
-    profit = 0
-    chromosome = np.zeros(len(problem))
-    for idx in range(len(problem)):
-        if problem.weights[idx] + inside <= problem.capacity:
-            inside += problem.weights[idx]
-            profit += problem.profits[idx]
-            chromosome[idx] = 1
+    weights_cumsum = np.cumsum(problem.weights)
+    valid_indices = weights_cumsum <= problem.capacity
+    chromosome = np.zeros(len(problem), dtype=np.int8)
+    chromosome[valid_indices] = 1
+    profit = np.sum(problem.profits[valid_indices])
     return [Solution(chromosome=chromosome, objectives=(profit,), fitness=profit)]
 
 
@@ -39,37 +36,26 @@ def map_kp(problem: Knapsack, *args, **kwargs) -> list[Solution]:
         msg = "No problem found in args of map_kp heuristic"
         raise ValueError(msg)
 
-    indices = np.argsort(problem.profits)[::-1]
-
-    inside = 0
-    profit = 0
-    chromosome = np.zeros(len(problem))
-    for idx in indices:
-        if problem.weights[idx] + inside <= problem.capacity:
-            inside += problem.weights[idx]
-            profit += problem.profits[idx]
-            chromosome[idx] = 1
+    indices = np.argsort(-problem.profits)
+    chromosome = np.zeros(len(problem), dtype=np.int8)
+    weights_cumsum = np.cumsum(problem.weights[indices])
+    selected = indices[weights_cumsum <= problem.capacity]
+    chromosome[selected] = 1
+    profit = np.sum(problem.profits[selected])
     return [Solution(chromosome=chromosome, objectives=(profit,), fitness=profit)]
 
 
 def miw_kp(problem: Knapsack, *args, **kwargs) -> list[Solution]:
     if problem is None:
-        msg = "No problem found in args of miw_kp heuristic"
+        msg = "No problem found in args of map_kp heuristic"
         raise ValueError(msg)
 
     indices = np.argsort(problem.weights)
-
-    inside = 0
-    profit = 0
-    chromosome = np.zeros(len(problem))
-    for idx in indices:
-        if problem.weights[idx] + inside <= problem.capacity:
-            inside += problem.weights[idx]
-            profit += problem.profits[idx]
-            chromosome[idx] = 1
-        else:
-            break
-
+    chromosome = np.zeros(len(problem), dtype=np.int8)
+    weights_cumsum = np.cumsum(problem.weights[indices])
+    selected = indices[weights_cumsum <= problem.capacity]
+    chromosome[selected] = 1
+    profit = np.sum(problem.profits[selected])
     return [Solution(chromosome=chromosome, objectives=(profit,), fitness=profit)]
 
 
@@ -78,15 +64,11 @@ def mpw_kp(problem: Knapsack, *args, **kwargs) -> list[Solution]:
         msg = "No problem found in args of mpw_kp heuristic"
         raise ValueError(msg)
 
-    profits_per_weights = [(p / w) for p, w in zip(problem.profits, problem.weights)]
-    indices = np.argsort(profits_per_weights)[::-1]
-    inside = 0
-    profit = 0
-    chromosome = np.zeros(len(problem))
-    for idx in indices:
-        if problem.weights[idx] + inside <= problem.capacity:
-            inside += problem.weights[idx]
-            profit += problem.profits[idx]
-            chromosome[idx] = 1
+    indices = np.argsort([-p / w for p, w in zip(problem.profits, problem.weights)])
+    chromosome = np.zeros(len(problem), dtype=np.int8)
+    weights_cumsum = np.cumsum(problem.weights[indices])
+    selected = indices[weights_cumsum <= problem.capacity]
+    chromosome[selected] = 1
+    profit = np.sum(problem.profits[selected])
 
     return [Solution(chromosome=chromosome, objectives=(profit,), fitness=profit)]

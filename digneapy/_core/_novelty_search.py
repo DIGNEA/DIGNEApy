@@ -148,7 +148,7 @@ class DominatedNS(NS):
                 )
                 if len(dist) > self._k:
                     dist = np.partition(dist, self._k)[: self._k]
-            fitness_values[i] = np.sum(dist) / self._k
+                fitness_values[i] = np.sum(dist) / self._k
         for i in range(num_instances):
             instances[i].fitness = fitness_values[i]
 

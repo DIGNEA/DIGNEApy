@@ -39,6 +39,7 @@ class Knapsack(Problem):
         self.weights = weights
         self.profits = profits
         self.capacity = capacity
+        self.penalty_factor = 100.0
 
     def evaluate(self, individual: Sequence | Solution) -> tuple[float]:
         """Evaluates the candidate individual with the information of the Knapsack
@@ -57,20 +58,11 @@ class Knapsack(Problem):
             msg = f"Mismatch between individual variables and instance variables in {self.__class__.__name__}"
             raise ValueError(msg)
 
-        profit = 0.0
-        packed = 0
-
-        for i in range(len(individual)):
-            profit += individual[i] * self.profits[i]
-            packed += individual[i] * self.weights[i]
-
-        difference = packed - self.capacity
-        penalty = 100.0 * difference
-        profit -= penalty if penalty > 0.0 else 0.0
-
-        if isinstance(individual, Solution):
-            individual.fitness = profit
-            individual.objectives = (profit,)
+        profit = np.dot(individual, self.profits)
+        packed = np.dot(individual, self.weights)
+        difference = max(0, packed - self.capacity)
+        penalty = self.penalty_factor * difference
+        profit -= penalty
 
         return (profit,)
 

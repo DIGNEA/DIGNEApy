@@ -16,7 +16,7 @@ from collections import deque
 import pandas as pd
 
 from digneapy import Direction
-from digneapy.archives import Archive, GridArchive
+from digneapy.archives import NS, Archive, GridArchive
 from digneapy.domains import KnapsackDomain
 from digneapy.generators import EAGenerator
 from digneapy.operators import generational_replacement
@@ -77,11 +77,10 @@ class NSEval:
                 generations=1000,
                 domain=self.kp_domain,
                 portfolio=self.portfolio,
-                archive=Archive(threshold=0.5),
-                s_set=Archive(threshold=0.05),
-                k=3,
+                novelty_approach=NS(Archive(threshold=1e-3), k=3),
+                solution_set=NS(Archive(threshold=1e-3), k=1),
                 repetitions=1,
-                descriptor="features",
+                descriptor_strategy="features",
                 replacement=generational_replacement,
                 transformer=transformer,
             )

@@ -71,7 +71,7 @@ class Archive:
     def __repr__(self):
         return f"Archive(threshold={self._threshold},data=(|{len(self)}|))"
 
-    def __array__(self, dtype=None) -> np.ndarray:
+    def __array__(self, dtype=Instance, copy=True) -> np.ndarray:
         """Creates a ndarray with the descriptors
 
         >>> import numpy as np
@@ -81,7 +81,7 @@ class Archive:
         >>> assert len(np_archive) == len(archive)
         >>> assert type(np_archive) == type(np.zeros(1))
         """
-        return np.array(self._instances, dtype=Instance)
+        return np.array(self._instances, dtype=Instance, copy=copy)
 
     def __eq__(self, other):
         """Compares whether to Archives are equal
@@ -127,11 +127,8 @@ class Archive:
         return self.instances[index]
 
     def append(self, i: Instance):
-        if isinstance(i, Instance):
+        if i.s > self.threshold:
             self.instances.append(i)
-        else:
-            msg = f"Only objects of type {Instance.__class__.__name__} can be inserted into an archive"
-            raise TypeError(msg)
 
     def extend(self, iterable: Iterable[Instance]):
         """Extends the current archive with all the individuals inside iterable that have
@@ -140,11 +137,7 @@ class Archive:
         Args:
             iterable (Iterable[Instance]): Iterable of instances to be include in the archive.
         """
-        if not all(isinstance(i, Instance) for i in iterable):
-            msg = "Only objects of type Instance can be inserted into an archive"
-            raise TypeError(msg)
-
-        self.instances.extend(filter(lambda i: i.s > self.threshold, iterable))
+        self.instances.extend(i for i in iterable if i.s >= self._threshold)
 
     def __format__(self, fmt_spec=""):
         variables = self

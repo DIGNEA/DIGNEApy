@@ -10,11 +10,9 @@
 @Desc    :   None
 """
 
-import copy
-
 import pandas as pd
 
-from digneapy import Archive, Direction, GridArchive
+from digneapy import NS, Archive, Direction, GridArchive
 from digneapy.domains import KnapsackDomain
 from digneapy.generators import EAGenerator
 from digneapy.operators import generational_replacement
@@ -44,7 +42,7 @@ class EvalNN:
 
         self.kp_domain = KnapsackDomain(dimension=50, capacity_approach="percentage")
 
-    def __call__(self, transformer: KerasNN):
+    def __call__(self, transformer: KerasNN, filename: str = ""):
         """This method runs the Novelty Search using a KerasNN as a transformer
         for searching novelty. It generates KP instances for each of the solvers in
         the portfolio [Default, MaP, MiW].
@@ -71,30 +69,30 @@ class EvalNN:
                 generations=1000,
                 domain=self.kp_domain,
                 portfolio=portfolio,
-                archive=Archive(threshold=0.5),
-                s_set=Archive(threshold=0.05),
-                k=3,
+                novelty_approach=NS(Archive(threshold=0.5), k=3),
+                solution_set=NS(Archive(threshold=0.05), k=1),
                 repetitions=1,
-                descriptor="instance",
+                descriptor_strategy="instance",
                 replacement=generational_replacement,
                 transformer=transformer,
             )
-            _, solution_set = eig()
-            if len(solution_set) != 0:
-                hypercube.extend(copy.deepcopy(solution_set))
+            _, solution_set = eig(verbose=True)
+            if solution_set is not None and len(solution_set) != 0:
+                hypercube.extend(solution_set)
 
         return len(hypercube)
 
 
 def main():
     R = 20  # Resolution/Number of bins for each of the 8 features
-    dimension = 5202  # Number of weights of the NN for this architecture
+    dimension = 15_504  # Number of weights of the NN for this architecture
     nn = KerasNN(
         name="NN_transformer_for_N_50_to_2D_kp_domain.keras",
         input_shape=(101,),
         shape=(50, 2),
         activations=("relu", "relu", None),
     )
+    print(f"Model:\n{nn}")
     # Hypercube boundaries based on the results from AE
     # https://colab.research.google.com/drive/1b392jz3syTJiehSCt_Tf72_D0OkmVVe5?hl=es
     ranges = [(0.0, 25.0), (0.0, 60.0)]
@@ -104,8 +102,8 @@ def main():
     cma_es = NNTuner(
         dimension=dimension,
         direction=Direction.MAXIMISE,
-        lambda_=64,
-        generations=1000,
+        lambda_=32,
+        generations=500,
         transformer=nn,
         eval_fn=ns_eval,
     )

@@ -12,7 +12,9 @@
 
 import operator
 from collections.abc import Iterable
-from typing import Optional
+from typing import Optional, Self
+
+import numpy as np
 
 
 class Solution:
@@ -24,12 +26,20 @@ class Solution:
         fitness: float = 0.0,
     ):
         if chromosome is not None:
-            self.chromosome = list(chromosome)
+            self.chromosome = np.asarray(chromosome)
         else:
-            self.chromosome = list()
-        self.objectives = tuple(objectives) if objectives else tuple()
-        self.constraints = tuple(constraints) if constraints else tuple()
+            self.chromosome = np.empty(0)
+        self.objectives = np.array(objectives) if objectives else np.empty(0)
+        self.constraints = np.array(constraints) if constraints else np.empty(0)
         self.fitness = fitness
+
+    def clone(self) -> Self:
+        return Solution(
+            chromosome=list(self.chromosome),
+            objectives=list(self.objectives),
+            constraints=list(self.constraints),
+            fitness=self.fitness,
+        )
 
     def __str__(self) -> str:
         return f"Solution(dim={len(self.chromosome)},f={self.fitness},objs={self.objectives},const={self.constraints})"

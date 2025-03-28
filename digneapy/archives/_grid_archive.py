@@ -64,7 +64,7 @@ class GridArchive(Archive):
         Raises:
             ValueError: ``dimensions`` and ``ranges`` are not the same length
         """
-        Archive.__init__(self, threshold=np.inf, dtype=dtype)
+        Archive.__init__(self, threshold=np.finfo(np.float32).max, dtype=dtype)
         if len(ranges) == 0 or len(dimensions) == 0:
             raise ValueError("dimensions and ranges must have length >= 1")
         if len(ranges) != len(dimensions):
@@ -223,7 +223,7 @@ class GridArchive(Archive):
         if isinstance(instance, Instance):
             index = self.index_of(np.asarray(instance.descriptor))
             if index not in self._grid or instance > self._grid[index]:
-                self._grid[index] = copy.deepcopy(instance)
+                self._grid[index] = instance.clone()
 
         else:
             msg = "Only objects of type Instance can be inserted into a GridArchive"
@@ -242,7 +242,7 @@ class GridArchive(Archive):
         indeces = self.index_of([i.descriptor for i in iterable])
         for idx, instance in zip(indeces, iterable, strict=True):
             if idx not in self._grid or instance.fitness > self._grid[idx].fitness:
-                self._grid[idx] = copy.deepcopy(instance)
+                self._grid[idx] = instance.clone()
 
     def remove(self, iterable: Iterable[Instance]):
         """Removes all the instances in iterable from the grid"""

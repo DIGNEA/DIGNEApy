@@ -65,7 +65,7 @@ ext_modules = [
 setup(
     author="Alejandro Marrero",
     author_email="amarrerd@ull.edu.es",
-    python_requires=">=3.10",
+    python_requires=">=3.12",
     classifiers=[
         "Development Status :: 2 - Pre-Alpha",
         "Intended Audience :: Science/Research",
@@ -73,8 +73,6 @@ setup(
         "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
         "Natural Language :: English",
         "Programming Language :: Python :: 3",
-        "Programming Language :: Python :: 3.10",
-        "Programming Language :: Python :: 3.11",
         "Programming Language :: Python :: 3.12",
         "Topic :: Scientific/Engineering",
         "Typing :: Typed",

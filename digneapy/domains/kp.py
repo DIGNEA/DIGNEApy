@@ -39,6 +39,7 @@ class Knapsack(Problem):
         self.weights = weights
         self.profits = profits
         self.capacity = capacity
+        self.penalty_factor = 100.0
 
     def evaluate(self, individual: Sequence | Solution) -> tuple[float]:
         """Evaluates the candidate individual with the information of the Knapsack
@@ -57,20 +58,11 @@ class Knapsack(Problem):
             msg = f"Mismatch between individual variables and instance variables in {self.__class__.__name__}"
             raise ValueError(msg)
 
-        profit = 0.0
-        packed = 0
-
-        for i in range(len(individual)):
-            profit += individual[i] * self.profits[i]
-            packed += individual[i] * self.weights[i]
-
-        difference = packed - self.capacity
-        penalty = 100.0 * difference
-        profit -= penalty if penalty > 0.0 else 0.0
-
-        if isinstance(individual, Solution):
-            individual.fitness = profit
-            individual.objectives = (profit,)
+        profit = np.dot(individual, self.profits)
+        packed = np.dot(individual, self.weights)
+        difference = max(0, packed - self.capacity)
+        penalty = self.penalty_factor * difference
+        profit -= penalty
 
         return (profit,)
 
@@ -117,10 +109,10 @@ class KnapsackDomain(Domain):
         dimension: int = 50,
         min_p: int = 1,
         min_w: int = 1,
-        max_p: int = 1000,
-        max_w: int = 1000,
+        max_p: int = 1_000,
+        max_w: int = 1_000,
         capacity_approach: str = "evolved",
-        max_capacity: int = int(1e4),
+        max_capacity: int = int(1e7),
         capacity_ratio: float = 0.8,
     ):
         self.min_p = min_p
@@ -183,13 +175,12 @@ class KnapsackDomain(Domain):
 
         capacity = 0
         # Sets the capacity according to the method
-        match self.capacity_approach:
-            case "evolved":
-                capacity = np.random.randint(1, self.max_capacity)
-            case "percentage":
-                capacity = np.sum(weights) * self.capacity_ratio
-            case "fixed":
-                capacity = self.max_capacity
+        if self.capacity_approach == "evolved":
+            capacity = np.random.randint(1, self.max_capacity)
+        elif self.capacity_approach == "percentage":
+            capacity = np.sum(weights) * self.capacity_ratio
+        elif self.capacity_approach == "fixed":
+            capacity = self.max_capacity
 
         variables = [int(capacity)] + list(itertools.chain(*zip(weights, profits)))
 
@@ -204,24 +195,23 @@ class KnapsackDomain(Domain):
         Returns:
             Tuple[float]: Values of each feature
         """
-        vars = instance.variables[1:]
+        vars = np.asarray(instance.variables[1:])
         weights = vars[0::2]
         profits = vars[1::2]
-        avg_eff = sum([p / w for p, w in zip(profits, weights)]) / len(vars)
-        capacity = int(instance.variables[0])
+        avg_eff = np.sum([p / w for p, w in zip(profits, weights)]) / len(vars)
+        capacity = instance.variables[0]
         # Sets the capacity according to the method
-        match self.capacity_approach:
-            case "percentage":
-                capacity = np.sum(weights) * self.capacity_ratio
-            case "fixed":
-                capacity = self.max_capacity
+        if self.capacity_approach == "percentage":
+            capacity = np.sum(weights) * self.capacity_ratio
+        elif self._capacity_approach == "fixed":
+            capacity = self.max_capacity
 
         return (
             int(capacity),
-            max(profits),
-            max(weights),
-            min(profits),
-            min(weights),
+            np.max(profits),
+            np.max(weights),
+            np.min(profits),
+            np.min(weights),
             avg_eff,
             np.mean(vars),
             np.std(vars),
@@ -244,20 +234,19 @@ class KnapsackDomain(Domain):
 
     def from_instance(self, instance: Instance) -> Knapsack:
         variables = instance.variables
-        weights = []
-        profits = []
-        capacity = int(variables[0])
-        for i in range(1, len(variables[1:]), 2):
-            weights.append(int(variables[i]))
-            profits.append(int(variables[i + 1]))
+        N = (len(variables) - 1) // 2
+        weights = np.zeros(N, dtype=np.int32)
+        profits = np.zeros(N, dtype=np.int32)
+        capacity = variables[0]
+        weights = variables[1::2]
+        profits = variables[2::2]
 
         # Sets the capacity according to the method
-        match self.capacity_approach:
-            case "percentage":
-                capacity = np.sum(weights) * self.capacity_ratio
-            case "fixed":
-                capacity = self.max_capacity
-        # The KP capacity must be updated JIC
-        instance.variables[0] = capacity
+        if self.capacity_approach == "percentage":
+            capacity = np.sum(weights) * self.capacity_ratio
+            instance.variables[0] = capacity
+        elif self.capacity_approach == "fixed":
+            capacity = self.max_capacity
+            instance.variables[0] = capacity
 
         return Knapsack(profits=profits, weights=weights, capacity=int(capacity))

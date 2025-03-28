@@ -10,6 +10,7 @@ from ._core import (
     NS,
     Direction,
     Domain,
+    DominatedNS,
     IndType,
     Instance,
     P,

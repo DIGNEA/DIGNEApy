@@ -17,7 +17,6 @@ __all__ = [
     "Replacement",
 ]
 
-import copy
 import itertools
 from collections.abc import Callable, Sequence
 from operator import attrgetter
@@ -53,7 +52,7 @@ def generational_replacement(
         msg = f"The size of the current population ({len(current_population)}) != size of the offspring ({len(offspring)}) in generational replacement"
         raise ValueError(msg)
 
-    return copy.deepcopy(offspring)
+    return offspring[:]
 
 
 def first_improve_replacement(

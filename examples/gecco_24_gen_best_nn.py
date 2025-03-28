@@ -14,11 +14,11 @@ import copy
 import itertools
 import sys
 
-from digneapy import Archive
+from digneapy import NS, Archive
 from digneapy.domains import KnapsackDomain
 from digneapy.generators import EAGenerator
-from digneapy.operators import first_improve_replacement
-from digneapy.solvers import default_kp, map_kp, miw_kp
+from digneapy.operators import generational_replacement
+from digneapy.solvers import default_kp, map_kp, miw_kp, mpw_kp
 from digneapy.transformers.neural import KerasNN
 
 
@@ -39,22 +39,18 @@ def save_instances(filename, generated_instances):
         "mean",
         "std",
     ]
-    header = (
-        ["target"]
-        + ["x_0", "x_1"]
-        + features
-        + list(itertools.chain.from_iterable([(f"w_{i}", f"p_{i}") for i in range(50)]))
+    header = ["target", *features] + list(
+        itertools.chain.from_iterable([(f"w_{i}", f"p_{i}") for i in range(50)])
     )
 
     with open(filename, "w") as file:
         file.write(",".join(header) + "\n")
         for solver, instances in generated_instances.items():
-            for inst in instances:
-                content = [solver, inst.descriptor, inst.features, inst[1:]]
-                file.write(
-                    ",".join(str(x) for x in itertools.chain.from_iterable(content))
-                    + "\n"
-                )
+            for instance in instances:
+                vars = ",".join(str(x) for x in instance[1:])
+                features = ",".join(str(f) for f in instance.features)
+                content = solver + "," + features + "," + vars + "\n"
+                file.write(content)
 
 
 def generate_instances(transformer: KerasNN):
@@ -72,28 +68,37 @@ def generate_instances(transformer: KerasNN):
     """
     kp_domain = KnapsackDomain(dimension=50, capacity_approach="percentage")
     portfolios = [
-        [default_kp, map_kp, miw_kp],
-        [map_kp, default_kp, miw_kp],
-        [miw_kp, default_kp, map_kp],
+        [default_kp, map_kp, miw_kp, mpw_kp],
+        [map_kp, default_kp, miw_kp, mpw_kp],
+        [miw_kp, default_kp, map_kp, mpw_kp],
+        [mpw_kp, default_kp, map_kp, miw_kp],
     ]
     instances = {}
     for portfolio in portfolios:
+        p_names = [s.__name__ for s in portfolio]
+        status = f"\rRunning portfolio: {p_names}"
+        print(status, end="")
+
         eig = EAGenerator(
             pop_size=10,
             generations=1000,
             domain=kp_domain,
             portfolio=portfolio,
-            archive=Archive(threshold=0.5),
-            s_set=Archive(threshold=0.05),
-            k=3,
+            novelty_approach=NS(Archive(threshold=0.5), k=3),
+            solution_set=NS(Archive(threshold=0.5), k=1),
             repetitions=1,
-            descriptor="features",
-            replacement=first_improve_replacement,
+            descriptor_strategy="features",
+            replacement=generational_replacement,
             transformer=transformer,
         )
         _, solution_set = eig()
-        instances[portfolio[0].__name__] = copy.copy(solution_set)
+        instances[portfolio[0].__name__] = copy.deepcopy(solution_set)
 
+        status = f"\rRunning portfolio: {p_names} completed ✅"
+        print(status, end="")
+    # When completed clear the terminal
+    blank = " " * 80
+    print(f"\r{blank}\r", end="")
     return instances
 
 
@@ -155,8 +160,8 @@ def main(repetition: int = 0):
     ]
     nn.update_weights(weights_113)
 
-    exp_filename = f"instances_best_NN_gecco_24_f_and_e_rep_{repetition}.csv"
-    print(f"Running repetition: {repetition}")
+    exp_filename = f"instances_best_NN_gecco_24_{repetition}.csv"
+    print(f"Running repetition: {repetition} 🚀")
     instances = generate_instances(nn)
     save_instances(exp_filename, instances)
 
@@ -164,7 +169,7 @@ def main(repetition: int = 0):
 if __name__ == "__main__":
     if len(sys.argv) != 2:
         print(
-            f"Error expected a repetition number.\n\tpython3 gecco_24_gen_best_nn.py <repetition_idx>"
+            "Error expected a repetition number.\n\tpython3 gecco_24_gen_best_nn.py <repetition_idx>"
         )
     rep = int(sys.argv[1])
     main(rep)

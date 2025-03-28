@@ -12,5 +12,6 @@
 
 from .bpp import BPP, BPPDomain
 from .kp import Knapsack, KnapsackDomain
+from .tsp import TSP, TSPDomain
 
-__all__ = ["BPP", "BPPDomain", "Knapsack", "KnapsackDomain"]
+__all__ = ["BPP", "BPPDomain", "Knapsack", "KnapsackDomain", "TSP", "TSPDomain"]

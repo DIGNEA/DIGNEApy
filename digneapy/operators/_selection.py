@@ -12,8 +12,8 @@
 
 __all__ = ["binary_tournament_selection", "Selection"]
 
-import copy
 from collections.abc import Callable, Sequence
+from operator import attrgetter
 
 import numpy as np
 
@@ -36,14 +36,11 @@ def binary_tournament_selection(
     Returns:
         Instance or Solution: New parent
     """
-    if not population:
+    if len(population) == 0:
         msg = "Trying to selection individuals in an empty population."
         raise RuntimeError(msg)
     if len(population) == 1:
-        return copy.deepcopy(population[0])
+        return population[0]
     else:
         idx1, idx2 = np.random.randint(low=0, high=len(population), size=2)
-        ind_1 = population[idx1]
-        ind_2 = population[idx2]
-        parent = copy.deepcopy(ind_1) if ind_1 > ind_2 else copy.deepcopy(ind_2)
-        return parent
+        return max(population[idx1], population[idx2], key=attrgetter("fitness"))

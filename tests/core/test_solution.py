@@ -66,7 +66,7 @@ def test_default_solution_attrs(default_solution):
     # Str comparison
     assert (
         other_solution.__str__()
-        == "Solution(dim=200,f=100.0,objs=(1.0, 1.0),const=(0.0, 0.0))"
+        == "Solution(dim=200,f=100.0,objs=[1. 1.],const=[0. 0.])"
     )
     # Equal comparison
     assert default_solution.__eq__(list()) == NotImplemented

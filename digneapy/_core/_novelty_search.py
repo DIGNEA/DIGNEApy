@@ -10,18 +10,14 @@
 @Desc    :   None
 """
 
-import itertools
 from collections.abc import Sequence
-from typing import Optional
-
+from operator import attrgetter
+from typing import Optional, Tuple
 import numpy as np
-from sklearn.neighbors import NearestNeighbors
 
+from digneapy._core._instance import Instance
 from digneapy.archives import Archive
-from digneapy.transformers import SupportsTransform
-
-from ._instance import Instance
-from .descriptors import DESCRIPTORS
+from digneapy._core._knn import sparseness
 
 
 class NS:
@@ -29,117 +25,47 @@ class NS:
     The current version supports Features, Performance and Instance variations.
     """
 
+    _EXPECTED_METRICS = "euclidean"
+
     def __init__(
         self,
         archive: Optional[Archive] = None,
-        s_set: Optional[Archive] = None,
-        k: int = 15,
-        descriptor: str = "features",
-        transformer: Optional[SupportsTransform] = None,
+        k: Optional[int] = 15,
+        dist_metric: Optional[str] = "euclidean",
     ):
         """Creates an instance of the NoveltySearch Algorithm
         Args:
-            archive (Archive, optional): Archive to store the instances to guide the evolution. Defaults to Archive(threshold=0.001)..
-            s_set (Archive, optional): Solution set to store the instances. Defaults to Archive(threshold=0.001).
+            archive (Archive, optional): Archive to store the instances to guide the evolution. Defaults to Archive(threshold=0.001).
             k (int, optional): Number of neighbours to calculate the sparseness. Defaults to 15.
-            descriptor (str, optional): Descriptor to calculate the diversity. The options available are defined in the dictionary digneapy.qd.descriptor_strategies. Defaults to "features".
-            transformer (callable, optional): Define a strategy to transform the high-dimensional descriptors to low-dimensional.Defaults to None.
+            dist_metric (str, optional): Defines the distance metric used by NearestNeighbor in the archives. Defaults to euclidean.
         """
-        self._archive = archive if archive is not None else Archive(threshold=0.001)
-        self._solution_set = s_set if s_set is not None else Archive(threshold=0.001)
+        if k < 0:
+            raise ValueError(
+                f"{__name__} k must be a positive integer and less than the number of instances."
+            )
         self._k = k
-        self._transformer = transformer
-
-        if descriptor not in DESCRIPTORS:
-            msg = f"describe_by {descriptor} not available in {self.__class__.__name__}.__init__. Set to features by default"
-            print(msg)
-            self._describe_by = "features"
-            self._descriptor_strategy = DESCRIPTORS["features"]
-        else:
-            self._describe_by = descriptor
-            self._descriptor_strategy = DESCRIPTORS[descriptor]
+        self._archive = archive if archive is not None else Archive(threshold=0.001)
+        self._dist_metric = (
+            dist_metric if dist_metric in NS._EXPECTED_METRICS else "euclidean"
+        )
 
     @property
     def archive(self):
         return self._archive
 
     @property
-    def solution_set(self):
-        return self._solution_set
-
-    @property
     def k(self):
         return self._k
 
     def __str__(self):
-        return f"NS(descriptor={self._describe_by},k={self._k},A={self._archive},S_S={self._solution_set})"
+        return f"NS(k={self._k },A={self._archive})"
 
     def __repr__(self) -> str:
-        return f"NS<descriptor={self._describe_by},k={self._k},A={self._archive},S_S={self._solution_set}>"
+        return f"NS<k={self._k },A={self._archive}>"
 
-    def _combined_archive_and_population(
-        self, current_pop: Archive, instances: Sequence[Instance]
-    ) -> np.ndarray:
-        """Combines the archive and the given population before computing the sparseness
-
-        Args:
-            current_pop (Archive): Current archive of solution.
-            instances (Sequence[Instance]): Sequence of instances to evaluate.
-
-        Returns:
-            np.ndarray: Returns an ndarray of descriptors.
-        """
-        components = self._descriptor_strategy(itertools.chain(instances, current_pop))
-        return np.vstack([components])
-
-    def __compute_sparseness(
-        self,
-        instances: Sequence[Instance],
-        current_archive: Archive,
-        neighbours: int,
-    ) -> list:
-        """This method does the calculation of sparseness either for the archive or the solution set.
-        It gets called by 'sparssenes' and 'sparseness_solution_set'. Note that this method update the `s`
-        attribute of each instances with the result of the computation. It also returns a list with all the
-        values for further used if necessary.
-
-        Args:
-            instances (Sequence[Instance]): Instances to evaluate.
-            current_archive (Archive): Current archive/solutio set of instances.
-            neighbours (int): Number of neighbours to calculate the KNN (K + 1 or 2). Always have to add 1.
-
-        Returns:
-            list[float]: Sparseness values of each instance.
-        """
-        # We need to concatentate the archive to the given descriptors
-        # and to set k+1 because it predicts n[0] == self descriptor
-        # The _desc_arr is a ndarray which contains the descriptor of the instances
-        # from the archive and the new list of instances. The order is [instances, current_archive]
-        # so we can easily calculate and update `s`
-        _desc_arr = self._combined_archive_and_population(current_archive, instances)
-        if self._transformer is not None:
-            # Transform the descriptors if necessary
-            _desc_arr = self._transformer(_desc_arr)
-
-        neighbourhood = NearestNeighbors(n_neighbors=neighbours, algorithm="ball_tree")
-        neighbourhood.fit(_desc_arr)
-        sparseness = []
-        # We're only interesed in the new instances
-        frac = 1.0 / neighbours
-        for instance, descriptor in zip(instances, _desc_arr[: len(instances)]):
-            dist, ind = neighbourhood.kneighbors([descriptor])
-            dist, ind = dist[0][1:], ind[0][1:]
-            s = frac * sum(dist)
-            instance.s = s
-            instance.descriptor = descriptor
-            sparseness.append(s)
-
-        return sparseness
-
-    def sparseness(
-        self,
-        instances: Sequence[Instance],
-    ) -> list[float]:
+    def __call__(
+        self, instances: Sequence[Instance]
+    ) -> Tuple[list[Instance], list[float]]:
         """Calculates the sparseness of the given instances against the individuals
         in the Archive.
 
@@ -152,41 +78,76 @@ class NS:
             ValueError: If NoveltySearch.k >= len(instances)
 
         Returns:
-            list[float]: List of sparseness values, one for each instance
+            Tuple(list[Instance], list[float]): Tuple with the instances and the list of sparseness values, one for each instance
         """
-        if len(instances) == 0 or any(len(d) == 0 for d in instances):
-            msg = f"{self.__class__.__name__} trying to calculate sparseness on an empty Instance list"
+        num_instances = len(instances)
+        if num_instances <= self._k:
+            msg = f"{self.__class__.__name__} trying to calculate sparseness with k({self._k}) > len(instances)({num_instances})"
             raise ValueError(msg)
 
-        if self._k >= len(instances):
-            msg = f"{self.__class__.__name__} trying to calculate sparseness with k({self._k}) > len(instances)({len(instances)})"
-            raise ValueError(msg)
+        results = sparseness(instances, self._archive, k=self._k)
+        return instances, results
 
-        return self.__compute_sparseness(
-            instances, self.archive, neighbours=self._k + 1
-        )
 
-    def sparseness_solution_set(self, instances: Sequence[Instance]) -> list[float]:
-        """Calculates the sparseness of the given instances against the individuals
-        in the Solution Set.
+class DominatedNS(NS):
+    """
+    Dominated Novelty Search (DNS)
+    Bahlous-Boldi, R., Faldor, M., Grillotti, L., Janmohamed, H., Coiffard, L., Spector, L., & Cully, A. (2025).
+    Dominated Novelty Search: Rethinking Local Competition in Quality-Diversity. 1.
+    https://arxiv.org/abs/2502.00593v1
+    Quality-Diversity algorithm that implements local competition through dynamic fitness transformations,
+    eliminating the need for predefined bounds or parameters. The competition fitness, also known as the dominated novelty score,
+    is calculated as the average distance to the k nearest neighbors with higher fitness.
+    The value is set in the ``p'' attribute of the Instance class.
+    """
+
+    def __init__(self, k: Optional[int] = 15):
+        super().__init__(k=k)
+        self._archive = None
+
+    def __call__(
+        self, instances: Sequence[Instance]
+    ) -> Tuple[list[Instance], list[float]]:
+        """
+
+        The method returns a descending sorted list of instances by their competition fitness value (p).
+        For each instance ``i'' in the sequence, we calculate all the other instances that dominate it.
+        Then, we compute the distances between their descriptors using the norm of the difference for each dimension of the descriptors.
+        Novel instances will get a competition fitness of np.inf (assuring they will survive).
+        Less novel instances will be selected by their competition fitness value. This competition mechanism creates two complementary evolutionary
+        pressures: individuals must either improve their fitness or discover distinct behaviors that differ from better-performing
+        solutions. Solutions that have no fitter neighbors (D𝑖 = ∅) receive an infinite competition fitness, ensuring their preservation in the
+        population.
 
         Args:
-            instances (Sequence[Instance]): Instances to calculate their sparseness
+            instances (Sequence[Instance]): Instances to calculate their competition
 
         Raises:
             ValueError: If len(d) where d is the descriptor of each instance i differs from another
-            ValueError: If 2 >= len(instances)
+            ValueError: If DNS.k >= len(instances)
 
         Returns:
-            list[float]: List of sparseness values, one for each instance
+            List[Instance]: Numpy array with the instances sorted by their competition fitness value (p). Descending order.
         """
-
-        if len(instances) == 0 or any(len(d) == 0 for d in instances):
-            msg = f"{self.__class__.__name__} trying to update the solution set with an empty instance list"
+        num_instances = len(instances)
+        if num_instances <= self._k:
+            msg = f"{self.__class__.__name__} trying to calculate sparseness with k({self._k}) > len(instances)({num_instances})"
             raise ValueError(msg)
 
-        if len(instances) <= 2:
-            msg = f"{self.__class__.__name__} trying to calculate sparseness_solution_set with k = 2 >= len(instances)({len(instances)})"
-            raise ValueError(msg)
+        perf_values = np.array([instance.p for instance in instances])
+        descriptors = np.array([instance.descriptor for instance in instances])
+        mask = perf_values[:, None] > perf_values
+        dominated_indices = [np.where(row)[0] for row in mask]
+        fitness_values = np.full(num_instances, np.finfo(np.float32).max)
+        for i in range(num_instances):
+            if dominated_indices[i].size > 0:
+                dist = np.linalg.norm(
+                    descriptors[i] - descriptors[dominated_indices[i]], axis=1
+                )
+                if len(dist) > self._k:
+                    dist = np.partition(dist, self._k)[: self._k]
+                fitness_values[i] = np.sum(dist) / self._k
+            instances[i].fitness = fitness_values[i]
 
-        return self.__compute_sparseness(instances, self.solution_set, neighbours=2)
+        instances.sort(key=attrgetter("fitness"), reverse=True)
+        return (instances, fitness_values)

@@ -15,7 +15,7 @@ from collections import deque
 
 import pandas as pd
 
-from digneapy import Archive, Direction, GridArchive
+from digneapy import NS, Archive, Direction, GridArchive
 from digneapy.domains import KnapsackDomain
 from digneapy.generators import EAGenerator
 from digneapy.operators import first_improve_replacement
@@ -76,17 +76,16 @@ class NSEval:
                 generations=1000,
                 domain=self.kp_domain,
                 portfolio=self.portfolio,
-                archive=Archive(threshold=0.5),
-                s_set=Archive(threshold=0.05),
-                k=3,
+                novelty_approach=NS(Archive(threshold=0.5), k=3),
+                solution_set=NS(Archive(threshold=0.05), k=1),
                 repetitions=1,
-                descriptor="features",
+                descriptor_strategy="features",
                 replacement=first_improve_replacement,
                 transformer=transformer,
             )
             _, solution_set = eig()
             print(solution_set)
-            if len(solution_set) != 0:
+            if solution_set is not None and len(solution_set) != 0:
                 gen_instances[self.portfolio[0].__name__].extend(
                     copy.deepcopy(solution_set)
                 )

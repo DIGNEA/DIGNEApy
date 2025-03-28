@@ -10,11 +10,9 @@
 @Desc    :   None
 """
 
-import heapq
 from collections.abc import Sequence
 from operator import attrgetter
 from typing import Optional, Tuple
-import itertools
 import numpy as np
 
 from digneapy._core._instance import Instance
@@ -138,22 +136,21 @@ class DominatedNS(NS):
 
         perf_values = np.array([instance.p for instance in instances])
         descriptors = np.array([instance.descriptor for instance in instances])
+        mask = perf_values[:, None] > perf_values
+        dominated_indices = [np.where(row)[0] for row in mask]
+
+        fitness_values = np.full(num_instances, np.finfo(np.float32).max)
+
         for i in range(num_instances):
-            # Note: Here it is where we enforce the performance bias
-            current_perf = perf_values[i]
-            mask = (perf_values > current_perf) & np.ones(num_instances, bool)
-            mask[i] = False
-            dominated_indices = np.where(mask)[0]
-            if len(dominated_indices) == 0:
-                instances[i].fitness = np.finfo(np.float32).max
-            else:
+            if dominated_indices[i].size > 0:
                 dist = np.linalg.norm(
-                    descriptors[i] - descriptors[dominated_indices], axis=1
+                    descriptors[i] - descriptors[dominated_indices[i]], axis=1
                 )
                 if len(dist) > self._k:
-                    dist = np.partition(dist, self._k)[self._k]
-
-                instances[i].fitness = np.sum(dist) / self._k
+                    dist = np.partition(dist, self._k)[: self._k]
+            fitness_values[i] = np.sum(dist) / self._k
+        for i in range(num_instances):
+            instances[i].fitness = fitness_values[i]
 
         instances.sort(key=attrgetter("fitness"), reverse=True)
-        return (instances, [])
+        return (instances, fitness_values)

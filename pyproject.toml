@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=70", "cmake>=3.16.3", "wheel", "pybind11>=2.12.0"]
+requires = ["setuptools>=70", "cmake>=3.31.0", "wheel", "ninja", "pybind11>=2.13.6"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools]
@@ -14,13 +14,10 @@ ext-modules = [
     { name = "parallel_ea", sources = [
         "digneapy/solvers/_parallel_ea/src/parallel_ea.cpp",
 
-    ] },
+    ] }
 ]
-# [tool.setuptools.dynamic]
-# dependencies = { file = ["requirements.txt"] }
 
 [project]
-#dynamic = ["dependencies"]
 name = "digneapy"
 version = "0.2.5"
 description = "Python version of the DIGNEA code for instance generation"

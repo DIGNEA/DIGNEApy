@@ -3,9 +3,11 @@
 """The setup script."""
 
 from glob import glob
-
 from setuptools import Extension, find_packages, setup
 from setuptools.command.build_ext import build_ext
+from Cython.Build import cythonize
+
+import numpy as np
 
 with open("README.md") as readme_file:
     readme = readme_file.read()
@@ -13,7 +15,7 @@ with open("README.md") as readme_file:
 with open("HISTORY.md") as history_file:
     history = history_file.read()
 
-requirements = []
+requirements: list[str] = []
 
 test_requirements = [
     "pytest>=3",
@@ -37,28 +39,42 @@ class get_pybind_include(object):
 
 compile_args = ["-std=c++11", "-fopenmp"]
 ext_modules = [
+    # Extension(
+    #     "pisinger_cpp",
+    #     sorted(glob("digneapy/solvers/_pisinger/src/*.cpp")),
+    #     include_dirs=[
+    #         # Path to pybind11 headers
+    #         get_pybind_include(),
+    #         get_pybind_include(user=True),
+    #     ],
+    #     extra_compile_args=compile_args,
+    #     language="c++",
+    # ),
+    # Extension(
+    #     "parallel_ea",
+    #     sorted(glob("digneapy/solvers/_parallel_ea/src/*.cpp")),
+    #     include_dirs=[
+    #         # Path to pybind11 headers
+    #         get_pybind_include(),
+    #         get_pybind_include(user=True),
+    #     ],
+    #     extra_compile_args=compile_args,
+    #     extra_link_args=["-fopenmp"],
+    #     language="c++",
+    # ),
     Extension(
-        "pisinger_cpp",
-        sorted(glob("digneapy/solvers/_pisinger/src/*.cpp")),
-        include_dirs=[
-            # Path to pybind11 headers
-            get_pybind_include(),
-            get_pybind_include(user=True),
-        ],
-        extra_compile_args=compile_args,
-        language="c++",
+        "digneapy.solvers.kp",
+        sources=["digneapy/solvers/_kp.pyx"],
+        libraries=["m"],
+        compiler_directives={"language_level": "3"},
+        include_dirs=[np.get_include()],
     ),
     Extension(
-        "parallel_ea",
-        sorted(glob("digneapy/solvers/_parallel_ea/src/*.cpp")),
-        include_dirs=[
-            # Path to pybind11 headers
-            get_pybind_include(),
-            get_pybind_include(user=True),
-        ],
-        extra_compile_args=compile_args,
-        extra_link_args=["-fopenmp"],
-        language="c++",
+        "digneapy._core._knn",
+        sources=["digneapy/_core/_knn.pyx"],
+        libraries=["m"],
+        compiler_directives={"language_level": "3"},
+        include_dirs=[np.get_include()],
     ),
 ]
 
@@ -98,7 +114,7 @@ setup(
     tests_require=test_requirements,
     url="https://github.com/DIGNEA/digneapy",
     version="0.2.5",
-    ext_modules=ext_modules,
+    ext_modules=cythonize(ext_modules),
     cmdclass={"build_ext": build_ext},
     zip_safe=False,
 )

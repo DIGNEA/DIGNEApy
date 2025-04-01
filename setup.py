@@ -63,7 +63,7 @@ ext_modules = [
         language="c++",
     ),
     Extension(
-        "digneapy.solvers.kp",
+        "digneapy.solvers._kp",
         sources=["digneapy/solvers/_kp.pyx"],
         libraries=["m"],
         compiler_directives={"language_level": "3"},

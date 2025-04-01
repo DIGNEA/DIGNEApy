@@ -13,29 +13,29 @@ permissions:
     contents: read
 
 jobs:
-  build_wheels:
-    name: Build wheels Linux System
+  test:
+    strategy:
+            matrix:
+                python-version: ["3.12", "3.13"]
     runs-on: ubuntu-latest
-
+    
+    name: Test application with Python ${{ matrix.python-version }}
     steps:
       - uses: actions/checkout@v4
       - name: Install uv
         uses: astral-sh/setup-uv@v5
         with:
           # Install a specific version of uv.
-          version: "0.6.10" 
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version-file: "pyproject.toml"  
-      - name: Build wheels
-        uses: pypa/cibuildwheel@v2.20.0
-        with:
-           package-dir: .
-           output-dir: wheelhouse
-           config-file: "{package}/pyproject.toml"
+          version: "0.6.10"
+          python-version: ${{ matrix.python-version }}
 
-      - uses: actions/upload-artifact@v4
-        with:
-          name: cibw-wheels-ubuntu-latest
-          path: ./wheelhouse/*.whl
+      - name: Install dependencies
+        run: |
+            uv add -r requirements.txt
+            uv add -r requirements_dev.txt
+
+      - name: Installing the project
+        run: uv sync --all-extras --dev
+
+      - name: Run tests
+        run: uv run pytest --doctest-modules tests

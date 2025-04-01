@@ -15,7 +15,7 @@ import pytest
 
 from digneapy._core import Solution
 from digneapy.domains import kp as knapsack
-from digneapy.solvers.kp import default_kp, map_kp, miw_kp, mpw_kp
+from digneapy.solvers import default_kp, map_kp, miw_kp, mpw_kp
 from digneapy.solvers.pisinger import combo, expknap, minknap
 
 

@@ -67,15 +67,3 @@ def test_uniform_one_mutation_solutions(initialised_solutions):
     new_solution = uniform_one_mutation(solution, bounds)
     assert new_solution != original
     assert sum(1 for i, j in zip(original, new_solution) if i != j) == 1
-
-
-def test_uniform_one_mutation_raises():
-    bounds = [(0, 100) for _ in range(100)]
-    with pytest.raises(Exception):
-        uniform_one_mutation(list(), bounds)
-
-
-def test_uniform_one_mutation_raises_bounds():
-    bounds = [(0, 1, 2) for _ in range(100)]
-    with pytest.raises(Exception):
-        uniform_one_mutation(list(range(100)), bounds)

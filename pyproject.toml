@@ -5,18 +5,19 @@ build-backend = "setuptools.build_meta"
 [tool.setuptools]
 py-modules = ["digneapy"]
 ext-modules = [
-    # { name = "pisinger_cpp", sources = [
-    #     "digneapy/solvers/_pisinger/src/combo.cpp",
-    #     "digneapy/solvers/_pisinger/src/expknap.cpp",
-    #     "digneapy/solvers/_pisinger/src/minknap.cpp",
-    #     "digneapy/solvers/_pisinger/src/pisinger.cpp",
-    # ] },
-    # { name = "parallel_ea", sources = [
-    #     "digneapy/solvers/_parallel_ea/src/parallel_ea.cpp",
+    { name = "pisinger_cpp", sources = [
+        "digneapy/solvers/_pisinger/src/combo.cpp",
+        "digneapy/solvers/_pisinger/src/expknap.cpp",
+        "digneapy/solvers/_pisinger/src/minknap.cpp",
+        "digneapy/solvers/_pisinger/src/pisinger.cpp",
+    ] },
+    { name = "parallel_ea", sources = [
+        "digneapy/solvers/_parallel_ea/src/parallel_ea.cpp",
 
-    # ] },
+    ] },
     {name="digneapy.solvers.kp", sources=["digneapy/solvers/_kp.pyx"]},
-    {name="digneapy._core._knn", sources=["digneapy/_core/_knn.pyx"]},
+    {name="digneapy.solvers._tsp_opt", sources=["digneapy/solvers/_tsp_opt.pyx"]},
+
 
 ]
 

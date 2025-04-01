@@ -39,29 +39,29 @@ class get_pybind_include(object):
 
 compile_args = ["-std=c++11", "-fopenmp"]
 ext_modules = [
-    # Extension(
-    #     "pisinger_cpp",
-    #     sorted(glob("digneapy/solvers/_pisinger/src/*.cpp")),
-    #     include_dirs=[
-    #         # Path to pybind11 headers
-    #         get_pybind_include(),
-    #         get_pybind_include(user=True),
-    #     ],
-    #     extra_compile_args=compile_args,
-    #     language="c++",
-    # ),
-    # Extension(
-    #     "parallel_ea",
-    #     sorted(glob("digneapy/solvers/_parallel_ea/src/*.cpp")),
-    #     include_dirs=[
-    #         # Path to pybind11 headers
-    #         get_pybind_include(),
-    #         get_pybind_include(user=True),
-    #     ],
-    #     extra_compile_args=compile_args,
-    #     extra_link_args=["-fopenmp"],
-    #     language="c++",
-    # ),
+    Extension(
+        "pisinger_cpp",
+        sorted(glob("digneapy/solvers/_pisinger/src/*.cpp")),
+        include_dirs=[
+            # Path to pybind11 headers
+            get_pybind_include(),
+            get_pybind_include(user=True),
+        ],
+        extra_compile_args=compile_args,
+        language="c++",
+    ),
+    Extension(
+        "parallel_ea",
+        sorted(glob("digneapy/solvers/_parallel_ea/src/*.cpp")),
+        include_dirs=[
+            # Path to pybind11 headers
+            get_pybind_include(),
+            get_pybind_include(user=True),
+        ],
+        extra_compile_args=compile_args,
+        extra_link_args=["-fopenmp"],
+        language="c++",
+    ),
     Extension(
         "digneapy.solvers.kp",
         sources=["digneapy/solvers/_kp.pyx"],
@@ -70,8 +70,8 @@ ext_modules = [
         include_dirs=[np.get_include()],
     ),
     Extension(
-        "digneapy._core._knn",
-        sources=["digneapy/_core/_knn.pyx"],
+        "digneapy.solvers._tsp_opt",
+        sources=["digneapy/solvers/_tsp_opt.pyx"],
         libraries=["m"],
         compiler_directives={"language_level": "3"},
         include_dirs=[np.get_include()],

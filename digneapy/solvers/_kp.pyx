@@ -26,8 +26,12 @@ from digneapy.domains.kp import Knapsack
 ctypedef long int li
 ctypedef long long int lli
 
+@cython.boundscheck(False)  # Deactivate bounds checking
+@cython.wraparound(False)   # Deactivate negative indexing
 cpdef list default_kp(problem: Knapsack):
-
+    if problem is None:
+        msg = "No problem found in args of default_kp heuristic"
+        raise ValueError(msg)
     cdef li q, N, packed, profit, i
     cdef li [:] p, w, chromosome 
 
@@ -48,7 +52,9 @@ cpdef list default_kp(problem: Knapsack):
 
 
 cpdef list map_kp(problem: Knapsack):
-    
+    if problem is None:
+        msg = "No problem found in args of default_kp heuristic"
+        raise ValueError(msg)    
     cdef li q, N, packed, profit, i
     cdef li [:] p, w, chromosome, indices
 
@@ -71,9 +77,12 @@ cpdef list map_kp(problem: Knapsack):
 
     return [Solution(chromosome=chromosome, objectives=(profit,), fitness=profit)]
 
-
+@cython.boundscheck(False)  # Deactivate bounds checking
+@cython.wraparound(False)   # Deactivate negative indexing
 cpdef list miw_kp(problem: Knapsack):
-    
+    if problem is None:
+        msg = "No problem found in args of default_kp heuristic"
+        raise ValueError(msg)    
     cdef li profit, i
 
     indices = np.argsort(problem.weights)
@@ -86,7 +95,9 @@ cpdef list miw_kp(problem: Knapsack):
 
 
 cpdef list mpw_kp(problem: Knapsack):
-    
+    if problem is None:
+        msg = "No problem found in args of default_kp heuristic"
+        raise ValueError(msg)    
     cdef li q, N, packed, profit, i
     cdef li [:] p, w, chromosome, indices
     q = problem.capacity

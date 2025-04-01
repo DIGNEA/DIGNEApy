@@ -406,9 +406,8 @@ class MapElitesGenerator:
             offspring = self._evaluate_population(offspring)
             # Only the feasible instances are considered to be included
             # in the archive and the solution set.
-            feasible_offspring = list(filter(lambda i: i.p >= 0, offspring))
 
-            self._archive.extend(feasible_offspring)
+            self._archive.extend([i for i in offspring if i.p >= 0])
 
             # Record the stats and update the performed gens
             self._logbook.update(
@@ -420,8 +419,7 @@ class MapElitesGenerator:
             blank = " " * 80
             print(f"\r{blank}\r", end="")
 
-        unfeasible_instances = list(filter(lambda i: i.p < 0, self._archive))
-        self._archive.remove(unfeasible_instances)
+        self._archive.remove_unfeasible()
         return self._archive
 
 

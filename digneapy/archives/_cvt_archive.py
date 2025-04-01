@@ -13,7 +13,7 @@
 import json
 from collections.abc import Iterable, Sequence
 from typing import Dict, Optional, Tuple
-
+from operator import attrgetter
 import numpy as np
 import numpy.typing as npt
 from sklearn.cluster import KMeans
@@ -257,6 +257,14 @@ class CVTArchive(Archive):
             if index in self._grid:
                 del self._grid[index]
 
+    def remove_unfeasible(self, attr: str = "p"):
+        """Removes all the unfeasible instances from the grid"""
+        keys_to_remove = [
+            i for i in self._grid.keys() if getattr(self._grid[i], attr) < 0
+        ]
+        for i in keys_to_remove:
+            del self._grid[i]
+
     def index_of(self, descriptors) -> np.ndarray:
         """Computes the indeces of a batch of descriptors.
 
@@ -269,7 +277,8 @@ class CVTArchive(Archive):
         Returns:
             np.ndarray:  (batch_size, ) array of integer indices representing the flattened grid coordinates.
         """
-        descriptors = np.asarray(descriptors)
+        descriptors = np.array(descriptors)
+
         if len(descriptors) == 0:
             return np.empty(0)
         if (
@@ -284,9 +293,10 @@ class CVTArchive(Archive):
                 f"(batch_size, {self._dimensions})) but it had shape "
                 f"{descriptors.shape}"
             )
-        indeces = self._kdtree.query(descriptors, return_distance=False)
-        indeces = indeces[:, 0]
-        return indeces.astype(np.int32)
+
+        indices = self._kdtree.query(descriptors, return_distance=False)
+        indices = indices[:, 0]
+        return indices.astype(np.int32)
 
     def to_file(self, file_pattern: str = "CVTArchive"):
         """Saves the centroids and the samples of the CVTArchive to .npy files

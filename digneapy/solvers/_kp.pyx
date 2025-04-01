@@ -12,24 +12,37 @@
 
 __all__ = ["default_kp", "map_kp", "miw_kp", "mpw_kp"]
 
+
+cimport cython
 import numpy as np
+cimport numpy as cnp
+cnp.import_array()  # add this line
+
 
 from digneapy._core import Solution
 from digneapy.domains.kp import Knapsack
 
 
-def default_kp(problem: Knapsack, *args, **kwargs) -> list[Solution]:
+ctypedef long int li
+ctypedef long long int lli
+
+@cython.boundscheck(False)  # Deactivate bounds checking
+@cython.wraparound(False)   # Deactivate negative indexing
+cpdef list default_kp(problem: Knapsack):
     if problem is None:
         msg = "No problem found in args of default_kp heuristic"
         raise ValueError(msg)
+    cdef li q, N, packed, profit, i
+    cdef li [:] p, w, chromosome 
 
-    p = problem.profits
-    w = problem.weights
     q = problem.capacity
     N = len(problem)
-    chromosome = np.zeros(N, dtype=np.int8)
     packed = 0
     profit = 0
+    p = problem.profits
+    w = problem.weights
+    chromosome = np.zeros(N, dtype=int)
+    
     for i in range(N):
         if packed + w[i] <= q:
             packed += w[i]
@@ -38,18 +51,21 @@ def default_kp(problem: Knapsack, *args, **kwargs) -> list[Solution]:
     return [Solution(chromosome=chromosome, objectives=(profit,), fitness=profit)]
 
 
-def map_kp(problem: Knapsack, *args, **kwargs) -> list[Solution]:
+cpdef list map_kp(problem: Knapsack):
     if problem is None:
-        msg = "No problem found in args of map_kp heuristic"
-        raise ValueError(msg)
+        msg = "No problem found in args of default_kp heuristic"
+        raise ValueError(msg)    
+    cdef li q, N, packed, profit, i
+    cdef li [:] p, w, chromosome, indices
 
-    w = problem.weights
-    p = problem.profits
     q = problem.capacity
-    chromosome = np.zeros(len(problem), dtype=np.int8)
+    N = len(problem)
     packed = 0
     profit = 0
-    indices = np.argsort(-p)
+    p = problem.profits
+    w = problem.weights
+    chromosome = np.zeros(N, dtype=int)
+    indices = np.argsort(p)[::-1]
 
     for i in indices:
         if packed + w[i] <= q:
@@ -61,14 +77,16 @@ def map_kp(problem: Knapsack, *args, **kwargs) -> list[Solution]:
 
     return [Solution(chromosome=chromosome, objectives=(profit,), fitness=profit)]
 
-
-def miw_kp(problem: Knapsack, *args, **kwargs) -> list[Solution]:
+@cython.boundscheck(False)  # Deactivate bounds checking
+@cython.wraparound(False)   # Deactivate negative indexing
+cpdef list miw_kp(problem: Knapsack):
     if problem is None:
-        msg = "No problem found in args of map_kp heuristic"
-        raise ValueError(msg)
+        msg = "No problem found in args of default_kp heuristic"
+        raise ValueError(msg)    
+    cdef li profit, i
 
     indices = np.argsort(problem.weights)
-    chromosome = np.zeros(len(problem), dtype=np.int8)
+    chromosome = np.zeros(len(problem), dtype=int)
     weights_cumsum = np.cumsum(problem.weights[indices])
     selected = indices[weights_cumsum <= problem.capacity]
     chromosome[selected] = 1
@@ -76,19 +94,21 @@ def miw_kp(problem: Knapsack, *args, **kwargs) -> list[Solution]:
     return [Solution(chromosome=chromosome, objectives=(profit,), fitness=profit)]
 
 
-def mpw_kp(problem: Knapsack, *args, **kwargs) -> list[Solution]:
+cpdef list mpw_kp(problem: Knapsack):
     if problem is None:
-        msg = "No problem found in args of mpw_kp heuristic"
-        raise ValueError(msg)
-    w = problem.weights
-    p = problem.profits
+        msg = "No problem found in args of default_kp heuristic"
+        raise ValueError(msg)    
+    cdef li q, N, packed, profit, i
+    cdef li [:] p, w, chromosome, indices
     q = problem.capacity
-    N = len(w)
-    indices = np.argsort([(p[i] / w[i]) for i in range(N)])[::-1]
-
+    N = len(problem)
     packed = 0
     profit = 0
-    chromosome = np.zeros(len(problem), dtype=np.int8)
+    p = problem.profits
+    w = problem.weights
+    chromosome = np.zeros(N, dtype=int)
+    indices = np.argsort([(p[i] / w[i]) for i in range(N)])[::-1]
+
     for idx in indices:
         if packed + w[idx] <= q:
             packed += w[idx]

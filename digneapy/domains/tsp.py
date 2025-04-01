@@ -15,7 +15,6 @@ from collections.abc import Sequence
 from typing import Mapping, Self, Tuple
 
 import numpy as np
-from more_itertools import windowed
 from sklearn.cluster import DBSCAN
 
 from digneapy._core import Domain, Instance, Problem, Solution
@@ -54,8 +53,8 @@ class TSP(Problem):
 
     def __evaluate_constraints(self, individual: Sequence | Solution) -> bool:
         counter = Counter(individual)
-        if (individual[0] != 0 or individual[-1] != 0) or any(
-            counter[c] != 1 for c in counter if c != 0
+        if any(counter[c] != 1 for c in counter if c != 0) or (
+            individual[0] != 0 or individual[-1] != 0
         ):
             return False
         return True
@@ -64,9 +63,6 @@ class TSP(Problem):
         """Evaluates the candidate individual with the information of the Travelling Salesmas Problem.
 
         The fitness of the solution is the fraction of the sum of the distances of the tour
-        defined as:
-        # TODO: Update with the correct equation (x) = \\frac{\\sum_{k=1}^{N} \\left(\\frac{fill_k}{C}\\right)^2}{N}
-
         Args:
             individual (Sequence | Solution): Individual to evaluate
 
@@ -77,17 +73,18 @@ class TSP(Problem):
             msg = f"Mismatch between individual variables ({len(individual)}) and instance variables ({self._nodes}) in {self.__class__.__name__}. A solution for the TSP must be a sequence of len {self._nodes + 1}"
             raise ValueError(msg)
 
-        distance = 0.0
-        penalty = 0.0
+        penalty: np.float32 = 0.0
 
         if self.__evaluate_constraints(individual):
-            for a, b in windowed(individual, n=2):
-                distance += self._distances[a][b]
+            distance: float = 0.0
+            for i in range(len(individual) - 2):
+                distance += self._distances[individual[i]][individual[i + 1]]
+
+            fitness = 1.0 / distance
         else:
-            distance = np.finfo(np.float32).max
+            fitness = 2.938736e-39  # --> 1.0 / np.float.max
             penalty = np.finfo(np.float32).max
 
-        fitness = 1.0 / (distance + penalty)
         if isinstance(individual, Solution):
             individual.fitness = fitness
             individual.objectives = (fitness,)

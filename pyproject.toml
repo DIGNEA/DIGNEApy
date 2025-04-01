@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=70", "cmake>=3.31.0", "wheel", "ninja", "pybind11>=2.13.6"]
+requires = ["setuptools>=70", "cmake>=3.31.0", "wheel", "ninja", "pybind11>=2.13.6", "Cython", "numpy"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools]
@@ -14,7 +14,11 @@ ext-modules = [
     { name = "parallel_ea", sources = [
         "digneapy/solvers/_parallel_ea/src/parallel_ea.cpp",
 
-    ] }
+    ] },
+    {name="digneapy.solvers.kp", sources=["digneapy/solvers/_kp.pyx"]},
+    {name="digneapy.solvers._tsp_opt", sources=["digneapy/solvers/_tsp_opt.pyx"]},
+
+
 ]
 
 [project]

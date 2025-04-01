@@ -3,9 +3,11 @@
 """The setup script."""
 
 from glob import glob
-
 from setuptools import Extension, find_packages, setup
 from setuptools.command.build_ext import build_ext
+from Cython.Build import cythonize
+
+import numpy as np
 
 with open("README.md") as readme_file:
     readme = readme_file.read()
@@ -13,7 +15,7 @@ with open("README.md") as readme_file:
 with open("HISTORY.md") as history_file:
     history = history_file.read()
 
-requirements = []
+requirements: list[str] = []
 
 test_requirements = [
     "pytest>=3",
@@ -60,6 +62,20 @@ ext_modules = [
         extra_link_args=["-fopenmp"],
         language="c++",
     ),
+    Extension(
+        "digneapy.solvers.kp",
+        sources=["digneapy/solvers/_kp.pyx"],
+        libraries=["m"],
+        compiler_directives={"language_level": "3"},
+        include_dirs=[np.get_include()],
+    ),
+    Extension(
+        "digneapy.solvers._tsp_opt",
+        sources=["digneapy/solvers/_tsp_opt.pyx"],
+        libraries=["m"],
+        compiler_directives={"language_level": "3"},
+        include_dirs=[np.get_include()],
+    ),
 ]
 
 setup(
@@ -98,7 +114,7 @@ setup(
     tests_require=test_requirements,
     url="https://github.com/DIGNEA/digneapy",
     version="0.2.5",
-    ext_modules=ext_modules,
+    ext_modules=cythonize(ext_modules),
     cmdclass={"build_ext": build_ext},
     zip_safe=False,
 )

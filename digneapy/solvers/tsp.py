@@ -10,52 +10,60 @@
 @Desc    :   None
 """
 
-__all__ = ["two_opt", "nneighbour", "three_opt", "greedy"]
-
-
-from collections import Counter
+__all__ = ["nneighbour", "greedy", "three_opt"]
 
 import numpy as np
-
-from digneapy._core import Solution
 from digneapy.domains.tsp import TSP
+from digneapy import Solution
+from collections import Counter
 
 
-def two_opt(problem: TSP, *args, **kwargs) -> list[Solution]:
-    """2-Opt Heuristic for the Travelling Salesman Problem
+def greedy(problem: TSP, *args, **kwargs) -> list[Solution]:
+    """The Greedy heuristic gradually constructs a tour by
+    repeatedly selecting the shortest edge and adding it to the tour as long as
+    it doesn’t create a cycle with less than N edges, or increases the degree of
+    any node to more than 2. We must not add the same edge twice of course.
 
-    Args:
-        problem (TSP): problem to solve
+       Args:
+           problem (TSP): Problem to solve
 
-    Raises:
-        ValueError: If problem is None
+       Raises:
+           ValueError: If problem is None
 
-    Returns:
-        list[Solution]: Collection of solutions
+       Returns:
+           list[Solution]: Collection of solutions for the given problem
     """
     if problem is None:
         raise ValueError("No problem found in two_opt heuristic")
-    tour = np.asarray([0] + list(range(1, problem.dimension)) + [0])
+    N = problem.dimension
     distances = problem._distances
-    improve = True
-    while improve:
-        improve = False
-        for i in range(1, len(tour) - 2):
-            for j in range(i + 2, len(tour)):
-                if j - i == 1:
-                    continue
-                current = (
-                    distances[tour[i - 1]][tour[j - 1]] + distances[tour[i]][tour[j]]
-                )
-                newer = (
-                    distances[tour[i - 1]][tour[i]] + distances[tour[j - 1]][tour[j]]
-                )
+    counter = Counter()
+    selected: set[tuple[int, int]] = set()
 
-                if newer < current:
-                    tour[i:j] = tour[j - 1 : i - 1 : -1]
-                    improve = True
-    _fitness = problem.evaluate(tour)[0]
-    return [Solution(chromosome=tour, objectives=(_fitness,), fitness=_fitness)]
+    ordered_edges = sorted(
+        [(distances[i][j], i, j) for i in range(N) for j in range(i + 1, N)]
+    )
+
+    length = 0.0
+    for dist, i, j in ordered_edges:
+        if (i, j) in selected or (j, i) in selected:
+            continue
+        if counter[i] >= 2 or counter[j] >= 2:
+            continue
+        selected.add((i, j))
+        counter[i] += 1
+        counter[j] += 1
+        length += dist
+        if len(selected) == N:
+            break
+
+    _fitness = 1.0 / length
+
+    return [
+        Solution(
+            chromosome=list(range(N + 1)), objectives=(_fitness,), fitness=_fitness
+        )
+    ]
 
 
 def nneighbour(problem: TSP, *args, **kwargs) -> list[Solution]:
@@ -113,9 +121,10 @@ def three_opt(problem: TSP, *args, **kwargs) -> list[Solution]:
     """
     if problem is None:
         raise ValueError("No problem found in three_opt heuristic")
-    tour = [0] + list(range(1, problem.dimension)) + [0]
     distances = problem._distances
     N = problem.dimension
+    tour = np.arange(start=0, stop=N + 1, step=1, dtype=int)
+    tour[-1] = 0
     improve = True
     while improve:
         improve = False
@@ -138,53 +147,5 @@ def three_opt(problem: TSP, *args, **kwargs) -> list[Solution]:
                         tour = new_tour
                         improve = True
 
-    _fitness = problem.evaluate(tour)[0]
-    return [Solution(chromosome=tour, objectives=(_fitness,), fitness=_fitness)]
-
-
-def greedy(problem: TSP, *args, **kwargs) -> list[Solution]:
-    """The Greedy heuristic gradually constructs a tour by
-    repeatedly selecting the shortest edge and adding it to the tour as long as
-    it doesn’t create a cycle with less than N edges, or increases the degree of
-    any node to more than 2. We must not add the same edge twice of course.
-
-       Args:
-           problem (TSP): Problem to solve
-
-       Raises:
-           ValueError: If problem is None
-
-       Returns:
-           list[Solution]: Collection of solutions for the given problem
-    """
-    if problem is None:
-        raise ValueError("No problem found in two_opt heuristic")
-    N = problem.dimension
-    distances = problem._distances
-    counter = Counter()
-    selected: set[tuple[int, int]] = set()
-
-    ordered_edges = sorted(
-        [(distances[i][j], i, j) for i in range(N) for j in range(i + 1, N)]
-    )
-
-    length = 0.0
-    for dist, i, j in ordered_edges:
-        if (i, j) in selected or (j, i) in selected:
-            continue
-        if counter[i] >= 2 or counter[j] >= 2:
-            continue
-        selected.add((i, j))
-        counter[i] += 1
-        counter[j] += 1
-        length += dist
-        if len(selected) == N:
-            break
-
-    _fitness = 1.0 / length
-
-    return [
-        Solution(
-            chromosome=list(range(N + 1)), objectives=(_fitness,), fitness=_fitness
-        )
-    ]
+    fitness = problem.evaluate(tour)[0]
+    return [Solution(chromosome=tour, objectives=(fitness,), fitness=fitness)]

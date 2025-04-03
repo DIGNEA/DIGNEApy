@@ -157,5 +157,5 @@ class Logbook:
         df_p.columns = ["gen", *[f"{h}_p" for h in self._headers]]
         df = pd.merge(df_f, df_s, on=["gen"])
         df = pd.merge(df, df_p, on=["gen"])
-
+        df.set_index("gen", inplace=True)
         return df

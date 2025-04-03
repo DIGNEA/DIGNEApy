@@ -5,7 +5,7 @@
 import numpy as np
 import pytest
 
-from digneapy import NS, DominatedNS, Instance, Archive
+from digneapy import NS, Archive, DominatedNS, Instance
 
 
 @pytest.fixture

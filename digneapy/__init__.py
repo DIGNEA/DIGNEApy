@@ -24,6 +24,7 @@ from ._core import (
 from ._core.descriptors import DESCRIPTORS, DescStrategy, descriptor
 from ._core.scores import PerformanceFn, max_gap_target, runtime_score
 from .archives import Archive, CVTArchive, GridArchive
+from .generators import GenResult, IsGenerator
 
 __dignea_submodules = {"utils", "generators", "solvers", "visualize"}
 

@@ -145,11 +145,19 @@ class Archive:
         components = (format(c, fmt_spec) for c in variables)
         return outer_fmt.format(", ".join(components))
 
+    def asdict(self) -> dict:
+        return {
+            "threshold": self._threshold,
+            "instances": {
+                i: instance.asdict() for i, instance in enumerate(self.instances)
+            },
+        }
+
     def to_json(self) -> str:
         """Converts the archive into a JSON object
 
         Returns:
             str: JSON str of the archive content
         """
-        data = {"threshold": self._threshold, "instances": self._instances}
-        return json.dumps(data, indent=4)
+
+        return json.dumps(self.asdict(), indent=4)

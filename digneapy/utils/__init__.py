@@ -11,5 +11,7 @@
 """
 
 from ._timers import clock
+from .serializer import to_json
+from .save_data import save_instances
 
-__all__ = ["clock"]
+__all__ = ["clock", "to_json", "save_instances"]

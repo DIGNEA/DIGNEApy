@@ -10,13 +10,13 @@
 @Desc    :   None
 """
 
-__all__ = ["EAGenerator", "MapElitesGenerator", "DEAGenerator"]
+__all__ = ["GenResult", "EAGenerator", "MapElitesGenerator", "DEAGenerator"]
 
-import random
 from collections.abc import Iterable
 from operator import attrgetter
-from typing import Optional, Tuple
-
+from typing import Optional, Tuple, Protocol
+from dataclasses import dataclass
+import random
 import numpy as np
 
 from ._core import (
@@ -41,10 +41,24 @@ from .operators import (
     uniform_crossover,
     uniform_one_mutation,
 )
+
 from .transformers import SupportsTransform
 
 
-class EAGenerator:
+@dataclass
+class GenResult:
+    target: str
+    instances: Iterable[Instance]
+    metrics: Logbook
+
+
+class IsGenerator(Protocol):
+    """Protocol to type check all generators of instances types in digneapy"""
+
+    def __call__(self, *args, **kwargs) -> GenResult: ...
+
+
+class EAGenerator(IsGenerator):
     """Object to generate instances based on a Evolutionary Algorithn with set of diverse solutions"""
 
     def __init__(
@@ -68,6 +82,7 @@ class EAGenerator:
         phi: float = 0.85,
     ):
         """Creates a Evolutionary Instance Generator based on Novelty Search
+            The target solver is the first solver in the portfolio.
 
         Args: TODO: Update the references
             pop_size (int, optional): Number of instances in the population to evolve. Defaults to 100.
@@ -84,10 +99,9 @@ class EAGenerator:
             cxrate (float, optional): Crossover rate. Defaults to 0.5.
             mutrate (float, optional): Mutation rate. Defaults to 0.8.
             phi (float, optional): Phi balance value for the weighted fitness function. Defaults to 0.85.
-            The target solver is the first solver in the portfolio. Defaults to True.
 
         Raises:
-            ValueError: Raises error if phi is not in the range [0.0-1.0]
+            ValueError: Raises error if phi is not a floating point value or it is not in the range [0.0-1.0]
         """
 
         try:
@@ -148,7 +162,7 @@ class EAGenerator:
         domain_name = self.domain.name if self.domain is not None else "None"
         return f"EAGenerator<pop_size={self.pop_size},gen={self.generations},domain={domain_name},portfolio={port_names!r},{self._novelty_search.__repr__()}>"
 
-    def __call__(self, verbose: bool = False) -> Tuple[Archive, Optional[Archive]]:
+    def __call__(self, verbose: bool = False) -> GenResult:
         if self.domain is None:
             raise ValueError("You must specify a domain to run the generator.")
         if len(self.portfolio) == 0:
@@ -189,9 +203,15 @@ class EAGenerator:
             blank = " " * 80
             print(f"\r{blank}\r", end="")
 
-        return (
-            self._novelty_search.archive,
-            self._ns_solution_set.archive if self._ns_solution_set else None,
+        _instances = (
+            self._ns_solution_set.archive
+            if self._ns_solution_set is not None
+            else self._novelty_search.archive
+        )
+        return GenResult(
+            target=self.portfolio[0].__name__,
+            instances=_instances,
+            metrics=self._logbook,
         )
 
     def _generate_offspring(self, offspring_size: int) -> list[Instance]:

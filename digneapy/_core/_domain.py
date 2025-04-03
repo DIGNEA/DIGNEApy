@@ -27,6 +27,7 @@ class Domain(ABC):
         bounds: Sequence[tuple],
         dtype=np.float64,
         name: str = "Domain",
+        feat_names: Sequence[str] = [""],
         *args,
         **kwargs,
     ):
@@ -35,6 +36,7 @@ class Domain(ABC):
         self._dimension = dimension
         self._bounds = bounds
         self._dtype = dtype
+        self._feat_names = feat_names
         if len(self._bounds) != 0:
             ranges = list(zip(*bounds))
             self._lbs = np.array(ranges[0], dtype=dtype)
@@ -82,6 +84,16 @@ class Domain(ABC):
     def from_instance(self, instance: Instance) -> Problem:
         msg = "from_instance is not implemented in Domain class."
         raise NotImplementedError(msg)
+
+    @property
+    def feat_names(self):
+        """Returns the names of the features defined for this domain. Useful for pretty formatting the results
+
+
+        Returns:
+            List[str]: List with the names of the features used in this domain.
+        """
+        return self._feat_names
 
     @property
     def bounds(self):

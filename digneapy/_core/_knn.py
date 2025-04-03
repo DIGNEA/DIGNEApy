@@ -10,9 +10,10 @@
 @Desc    :   None
 """
 
+from collections.abc import Sequence
+
 import numpy as np
 
-from collections.abc import Sequence
 from digneapy._core import Instance
 
 

@@ -327,11 +327,16 @@ class GridArchive(Archive):
             ).T.astype(int)
         return unravel_indices
 
-    def to_json(self):
-        data = {
+    def asdict(self) -> dict:
+        return {
             "dimensions": self._dimensions.tolist(),
             "lbs": self._lower_bounds.tolist(),
             "ubs": self._upper_bounds.tolist(),
             "n_cells": self._cells.astype(int),
+            "instances": {
+                i: instance.asdict() for i, instance in enumerate(self._grid.values())
+            },
         }
-        return json.dumps(data, indent=4)
+
+    def to_json(self) -> str:
+        return json.dumps(self.asdict(), indent=4)

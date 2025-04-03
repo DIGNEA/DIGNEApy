@@ -12,10 +12,12 @@
 
 __all__ = ["nneighbour", "greedy", "three_opt"]
 
-import numpy as np
-from digneapy.domains.tsp import TSP
-from digneapy import Solution
 from collections import Counter
+
+import numpy as np
+
+from digneapy import Solution
+from digneapy.domains.tsp import TSP
 
 
 def greedy(problem: TSP, *args, **kwargs) -> list[Solution]:

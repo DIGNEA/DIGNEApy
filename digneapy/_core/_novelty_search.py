@@ -13,11 +13,12 @@
 from collections.abc import Sequence
 from operator import attrgetter
 from typing import Optional, Tuple
+
 import numpy as np
 
 from digneapy._core._instance import Instance
-from digneapy.archives import Archive
 from digneapy._core._knn import sparseness
+from digneapy.archives import Archive
 
 
 class NS:
@@ -58,10 +59,10 @@ class NS:
         return self._k
 
     def __str__(self):
-        return f"NS(k={self._k },A={self._archive})"
+        return f"NS(k={self._k},A={self._archive})"
 
     def __repr__(self) -> str:
-        return f"NS<k={self._k },A={self._archive}>"
+        return f"NS<k={self._k},A={self._archive}>"
 
     def __call__(
         self, instances: Sequence[Instance]

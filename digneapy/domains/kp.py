@@ -139,7 +139,12 @@ class KnapsackDomain(Domain):
             (min_w, max_w) if i % 2 == 0 else (min_p, max_p)
             for i in range(2 * dimension)
         ]
-        super().__init__(dimension=dimension, bounds=bounds, name="KP")
+        super().__init__(
+            dimension=dimension,
+            bounds=bounds,
+            name="KP",
+            feat_names="capacity,max_p,max_w,min_p,min_w,avg_eff,mean,std".split(","),
+        )
 
     @property
     def capacity_approach(self):
@@ -228,9 +233,11 @@ class KnapsackDomain(Domain):
         Returns:
             Mapping[str, float]: Dictionary with the names/values of each feature
         """
-        names = "capacity,max_p,max_w,min_p,min_w,avg_eff,mean,std"
-        features = self.extract_features(instance)
-        return {k: v for k, v in zip(names.split(","), features)}
+        if len(instance.features) == len(self._feat_names):
+            return {k: v for k, v in zip(self._feat_names, instance.features)}
+        else:
+            features = self.extract_features(instance)
+            return {k: v for k, v in zip(self._feat_names, features)}
 
     def from_instance(self, instance: Instance) -> Knapsack:
         variables = instance.variables

@@ -118,21 +118,10 @@ def test_eig_gen_kp_perf_descriptor():
         descriptor_strategy="performance",
         replacement=generational_replacement,
     )
-    archive, solution_set = eig()
+    result = eig()
+    solution_set = result.instances
     # They could be empty
-    assert isinstance(archive, Archive)
     assert isinstance(solution_set, Archive)
-    # If they're not empty
-    if len(archive) != 0:
-        assert all(len(s) == 101 for s in archive)
-        assert all(s.fitness >= 0.0 for s in archive)
-        assert all(s.p >= 0.0 for s in archive)
-        assert all(s.s >= 0.0 for s in archive)
-        assert all(len(s.descriptor) == len(portfolio) for s in archive)
-        assert all(len(s.portfolio_scores) == len(portfolio) for s in archive)
-        p_scores = [s.portfolio_scores for s in archive]
-        # The instances are biased to the performance of the target
-        assert all(max(p_scores[i]) == p_scores[i][0] for i in range(len(p_scores)))
 
     if len(solution_set) != 0:
         assert all(len(s) == 101 for s in solution_set)
@@ -161,21 +150,10 @@ def test_eig_gen_kp_feat_descriptor():
         descriptor_strategy="features",
         replacement=generational_replacement,
     )
-    archive, solution_set = eig()
+    result = eig()
+    solution_set = result.instances
     # They could be empty
-    assert isinstance(archive, Archive)
     assert isinstance(solution_set, Archive)
-    # If they're not empty
-    if len(archive) != 0:
-        assert all(len(s) == 101 for s in archive)
-        assert all(s.fitness >= 0.0 for s in archive)
-        assert all(s.p >= 0.0 for s in archive)
-        assert all(s.s >= 0.0 for s in archive)
-        assert all(len(s.descriptor) == 8 for s in archive)
-        assert all(len(s.portfolio_scores) == len(portfolio) for s in archive)
-        p_scores = [s.portfolio_scores for s in archive]
-        # The instances are biased to the performance of the target
-        assert all(max(p_scores[i]) == p_scores[i][0] for i in range(len(p_scores)))
 
     if len(solution_set) != 0:
         assert all(len(s) == 101 for s in solution_set)
@@ -212,23 +190,10 @@ def test_eig_gen_kp_inst_descriptor():
         descriptor_strategy="instance",
         replacement=generational_replacement,
     )
-    archive, solution_set = eig()
+    result = eig()
+    solution_set = result.instances
     # They could be empty
-    assert isinstance(archive, Archive)
     assert isinstance(solution_set, Archive)
-    # If they're not empty
-    if len(archive) != 0:
-        assert all(len(s) == 101 for s in archive)
-        assert all(s.fitness >= 0.0 for s in archive)
-        assert all(s.p >= 0.0 for s in archive)
-        assert all(s.s >= 0.0 for s in archive)
-        assert all(
-            len(s.descriptor) == len(s) for s in archive
-        )  # Because we do not calculate features in this case
-        assert all(len(s.portfolio_scores) == len(portfolio) for s in archive)
-        p_scores = [s.portfolio_scores for s in archive]
-        # The instances are biased to the performance of the target
-        assert all(max(p_scores[i]) == p_scores[i][0] for i in range(len(p_scores)))
 
     if len(solution_set) != 0:
         assert all(len(s) == 101 for s in solution_set)

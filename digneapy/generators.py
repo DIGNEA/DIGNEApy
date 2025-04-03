@@ -19,14 +19,7 @@ from dataclasses import dataclass
 import random
 import numpy as np
 
-from ._core import (
-    NS,
-    Domain,
-    DominatedNS,
-    Instance,
-    P,
-    SupportsSolve,
-)
+from ._core import NS, Domain, DominatedNS, Instance, P, SupportsSolve, RNG
 from ._core._metrics import Logbook
 from ._core.descriptors import DESCRIPTORS
 from ._core.scores import PerformanceFn, max_gap_target
@@ -52,13 +45,13 @@ class GenResult:
     metrics: Logbook
 
 
-class IsGenerator(Protocol):
+class Generator(Protocol):
     """Protocol to type check all generators of instances types in digneapy"""
 
     def __call__(self, *args, **kwargs) -> GenResult: ...
 
 
-class EAGenerator(IsGenerator):
+class EAGenerator(Generator, RNG):
     """Object to generate instances based on a Evolutionary Algorithn with set of diverse solutions"""
 
     def __init__(
@@ -80,6 +73,7 @@ class EAGenerator(IsGenerator):
         replacement: Replacement = generational_replacement,
         performance_function: PerformanceFn = max_gap_target,
         phi: float = 0.85,
+        seed: int = 42,
     ):
         """Creates a Evolutionary Instance Generator based on Novelty Search
             The target solver is the first solver in the portfolio.
@@ -147,6 +141,7 @@ class EAGenerator(IsGenerator):
         self.performance_function = performance_function
 
         self._logbook = Logbook(batch_size=self.offspring_size)
+        self.initialize_rng(seed=seed)
 
     @property
     def log(self) -> Logbook:
@@ -180,7 +175,7 @@ class EAGenerator(IsGenerator):
             offspring = self._evaluate_population(offspring)
             offspring = self._update_descriptors(offspring)
             offspring, _ = self._novelty_search(offspring)
-            offspring = self._compute_fitness(population=offspring)  # Fitness = p&s
+            offspring = self._compute_fitness(population=offspring)
 
             # Only the feasible instances are considered to be included
             # in the archive and the solution set.
@@ -305,7 +300,7 @@ class EAGenerator(IsGenerator):
         Returns:
             Instance: New offspring
         """
-        if np.random.rand() < self.cxrate:
+        if self._rng.random() < self.cxrate:
             off = self.crossover(p_1, p_2)
             return self.mutation(off, self.domain.bounds)
         else:

@@ -22,7 +22,7 @@ from digneapy.domains.tsp import TSP, TSPDomain
 @pytest.fixture
 def default_tsp():
     N = 100
-    _coords = np.random.randint(
+    _coords = np.random.default_rng(seed=42).integers(
         low=(0),
         high=(1000),
         size=(N, 2),
@@ -77,7 +77,7 @@ def test_tsp_domain_to_features():
     features = domain.extract_features(instance)
     assert isinstance(features, tuple)
     assert len(features) == 11
-    assert all(f != 0.0 for f in features)
+    assert all(not np.isclose(f, 0.0) for f in features)
     assert features[0] == dimension
 
 
@@ -88,13 +88,15 @@ def test_bpp_domain_to_features_dict():
     features = domain.extract_features_as_dict(instance)
     assert isinstance(features, dict)
     assert len(features.keys()) == 11
-    assert all(f != 0.0 for f in features.values())
+    assert all(not np.isclose(f, 0.0) for f in features.values())
     assert features["size"] == dimension
 
 
 def test_tsp_domain_to_instance():
     dimension = 100
-    variables = np.random.randint(low=1, high=1000, size=(dimension, 2))
+    variables = np.random.default_rng(seed=42).integers(
+        low=1, high=1000, size=(dimension, 2)
+    )
     variables = variables.flatten()
     instance = Instance(variables)
 

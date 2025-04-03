@@ -15,17 +15,18 @@ from collections.abc import Sequence
 from typing import Tuple, TypeVar
 
 import numpy as np
-
+from .types import RNG
 from ._solution import Solution
 
 
-class Problem(ABC):
+class Problem(ABC, RNG):
     def __init__(
         self,
         dimension: int,
         bounds: Sequence[tuple],
         name: str = "DefaultProblem",
         dtype=np.float64,
+        seed: int = 42,
         *args,
         **kwargs,
     ):
@@ -34,6 +35,7 @@ class Problem(ABC):
         self._dimension = dimension
         self._bounds = bounds
         self._dtype = dtype
+        self.initialize_rng(seed=seed)
         if len(self._bounds) != 0:
             ranges = list(zip(*bounds))
             self._lbs = np.array(ranges[0], dtype=dtype)

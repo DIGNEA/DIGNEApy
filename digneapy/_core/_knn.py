@@ -67,7 +67,7 @@ def sparseness(
     for i in range(num_instances):
         mask = np.ones(num_instances, bool)
         mask[i] = False
-        differences = combined[i] - combined[np.where(mask)[0]]
+        differences = combined[i] - combined[np.nonzero(mask)]
         distances = np.linalg.norm(differences, axis=1)
         _neighbors = np.partition(distances, k + 1)[1 : k + 1]
         result[i] = np.sum(_neighbors) / k

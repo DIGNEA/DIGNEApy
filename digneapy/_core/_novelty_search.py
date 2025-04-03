@@ -138,10 +138,10 @@ class DominatedNS(NS):
         perf_values = np.array([instance.p for instance in instances])
         descriptors = np.array([instance.descriptor for instance in instances])
         mask = perf_values[:, None] > perf_values
-        dominated_indices = [np.where(row)[0] for row in mask]
+        dominated_indices = [np.nonzero(row) for row in mask]
         fitness_values = np.full(num_instances, np.finfo(np.float32).max)
         for i in range(num_instances):
-            if dominated_indices[i].size > 0:
+            if dominated_indices[i][0].size > 0:
                 dist = np.linalg.norm(
                     descriptors[i] - descriptors[dominated_indices[i]], axis=1
                 )

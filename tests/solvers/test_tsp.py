@@ -19,8 +19,10 @@ from digneapy.solvers import greedy, nneighbour, two_opt
 
 @pytest.fixture
 def default_tsp_instance():
+    rng = np.random.default_rng(seed=42)
+
     N = 100
-    _coords = np.random.randint(
+    _coords = rng.integers(
         low=(0),
         high=(1000),
         size=(N, 2),
@@ -33,7 +35,7 @@ def test_two_opt_solves_sample(default_tsp_instance):
     solutions = two_opt(default_tsp_instance)
     assert len(solutions) == 1
     assert len(solutions[0]) == len(default_tsp_instance) + 1
-    assert solutions[0].fitness != 0.0
+    assert not np.isclose(solutions[0].fitness, 0.0)
 
 
 def test_two_opt_raises_sample():
@@ -51,7 +53,7 @@ def test_nneighbour_solves_sample(default_tsp_instance):
     solutions = nneighbour(default_tsp_instance)
     assert len(solutions) == 1
     assert len(solutions[0]) == len(default_tsp_instance) + 1
-    assert solutions[0].fitness != 0.0
+    assert not np.isclose(solutions[0].fitness, 0.0)
 
 
 def test_nneighbour_raises_sample():
@@ -69,7 +71,7 @@ def test_greedy_solves_sample(default_tsp_instance):
     solutions = greedy(default_tsp_instance)
     assert len(solutions) == 1
     assert len(solutions[0]) == len(default_tsp_instance) + 1
-    assert solutions[0].fitness != 0.0
+    assert not np.isclose(solutions[0].fitness, 0.0)
 
 
 def test_greedy_raises_sample():

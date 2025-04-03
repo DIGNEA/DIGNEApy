@@ -99,16 +99,16 @@ class KerasNN(Transformer):
         self._model.set_weights(reshaped_weights)
         return True
 
-    def predict(self, X: npt.NDArray) -> np.ndarray:
-        if len(X) == 0:
-            msg = "X cannot be None in KerasNN predict"
+    def predict(self, x: npt.NDArray) -> np.ndarray:
+        if len(x) == 0:
+            msg = "x cannot be None in KerasNN predict"
             raise RuntimeError(msg)
         if self._scaler is not None:
-            X = self._scaler.fit_transform(X)
-        return self._model.predict(X, verbose=0)
+            x = self._scaler.fit_transform(x)
+        return self._model.predict(x, verbose=0)
 
-    def __call__(self, X: npt.NDArray) -> np.ndarray:
-        return self.predict(X)
+    def __call__(self, x: npt.NDArray) -> np.ndarray:
+        return self.predict(x)
 
 
 class TorchNN(Transformer, torch.nn.Module):
@@ -184,15 +184,15 @@ class TorchNN(Transformer, torch.nn.Module):
 
         return True
 
-    def predict(self, X: npt.NDArray) -> np.ndarray:
-        return self.forward(X)
+    def predict(self, x: npt.NDArray) -> np.ndarray:
+        return self.forward(x)
 
-    def forward(self, X: npt.NDArray) -> np.ndarray:
+    def forward(self, x: npt.NDArray) -> np.ndarray:
         """This is a necessary method for the PyTorch module.
         It works as a predict method in Keras
 
         Args:
-            X (npt.NDArray): Sequence of instances to evaluate and predict their descriptor
+            x (npt.NDArray): Sequence of instances to evaluate and predict their descriptor
 
         Raises:
             RuntimeError: If Sequence is empty
@@ -200,18 +200,18 @@ class TorchNN(Transformer, torch.nn.Module):
         Returns:
             Numpy.ndarray: Descriptor of the instances
         """
-        if len(X) == 0:
-            msg = "X cannot be None in TorchNN forward"
+        if len(x) == 0:
+            msg = "x cannot be None in TorchNN forward"
             raise RuntimeError(msg)
         if self._scaler is not None:
-            X = self._scaler.fit_transform(X)
+            x = self._scaler.fit_transform(x)
 
-        X = torch.tensor(X, dtype=torch.float32)
-        y = X
+        x = torch.tensor(x, dtype=torch.float32)
+        y = x
         for layer in self._model:
             y = layer(y)
         y = y.detach().numpy()
         return y
 
-    def __call__(self, X: npt.NDArray) -> np.ndarray:
-        return self.forward(X)
+    def __call__(self, x: npt.NDArray) -> np.ndarray:
+        return self.forward(x)

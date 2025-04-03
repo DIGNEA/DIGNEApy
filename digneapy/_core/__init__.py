@@ -18,6 +18,7 @@ from ._novelty_search import NS, DominatedNS
 from ._problem import P, Problem
 from ._solution import Solution
 from ._solver import Solver, SupportsSolve
+from .types import RNG
 
 __all__ = [
     "Domain",
@@ -34,4 +35,5 @@ __all__ = [
     "qd_score",
     "QDSCoreAUC",
     "Logbook",
+    "RNG",
 ]

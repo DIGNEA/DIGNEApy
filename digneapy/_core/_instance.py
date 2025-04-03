@@ -11,7 +11,7 @@
 """
 
 import operator
-from typing import Optional, Self, Sequence, Iterable
+from typing import Optional, Self, Sequence
 
 import numpy as np
 import numpy.typing as npt
@@ -39,7 +39,6 @@ class Instance:
             raise ValueError(
                 "The fitness, p and s parameters must be convertible to float"
             )
-        import numpy as np
 
         self._vars = np.array(variables) if variables is not None else np.empty(0)
         self._fit = fitness
@@ -167,20 +166,26 @@ class Instance:
             except ValueError:
                 return False
         else:
-            msg = f"Other of type {other.__class__.__name__} can not be compared with with {self.__class__.__name__}"
-            raise NotImplementedError(msg)
+            print(
+                f"Other of type {other.__class__.__name__} can not be compared with with {self.__class__.__name__}"
+            )
+            return NotImplemented
 
     def __gt__(self, other):
         if not isinstance(other, Instance):
-            msg = f"Other of type {other.__class__.__name__} can not be compared with with {self.__class__.__name__}"
-            raise NotImplementedError(msg)
+            print(
+                f"Other of type {other.__class__.__name__} can not be compared with with {self.__class__.__name__}"
+            )
+            return NotImplemented
 
         return self.fitness > other.fitness
 
     def __ge__(self, other):
         if not isinstance(other, Instance):
-            msg = f"Other of type {other.__class__.__name__} can not be compared with with {self.__class__.__name__}"
-            raise NotImplementedError(msg)
+            print(
+                f"Other of type {other.__class__.__name__} can not be compared with with {self.__class__.__name__}"
+            )
+            return NotImplemented
 
         return self.fitness >= other.fitness
 

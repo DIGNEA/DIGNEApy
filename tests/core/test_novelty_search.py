@@ -26,16 +26,18 @@ def test_default_ns(ns):
 
 
 def __random_descriptors(n, size: int = 100):
-    return [np.random.uniform(low=0, high=100, size=n) for _ in range(size)]
+    rng = np.random.default_rng(seed=42)
+    return [rng.uniform(low=0, high=100, size=n) for _ in range(size)]
 
 
 @pytest.fixture
 def random_population():
     features = __random_descriptors(n=10)
     performances = __random_descriptors(n=(4, 4))
+    rng = np.random.default_rng(seed=42)
+
     instances = [
-        Instance(variables=np.random.randint(low=0, high=100, size=100))
-        for _ in range(100)
+        Instance(variables=rng.integers(low=0, high=100, size=100)) for _ in range(100)
     ]
     for i, instance in enumerate(instances):
         instance.descriptor = features[i]

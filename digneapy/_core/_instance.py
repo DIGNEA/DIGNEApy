@@ -160,16 +160,17 @@ class Instance:
         self._vars[key] = value
 
     def __eq__(self, other):
-        if isinstance(other, Instance):
-            try:
-                return all(a == b for a, b in zip(self, other, strict=True))
-            except ValueError:
-                return False
-        else:
+        if not isinstance(other, Instance):
             print(
                 f"Other of type {other.__class__.__name__} can not be compared with with {self.__class__.__name__}"
             )
             return NotImplemented
+
+        else:
+            try:
+                return all(a == b for a, b in zip(self, other, strict=True))
+            except ValueError:
+                return False
 
     def __gt__(self, other):
         if not isinstance(other, Instance):

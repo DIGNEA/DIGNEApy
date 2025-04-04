@@ -16,24 +16,20 @@ from digneapy.generators import GenResult
 import pandas as pd
 
 
-def save_instances(
-    filename: str,
+def save_results_to_files(
+    filename_pattern: str,
     result: GenResult,
     solvers_names: Optional[Sequence[str]],
     features_names: Optional[Sequence[str]],
     vars_names: Optional[Sequence[str]],
-) -> pd.DataFrame:
-    """Saves the results from a Generator into a pd.DataFrame and writes it to a CSV file.
-
+):
+    """Saves the results of the generation to CSV files.
     Args:
-        filename (str): filename to store the results.
-        result (GenResult): Results from a Generator object.
-        solvers_names (Optional[Sequence[str]]): Optionally you can provide the names of the solvers used in the experiment. Default to solver_i.
-        features_names (Optional[Sequence[str]]): Optionally you can provide the names of the features of the instances if used. Default to fi.
-        vars_names (Optional[Sequence[str]]): Optionally you can provide custom names for the variables of the instances. Default to vi.
-
-    Returns:
-        pd.DataFrame: _description_
+        filename_pattern (str): Pattern for the filenames.
+        result (GenResult): Result of the generation.
+        solvers_names (Sequence[str]): Names of the solvers.
+        features_names (Sequence[str]): Names of the features.
+        vars_names (Sequence[str]): Names of the variables.
     """
     df = pd.DataFrame(
         list(
@@ -46,5 +42,7 @@ def save_instances(
         )
     )
     df.insert(0, "target", result.target)
-    df.to_csv(filename, index=False)
-    return df
+    df.to_csv(f"{filename_pattern}_instances.csv", index=False)
+    result.history.to_df().to_csv(f"{filename_pattern}_history.csv", index=False)
+    if result.metrics is not None:
+        result.metrics.to_csv(f"{filename_pattern}_archive_metrics.csv")

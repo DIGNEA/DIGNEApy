@@ -112,9 +112,9 @@ def test_equal_instances(initialised_instance, default_instance):
 
     assert initialised_instance == instance_2
 
-    # TODO: Check test assert (default_instance == list()) == NotImplemented
-    assert (default_instance >= list()) == NotImplemented
-    assert (default_instance > list()) == NotImplemented
+    assert default_instance.__eq__(list()) == NotImplemented
+    assert default_instance.__ge__(list()) == NotImplemented
+    assert default_instance.__gt__(list()) == NotImplemented
 
     instance_2.fitness = default_instance.fitness + 100.0
     assert instance_2 >= default_instance

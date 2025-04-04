@@ -12,6 +12,6 @@
 
 from ._timers import clock
 from .serializer import to_json
-from .save_data import save_instances
+from .save_data import save_results_to_files
 
-__all__ = ["clock", "to_json", "save_instances"]
+__all__ = ["clock", "save_results_to_files", "to_json"]

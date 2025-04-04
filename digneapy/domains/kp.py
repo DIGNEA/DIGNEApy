@@ -236,11 +236,11 @@ class KnapsackDomain(Domain):
         Returns:
             Mapping[str, float]: Dictionary with the names/values of each feature
         """
-        if len(instance.features) == len(self._feat_names):
-            return {k: v for k, v in zip(self._feat_names, instance.features)}
+        if len(instance.features) == len(self.feat_names):
+            return {k: v for k, v in zip(self.feat_names, instance.features)}
         else:
             features = self.extract_features(instance)
-            return {k: v for k, v in zip(self._feat_names, features)}
+            return {k: v for k, v in zip(self.feat_names, features)}
 
     def from_instance(self, instance: Instance) -> Knapsack:
         variables = instance.variables

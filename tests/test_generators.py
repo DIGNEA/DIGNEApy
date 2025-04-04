@@ -278,7 +278,8 @@ def test_map_elites_domain_grid(
         descriptor="features",
         repetitions=1,
     )
-    archive = map_elites()
+    result = map_elites()
+    archive = result.instances
     assert map_elites.__str__() == expected_str
     assert map_elites.__repr__() == expected_repr
 
@@ -325,8 +326,8 @@ def test_map_elites_domain_cvt(domain_cls, portfolio, ranges):
         descriptor="instance",
         repetitions=1,
     )
-    archive = map_elites()
-
+    result = map_elites()
+    archive = result.instances
     assert len(archive) != 0
     assert all(i.p >= 0 for i in archive)
     assert all(i.s == 0 for i in archive)

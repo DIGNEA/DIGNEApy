@@ -20,7 +20,7 @@ from deap import tools
 from ._instance import Instance
 
 
-def qd_score(instances_fitness: Sequence[float]) -> float:
+def qd_score(instances_fitness: Sequence[float]) -> np.float64:
     """Calculates the Quality Diversity score of a set of instances fitness.
 
     Args:
@@ -32,64 +32,27 @@ def qd_score(instances_fitness: Sequence[float]) -> float:
     return np.sum(instances_fitness)
 
 
-class QDSCoreAUC:
-    """
-        Quantifying Efficiency in Quality Diversity Optimization
+def qd_score_auc(qd_scores: Sequence[float], batch_size: int) -> np.float64:
+    """Calculates the Quantifying Efficiency in Quality Diversity Optimization
     In quality diversity (QD) optimization, the QD score is a holistic
     metric which sums the objective values of all cells in the archive.
     Since the QD score only measures the performance of a QD algorithm at a single point in time, it fails to reflect algorithm efficiency.
     Two algorithms may have the same QD score even though one
     algorithm achieved that score with fewer evaluations. We propose
     a metric called “QD score AUC” which quantifies this efficiency.
+
+    Args:
+        qd_scores (Sequence[float]): Sequence of QD scores.
+        batch_size (int): Number of instances evaluated in each generation.
+
+    Returns:
+        np.float64: QD score AUC metric.
     """
-
-    def __init__(self, batch_size: int):
-        if batch_size < 0:
-            raise ValueError(
-                f"batch_size in {self.__class__.__name__} must be greater than one"
-            )
-
-        self._batch_size = batch_size
-        self._scores: list[float] = []
-
-    @property
-    def scores(self):
-        return self._scores
-
-    def __update(self, instance_fitness: Sequence[float]) -> float:
-        """Updates the scores after each generation of the algorithm
-
-        Args:
-            instances (Sequence[Instance]): List of instances to calculate the QD score.
-
-        Returns:
-            float: QD score of the generation.
-        """
-        generation_score = qd_score(instance_fitness) * self._batch_size
-        self._scores.append(generation_score)
-        return generation_score
-
-    def auc(self) -> float:
-        """Calculates the Area Under the Curve of the QD score --> Efficiency
-
-        Args:
-            batch_size (int): Number of instances evaluated in each generation.
-
-        Returns:
-            float: QD score AUC metric.
-        """
-        return sum(self._scores)
-
-    def __call__(self, instance_fitness: Sequence[float]) -> float:
-        return self.__update(instance_fitness)
+    return np.sum(qd_scores) * batch_size
 
 
-class Logbook:
-    def __init__(self, batch_size: int):
-        if batch_size < 0:
-            raise ValueError("batch_size in Logbook must be greater than zero.")
-
-        self._batch_size = batch_size
+class Statistics:
+    def __init__(self):
         self._stats_s = tools.Statistics(key=attrgetter("s"))
         self._stats_p = tools.Statistics(key=attrgetter("p"))
         self._stats_f = tools.Statistics(key=attrgetter("fitness"))
@@ -97,26 +60,57 @@ class Logbook:
         self._stats = tools.MultiStatistics(
             s=self._stats_s, p=self._stats_p, fitness=self._stats_f
         )
-        self._stats.register("avg", np.mean)
+        self._stats.register("mean", np.mean)
         self._stats.register("std", np.std)
         self._stats.register("min", np.min)
         self._stats.register("max", np.max)
-        self._stats.register("QD score", np.sum)
-        self._stats.register("QD score AUC", QDSCoreAUC(self._batch_size))
+        self._stats.register("qd_score", np.sum)
 
+    def __call__(
+        self, population: Sequence[Instance], as_series: bool = False
+    ) -> dict | pd.Series:
+        """Calculates the statistics of the population.
+        Args:
+            population (Sequence[Instance]): List of instances to calculate the statistics.
+        Returns:
+            dict: Dictionary with the statistics of the population.
+        """
+        if len(population) == 0:
+            raise ValueError(
+                "Error: Trying to calculate the metrics with an empty population"
+            )
+        if not all(isinstance(ind, Instance) for ind in population):
+            raise TypeError("Error: Population must be a sequence of Instance objects")
+
+        record = self._stats.compile(population)
+        if as_series:
+            _flatten_record = {}
+            for key, value in record.items():
+                if isinstance(value, dict):  # Flatten nested dicts
+                    for sub_key, sub_value in value.items():
+                        _flatten_record[f"{key}_{sub_key}"] = sub_value
+                else:
+                    _flatten_record[key] = value
+            return pd.Series(_flatten_record)
+        else:
+            return record
+
+
+class Logbook:
+    def __init__(self):
+        self._statistics = Statistics()
         self._logbook = tools.Logbook()
-        self._logbook.header = "gen", "fitness", "s", "p"
+        self._logbook.header = "gen", "s", "p", "fitness"
         self._headers = (
             "min",
-            "avg",
+            "mean",
             "std",
             "max",
-            "QD score",
-            "QD score AUC",
+            "qd_score",
         )
-        self._logbook.chapters["fitness"].header = self._headers
-        self._logbook.chapters["s"].header = self._headers
+        self._logbook.chapters["s"].header = self._headers[:-1]
         self._logbook.chapters["p"].header = self._headers
+        self._logbook.chapters["fitness"].header = self._headers
 
     def __len__(self):
         return len(self._logbook)
@@ -132,13 +126,7 @@ class Logbook:
             raise ValueError(
                 f"generation value {generation} must be greater than zero in Logbook.update()"
             )
-        if len(population) == 0:
-            raise ValueError(
-                "Error: Trying to calculate the metrics with an empty population"
-            )
-
-        record = self._stats.compile(population)
-        self._logbook.record(gen=generation, **record)
+        self._logbook.record(gen=generation, **self._statistics(population))
         if feedback:
             print(self._logbook.stream)
 

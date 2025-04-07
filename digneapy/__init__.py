@@ -20,10 +20,12 @@ from ._core import (
     SupportsSolve,
     descriptors,
     scores,
+    RNG,
 )
 from ._core.descriptors import DESCRIPTORS, DescStrategy, descriptor
 from ._core.scores import PerformanceFn, max_gap_target, runtime_score
 from .archives import Archive, CVTArchive, GridArchive
+from .generators import GenResult, Generator
 
 __dignea_submodules = {"utils", "generators", "solvers", "visualize"}
 

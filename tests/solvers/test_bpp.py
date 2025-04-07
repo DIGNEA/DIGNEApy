@@ -11,7 +11,7 @@
 """
 
 import pytest
-
+import numpy as np
 from digneapy.domains.bpp import BPP
 from digneapy.solvers import best_fit, first_fit, next_fit, worst_fit
 
@@ -78,7 +78,7 @@ def test_best_fit_solves_sample(default_bpp_instance):
     solutions = best_fit(default_bpp_instance)
     assert len(solutions) == 1
     assert len(solutions[0]) == len(default_bpp_instance)
-    assert solutions[0].fitness != 0.0
+    assert not np.isclose(solutions[0].fitness, 0.0)
 
 
 def test_best_fit_raises_sample(default_bpp_instance):
@@ -96,7 +96,7 @@ def test_first_fit_solves_sample(default_bpp_instance):
     solutions = first_fit(default_bpp_instance)
     assert len(solutions) == 1
     assert len(solutions[0]) == len(default_bpp_instance)
-    assert solutions[0].fitness != 0.0
+    assert not np.isclose(solutions[0].fitness, 0.0)
 
 
 def test_first_fit_raises_sample(default_bpp_instance):
@@ -114,7 +114,7 @@ def test_next_fit_solves_sample(default_bpp_instance):
     solutions = next_fit(default_bpp_instance)
     assert len(solutions) == 1
     assert len(solutions[0]) == len(default_bpp_instance)
-    assert solutions[0].fitness != 0.0
+    assert not np.isclose(solutions[0].fitness, 0.0)
 
 
 def test_next_fit_raises_sample(default_bpp_instance):
@@ -132,7 +132,7 @@ def test_worst_fit_solves_sample(default_bpp_instance):
     solutions = worst_fit(default_bpp_instance)
     assert len(solutions) == 1
     assert len(solutions[0]) == len(default_bpp_instance)
-    assert solutions[0].fitness != 0.0
+    assert not np.isclose(solutions[0].fitness, 0.0)
 
 
 def test_worst_fit_raises_sample(default_bpp_instance):

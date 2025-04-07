@@ -11,10 +11,11 @@
 """
 
 import operator
-from typing import Optional, Self
+from typing import Optional, Self, Sequence
 
 import numpy as np
 import numpy.typing as npt
+import pandas as pd
 
 
 class Instance:
@@ -38,7 +39,6 @@ class Instance:
             raise ValueError(
                 "The fitness, p and s parameters must be convertible to float"
             )
-        import numpy as np
 
         self._vars = np.array(variables) if variables is not None else np.empty(0)
         self._fit = fitness
@@ -52,13 +52,13 @@ class Instance:
 
     def clone(self) -> Self:
         return Instance(
-            list(self._vars),
-            self._fit,
-            self._p,
-            self._s,
-            tuple(self._features),
-            tuple(self._pscores),
-            tuple(self._desc),
+            variables=list(self._vars),
+            fitness=self._fit,
+            p=self._p,
+            s=self._s,
+            features=tuple(self._features),
+            portfolio_scores=tuple(self._pscores),
+            descriptor=tuple(self._desc),
         )
 
     @property
@@ -160,26 +160,33 @@ class Instance:
         self._vars[key] = value
 
     def __eq__(self, other):
-        if isinstance(other, Instance):
+        if not isinstance(other, Instance):
+            print(
+                f"Other of type {other.__class__.__name__} can not be compared with with {self.__class__.__name__}"
+            )
+            return NotImplemented
+
+        else:
             try:
                 return all(a == b for a, b in zip(self, other, strict=True))
             except ValueError:
                 return False
-        else:
-            msg = f"Other of type {other.__class__.__name__} can not be compared with with {self.__class__.__name__}"
-            raise NotImplementedError(msg)
 
     def __gt__(self, other):
         if not isinstance(other, Instance):
-            msg = f"Other of type {other.__class__.__name__} can not be compared with with {self.__class__.__name__}"
-            raise NotImplementedError(msg)
+            print(
+                f"Other of type {other.__class__.__name__} can not be compared with with {self.__class__.__name__}"
+            )
+            return NotImplemented
 
         return self.fitness > other.fitness
 
     def __ge__(self, other):
         if not isinstance(other, Instance):
-            msg = f"Other of type {other.__class__.__name__} can not be compared with with {self.__class__.__name__}"
-            raise NotImplementedError(msg)
+            print(
+                f"Other of type {other.__class__.__name__} can not be compared with with {self.__class__.__name__}"
+            )
+            return NotImplemented
 
         return self.fitness >= other.fitness
 
@@ -207,16 +214,72 @@ class Instance:
 
         return msg
 
-    def to_json(self):
+    def asdict(
+        self,
+        variables_names: Optional[Sequence[str]] = None,
+        features_names: Optional[Sequence[str]] = None,
+        score_names: Optional[Sequence[str]] = None,
+    ) -> dict:
+        sckeys = (
+            [f"solver_{i}" for i in range(len(self._pscores))]
+            if score_names is None
+            else score_names
+        )
+        _data = {
+            "fitness": self._fit,
+            "s": self._s,
+            "p": self._p,
+            "portfolio_scores": {sk: v for sk, v in zip(sckeys, self._pscores)},
+        }
+        if variables_names:
+            if len(variables_names) != len(self._vars):
+                print(
+                    f"Error in asdict(). len(variables_names) = {len(variables_names)} != len(variables) ({len(self._vars)}). Fallback to v#"
+                )
+                _data["variables"] = {f"v{i}": v for i, v in enumerate(self._vars)}
+            else:
+                _data["variables"] = {
+                    vk: v for vk, v in zip(variables_names, self._vars)
+                }
+
+        else:
+            _data["variables"] = {f"v{i}": v for i, v in enumerate(self._vars)}
+
+        if len(self._desc) not in (
+            len(self._vars),
+            len(self._features),
+            len(self._pscores),
+        ):
+            _data["descriptor"] = {f"d{i}": v for i, v in enumerate(self._desc)}
+        if len(self.features) != 0:
+            f_keys = (
+                [f"f{i}" for i in range(len(self._features))]
+                if features_names is None
+                else features_names
+            )
+            _data["features"] = {fk: v for fk, v in zip(f_keys, self._features)}
+        return _data
+
+    def to_json(self) -> str:
         import json
 
-        data = {
-            "fitness": self.fitness,
-            "s": self.s,
-            "p": self.p,
-            "portfolio": self.portfolio_scores.tolist(),
-            "variables": self._vars.tolist(),
-            "features": self.features.tolist(),
-            "descriptor": self.descriptor.tolist(),
-        }
-        return json.dumps(data, sort_keys=True, indent=4)
+        return json.dumps(self.asdict(), sort_keys=True, indent=4)
+
+    def to_series(
+        self,
+        variables_names: Optional[Sequence[str]] = None,
+        features_names: Optional[Sequence[str]] = None,
+        score_names: Optional[Sequence[str]] = None,
+    ) -> pd.Series:
+        _flatten_data = {}
+        for key, value in self.asdict(
+            variables_names=variables_names,
+            features_names=features_names,
+            score_names=score_names,
+        ).items():
+            if isinstance(value, dict):  # Flatten nested dicts
+                for sub_key, sub_value in value.items():
+                    _flatten_data[f"{sub_key}"] = sub_value
+            else:
+                _flatten_data[key] = value
+        return pd.Series(_flatten_data)

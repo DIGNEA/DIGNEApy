@@ -30,9 +30,10 @@ def default_instance():
 
 @pytest.fixture
 def default_large_knap():
-    c = np.random.randint(1e3, 1e5)
-    w = np.random.randint(1000, 5000, size=1000, dtype=np.int32)
-    p = np.random.randint(1000, 5000, size=1000, dtype=np.int32)
+    rng = np.random.default_rng(seed=42)
+    c = rng.integers(1e3, 1e5)
+    w = rng.integers(1000, 5000, size=1000, dtype=np.int32)
+    p = rng.integers(1000, 5000, size=1000, dtype=np.int32)
     kp = knapsack.Knapsack(profits=p, weights=w, capacity=c)
     return kp
 
@@ -150,8 +151,8 @@ def test_parallel_cpp_ea(default_instance):
     solutions = solver(default_instance)
     assert solver._pop_size == 32
     assert solver._generations == 1000
-    assert solver._cxpb == 0.7
-    assert solver._mutpb == 0.2
+    assert np.isclose(solver._cxpb, 0.7)
+    assert np.isclose(solver._mutpb, 0.2)
     assert solver._n_cores == 1
     assert solver.__name__ == "ParEAKP_PS_32_CXPB_0.7_MUTPB_0.2"
     assert len(solutions) == 1

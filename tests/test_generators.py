@@ -12,7 +12,7 @@
 
 import os
 from collections import deque
-
+import numpy as np
 import pytest
 
 from digneapy import (
@@ -55,13 +55,13 @@ def test_default_generator():
     assert eig.domain is None
     assert eig.portfolio == tuple()
     assert eig.repetitions == 1
-    assert eig.cxrate == 0.5
-    assert eig.mutrate == 0.8
+    assert np.isclose(eig.cxrate, 0.5)
+    assert np.isclose(eig.mutrate, 0.8)
     assert eig.crossover == uniform_crossover
     assert eig.mutation == uniform_one_mutation
     assert eig.selection == binary_tournament_selection
     assert eig.replacement == generational_replacement
-    assert eig.phi == 0.85
+    assert np.isclose(eig.phi, 0.85)
     assert eig.performance_function is not None
     assert eig.performance_function == max_gap_target
 
@@ -88,15 +88,13 @@ def test_default_generator():
     )
 
     with pytest.raises(ValueError) as e:
-        eig = EAGenerator(
-            domain=None, portfolio=[], novelty_approach=NS(k=15), phi=-1.0
-        )
+        _ = EAGenerator(domain=None, portfolio=[], novelty_approach=NS(k=15), phi=-1.0)
     assert (
         e.value.args[0]
         == "Phi must be a float number in the range [0.0-1.0]. Got: -1.0."
     )
     with pytest.raises(ValueError) as e:
-        eig = EAGenerator(
+        _ = EAGenerator(
             domain=None, portfolio=[], novelty_approach=NS(k=15), phi="hello"
         )
     assert e.value.args[0] == "Phi must be a float number in the range [0.0-1.0]."
@@ -118,21 +116,10 @@ def test_eig_gen_kp_perf_descriptor():
         descriptor_strategy="performance",
         replacement=generational_replacement,
     )
-    archive, solution_set = eig()
+    result = eig()
+    solution_set = result.instances
     # They could be empty
-    assert isinstance(archive, Archive)
     assert isinstance(solution_set, Archive)
-    # If they're not empty
-    if len(archive) != 0:
-        assert all(len(s) == 101 for s in archive)
-        assert all(s.fitness >= 0.0 for s in archive)
-        assert all(s.p >= 0.0 for s in archive)
-        assert all(s.s >= 0.0 for s in archive)
-        assert all(len(s.descriptor) == len(portfolio) for s in archive)
-        assert all(len(s.portfolio_scores) == len(portfolio) for s in archive)
-        p_scores = [s.portfolio_scores for s in archive]
-        # The instances are biased to the performance of the target
-        assert all(max(p_scores[i]) == p_scores[i][0] for i in range(len(p_scores)))
 
     if len(solution_set) != 0:
         assert all(len(s) == 101 for s in solution_set)
@@ -161,21 +148,10 @@ def test_eig_gen_kp_feat_descriptor():
         descriptor_strategy="features",
         replacement=generational_replacement,
     )
-    archive, solution_set = eig()
+    result = eig()
+    solution_set = result.instances
     # They could be empty
-    assert isinstance(archive, Archive)
     assert isinstance(solution_set, Archive)
-    # If they're not empty
-    if len(archive) != 0:
-        assert all(len(s) == 101 for s in archive)
-        assert all(s.fitness >= 0.0 for s in archive)
-        assert all(s.p >= 0.0 for s in archive)
-        assert all(s.s >= 0.0 for s in archive)
-        assert all(len(s.descriptor) == 8 for s in archive)
-        assert all(len(s.portfolio_scores) == len(portfolio) for s in archive)
-        p_scores = [s.portfolio_scores for s in archive]
-        # The instances are biased to the performance of the target
-        assert all(max(p_scores[i]) == p_scores[i][0] for i in range(len(p_scores)))
 
     if len(solution_set) != 0:
         assert all(len(s) == 101 for s in solution_set)
@@ -212,23 +188,10 @@ def test_eig_gen_kp_inst_descriptor():
         descriptor_strategy="instance",
         replacement=generational_replacement,
     )
-    archive, solution_set = eig()
+    result = eig()
+    solution_set = result.instances
     # They could be empty
-    assert isinstance(archive, Archive)
     assert isinstance(solution_set, Archive)
-    # If they're not empty
-    if len(archive) != 0:
-        assert all(len(s) == 101 for s in archive)
-        assert all(s.fitness >= 0.0 for s in archive)
-        assert all(s.p >= 0.0 for s in archive)
-        assert all(s.s >= 0.0 for s in archive)
-        assert all(
-            len(s.descriptor) == len(s) for s in archive
-        )  # Because we do not calculate features in this case
-        assert all(len(s.portfolio_scores) == len(portfolio) for s in archive)
-        p_scores = [s.portfolio_scores for s in archive]
-        # The instances are biased to the performance of the target
-        assert all(max(p_scores[i]) == p_scores[i][0] for i in range(len(p_scores)))
 
     if len(solution_set) != 0:
         assert all(len(s) == 101 for s in solution_set)
@@ -259,23 +222,11 @@ def test_eig_gen_kp_perf_descriptor_with_pisinger():
         replacement=generational_replacement,
         performance_function=runtime_score,
     )
-    archive, solution_set = eig()
+    result = eig()
+    solution_set = result.instances
     # They could be empty
-    assert isinstance(archive, Archive)
     assert isinstance(solution_set, Archive)
     # If they're not empty
-    if len(archive) != 0:
-        assert all(len(s) == 101 for s in archive)
-        assert all(s.fitness >= 0.0 for s in archive)
-        assert all(s.p >= 0.0 for s in archive)
-        assert all(s.s >= 0.0 for s in archive)
-        assert all(len(s.descriptor) == len(portfolio) for s in archive)
-        assert all(len(s.portfolio_scores) == len(portfolio) for s in archive)
-        p_scores = [s.portfolio_scores for s in archive]
-        # The instances are biased to the performance of the target
-        # in this case, the performance score is the minimum because
-        # we are measuring running time
-        assert all(min(p_scores[i]) == p_scores[i][0] for i in range(len(p_scores)))
 
     if len(solution_set) != 0:
         assert all(len(s) == 101 for s in solution_set)
@@ -327,7 +278,8 @@ def test_map_elites_domain_grid(
         descriptor="features",
         repetitions=1,
     )
-    archive = map_elites()
+    result = map_elites()
+    archive = result.instances
     assert map_elites.__str__() == expected_str
     assert map_elites.__repr__() == expected_repr
 
@@ -374,8 +326,8 @@ def test_map_elites_domain_cvt(domain_cls, portfolio, ranges):
         descriptor="instance",
         repetitions=1,
     )
-    archive = map_elites()
-
+    result = map_elites()
+    archive = result.instances
     assert len(archive) != 0
     assert all(i.p >= 0 for i in archive)
     assert all(i.s == 0 for i in archive)

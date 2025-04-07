@@ -23,21 +23,21 @@ class SupportsTransform(Protocol):
     to other sequence.
     """
 
-    def __call__(self, X: npt.NDArray) -> np.ndarray: ...
+    def __call__(self, x: npt.NDArray) -> np.ndarray: ...
 
 
 class Transformer(ABC, SupportsTransform):
     def __init__(self, name: str):
         self._name = name
 
-    def train(self, X: npt.NDArray):
+    def train(self, x: npt.NDArray):
         raise NotImplementedError("train method not implemented in Transformer")
 
-    def predict(self, X: npt.NDArray) -> np.ndarray:
+    def predict(self, x: npt.NDArray) -> np.ndarray:
         raise NotImplementedError("predict method not implemented in Transformer")
 
     @abstractmethod
-    def __call__(self, X: npt.NDArray) -> np.ndarray:
+    def __call__(self, x: npt.NDArray) -> np.ndarray:
         raise NotImplementedError("__call__ method not implemented in Transformer")
 
     def save(self):

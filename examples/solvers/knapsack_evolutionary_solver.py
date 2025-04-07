@@ -39,7 +39,7 @@ def main():
         min_g=0,
         max_g=1,
     )
-    solutions = clocked_solving(solver, kp)
+    _ = clocked_solving(solver, kp)
 
 
 if __name__ == "__main__":

@@ -13,11 +13,12 @@
 from ._constants import Direction, IndType
 from ._domain import Domain
 from ._instance import Instance
-from ._metrics import Logbook, QDSCoreAUC, qd_score
+from ._metrics import Logbook, qd_score, qd_score_auc, Statistics
 from ._novelty_search import NS, DominatedNS
 from ._problem import P, Problem
 from ._solution import Solution
 from ._solver import Solver, SupportsSolve
+from .types import RNG
 
 __all__ = [
     "Domain",
@@ -32,6 +33,8 @@ __all__ = [
     "NS",
     "DominatedNS",
     "qd_score",
-    "QDSCoreAUC",
+    "qd_score_auc",
+    "Statistics",
     "Logbook",
+    "RNG",
 ]

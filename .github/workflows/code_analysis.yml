@@ -1,0 +1,27 @@
+# This workflow will install Python dependencies, run tests and lint with a single version of Python
+# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-python
+
+name: Code Analysis
+
+on:
+    push:
+        branches: "**" # push to any branch
+    pull_request:
+        branches: "**" # push to any branch
+        types: [opened, synchronize, reopened]
+
+permissions:
+    contents: read
+
+jobs:
+    sonarqube:
+        name: SonarQube
+        runs-on: ubuntu-latest
+        steps:
+          - uses: actions/checkout@v4
+            with:
+              fetch-depth: 0  # Shallow clones should be disabled for a better relevancy of analysis
+          - name: SonarQube Scan
+            uses: SonarSource/sonarqube-scan-action@v5
+            env:
+                SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}

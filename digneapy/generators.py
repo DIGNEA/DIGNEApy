@@ -10,24 +10,18 @@
 @Desc    :   None
 """
 
-__all__ = ["EAGenerator", "MapElitesGenerator", "DEAGenerator"]
+__all__ = ["GenResult", "EAGenerator", "MapElitesGenerator", "DEAGenerator"]
 
-import random
-from collections.abc import Iterable
+from collections.abc import Iterable, Sequence
 from operator import attrgetter
-from typing import Optional, Tuple
-
+from typing import Optional, Tuple, Protocol
+from dataclasses import dataclass
+import random
 import numpy as np
+import pandas as pd
 
-from ._core import (
-    NS,
-    Domain,
-    DominatedNS,
-    Instance,
-    P,
-    SupportsSolve,
-)
-from ._core._metrics import Logbook
+from ._core import NS, Domain, DominatedNS, Instance, P, SupportsSolve, RNG
+from ._core._metrics import Logbook, Statistics
 from ._core.descriptors import DESCRIPTORS
 from ._core.scores import PerformanceFn, max_gap_target
 from .archives import Archive, CVTArchive, GridArchive
@@ -41,10 +35,37 @@ from .operators import (
     uniform_crossover,
     uniform_one_mutation,
 )
+
 from .transformers import SupportsTransform
 
 
-class EAGenerator:
+@dataclass
+class GenResult:
+    """Class to store the results of the generator
+    Attributes:
+        target (str): Name of the target solver used to evaluate the instances.
+        instances (Sequence[Instance]): List of generated instances.
+        history (Logbook): Logbook with the history of the generator.
+        metrics (Optional[pd.Series], optional): Metrics of the instances. Defaults to None.
+    """
+
+    target: str
+    instances: Sequence[Instance]
+    history: Logbook
+    metrics: Optional[pd.Series] = None
+
+    def __post_init__(self):
+        if len(self.instances) != 0:
+            self.metrics = Statistics()(self.instances, as_series=True)
+
+
+class Generator(Protocol):
+    """Protocol to type check all generators of instances types in digneapy"""
+
+    def __call__(self, *args, **kwargs) -> GenResult: ...
+
+
+class EAGenerator(Generator, RNG):
     """Object to generate instances based on a Evolutionary Algorithn with set of diverse solutions"""
 
     def __init__(
@@ -66,8 +87,10 @@ class EAGenerator:
         replacement: Replacement = generational_replacement,
         performance_function: PerformanceFn = max_gap_target,
         phi: float = 0.85,
+        seed: int = 42,
     ):
         """Creates a Evolutionary Instance Generator based on Novelty Search
+            The target solver is the first solver in the portfolio.
 
         Args: TODO: Update the references
             pop_size (int, optional): Number of instances in the population to evolve. Defaults to 100.
@@ -84,10 +107,9 @@ class EAGenerator:
             cxrate (float, optional): Crossover rate. Defaults to 0.5.
             mutrate (float, optional): Mutation rate. Defaults to 0.8.
             phi (float, optional): Phi balance value for the weighted fitness function. Defaults to 0.85.
-            The target solver is the first solver in the portfolio. Defaults to True.
 
         Raises:
-            ValueError: Raises error if phi is not in the range [0.0-1.0]
+            ValueError: Raises error if phi is not a floating point value or it is not in the range [0.0-1.0]
         """
 
         try:
@@ -132,7 +154,8 @@ class EAGenerator:
         self.replacement = replacement
         self.performance_function = performance_function
 
-        self._logbook = Logbook(batch_size=self.offspring_size)
+        self._logbook = Logbook()
+        self.initialize_rng(seed=seed)
 
     @property
     def log(self) -> Logbook:
@@ -148,7 +171,7 @@ class EAGenerator:
         domain_name = self.domain.name if self.domain is not None else "None"
         return f"EAGenerator<pop_size={self.pop_size},gen={self.generations},domain={domain_name},portfolio={port_names!r},{self._novelty_search.__repr__()}>"
 
-    def __call__(self, verbose: bool = False) -> Tuple[Archive, Optional[Archive]]:
+    def __call__(self, verbose: bool = False) -> GenResult:
         if self.domain is None:
             raise ValueError("You must specify a domain to run the generator.")
         if len(self.portfolio) == 0:
@@ -166,7 +189,7 @@ class EAGenerator:
             offspring = self._evaluate_population(offspring)
             offspring = self._update_descriptors(offspring)
             offspring, _ = self._novelty_search(offspring)
-            offspring = self._compute_fitness(population=offspring)  # Fitness = p&s
+            offspring = self._compute_fitness(population=offspring)
 
             # Only the feasible instances are considered to be included
             # in the archive and the solution set.
@@ -189,9 +212,15 @@ class EAGenerator:
             blank = " " * 80
             print(f"\r{blank}\r", end="")
 
-        return (
-            self._novelty_search.archive,
-            self._ns_solution_set.archive if self._ns_solution_set else None,
+        _instances = (
+            self._ns_solution_set.archive
+            if self._ns_solution_set is not None
+            else self._novelty_search.archive
+        )
+        return GenResult(
+            target=self.portfolio[0].__name__,
+            instances=_instances,
+            history=self._logbook,
         )
 
     def _generate_offspring(self, offspring_size: int) -> list[Instance]:
@@ -285,7 +314,7 @@ class EAGenerator:
         Returns:
             Instance: New offspring
         """
-        if np.random.rand() < self.cxrate:
+        if self._rng.random() < self.cxrate:
             off = self.crossover(p_1, p_2)
             return self.mutation(off, self.domain.bounds)
         else:
@@ -293,7 +322,7 @@ class EAGenerator:
             return self.mutation(off, self.domain.bounds)
 
 
-class MapElitesGenerator:
+class MapElitesGenerator(Generator, RNG):
     """Object to generate instances based on MAP-Elites algorithm."""
 
     def __init__(
@@ -307,6 +336,7 @@ class MapElitesGenerator:
         repetitions: int,
         descriptor: str,
         performance_function: PerformanceFn = max_gap_target,
+        seed: int = 42,
     ):
         if not isinstance(archive, (GridArchive, CVTArchive)):
             raise ValueError(
@@ -333,7 +363,8 @@ class MapElitesGenerator:
             case _:
                 self._descriptor_strategy = DESCRIPTORS[descriptor]
 
-        self._logbook = Logbook(batch_size=self._init_pop_size)
+        self._logbook = Logbook()
+        self.initialize_rng(seed=seed)
 
     @property
     def archive(self):
@@ -388,7 +419,7 @@ class MapElitesGenerator:
 
         return population
 
-    def __call__(self, verbose: bool = False) -> Archive:
+    def __call__(self, verbose: bool = False) -> GenResult:
         self._populate_archive()
         self._logbook.update(generation=0, population=self._archive, feedback=verbose)
         for generation in range(self._generations):
@@ -419,8 +450,13 @@ class MapElitesGenerator:
             blank = " " * 80
             print(f"\r{blank}\r", end="")
 
-        self._archive.remove_unfeasible()
-        return self._archive
+        unfeasible_instances = list(filter(lambda i: i.p < 0, self._archive))
+        self._archive.remove(unfeasible_instances)
+        return GenResult(
+            target=self._portfolio[0].__name__,
+            instances=self._archive,
+            history=self._logbook,
+        )
 
 
 class DEAGenerator(EAGenerator):
@@ -491,7 +527,7 @@ class DEAGenerator(EAGenerator):
         domain_name = self.domain.name if self.domain is not None else "None"
         return f"DEAGenerator<pop_size={self.pop_size},gen={self.generations},domain={domain_name},portfolio={port_names!r}>"
 
-    def __call__(self, verbose: bool = False) -> Tuple[Archive, Optional[Archive]]:
+    def __call__(self, verbose: bool = False) -> GenResult:
         if self.domain is None:
             raise ValueError("You must specify a domain to run the generator.")
         if len(self.portfolio) == 0:
@@ -521,4 +557,8 @@ class DEAGenerator(EAGenerator):
             blank = " " * 80
             print(f"\r{blank}\r", end="")
 
-        return (self.population, None)
+        return GenResult(
+            target=self.portfolio[0].__name__,
+            instances=self.population,
+            history=self._logbook,
+        )

@@ -20,11 +20,12 @@ from sklearn.cluster import KMeans
 from sklearn.neighbors import KDTree
 
 from digneapy._core import Instance
+from digneapy._core.types import RNG
 
 from ._base_archive import Archive
 
 
-class CVTArchive(Archive):
+class CVTArchive(Archive, RNG):
     """An Archive that divides a high-dimensional measure space into k homogeneous geometric regions.
     Based on the paper from Vassiliades et al (2018) <https://ieeexplore.ieee.org/document/8000667>
     > The computational complexity of the method we provide for constructing the CVT (in Algorithm 1) is O(ndki),
@@ -40,6 +41,7 @@ class CVTArchive(Archive):
         centroids: Optional[npt.NDArray | str] = None,
         samples: Optional[npt.NDArray | str] = None,
         dtype=np.float64,
+        seed: int = 42,
     ):
         """Creates a CVTArchive object
 
@@ -88,7 +90,8 @@ class CVTArchive(Archive):
         self._n_samples = n_samples
         self._samples = None
         self._centroids = None
-        self._kmeans = KMeans(n_clusters=self._k, n_init=1)
+        self.initialize_rng(seed=seed)
+        self._kmeans = KMeans(n_clusters=self._k, n_init=1, random_state=self._seed)
 
         # Data Structure to store the instances in the CVT
         self._grid: Dict[int, Instance] = {}
@@ -128,7 +131,8 @@ class CVTArchive(Archive):
             # Generate centroids
             if self._samples is None:
                 # Generate uniform samples if not given
-                self._samples = np.random.uniform(
+                rng = np.random.default_rng(seed=self._seed)
+                self._samples = rng.uniform(
                     low=self._lower_bounds,
                     high=self._upper_bounds,
                     size=(self._n_samples, self._dimensions),
@@ -335,9 +339,9 @@ class CVTArchive(Archive):
         try:
             with open(filename, "r") as file:
                 json_data = json.load(file)
-                if not expected_keys == json_data.keys():
+                if expected_keys != json_data.keys():
                     raise ValueError(
-                        f"The JSON file does not contain all the expected keys. Expected keys are {expected_keys} and got {json_data.keys()}"
+                        f"The JSON file does not contain all the minimum expected keys. Expected keys are {expected_keys} and got {json_data.keys()}"
                     )
                 _ranges = [
                     (l_i, u_i) for l_i, u_i in zip(json_data["lbs"], json_data["ubs"])
@@ -354,17 +358,8 @@ class CVTArchive(Archive):
         except IOError as io:
             raise ValueError(f"Error opening file {filename}. Reason -> {io.strerror}")
 
-    def to_json(self, filename: Optional[str] = None) -> str:
-        """Returns the content of the CVTArchive in JSON format.
-        It also allows to save the information in a .json file in the current work directory whhen passing a filename
-
-        Args:
-            filename (Optional[str], optional): Filename to the CVTArchive. Must include the .json extension. Defaults to None.
-
-        Returns:
-            str: String in JSON format with the content of the CVTArchive
-        """
-        data = {
+    def asdict(self) -> dict:
+        return {
             "dimensions": self._dimensions,
             "n_samples": self._n_samples,
             "regions": self._k,
@@ -372,8 +367,18 @@ class CVTArchive(Archive):
             "ubs": self._upper_bounds.tolist(),
             "centroids": self._centroids.tolist(),
             "samples": self._samples.tolist(),
+            "instances": {
+                i: instance.asdict() for i, instance in enumerate(self._grid.values())
+            },
         }
-        json_data = json.dumps(data, indent=4)
+
+    def to_json(self, filename: Optional[str] = None) -> str:
+        """Returns the content of the CVTArchive in JSON format.
+
+        Returns:
+            str: String in JSON format with the content of the CVTArchive
+        """
+        json_data = json.dumps(self.asdict(), indent=4)
         if filename is not None:
             filename = (
                 f"{filename}.json" if not filename.endswith(".json") else filename

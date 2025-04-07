@@ -27,6 +27,7 @@ class TSP(Problem):
         self,
         nodes: int,
         coords: Tuple[Tuple[int, int], ...],
+        seed: int = 42,
         *args,
         **kwargs,
     ):
@@ -41,7 +42,7 @@ class TSP(Problem):
         x_min, y_min = np.min(self._coords, axis=0)
         x_max, y_max = np.max(self._coords, axis=0)
         bounds = list(((x_min, y_min), (x_max, y_max)) for _ in range(self._nodes))
-        super().__init__(dimension=nodes, bounds=bounds, name="TSP")
+        super().__init__(dimension=nodes, bounds=bounds, name="TSP", seed=seed)
 
         self._distances = np.zeros((self._nodes, self._nodes))
         for i in range(self._nodes):
@@ -73,7 +74,7 @@ class TSP(Problem):
             msg = f"Mismatch between individual variables ({len(individual)}) and instance variables ({self._nodes}) in {self.__class__.__name__}. A solution for the TSP must be a sequence of len {self._nodes + 1}"
             raise ValueError(msg)
 
-        penalty: np.float32 = 0.0
+        penalty: np.float64 = np.float64(0)
 
         if self.__evaluate_constraints(individual):
             distance: float = 0.0
@@ -83,7 +84,7 @@ class TSP(Problem):
             fitness = 1.0 / distance
         else:
             fitness = 2.938736e-39  # --> 1.0 / np.float.max
-            penalty = np.finfo(np.float32).max
+            penalty = np.finfo(np.float64).max
 
         if isinstance(individual, Solution):
             individual.fitness = fitness
@@ -137,6 +138,7 @@ class TSPDomain(Domain):
         dimension: int = 100,
         x_range: Tuple[int, int] = (0, 1000),
         y_range: Tuple[int, int] = (0, 1000),
+        seed: int = 42,
     ):
         """Creates a new TSPDomain to generate instances for the Symmetric Travelling Salesman Problem
 
@@ -174,7 +176,7 @@ class TSPDomain(Domain):
             for i in range(dimension * 2)
         ]
 
-        super().__init__(dimension=dimension, bounds=__bounds, name="TSP")
+        super().__init__(dimension=dimension, bounds=__bounds, name="TSP", seed=seed)
 
     def generate_instance(self) -> Instance:
         """Generates a new instances for the TSP domain
@@ -182,7 +184,7 @@ class TSPDomain(Domain):
         Returns:
             Instance: New randomly generated instance
         """
-        coords = np.random.randint(
+        coords = self._rng.integers(
             low=(self._x_range[0], self._y_range[0]),
             high=(self._x_range[1], self._y_range[1]),
             size=(self.dimension, 2),
@@ -225,8 +227,8 @@ class TSPDomain(Domain):
         # Top five only
         norm_distances = np.sort(tsp._distances)[::-1][:5] / np.max(tsp._distances)
 
-        variance_nnNds = np.var(norm_distances)
-        variation_nnNds = variance_nnNds / np.mean(norm_distances)
+        variance_nnds = np.var(norm_distances)
+        variation_nnds = variance_nnds / np.mean(norm_distances)
 
         dbscan = DBSCAN()
         dbscan.fit(tsp._coords)
@@ -252,8 +254,8 @@ class TSPDomain(Domain):
             radius,
             fraction,
             area,
-            variance_nnNds,
-            variation_nnNds,
+            variance_nnds,
+            variation_nnds,
             cluster_ratio,
             mean_cluster_radius,
         )

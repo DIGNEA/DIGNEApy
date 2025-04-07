@@ -15,7 +15,7 @@ import pytest
 
 from digneapy._core import Solution
 from digneapy.domains import kp as knapsack
-from digneapy.solvers.kp import default_kp, map_kp, miw_kp, mpw_kp
+from digneapy.solvers import default_kp, map_kp, miw_kp, mpw_kp
 from digneapy.solvers.pisinger import combo, expknap, minknap
 
 
@@ -90,8 +90,6 @@ def test_mpw_kp_heuristic(default_instance):
     assert len(default_instance) == 100
     solution = mpw_kp(default_instance)[0]
     expected_p = 50
-    expected_chromosome = [0.0] * 49 + [1.0] + [0.0] * 50
-    # assert np.array_equal(solution.chromosome, np.array(expected_chromosome))
     assert len(solution) == len(default_instance)
     assert solution.fitness == expected_p
     assert solution.objectives == (expected_p,)

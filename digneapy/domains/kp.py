@@ -27,6 +27,7 @@ class Knapsack(Problem):
         profits: Sequence[int],
         weights: Sequence[int],
         capacity: int = 0,
+        seed: int = 42,
         *args,
         **kwargs,
     ):
@@ -34,7 +35,7 @@ class Knapsack(Problem):
         assert capacity > 0
 
         bounds = list((0, 1) for _ in range(len(profits)))
-        super().__init__(dimension=len(profits), bounds=bounds, name="KP")
+        super().__init__(dimension=len(profits), bounds=bounds, name="KP", seed=seed)
 
         self.weights = weights
         self.profits = profits
@@ -76,7 +77,7 @@ class Knapsack(Problem):
         return len(self.weights)
 
     def create_solution(self) -> Solution:
-        chromosome = list(np.random.randint(low=0, high=1, size=self._dimension))
+        chromosome = self._rng.integers(low=0, high=1, size=self._dimension)
         return Solution(chromosome=chromosome)
 
     def to_file(self, filename: str = "instance.kp"):
@@ -114,6 +115,7 @@ class KnapsackDomain(Domain):
         capacity_approach: str = "evolved",
         max_capacity: int = int(1e7),
         capacity_ratio: float = 0.8,
+        seed: int = 42,
     ):
         self.min_p = min_p
         self.min_w = min_w
@@ -139,7 +141,13 @@ class KnapsackDomain(Domain):
             (min_w, max_w) if i % 2 == 0 else (min_p, max_p)
             for i in range(2 * dimension)
         ]
-        super().__init__(dimension=dimension, bounds=bounds, name="KP")
+        super().__init__(
+            dimension=dimension,
+            bounds=bounds,
+            name="KP",
+            feat_names="capacity,max_p,max_w,min_p,min_w,avg_eff,mean,std".split(","),
+            seed=seed,
+        )
 
     @property
     def capacity_approach(self):
@@ -166,19 +174,19 @@ class KnapsackDomain(Domain):
         Returns:
             Instance: New randomly generated instance
         """
-        weights = np.random.randint(
+        weights = self._rng.integers(
             low=self.min_w, high=self.max_w, size=self.dimension
         )
-        profits = np.random.randint(
+        profits = self._rng.integers(
             low=self.min_p, high=self.max_p, size=self.dimension
         )
 
         capacity = 0
         # Sets the capacity according to the method
         if self.capacity_approach == "evolved":
-            capacity = np.random.randint(1, self.max_capacity)
+            capacity = self._rng.integers(1, self.max_capacity)
         elif self.capacity_approach == "percentage":
-            capacity = np.sum(weights) * self.capacity_ratio
+            capacity = np.sum(weights, dtype=int) * self.capacity_ratio
         elif self.capacity_approach == "fixed":
             capacity = self.max_capacity
 
@@ -195,10 +203,10 @@ class KnapsackDomain(Domain):
         Returns:
             Tuple[float]: Values of each feature
         """
-        vars = np.asarray(instance.variables[1:])
-        weights = vars[0::2]
-        profits = vars[1::2]
-        avg_eff = np.sum([p / w for p, w in zip(profits, weights)]) / len(vars)
+        _vars = np.asarray(instance.variables[1:])
+        weights = _vars[0::2]
+        profits = _vars[1::2]
+        avg_eff = np.sum([p / w for p, w in zip(profits, weights)]) / len(_vars)
         capacity = instance.variables[0]
         # Sets the capacity according to the method
         if self.capacity_approach == "percentage":
@@ -213,8 +221,8 @@ class KnapsackDomain(Domain):
             np.min(profits),
             np.min(weights),
             avg_eff,
-            np.mean(vars),
-            np.std(vars),
+            np.mean(_vars),
+            np.std(_vars),
         )
 
     def extract_features_as_dict(self, instance: Instance) -> Mapping[str, float]:
@@ -228,15 +236,14 @@ class KnapsackDomain(Domain):
         Returns:
             Mapping[str, float]: Dictionary with the names/values of each feature
         """
-        names = "capacity,max_p,max_w,min_p,min_w,avg_eff,mean,std"
-        features = self.extract_features(instance)
-        return {k: v for k, v in zip(names.split(","), features)}
+        if len(instance.features) == len(self.feat_names):
+            return {k: v for k, v in zip(self.feat_names, instance.features)}
+        else:
+            features = self.extract_features(instance)
+            return {k: v for k, v in zip(self.feat_names, features)}
 
     def from_instance(self, instance: Instance) -> Knapsack:
         variables = instance.variables
-        N = (len(variables) - 1) // 2
-        weights = np.zeros(N, dtype=np.int32)
-        profits = np.zeros(N, dtype=np.int32)
         capacity = variables[0]
         weights = variables[1::2]
         profits = variables[2::2]

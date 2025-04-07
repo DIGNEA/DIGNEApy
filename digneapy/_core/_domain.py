@@ -12,21 +12,24 @@
 
 from abc import ABC, abstractmethod
 from collections.abc import Sequence
-from typing import Mapping
+from typing import Mapping, Optional
 
 import numpy as np
 
 from digneapy._core._instance import Instance
 from digneapy._core._problem import Problem
+from .types import RNG
 
 
-class Domain(ABC):
+class Domain(ABC, RNG):
     def __init__(
         self,
         dimension: int,
         bounds: Sequence[tuple],
         dtype=np.float64,
+        seed: int = 42,
         name: str = "Domain",
+        feat_names: Optional[Sequence[str]] = None,
         *args,
         **kwargs,
     ):
@@ -35,6 +38,8 @@ class Domain(ABC):
         self._dimension = dimension
         self._bounds = bounds
         self._dtype = dtype
+        self.feat_names = feat_names if feat_names else list()
+        self.initialize_rng(seed=seed)
         if len(self._bounds) != 0:
             ranges = list(zip(*bounds))
             self._lbs = np.array(ranges[0], dtype=dtype)

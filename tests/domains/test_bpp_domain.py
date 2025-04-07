@@ -21,7 +21,8 @@ from digneapy.domains.bpp import BPP, BPPDomain
 
 @pytest.fixture
 def default_bpp():
-    items = np.random.randint(low=0, high=1000, size=100)
+    rng = np.random.default_rng(seed=42)
+    items = rng.integers(low=0, high=1000, size=100)
     return BPP(items, capacity=100)
 
 
@@ -55,7 +56,7 @@ def test_default_bpp_domain():
     assert len(domain) == dimension
     assert domain.capacity_approach == "fixed"
     assert domain._max_capacity == 100
-    assert domain.capacity_ratio == 0.8
+    assert np.isclose(domain.capacity_ratio, 0.8)
     assert domain._min_i == 1
     assert domain._max_i == 1000
     assert domain.bounds == [(1, domain._max_capacity)] + [
@@ -79,7 +80,7 @@ def test_default_bpp_domain_wrong_args():
     dimension = 100
     domain = BPPDomain(dimension, capacity_approach="random", capacity_ratio=-1.0)
     assert domain.capacity_approach == "fixed"
-    assert domain.capacity_ratio == 0.8
+    assert np.isclose(domain.capacity_ratio, 0.8)
 
     domain.capacity_approach = "random"
     assert domain.capacity_approach == "fixed"
@@ -159,8 +160,9 @@ def test_bpp_domain_to_features_dict():
 
 
 def test_bpp_domain_to_instance():
+    rng = np.random.default_rng(seed=42)
     dimension = 100
-    variables = np.random.randint(low=1, high=1000, size=101)
+    variables = rng.integers(low=1, high=1000, size=101)
     instance = Instance(variables)
 
     domain = BPPDomain(dimension, capacity_approach="fixed")

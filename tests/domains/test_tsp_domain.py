@@ -22,7 +22,7 @@ from digneapy.domains.tsp import TSP, TSPDomain
 @pytest.fixture
 def default_tsp():
     N = 100
-    _coords = np.random.randint(
+    _coords = np.random.default_rng(seed=42).integers(
         low=(0),
         high=(1000),
         size=(N, 2),
@@ -76,6 +76,9 @@ def test_tsp_domain_to_features():
     instance = domain.generate_instance()
     features = domain.extract_features(instance)
     assert isinstance(features, tuple)
+    assert len(features) == 11
+    assert all(not np.isclose(f, 0.0) for f in features)
+    assert features[0] == dimension
 
 
 def test_bpp_domain_to_features_dict():
@@ -83,27 +86,17 @@ def test_bpp_domain_to_features_dict():
     domain = TSPDomain(dimension=dimension)
     instance = domain.generate_instance()
     features = domain.extract_features_as_dict(instance)
-    # TODO
-    # capacity = instance.variables[0]
-    # items = np.asarray(instance.variables[1:])
-    # items_norm = items / capacity
-
-    # assert isinstance(features, dict)
-    # assert features["mean"] == np.mean(items_norm)
-    # assert features["std"] == np.std(items_norm)
-    # assert features["median"] == np.median(items_norm)
-    # assert features["max"] == max(items_norm)
-    # assert features["min"] == min(items_norm)
-    # assert isinstance(features["tiny"], float)
-    # assert isinstance(features["small"], float)
-    # assert isinstance(features["medium"], float)
-    # assert isinstance(features["large"], float)
-    # assert isinstance(features["huge"], float)
+    assert isinstance(features, dict)
+    assert len(features.keys()) == 11
+    assert all(not np.isclose(f, 0.0) for f in features.values())
+    assert features["size"] == dimension
 
 
 def test_tsp_domain_to_instance():
     dimension = 100
-    variables = np.random.randint(low=1, high=1000, size=(dimension, 2))
+    variables = np.random.default_rng(seed=42).integers(
+        low=1, high=1000, size=(dimension, 2)
+    )
     variables = variables.flatten()
     instance = Instance(variables)
 

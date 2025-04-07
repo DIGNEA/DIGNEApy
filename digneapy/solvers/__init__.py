@@ -10,14 +10,14 @@
 @Desc    :   None
 """
 
-from . import bpp, kp, tsp, _tsp_opt
+from . import bpp, tsp, _kp, _tsp_opt
 from .bpp import best_fit, first_fit, next_fit, worst_fit
-from .kp import default_kp, map_kp, miw_kp, mpw_kp
+from ._kp import default_kp, map_kp, miw_kp, mpw_kp
 from .tsp import greedy, nneighbour, three_opt
 from ._tsp_opt import two_opt
 
 __all__ = list(
-    set(bpp.__all__) | set(kp.__all__) | set(tsp.__all__) | set(_tsp_opt.__all__)
+    set(bpp.__all__) | set(_kp.__all__) | set(tsp.__all__) | set(_tsp_opt.__all__)
 )
 
 __solvers_modules = {"evo", "pisinger"}

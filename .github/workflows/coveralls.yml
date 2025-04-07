@@ -9,7 +9,7 @@ permissions:
     contents: read
 
 jobs:
-    build_wheels:
+    coverage:
         strategy:
             matrix:
                 python-version: ["3.12", "3.13"]
@@ -32,8 +32,8 @@ jobs:
                   uv add -r requirements.txt
                   uv add -r requirements_dev.txt
 
-            - name: Build and install
-              run: uv run pip install .
+            - name: Installing the project
+              run: uv sync --all-extras --dev
 
             - name: Run coverage and send to coveralls
               env:

@@ -15,7 +15,7 @@ ext-modules = [
         "digneapy/solvers/_parallel_ea/src/parallel_ea.cpp",
 
     ] },
-    {name="digneapy.solvers.kp", sources=["digneapy/solvers/_kp.pyx"]},
+    {name="digneapy.solvers._kp", sources=["digneapy/solvers/_kp.pyx"]},
     {name="digneapy.solvers._tsp_opt", sources=["digneapy/solvers/_tsp_opt.pyx"]},
 
 
@@ -98,6 +98,7 @@ build = [
     "cp311-macosx_x86_64",
     "cp312-macosx_x86_64",
 ]
+build-frontend = "build[uv]"
 before-test = "python -m pip install -r requirements.txt"
 test-requires = "pytest"
 test-command = "pytest --doctest-modules -W ignore::ImportWarning -W ignore::DeprecationWarning -W ignore::UserWarning {project}/tests"

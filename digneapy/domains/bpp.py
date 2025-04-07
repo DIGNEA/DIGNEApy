@@ -25,6 +25,7 @@ class BPP(Problem):
         self,
         items: Iterable[int],
         capacity: int,
+        seed: int = 42,
         *args,
         **kwargs,
     ):
@@ -35,7 +36,7 @@ class BPP(Problem):
         assert self._capacity > 0
 
         bounds = list((0, dim - 1) for _ in range(dim))
-        super().__init__(dimension=dim, bounds=bounds, name="BPP")
+        super().__init__(dimension=dim, bounds=bounds, name="BPP", seed=seed)
 
     def evaluate(self, individual: Sequence | Solution) -> tuple[float]:
         """Evaluates the candidate individual with the information of the Bin Packing.
@@ -116,6 +117,7 @@ class BPPDomain(Domain):
         capacity_approach: str = "fixed",
         max_capacity: int = 100,
         capacity_ratio: float = 0.8,
+        seed: int = 42,
     ):
         if dimension < 0:
             raise ValueError(f"Expected dimension > 0 got {dimension}")
@@ -150,7 +152,7 @@ class BPPDomain(Domain):
         bounds = [(1.0, self._max_capacity)] + [
             (self._min_i, self._max_i) for _ in range(self._dimension)
         ]
-        super().__init__(dimension=dimension, bounds=bounds, name="BPP")
+        super().__init__(dimension=dimension, bounds=bounds, name="BPP", seed=seed)
 
     @property
     def capacity_approach(self):
@@ -177,18 +179,18 @@ class BPPDomain(Domain):
         Returns:
             Instance: New randomly generated instance
         """
-        items = np.random.randint(
+        items = self._rng.integers(
             low=self._min_i, high=self._max_i, size=self._dimension, dtype=int
         )
-        np.random.shuffle(items)
+        self._rng.shuffle(items)
 
         capacity = 0
         # Sets the capacity according to the method
         match self.capacity_approach:
             case "evolved":
-                capacity = np.random.randint(1, self._max_capacity)
+                capacity = self._rng.integers(1, self._max_capacity)
             case "percentage":
-                capacity = np.sum(items) * self.capacity_ratio
+                capacity = np.sum(items, dtype=int) * self.capacity_ratio
             case "fixed":
                 capacity = self._max_capacity
 
@@ -208,8 +210,8 @@ class BPPDomain(Domain):
             Tuple[float]: Values of each feature
         """
         capacity = instance.variables[0]
-        vars = np.asarray(instance.variables[1:])
-        vars_norm = vars / capacity
+        _vars = np.asarray(instance.variables[1:])
+        vars_norm = _vars / capacity
         huge = sum(k > 0.5 for k in vars_norm) / self._dimension
         large = sum(0.5 >= k > 1 / 3 for k in vars_norm) / self._dimension
         medium = sum(1 / 3 >= k > 0.25 for k in vars_norm) / self._dimension

@@ -103,8 +103,10 @@ class KerasNN(Transformer):
         if len(x) == 0:
             msg = "x cannot be None in KerasNN predict"
             raise RuntimeError(msg)
+        x = np.vstack(x)
         if self._scaler is not None:
             x = self._scaler.fit_transform(x)
+
         return self._model.predict(x, verbose=0)
 
     def __call__(self, x: npt.NDArray) -> np.ndarray:

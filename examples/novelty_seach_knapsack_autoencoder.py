@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 # -*-coding:utf-8 -*-
 """
-@File    :   generate_instances.py
-@Time    :   2024/09/30 09:19:06
+@File    :   kp_ae_example.py
+@Time    :   2024/05/28 10:23:57
 @Author  :   Alejandro Marrero
 @Version :   1.0
 @Contact :   amarrerd@ull.edu.es
@@ -11,50 +11,58 @@
 """
 
 import argparse
-from digneapy import CVTArchive
-from digneapy.domains import KnapsackDomain
-from digneapy.generators import MapElitesGenerator
-from digneapy.operators import uniform_one_mutation
-from digneapy.solvers import default_kp, map_kp, miw_kp, mpw_kp
-from digneapy.utils import save_results_to_files
 import itertools
+
+from digneapy import NS, Archive
+from digneapy.domains import KnapsackDomain
+from digneapy.generators import EAGenerator
+from digneapy.operators import generational_replacement
+from digneapy.solvers import default_kp, map_kp, miw_kp, mpw_kp
+from digneapy.transformers.autoencoders import KPEncoder
 from multiprocessing.pool import Pool
 from functools import partial
+from digneapy.utils import save_results_to_files
 
 
 def generate_instances(
     portfolio,
     dimension: int,
+    encoder: str,
     pop_size: int,
     generations: int,
-    verbose: bool,
+    archive_threshold: float,
+    ss_threshold: float,
+    k: int,
+    verbose,
 ):
-    domain = KnapsackDomain(dimension=dimension)
-    # Create an empty archive with the previous centroids and samples
-    cvt_archive = CVTArchive(
-        k=1_000,
-        ranges=[(1.0, 10_000), *[(1.0, 1_000) for _ in range(dimension * 2)]],
-        n_samples=100000,
-    )
-    map_elites = MapElitesGenerator(
+    domain = KnapsackDomain(dimension=dimension, capacity_approach="percentage")
+    autoencoder = KPEncoder(encoder=encoder)
+
+    eig = EAGenerator(
+        pop_size=pop_size,
+        generations=generations,
         domain=domain,
         portfolio=portfolio,
-        archive=cvt_archive,
-        initial_pop_size=pop_size,
-        mutation=uniform_one_mutation,
-        generations=generations,
-        descriptor="instance",
+        novelty_approach=NS(Archive(threshold=archive_threshold), k=k),
+        solution_set=Archive(threshold=ss_threshold),
         repetitions=1,
+        descriptor_strategy="instance",
+        replacement=generational_replacement,
+        transformer=autoencoder,
     )
-    result = map_elites()
+
+    result = eig()
     if verbose:
         print(f"Target: {result.target} completed.")
     return result
 
 
 if __name__ == "__main__":
+    expected_dimensions = (50, 100, 500, 1000)
+
     parser = argparse.ArgumentParser(
-        description="Generate instances for the knapsack problem with different solvers using CVT-MapElites."
+        prog="novelty_search_knapsack_autoencoder",
+        description="Novelty Search for KP instances with variable size AE",
     )
     parser.add_argument(
         "-n",
@@ -64,7 +72,27 @@ if __name__ == "__main__":
         help="Size of the knapsack problem.",
         default=50,
     )
-
+    parser.add_argument(
+        "-k",
+        type=int,
+        required=True,
+        help="Number of neighbors to use for the NS.",
+        default=3,
+    )
+    parser.add_argument(
+        "-a",
+        "--archive_threshold",
+        default=1e-3,
+        type=float,
+        help="Threshold for the Archive.",
+    )
+    parser.add_argument(
+        "-s",
+        "--solution_set_threshold",
+        default=1e-3,
+        type=float,
+        help="Threshold for the Archive.",
+    )
     parser.add_argument(
         "-p",
         "--population_size",
@@ -92,19 +120,23 @@ if __name__ == "__main__":
         help="Print the evolution logbook.",
     )
     args = parser.parse_args()
+    descriptor = args.descriptor
     generations = args.generations
     population_size = args.population_size
+    archive_threshold = args.archive_threshold
+    solution_set_threshold = args.solution_set_threshold
     dimension = args.n
+    k = args.k
     rep = args.repetition
     verbose = args.verbose
 
+    encoder = "variable"
     portfolios = [
         [default_kp, map_kp, miw_kp, mpw_kp],
         [map_kp, default_kp, miw_kp, mpw_kp],
         [miw_kp, default_kp, map_kp, mpw_kp],
         [mpw_kp, default_kp, map_kp, miw_kp],
     ]
-
     with Pool(4) as pool:
         results = pool.map(
             partial(
@@ -112,6 +144,9 @@ if __name__ == "__main__":
                 dimension=dimension,
                 pop_size=population_size,
                 generations=generations,
+                archive_threshold=archive_threshold,
+                ss_threshold=solution_set_threshold,
+                k=k,
                 verbose=verbose,
             ),
             portfolios,
@@ -119,17 +154,19 @@ if __name__ == "__main__":
 
     pool.close()
     pool.join()
-    vars_names = ["Q"] + list(
-        itertools.chain.from_iterable([(f"w_{i}", f"p_{i}") for i in range(dimension)])
-    )
 
     for i, result in enumerate(results):
         solvers_names = [p.__name__ for p in portfolios[i]]
 
         save_results_to_files(
-            f"map_elites_cvt_N_{dimension}_target_{result.target}_rep_{rep}",
-            result=result,
-            solvers_names=solvers_names,
-            vars_names=vars_names,
+            f"ns_knapsack_encoder_variable_N_{dimension}_target_{result.target}_rep_{rep}",
+            result,
+            solvers_names,
             features_names=None,
+            vars_names=["Q"]
+            + list(
+                itertools.chain.from_iterable(
+                    [(f"w_{i}", f"p_{i}") for i in range(dimension)]
+                )
+            ),
         )

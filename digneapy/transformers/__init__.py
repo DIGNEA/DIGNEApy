@@ -11,10 +11,11 @@
 """
 
 from ._base import SupportsTransform, Transformer
+from .pca import PCAEncoder
 
-__transformer_submodules = {"neural", "autoencoders", "tuner"}
+__transformer_submodules = {"neural", "autoencoders", "tuner", "pca"}
 
-__all__ = ["Transformer", "SupportsTransform"]
+__all__ = ["Transformer", "SupportsTransform", "PCAEncoder"]
 
 
 # Lazy import function

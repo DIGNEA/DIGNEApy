@@ -19,34 +19,17 @@ from digneapy.domains import BPPDomain
 from digneapy.generators import EAGenerator
 from digneapy.operators import generational_replacement
 from digneapy.solvers import best_fit, first_fit, next_fit, worst_fit
+from digneapy.utils import save_results_to_files
 
 
-def save_instances(filename, results, dimension):
-    bpp_features = ",mean,std,median,max,min,tiny,small,medium,large,huge"
-    header = "target,N,capacity,"
-    header += ",".join([f"w_{i}" for i in range(dimension)])
-    if descriptor == "features":
-        header += bpp_features
-
-    with open(filename, "w") as file:
-        file.write(f"{header}\n")
-        for solver, instances in results:
-            for instance in instances:
-                assert len(instance) == dimension + 1
-                vars = ",".join(str(x) for x in instance)
-                if descriptor == "features":
-                    features = ",".join(str(f) for f in instance.features)
-                    file.write(f"{solver},{dimension},{vars},{features}\n")
-                else:
-                    file.write(f"{solver},{dimension},{vars}\n")
-
-
-def generate_instances_for_target(
+def generate_instances(
     portfolio,
     dimension: int,
     descriptor: str,
     generations: int = 1000,
     population_size: int = 128,
+    k: int = 15,
+    verbose: bool = False,
 ):
     domain = BPPDomain(
         dimension=dimension,
@@ -61,45 +44,69 @@ def generate_instances_for_target(
         generations=generations,
         domain=domain,
         portfolio=portfolio,
-        novelty_approach=NS(Archive(threshold=1e-7), k=15),
+        novelty_approach=NS(Archive(threshold=1e-7), k=k),
         solution_set=Archive(threshold=1e-7),
         repetitions=1,
         descriptor_strategy=descriptor,
         replacement=generational_replacement,
     )
-    _, solution_set = eig()
-    print(f"Solver: {portfolio[0].__name__} finised")
-    return (portfolio[0].__name__, solution_set)
+    result = eig()
+    if verbose:
+        print(f"Target: {result.target} completed.")
+    return result
 
 
 if __name__ == "__main__":
     expected_dimensions = (120, 240, 560, 1080)
     parser = argparse.ArgumentParser(
-        prog="bin_packing_ns",
+        prog="novelty_search_bin_packing",
         description="Bin-Packing Problem instance generator using NS",
     )
     parser.add_argument(
-        "dimension",
-        choices=expected_dimensions,
+        "-n",
+        "-number_of_items",
         type=int,
-        help="dimension of the Bin Packing instances",
+        required=True,
+        help="Size of the BP problem.",
+        default=120,
     )
     parser.add_argument(
-        "repetition",
-        choices=list(range(10)),
-        type=int,
-        help="Number of the run to append in the final CSV file",
+        "-d", "--descriptor", type=str, required=True, help="Descriptor to use."
     )
     parser.add_argument(
-        "descriptor",
-        choices=("features", "performance", "instance"),
-        type=str,
-        help="Descriptor for the NS",
+        "-k",
+        type=int,
+        required=True,
+        help="Number of neighbors to use for the NS.",
+        default=3,
     )
-    args = parser.parse_args()
-    n_run = args.repetition
-    dimension = args.dimension
-    descriptor = args.descriptor
+
+    parser.add_argument(
+        "-p",
+        "--population_size",
+        default=128,
+        type=int,
+        required=True,
+        help="Number of instances to evolve.",
+    )
+    parser.add_argument(
+        "-g",
+        "--generations",
+        default=1000,
+        type=int,
+        required=True,
+        help="Number of generations to perform.",
+    )
+    parser.add_argument(
+        "-r", "--repetition", type=int, required=True, help="Repetition index."
+    )
+    parser.add_argument(
+        "-v",
+        "--verbose",
+        default=False,
+        action="store_true",
+        help="Print the evolution logbook.",
+    )
 
     portfolios = [
         [best_fit, first_fit, next_fit, worst_fit],
@@ -107,25 +114,37 @@ if __name__ == "__main__":
         [next_fit, best_fit, first_fit, worst_fit],
         [worst_fit, best_fit, first_fit, next_fit],
     ]
-
-    print(
-        f"Running experiment #{n_run + 1} for dimension: {dimension} with descriptor: {descriptor}"
-    )
+    args = parser.parse_args()
+    descriptor = args.descriptor
+    generations = args.generations
+    population_size = args.population_size
+    dimension = args.n
+    k = args.k
+    rep = args.repetition
+    verbose = args.verbose
     pool = Pool(4)
     results = pool.map(
         partial(
-            generate_instances_for_target,
+            generate_instances,
             dimension=dimension,
             descriptor=descriptor,
-            generations=1000,
-            population_size=128,
+            generations=generations,
+            population_size=population_size,
+            k=k,
         ),
         portfolios,
     )
     pool.close()
     pool.join()
-    save_instances(
-        f"bpp_ns{descriptor[0]}_N_{dimension}_{n_run}.csv",
-        results=results,
-        dimension=dimension,
-    )
+    features_names = BPPDomain().feat_names if descriptor == "features" else None
+    vars_names = [f"w_{i}" for i in range(dimension)]
+    for i, result in enumerate(results):
+        solvers_names = [p.__name__ for p in portfolios[i]]
+
+        save_results_to_files(
+            f"ns_{descriptor}_bin_packing_N_{dimension}_target_{result.target}_rep_{rep}",
+            result,
+            solvers_names,
+            features_names,
+            vars_names,
+        )

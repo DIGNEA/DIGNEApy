@@ -1,46 +1,52 @@
 #!/usr/bin/env python
 # -*-coding:utf-8 -*-
 """
-@File    :   nn_transformer_gecco_23.py
-@Time    :   2023/11/10 14:09:41
+@File    :   knapsack_domain_heuristics.py
+@Time    :   2023/11/02 11:18:13
 @Author  :   Alejandro Marrero
 @Version :   1.0
 @Contact :   amarrerd@ull.edu.es
 @License :   (C)Copyright 2023, Alejandro Marrero
-@Desc    :   None
+@Desc    :   Example of how to generated diverse and biased KP instances using DIGNEApy
 """
 
 import argparse
+from digneapy import NS, Archive, runtime_score
 from digneapy.domains import KnapsackDomain
+from digneapy.generators import EAGenerator
+from digneapy.operators import first_improve_replacement
+from digneapy.solvers.pisinger import combo, expknap, minknap
 from digneapy.utils import save_results_to_files
 import itertools
 from multiprocessing.pool import Pool
 from functools import partial
-from digneapy.generators import DEAGenerator
-from digneapy.solvers import default_kp, map_kp, miw_kp, mpw_kp
 
 
 def generate_instances(
     portfolio,
-    dimension: int,
     pop_size: int,
     generations: int,
+    archive_threshold: float,
+    ss_threshold: float,
     k: int,
     descriptor: str,
     verbose,
 ):
-    domain = KnapsackDomain(dimension, capacity_approach="percentage")
-    deig = DEAGenerator(
+    domain = KnapsackDomain(1000, capacity_approach="percentage")
+    eig = EAGenerator(
         pop_size=pop_size,
-        offspring_size=pop_size,
         generations=generations,
         domain=domain,
         portfolio=portfolio,
-        k=k,
+        novelty_approach=NS(Archive(threshold=archive_threshold), k=k),
+        solution_set=Archive(threshold=ss_threshold),
         repetitions=1,
         descriptor_strategy=descriptor,
+        performance_function=runtime_score,
+        replacement=first_improve_replacement,
     )
-    result = deig()
+
+    result = eig()
     if verbose:
         print(f"Target: {result.target} completed.")
     return result
@@ -48,16 +54,9 @@ def generate_instances(
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
-        description="Generate instances for the knapsack problem with different solvers using Dominated Novelty Search."
+        description="Generate instances for the Knapsack Problem N = 1000 with Pisinger solvers."
     )
-    parser.add_argument(
-        "-n",
-        "-number_of_items",
-        type=int,
-        required=True,
-        help="Size of the knapsack problem.",
-        default=50,
-    )
+
     parser.add_argument(
         "-d", "--descriptor", type=str, required=True, help="Descriptor to use."
     )
@@ -68,7 +67,20 @@ if __name__ == "__main__":
         help="Number of neighbors to use for the NS.",
         default=3,
     )
-
+    parser.add_argument(
+        "-a",
+        "--archive_threshold",
+        default=1 - 3,
+        type=float,
+        help="Threshold for the Archive.",
+    )
+    parser.add_argument(
+        "-s",
+        "--solution_set_threshold",
+        default=1e-4,
+        type=float,
+        help="Threshold for the Solution Set.",
+    )
     parser.add_argument(
         "-p",
         "--population_size",
@@ -99,24 +111,26 @@ if __name__ == "__main__":
     descriptor = args.descriptor
     generations = args.generations
     population_size = args.population_size
+    archive_threshold = args.archive_threshold
+    solution_set_threshold = args.solution_set_threshold
     dimension = args.n
     k = args.k
     rep = args.repetition
     verbose = args.verbose
     portfolios = [
-        [default_kp, map_kp, miw_kp, mpw_kp],
-        [map_kp, default_kp, miw_kp, mpw_kp],
-        [miw_kp, default_kp, map_kp, mpw_kp],
-        [mpw_kp, default_kp, map_kp, miw_kp],
+        [combo, minknap, expknap],
+        [minknap, combo, expknap],
+        [expknap, combo, minknap],
     ]
 
     with Pool(4) as pool:
         results = pool.map(
             partial(
                 generate_instances,
-                dimension=dimension,
                 pop_size=population_size,
                 generations=generations,
+                archive_threshold=archive_threshold,
+                ss_threshold=solution_set_threshold,
                 k=k,
                 descriptor=descriptor,
                 verbose=verbose,
@@ -135,7 +149,7 @@ if __name__ == "__main__":
         solvers_names = [p.__name__ for p in portfolios[i]]
 
         save_results_to_files(
-            f"dns_{descriptor}_N_{dimension}_target_{result.target}_rep_{rep}",
+            f"ns_{descriptor}_N_{dimension}_target_{result.target}_rep_{rep}",
             result,
             solvers_names,
             features_names,

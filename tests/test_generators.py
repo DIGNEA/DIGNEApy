@@ -25,7 +25,7 @@ from digneapy import (
     runtime_score,
 )
 from digneapy.domains import BPPDomain, KnapsackDomain
-from digneapy.generators import EAGenerator, MapElitesGenerator
+from digneapy.generators import EAGenerator, MapElitesGenerator, DEAGenerator
 from digneapy.operators import (
     binary_tournament_selection,
     generational_replacement,
@@ -340,3 +340,43 @@ def test_map_elites_domain_cvt(domain_cls, portfolio, ranges):
     map_elites_evolution_plot(log.logbook, "example.png")
     assert os.path.exists("example.png")
     os.remove("example.png")
+
+
+def test_dominated_gen_kp_feat_descriptor():
+    portfolio = deque([default_kp, map_kp, miw_kp, mpw_kp])
+    kp_domain = KnapsackDomain(dimension=50, capacity_approach="evolved")
+    generations = 100
+    k = 3
+    eig = EAGenerator(
+        pop_size=10,
+        generations=generations,
+        domain=kp_domain,
+        portfolio=portfolio,
+        novelty_approach=NS(k=k),
+        solution_set=Archive(threshold=3),
+        repetitions=1,
+        descriptor_strategy="features",
+        replacement=generational_replacement,
+    )
+    result = eig()
+    solution_set = result.instances
+    # They could be empty
+    assert isinstance(solution_set, Archive)
+
+    if len(solution_set) != 0:
+        assert all(len(s) == 101 for s in solution_set)
+        assert all(s.fitness >= 0.0 for s in solution_set)
+        assert all(s.p >= 0.0 for s in solution_set)
+        assert all(s.s >= 0.0 for s in solution_set)
+        assert all(len(s.descriptor) == 8 for s in solution_set)
+        assert all(len(s.portfolio_scores) == len(portfolio) for s in solution_set)
+        p_scores = [s.portfolio_scores for s in solution_set]
+        assert all(max(p_scores[i]) == p_scores[i][0] for i in range(len(p_scores)))
+
+    # Test the creation of the evolution images
+    log = eig._logbook
+    assert len(log) == eig.generations
+    filename = "test_evolution.png"
+    ea_generator_evolution_plot(log.logbook, filename=filename)
+    assert os.path.exists(filename)
+    os.remove(filename)

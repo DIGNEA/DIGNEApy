@@ -32,6 +32,23 @@ def default_tsp():
 
 
 def test_default_tsp_instance(default_tsp):
+    individual = default_tsp.create_solution()
+    fitness = default_tsp.evaluate(individual)
+    assert not np.isclose(fitness, 0.0)
+    assert np.isclose(fitness, default_tsp(individual))
+    individual[0] = 100
+    assert np.isclose(
+        default_tsp.evaluate(individual), (1.0 / np.finfo(np.float64).max)
+    )
+
+    individual[0] = 0
+    individual[1] = 2
+    assert np.isclose(
+        default_tsp.evaluate(individual), (1.0 / np.finfo(np.float64).max)
+    )
+
+
+def test_tsp_evaluation(default_tsp):
     assert len(default_tsp) == 100
     assert default_tsp._nodes == 100
     expected_repr = "TSP<n=100>"
@@ -68,6 +85,18 @@ def test_default_tsp_domain():
 
     with pytest.raises(ValueError):
         TSPDomain(dimension=-1)
+
+    with pytest.raises(ValueError):
+        TSPDomain(dimension=100, x_range=tuple(), y_range=(0, 1000))
+
+    with pytest.raises(ValueError):
+        TSPDomain(dimension=100, x_range=(0, 1000), y_range=tuple())
+
+    with pytest.raises(ValueError):
+        TSPDomain(dimension=100, x_range=(1000, 100), y_range=(0, 1000))
+
+    with pytest.raises(ValueError):
+        TSPDomain(dimension=100, x_range=(0, 1000), y_range=(1000, 100))
 
 
 def test_tsp_domain_to_features():

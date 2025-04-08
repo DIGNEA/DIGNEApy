@@ -25,8 +25,9 @@ def default_instance():
 @pytest.fixture
 def initialised_instances():
     N = 100
-    chr_1 = np.random.randint(low=0, high=100, size=N)
-    chr_2 = np.random.randint(low=0, high=100, size=N)
+    rng = np.random.default_rng(42)
+    chr_1 = rng.integers(low=0, high=100, size=N)
+    chr_2 = rng.integers(low=0, high=100, size=N)
     instance_1 = Instance(chr_1)
     instance_2 = Instance(chr_2)
     return (instance_1, instance_2)
@@ -40,8 +41,9 @@ def default_solution():
 @pytest.fixture
 def initialised_solutions():
     N = 100
-    chr_1 = np.random.randint(low=0, high=100, size=N)
-    chr_2 = np.random.randint(low=0, high=100, size=N)
+    rng = np.random.default_rng(42)
+    chr_1 = rng.integers(low=0, high=100, size=N)
+    chr_2 = rng.integers(low=0, high=100, size=N)
     solution_1 = Solution(chromosome=chr_1)
     solution_2 = Solution(chromosome=chr_2)
     return (solution_1, solution_2)
@@ -85,8 +87,9 @@ def test_one_point_crossover_instances(initialised_instances):
 
 def test_uniform_crossover_raises():
     N = 100
-    chr_1 = np.random.randint(low=0, high=100, size=N)
-    chr_2 = np.random.randint(low=0, high=100, size=N * 2)
+    rng = np.random.default_rng(42)
+    chr_1 = rng.integers(low=0, high=100, size=N)
+    chr_2 = rng.integers(low=0, high=100, size=N * 2)
     instance_1 = Instance(chr_1)
     instance_2 = Instance(chr_2)
 
@@ -96,8 +99,9 @@ def test_uniform_crossover_raises():
 
 def test_one_point_crossover_raises():
     N = 100
-    chr_1 = np.random.randint(low=0, high=100, size=N)
-    chr_2 = np.random.randint(low=0, high=100, size=N * 2)
+    rng = np.random.default_rng(42)
+    chr_1 = rng.integers(low=0, high=100, size=N)
+    chr_2 = rng.integers(low=0, high=100, size=N * 2)
     instance_1 = Instance(chr_1)
     instance_2 = Instance(chr_2)
 

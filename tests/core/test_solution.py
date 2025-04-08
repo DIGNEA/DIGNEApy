@@ -20,17 +20,18 @@ from digneapy import Solution
 
 @pytest.fixture
 def default_solution():
+    rng = np.random.default_rng(42)
     return Solution(
-        chromosome=np.random.randint(low=0, high=100, size=100),
+        chromosome=rng.integers(low=0, high=100, size=100),
         objectives=(
-            np.random.uniform(low=0, high=10),
-            np.random.uniform(low=0, high=10),
+            rng.uniform(low=0, high=10),
+            rng.uniform(low=0, high=10),
         ),
         constraints=(
-            np.random.uniform(low=0, high=10),
-            np.random.uniform(low=0, high=10),
+            rng.uniform(low=0, high=10),
+            rng.uniform(low=0, high=10),
         ),
-        fitness=np.random.random(),
+        fitness=rng.random(),
     )
 
 

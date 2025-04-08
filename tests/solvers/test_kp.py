@@ -29,9 +29,10 @@ def default_instance():
 
 @pytest.fixture
 def default_large_knap():
-    c = np.random.randint(1e3, 1e5)
-    w = np.random.randint(1000, 5000, size=1000)
-    p = np.random.randint(1000, 5000, size=1000)
+    rng = np.random.default_rng(seed=42)
+    c = rng.integers(1e3, 1e5)
+    w = rng.integers(1000, 5000, size=1000)
+    p = rng.integers(1000, 5000, size=1000)
     kp = knapsack.Knapsack(profits=p, weights=w, capacity=c)
 
     return kp

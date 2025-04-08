@@ -22,9 +22,7 @@ from .._core import IndType
 Selection = Callable[[Sequence[IndType]], IndType]
 
 
-def binary_tournament_selection(
-    population: Sequence[IndType],
-) -> IndType:
+def binary_tournament_selection(population: Sequence[IndType]) -> IndType:
     """Binary Tournament Selection Operator
 
     Args:
@@ -36,11 +34,13 @@ def binary_tournament_selection(
     Returns:
         Instance or Solution: New parent
     """
-    if len(population) == 0:
+    if population is None or len(population) == 0:
         msg = "Trying to selection individuals in an empty population."
-        raise RuntimeError(msg)
+        raise ValueError(msg)
     if len(population) == 1:
         return population[0]
     else:
-        idx1, idx2 = np.random.randint(low=0, high=len(population), size=2)
+        idx1, idx2 = np.random.default_rng().integers(
+            low=0, high=len(population), size=2
+        )
         return max(population[idx1], population[idx2], key=attrgetter("fitness"))

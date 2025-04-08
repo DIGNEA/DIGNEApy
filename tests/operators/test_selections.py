@@ -25,8 +25,9 @@ def default_instance():
 @pytest.fixture
 def initialised_instances():
     N = 100
-    chr_1 = np.random.randint(low=0, high=100, size=N)
-    chr_2 = np.random.randint(low=0, high=100, size=N)
+    rng = np.random.default_rng(42)
+    chr_1 = rng.integers(low=0, high=100, size=N)
+    chr_2 = rng.integers(low=0, high=100, size=N)
     instance_1 = Instance(chr_1)
     instance_2 = Instance(chr_2)
     return (instance_1, instance_2)
@@ -40,8 +41,9 @@ def default_solution():
 @pytest.fixture
 def initialised_solutions():
     N = 100
-    chr_1 = np.random.randint(low=0, high=100, size=N)
-    chr_2 = np.random.randint(low=0, high=100, size=N)
+    rng = np.random.default_rng(42)
+    chr_1 = rng.integers(low=0, high=100, size=N)
+    chr_2 = rng.integers(low=0, high=100, size=N)
     solution_1 = Solution(chromosome=chr_1)
     solution_2 = Solution(chromosome=chr_2)
     return (solution_1, solution_2)
@@ -76,8 +78,11 @@ def test_binary_selection_instances(initialised_instances):
 
 
 def test_binary_selection_solutions_raises_empty():
-    with pytest.raises(Exception):
-        binary_tournament_selection(None)
+    with pytest.raises(ValueError):
+        _ = binary_tournament_selection(None)
+
+    with pytest.raises(ValueError):
+        _ = binary_tournament_selection(list())
 
 
 def test_binary_selection_one_ind(initialised_solutions):
@@ -91,10 +96,11 @@ def test_binary_selection_one_ind(initialised_solutions):
 
 @pytest.fixture
 def population():
+    rng = np.random.default_rng(seed=42)
     instances = [
         Instance(
-            variables=np.random.randint(low=0, high=100, size=100),
-            fitness=np.random.randint(0, 100),
+            variables=rng.integers(low=0, high=100, size=100),
+            fitness=rng.integers(0, 100),
         )
         for _ in range(100)
     ]

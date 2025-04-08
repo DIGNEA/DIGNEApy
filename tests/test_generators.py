@@ -204,41 +204,6 @@ def test_eig_gen_kp_inst_descriptor():
         assert all(max(p_scores[i]) == p_scores[i][0] for i in range(len(p_scores)))
 
 
-@pytest.mark.skip(reason="No way of currently testing this")
-def test_eig_gen_kp_perf_descriptor_with_pisinger():
-    portfolio = deque([combo, minknap, expknap])
-    kp_domain = KnapsackDomain(dimension=50, capacity_approach="evolved")
-    generations = 100
-    k = 3
-    eig = EAGenerator(
-        pop_size=10,
-        generations=generations,
-        domain=kp_domain,
-        portfolio=portfolio,
-        novelty_approach=NS(k=k),
-        solution_set=Archive(threshold=3),
-        repetitions=1,
-        descriptor_strategy="performance",
-        replacement=generational_replacement,
-        performance_function=runtime_score,
-    )
-    result = eig()
-    solution_set = result.instances
-    # They could be empty
-    assert isinstance(solution_set, Archive)
-    # If they're not empty
-
-    if len(solution_set) != 0:
-        assert all(len(s) == 101 for s in solution_set)
-        assert all(s.fitness >= 0.0 for s in solution_set)
-        assert all(s.p >= 0.0 for s in solution_set)
-        assert all(s.s >= 0.0 for s in solution_set)
-        assert all(len(s.descriptor) == len(portfolio) for s in solution_set)
-        assert all(len(s.portfolio_scores) == len(portfolio) for s in solution_set)
-        p_scores = [s.portfolio_scores for s in solution_set]
-        assert all(min(p_scores[i]) == p_scores[i][0] for i in range(len(p_scores)))
-
-
 test_data = [
     (
         KnapsackDomain,
@@ -343,40 +308,63 @@ def test_map_elites_domain_cvt(domain_cls, portfolio, ranges):
 
 
 def test_dominated_gen_kp_feat_descriptor():
-    portfolio = deque([default_kp, map_kp, miw_kp, mpw_kp])
+    portfolio = [default_kp, map_kp, miw_kp, mpw_kp]
     kp_domain = KnapsackDomain(dimension=50, capacity_approach="evolved")
-    generations = 100
-    k = 3
-    eig = EAGenerator(
+    generations = 10
+    deig = DEAGenerator(
         pop_size=10,
+        offspring_size=10,
         generations=generations,
         domain=kp_domain,
         portfolio=portfolio,
-        novelty_approach=NS(k=k),
-        solution_set=Archive(threshold=3),
         repetitions=1,
         descriptor_strategy="features",
-        replacement=generational_replacement,
     )
-    result = eig()
-    solution_set = result.instances
+    portfolio_names = [s.__name__ for s in portfolio]
+    expected_str = (
+        f"pop_size=10,gen=10,domain={kp_domain.name},portfolio={portfolio_names}"
+    )
+    assert deig.__str__() == f"DEAGenerator({expected_str})"
+    assert deig.__repr__() == f"DEAGenerator<{expected_str}>"
+    result = deig()
+    assert len(result.instances) == 10
+    instances = result.instances
     # They could be empty
-    assert isinstance(solution_set, Archive)
+    assert isinstance(instances, list)
+    assert all(len(s) == 101 for s in instances)
+    assert all(s.fitness >= 0.0 for s in instances)
+    assert all(s.p >= 0.0 for s in instances)
+    assert all(s.s >= 0.0 for s in instances)
+    assert all(len(s.descriptor) == 8 for s in instances)
+    assert all(len(s.portfolio_scores) == len(portfolio) for s in instances)
+    p_scores = [s.portfolio_scores for s in instances]
+    assert all(max(p_scores[i]) == p_scores[i][0] for i in range(len(p_scores)))
 
-    if len(solution_set) != 0:
-        assert all(len(s) == 101 for s in solution_set)
-        assert all(s.fitness >= 0.0 for s in solution_set)
-        assert all(s.p >= 0.0 for s in solution_set)
-        assert all(s.s >= 0.0 for s in solution_set)
-        assert all(len(s.descriptor) == 8 for s in solution_set)
-        assert all(len(s.portfolio_scores) == len(portfolio) for s in solution_set)
-        p_scores = [s.portfolio_scores for s in solution_set]
-        assert all(max(p_scores[i]) == p_scores[i][0] for i in range(len(p_scores)))
 
-    # Test the creation of the evolution images
-    log = eig._logbook
-    assert len(log) == eig.generations
-    filename = "test_evolution.png"
-    ea_generator_evolution_plot(log.logbook, filename=filename)
-    assert os.path.exists(filename)
-    os.remove(filename)
+def test_dominated_generator_raises():
+    portfolio = deque([default_kp, map_kp, miw_kp, mpw_kp])
+    kp_domain = KnapsackDomain(dimension=50, capacity_approach="evolved")
+    generations = 10
+    eig = DEAGenerator(
+        pop_size=10,
+        offspring_size=10,
+        generations=generations,
+        domain=None,
+        portfolio=portfolio,
+        repetitions=1,
+        descriptor_strategy="features",
+    )
+    with pytest.raises(ValueError):
+        _ = eig()
+
+    with pytest.raises(ValueError):
+        eig = DEAGenerator(
+            pop_size=10,
+            offspring_size=10,
+            generations=generations,
+            domain=kp_domain,
+            portfolio=list(),
+            repetitions=1,
+            descriptor_strategy="features",
+        )
+        _ = eig()

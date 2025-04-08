@@ -19,6 +19,7 @@ from ._problem import P, Problem
 from ._solution import Solution
 from ._solver import Solver, SupportsSolve
 from .types import RNG
+from ._knn import sparseness, sparseness_only_values
 
 __all__ = [
     "Domain",

@@ -9,23 +9,18 @@ Diverse Instance Generator with Novelty Search and Evolutionary Algorithms
 
 Repository containing the Python version of DIGNEA, a Diverse Instance Generator with Novelty Search and Evolutionary Algorithms. This framework is an extensible tool for generating diverse and discriminatory instances for any desired domain. The instances obtained generated will be biased to the performance of a *target* in a specified portfolio of algorithms. 
 
-
-## Dependencies
-
-- Numpy
-- Sklearn
-- Pandas
-- Keras
-- DEAP 
-- PyTorch
-- Pybind11
-- Seaborn
-- Matplotlib
-    
+* Documentation: https://dignea.github.io
+* Contributing: https://github.com/DIGNEA/DIGNEApy/blob/main/CONTRIBUTING.md
+* Bug reports: https://github.com/DIGNEA/DIGNEApy/issues
+  
+Installation:
+```python
+    python3 -m pip install digneapy
+```
 
 ## Publications
 
-DIGNEA was used in the following publications:
+DIGNEA and DIGNEApy has been used in the following publications:
 
 * Alejandro Marrero, Eduardo Segredo, and Coromoto Leon. 2021. A parallel genetic algorithm to speed up the resolution of the algorithm selection problem. Proceedings of the Genetic and Evolutionary Computation Conference Companion. Association for Computing Machinery, New York, NY, USA, 1978–1981. DOI:https://doi.org/10.1145/3449726.3463160
 
@@ -39,22 +34,15 @@ DIGNEA was used in the following publications:
 
 * Marrero, A. 2024. Evolutionary Computation Methods for Instance Generation in Optimisation Domains. PhD thesis. Universidad de La Laguna. https://riull.ull.es/xmlui/handle/915/37726
 
-## How to cite DIGNEA
+## How to Cite DIGNEA
 
-If you use DIGNEA in your research work, remember to cite: 
+If you use DIGNEA in your research work, please cite the following:
 
->
->@article{dignea_23,
->title = {DIGNEA: A tool to generate diverse and discriminatory instance suites for optimisation domains},
->journal = {SoftwareX},
->volume = {22},
->pages = {101355},
->year = {2023},
->issn = {2352-7110},
->doi = {https://doi.org/10.1016/j.softx.2023.101355},
->url = {https://www.sciencedirect.com/science/article/pii/S2352711023000511},
->author = {Alejandro Marrero and Eduardo Segredo and Coromoto León and Emma Hart},
->keywords = {Instance generation, Novelty search, Evolutionary algorithm, Optimisation, Knapsack problem},
->abstract = {To advance research in the development of optimisation algorithms, it is crucial to have access to large test-beds of diverse and discriminatory instances from a domain that can highlight strengths and weaknesses of different algorithms. The DIGNEA tool enables diverse instance suites to be generated for any domain, that are also discriminatory with respect to a set of solvers of the user choice. Written in C++, and delivered as a repository and as a Docker image, its modular and template-based design enables it to be easily adapted to multiple domains and types of solvers with minimal effort. This paper exemplifies how to generate instances for the Knapsack Problem domain.}
->}
->
+> **DIGNEA: A tool to generate diverse and discriminatory instance suites for optimisation domains**  
+> Alejandro Marrero, Eduardo Segredo, Coromoto León, Emma Hart  
+> *SoftwareX*, Volume 22, 2023, Page 101355  
+> DOI: [10.1016/j.softx.2023.101355](https://doi.org/10.1016/j.softx.2023.101355)  
+> URL: [https://www.sciencedirect.com/science/article/pii/S2352711023000511](https://www.sciencedirect.com/science/article/pii/S2352711023000511)  
+> **Keywords**: Instance generation, Novelty search, Evolutionary algorithm, Optimisation, Knapsack problem  
+> **Abstract**:  
+> To advance research in the development of optimisation algorithms, it is crucial to have access to large test-beds of diverse and discriminatory instances from a domain that can highlight strengths and weaknesses of different algorithms. The DIGNEA tool enables diverse instance suites to be generated for any domain, that are also discriminatory with respect to a set of solvers of the user's choice. Written in C++, and delivered as a repository and as a Docker image, its modular and template-based design enables it to be easily adapted to multiple domains and types of solvers with minimal effort. This paper exemplifies how to generate instances for the Knapsack Problem domain.

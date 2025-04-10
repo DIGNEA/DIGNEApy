@@ -17,6 +17,7 @@ from typing import Tuple, TypeVar
 import numpy as np
 from .types import RNG
 from ._solution import Solution
+from ._instance import Instance
 
 
 class Problem(ABC, RNG):
@@ -84,6 +85,14 @@ class Problem(ABC, RNG):
     @abstractmethod
     def __call__(self, individual: Sequence | Solution) -> Tuple[float]:
         msg = "__call__ method not implemented in Problem"
+        raise NotImplementedError(msg)
+
+    @abstractmethod
+    def to_instance(self) -> Instance:
+        """Creates an instance from the information of the problem.
+        This method is used in the generators to create instances to evolve
+        """
+        msg = "to_instance method not implemented in Problem"
         raise NotImplementedError(msg)
 
     @abstractmethod

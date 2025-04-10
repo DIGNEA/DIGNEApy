@@ -12,6 +12,7 @@ Repository containing the Python version of DIGNEA, a Diverse Instance Generator
 * Documentation: https://dignea.github.io
 * Contributing: https://github.com/DIGNEA/DIGNEApy/blob/main/CONTRIBUTING.md
 * Bug reports: https://github.com/DIGNEA/DIGNEApy/issues
+* A brief tutorial on how to create domains and solvers can be found [here](docs/tutorial/0_getting_started.md)
   
 Installation:
 ```python

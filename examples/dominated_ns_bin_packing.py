@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 # -*-coding:utf-8 -*-
 """
-@File    :   bin_packing_novelty_search.py
-@Time    :   2025/04/02 15:40:48
+@File    :   dominated_ns_bin_packing.py
+@Time    :   2025/04/21 11:05:57
 @Author  :   Alejandro Marrero
 @Version :   1.0
 @Contact :   amarrerd@ull.edu.es
@@ -11,25 +11,24 @@
 """
 
 import argparse
-from functools import partial
-from multiprocessing.pool import Pool
-
-from digneapy import NS, Archive
 from digneapy.domains import BPPDomain
-from digneapy.generators import EAGenerator
-from digneapy.operators import generational_replacement
-from digneapy.solvers import best_fit, first_fit, next_fit, worst_fit
+from digneapy.domains.bpp import BPP
 from digneapy.utils import save_results_to_files
+import itertools
+from multiprocessing.pool import Pool
+from functools import partial
+from digneapy.generators import DEAGenerator
+from digneapy.solvers import best_fit, worst_fit, next_fit, first_fit
 
 
 def generate_instances(
     portfolio,
     dimension: int,
+    pop_size: int,
+    generations: int,
+    k: int,
     descriptor: str,
-    generations: int = 1000,
-    population_size: int = 128,
-    k: int = 15,
-    verbose: bool = False,
+    verbose,
 ):
     domain = BPPDomain(
         dimension=dimension,
@@ -38,36 +37,32 @@ def generate_instances(
         max_capacity=150,
         capacity_approach="fixed",
     )
-
-    eig = EAGenerator(
-        pop_size=population_size,
+    deig = DEAGenerator(
+        pop_size=pop_size,
+        offspring_size=pop_size,
         generations=generations,
         domain=domain,
         portfolio=portfolio,
-        novelty_approach=NS(Archive(threshold=1e-7), k=k),
-        solution_set=Archive(threshold=1e-7),
+        k=k,
         repetitions=1,
         descriptor_strategy=descriptor,
-        replacement=generational_replacement,
     )
-    result = eig()
+    result = deig()
     if verbose:
         print(f"Target: {result.target} completed.")
     return result
 
 
 if __name__ == "__main__":
-    expected_dimensions = (120, 240, 560, 1080)
     parser = argparse.ArgumentParser(
-        prog="novelty_search_bin_packing",
-        description="Bin-Packing Problem instance generator using NS",
+        description="Generate instances for the BP problem with different solvers using Dominated Novelty Search."
     )
     parser.add_argument(
         "-n",
         "-number_of_items",
         type=int,
         required=True,
-        help="Size of the BP problem.",
+        help="Size of the BPP problem.",
         default=120,
     )
     parser.add_argument(
@@ -107,13 +102,6 @@ if __name__ == "__main__":
         action="store_true",
         help="Print the evolution logbook.",
     )
-
-    portfolios = [
-        [best_fit, first_fit, next_fit, worst_fit],
-        [first_fit, best_fit, next_fit, worst_fit],
-        [next_fit, best_fit, first_fit, worst_fit],
-        [worst_fit, best_fit, first_fit, next_fit],
-    ]
     args = parser.parse_args()
     descriptor = args.descriptor
     generations = args.generations
@@ -122,27 +110,37 @@ if __name__ == "__main__":
     k = args.k
     rep = args.repetition
     verbose = args.verbose
-    pool = Pool(4)
-    results = pool.map(
-        partial(
-            generate_instances,
-            dimension=dimension,
-            descriptor=descriptor,
-            generations=generations,
-            population_size=population_size,
-            k=k,
-        ),
-        portfolios,
-    )
+    portfolios = [
+        [best_fit, first_fit, next_fit, worst_fit],
+        [first_fit, best_fit, next_fit, worst_fit],
+        [next_fit, best_fit, first_fit, worst_fit],
+        [worst_fit, best_fit, first_fit, next_fit],
+    ]
+
+    with Pool(4) as pool:
+        results = pool.map(
+            partial(
+                generate_instances,
+                dimension=dimension,
+                pop_size=population_size,
+                generations=generations,
+                k=k,
+                descriptor=descriptor,
+                verbose=verbose,
+            ),
+            portfolios,
+        )
+
     pool.close()
     pool.join()
     features_names = BPPDomain().feat_names if descriptor == "features" else None
     vars_names = ["Q", *[f"w_{i}" for i in range(dimension)]]
+
     for i, result in enumerate(results):
         solvers_names = [p.__name__ for p in portfolios[i]]
 
         save_results_to_files(
-            f"ns_{descriptor}_bin_packing_N_{dimension}_target_{result.target}_rep_{rep}",
+            f"dns_{descriptor}_N_{dimension}_target_{result.target}_rep_{rep}",
             result,
             solvers_names,
             features_names,

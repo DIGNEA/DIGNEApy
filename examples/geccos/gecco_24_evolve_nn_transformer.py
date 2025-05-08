@@ -78,15 +78,15 @@ class NSEval:
                 domain=self.kp_domain,
                 portfolio=self.portfolio,
                 novelty_approach=NS(Archive(threshold=1e-3), k=3),
-                solution_set=NS(Archive(threshold=1e-3), k=1),
+                solution_set=Archive(threshold=1e-3),
                 repetitions=1,
                 descriptor_strategy="features",
                 replacement=generational_replacement,
                 transformer=transformer,
             )
-            _, solution_set = eig()
-            if len(solution_set) != 0:
-                hypercube.extend(copy.deepcopy(solution_set))
+            solutions = eig()
+            if len(solutions.instances) != 0:
+                hypercube.extend(copy.deepcopy(solutions.instances))
 
         return len(hypercube)
 

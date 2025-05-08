@@ -14,6 +14,7 @@ from typing import Optional
 from collections.abc import Sequence
 from digneapy.generators import GenResult
 import pandas as pd
+from typing import Literal
 
 
 def save_results_to_files(
@@ -22,6 +23,7 @@ def save_results_to_files(
     solvers_names: Optional[Sequence[str]],
     features_names: Optional[Sequence[str]],
     vars_names: Optional[Sequence[str]],
+    format: Literal["csv", "parquet"] = "parquet",
 ):
     """Saves the results of the generation to CSV files.
     Args:
@@ -30,19 +32,27 @@ def save_results_to_files(
         solvers_names (Sequence[str]): Names of the solvers.
         features_names (Sequence[str]): Names of the features.
         vars_names (Sequence[str]): Names of the variables.
+        format (Literal[str] = "csv" or "parquet"): Format to store the resulting instances file.
+            Parquet is the most efficient for large datasets.
     """
     df = pd.DataFrame(
-        list(
+        [
             i.to_series(
                 variables_names=vars_names,
                 features_names=features_names,
                 score_names=solvers_names,
             )
             for i in result.instances
-        )
+        ]
     )
-    df.insert(0, "target", result.target)
-    df.to_csv(f"{filename_pattern}_instances.csv", index=False)
+    if not df.empty:
+        df.insert(0, "target", result.target)
+        print(df.head())
+    if format == "csv":
+        df.to_csv(f"{filename_pattern}_instances.csv", index=False)
+    elif format == "parquet":
+        df.to_parquet(f"{filename_pattern}_instances.parquet", index=False)
+
     result.history.to_df().to_csv(f"{filename_pattern}_history.csv", index=False)
     if result.metrics is not None:
         result.metrics.to_csv(f"{filename_pattern}_archive_metrics.csv")

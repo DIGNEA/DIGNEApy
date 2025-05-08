@@ -15,6 +15,7 @@ from typing import Optional, Self, Sequence
 
 import numpy as np
 import numpy.typing as npt
+import polars as pl
 import pandas as pd
 
 
@@ -231,6 +232,21 @@ class Instance:
             "p": self._p,
             "portfolio_scores": {sk: v for sk, v in zip(sckeys, self._pscores)},
         }
+
+        if len(self._desc) not in (
+            len(self._vars),
+            len(self._features),
+            len(self._pscores),
+        ):  # Transformed descriptor
+            _data["descriptor"] = {f"d{i}": v for i, v in enumerate(self._desc)}
+        if len(self.features) != 0:
+            f_keys = (
+                [f"f{i}" for i in range(len(self._features))]
+                if features_names is None
+                else features_names
+            )
+            _data["features"] = {fk: v for fk, v in zip(f_keys, self._features)}
+
         if variables_names:
             if len(variables_names) != len(self._vars):
                 print(
@@ -245,19 +261,6 @@ class Instance:
         else:
             _data["variables"] = {f"v{i}": v for i, v in enumerate(self._vars)}
 
-        if len(self._desc) not in (
-            len(self._vars),
-            len(self._features),
-            len(self._pscores),
-        ):
-            _data["descriptor"] = {f"d{i}": v for i, v in enumerate(self._desc)}
-        if len(self.features) != 0:
-            f_keys = (
-                [f"f{i}" for i in range(len(self._features))]
-                if features_names is None
-                else features_names
-            )
-            _data["features"] = {fk: v for fk, v in zip(f_keys, self._features)}
         return _data
 
     def to_json(self) -> str:

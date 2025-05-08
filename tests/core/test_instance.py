@@ -141,3 +141,29 @@ def test_hash_instances(initialised_instance, default_instance):
     assert hash(default_instance) != hash(initialised_instance)
     instance_2 = Instance(variables=list(range(100)))
     assert hash(initialised_instance) == hash(instance_2)
+
+
+def test_instance_as_dict(initialised_instance):
+    data = initialised_instance.asdict()
+    assert isinstance(data, dict)
+    assert "fitness" in data
+    assert "s" in data
+    assert "p" in data
+    assert "portfolio_scores" in data
+    assert "variables" in data
+    assert len(list(data["variables"].values())) == len(initialised_instance)
+
+
+def test_instance_as_series(initialised_instance):
+    import pandas as pd
+
+    data = initialised_instance.to_series()
+    assert isinstance(data, pd.Series)
+
+    assert "fitness" in data
+    assert "s" in data
+    assert "p" in data
+    for i in range(len(initialised_instance.portfolio_scores)):
+        assert f"portfolio_scores_{i}" in data
+    for i in range(len(initialised_instance)):
+        assert f"v{i}" in data

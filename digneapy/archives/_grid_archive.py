@@ -332,7 +332,7 @@ class GridArchive(Archive):
             "dimensions": self._dimensions.tolist(),
             "lbs": self._lower_bounds.tolist(),
             "ubs": self._upper_bounds.tolist(),
-            "n_cells": self._cells.astype(int),
+            "n_cells": self._cells,
             "instances": {
                 i: instance.asdict() for i, instance in enumerate(self._grid.values())
             },

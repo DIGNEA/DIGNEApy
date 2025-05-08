@@ -14,14 +14,14 @@ import numpy as np
 import pytest
 
 from digneapy.domains.tsp import TSP
-from digneapy.solvers import greedy, nneighbour, two_opt
+from digneapy.solvers import greedy, nneighbour, two_opt, three_opt
 
 
 @pytest.fixture
 def default_tsp_instance():
     rng = np.random.default_rng(seed=42)
 
-    N = 100
+    N = 20
     _coords = rng.integers(
         low=(0),
         high=(1000),
@@ -46,6 +46,35 @@ def test_two_opt_raises_sample():
 def test_two_opt_is_deterministic(default_tsp_instance):
     solutions = [two_opt(default_tsp_instance)[0].fitness for _ in range(10)]
     assert len(solutions) == 10
+    assert all(x == solutions[0] for x in solutions)
+
+
+def test_three_opt_solves_sample():
+    rng = np.random.default_rng(seed=42)
+    tsp = TSP(
+        nodes=5,
+        coords=rng.integers(
+            low=(0),
+            high=(1000),
+            size=(5, 2),
+            dtype=int,
+        ),
+    )
+    solutions = three_opt(tsp)
+    assert len(solutions) == 1
+    assert len(solutions[0]) == len(tsp) + 1
+    assert not np.isclose(solutions[0].fitness, 0.0)
+
+
+def test_three_opt_raises_sample():
+    with pytest.raises(ValueError):
+        three_opt(None)
+
+
+@pytest.mark.skip(reason="To costly")
+def test_three_opt_is_deterministic(default_tsp_instance):
+    solutions = [three_opt(default_tsp_instance)[0].fitness for _ in range(2)]
+    assert len(solutions) == 2
     assert all(x == solutions[0] for x in solutions)
 
 

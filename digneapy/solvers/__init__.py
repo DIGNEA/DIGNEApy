@@ -20,7 +20,7 @@ __all__ = list(
     set(bpp.__all__) | set(_kp.__all__) | set(tsp.__all__) | set(_tsp_opt.__all__)
 )
 
-__solvers_modules = {"evo", "pisinger"}
+__solvers_modules = {"evolutionary", "pisinger"}
 
 
 # Lazy import function

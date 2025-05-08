@@ -39,7 +39,7 @@ features = [
     "tiny",
 ]
 X = pd.read_csv(os.path.join(dir, "data/eig_bpp_instances_only_features.csv"))
-X = X[features]
+X = X[features].values
 
 
 def experimental_work_test(transformer: KerasNN, *args):
@@ -112,7 +112,7 @@ def test_hyper_cmaes_raises():
 
     # Raises because we do not specify any valid direction
     with pytest.raises(ValueError):
-        cma_es = NNTuner(
+        _ = NNTuner(
             dimension=dimension,
             generations=5,
             eval_fn=experimental_work_test,
@@ -122,7 +122,7 @@ def test_hyper_cmaes_raises():
 
     # Raises because we do not specify any transformer
     with pytest.raises(TypeError):
-        cma_es = NNTuner(
+        _ = NNTuner(
             transformer=None,
             dimension=dimension,
             direction=Direction.MAXIMISE,
@@ -132,7 +132,7 @@ def test_hyper_cmaes_raises():
 
     # Raises because we do not specify any eval_fn
     with pytest.raises(ValueError):
-        cma_es = NNTuner(
+        _ = NNTuner(
             dimension=dimension,
             direction=Direction.MAXIMISE,
             generations=5,
@@ -142,7 +142,7 @@ def test_hyper_cmaes_raises():
 
     # Raises because we n_jobs < 1
     with pytest.raises(ValueError):
-        cma_es = NNTuner(
+        _ = NNTuner(
             dimension=dimension,
             direction=Direction.MAXIMISE,
             generations=5,

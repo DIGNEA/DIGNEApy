@@ -2,7 +2,7 @@
 
 __author__ = """Alejandro Marrero"""
 __email__ = "amarrerd@ull.edu.es"
-__version__ = "0.2.4"
+__version__ = "0.2.5"
 
 
 from . import _core, archives, domains, operators
@@ -24,6 +24,7 @@ from ._core import (
 )
 from ._core.descriptors import DESCRIPTORS, DescStrategy, descriptor
 from ._core.scores import PerformanceFn, max_gap_target, runtime_score
+from ._core._metrics import qd_score, qd_score_auc, Logbook, Statistics
 from .archives import Archive, CVTArchive, GridArchive
 from .generators import GenResult, Generator
 

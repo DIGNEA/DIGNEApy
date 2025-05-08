@@ -19,17 +19,19 @@ from deap import algorithms, base, creator, tools
 
 from digneapy._core import Direction, P, Solution, Solver, SupportsSolve
 from digneapy.domains import Knapsack
+from digneapy import RNG
 
 
-def _gen_dignea_ind(icls, size: int, min_value, max_value):
+def _gen_dignea_ind(icls, rng, size: int, min_value, max_value):
     """Auxiliar function to generate individual based on
     the Solution class of digneapy
     """
-    chromosome = icls(np.random.randint(low=min_value, high=max_value, size=size))
+
+    chromosome = icls(rng.integers(low=min_value, high=max_value, size=size))
     return chromosome
 
 
-class EA(Solver, SupportsSolve[P]):
+class EA(Solver, SupportsSolve[P], RNG):
     """Evolutionary Algorithm from DEAP for digneapy"""
 
     def __init__(
@@ -45,6 +47,7 @@ class EA(Solver, SupportsSolve[P]):
         mutpb: float = 0.3,
         generations: int = 500,
         n_cores: int = 1,
+        seed: int = 42,
     ):
         """Creates a new EA instance with the given parameters.
         Args:
@@ -74,15 +77,27 @@ class EA(Solver, SupportsSolve[P]):
         self._generations = generations
         self._n_cores = n_cores if n_cores > 1 else 1
         self._toolbox = base.Toolbox()
-
+        self.initialize_rng(seed=seed)
         if direction == Direction.MINIMISE:
             self._toolbox.register(
-                "individual", _gen_dignea_ind, creator.IndMin, dim, min_g, max_g
+                "individual",
+                _gen_dignea_ind,
+                creator.IndMin,
+                self._rng,
+                dim,
+                min_g,
+                max_g,
             )
 
         else:
             self._toolbox.register(
-                "individual", _gen_dignea_ind, creator.IndMax, dim, min_g, max_g
+                "individual",
+                _gen_dignea_ind,
+                creator.IndMax,
+                self._rng,
+                dim,
+                min_g,
+                max_g,
             )
 
         self._toolbox.register(

@@ -227,7 +227,7 @@ class CVTArchive(Archive, RNG):
             TypeError: ``instance`` is not a instance of the class Instance.
         """
         if isinstance(instance, Instance):
-            index = self.index_of(np.asarray(instance.descriptor))
+            index = self.index_of(np.asarray(instance.descriptor).reshape(1, -1))[0]
             if index not in self._grid or instance > self._grid[index]:
                 self._grid[index] = instance.clone()
 

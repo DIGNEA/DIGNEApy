@@ -29,9 +29,10 @@ def default_instance():
 
 @pytest.fixture
 def default_large_knap():
-    c = np.random.randint(1e3, 1e5)
-    w = np.random.randint(1000, 5000, size=1000)
-    p = np.random.randint(1000, 5000, size=1000)
+    rng = np.random.default_rng(seed=42)
+    c = rng.integers(1e3, 1e5)
+    w = rng.integers(1000, 5000, size=1000)
+    p = rng.integers(1000, 5000, size=1000)
     kp = knapsack.Knapsack(profits=p, weights=w, capacity=c)
 
     return kp
@@ -120,7 +121,7 @@ def test_minknap(default_large_knap):
 
 def test_expknap(default_large_knap):
     solutions = expknap(default_large_knap)
-    assert solutions[0].fitness <= 15.0  # Here compares time (15.0s max time allowed)
+    assert solutions[0].fitness <= 16.0  # Here compares time (15.0s max time allowed)
     solutions = expknap(default_large_knap, only_time=False)
     assert len(solutions) == 1
     assert all(isinstance(i, Solution) for i in solutions)

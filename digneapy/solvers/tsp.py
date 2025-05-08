@@ -133,7 +133,9 @@ def three_opt(problem: TSP, *args, **kwargs) -> list[Solution]:
         for i in range(1, N - 2):
             for j in range(i + 2, N - 1):
                 for k in range(j + 2, N):
-                    new_tour = tour[:i] + tour[j:k][::-1] + tour[i:j] + tour[k:]
+                    new_tour = np.concatenate(
+                        (tour[:i], tour[j:k][::-1], tour[i:j], tour[k:])
+                    )
 
                     current = (
                         distances[tour[i - 1]][tour[i]]

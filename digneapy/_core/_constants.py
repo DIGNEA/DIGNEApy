@@ -18,19 +18,6 @@ from typing import TypeVar
 from digneapy._core._instance import Instance
 from digneapy._core._solution import Solution
 
-# from deap import base, creator
-
-# """
-#     Definition of the constant Fitness and Individual types
-#     for the DEAP algorithms used in DIGNEApy.
-#     These values are used in the evolutionary.py and tuner.py modules
-# """
-# creator.create("FitnessMax", base.Fitness, weights=(1,))
-# creator.create("FitnessMin", base.Fitness, weights=(-1,))
-
-# creator.create("IndMax", list, fitness=creator.FitnessMax)
-# creator.create("IndMin", list, fitness=creator.FitnessMin)
-
 
 def create_individual(direction):
     from deap import base, creator

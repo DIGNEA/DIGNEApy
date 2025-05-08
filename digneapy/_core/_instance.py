@@ -242,7 +242,7 @@ class Instance:
         if len(self.features) != 0:
             f_keys = (
                 [f"f{i}" for i in range(len(self._features))]
-                if features_names is None
+                if features_names is None or len(features_names) == 0
                 else features_names
             )
             _data["features"] = {fk: v for fk, v in zip(f_keys, self._features)}

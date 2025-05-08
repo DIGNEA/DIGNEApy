@@ -136,6 +136,6 @@ if __name__ == "__main__":
             f"map_elites_cvt_bin_packing_N_{dimension}_target_{result.target}_rep_{rep}",
             result=result,
             solvers_names=solvers_names,
-            vars_names=[f"w_{i}" for i in range(dimension)],
+            vars_names=["capacity", *[f"w_{i}" for i in range(dimension)]],
             features_names=None,
         )

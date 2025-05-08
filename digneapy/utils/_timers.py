@@ -45,7 +45,7 @@ def clock_to_file(func, filename: str = "clocked_fun.txt"):
             else repr(result)
         )
         runtime = f"[{elapsed:0.8f}s] {name}({args_str}) -> {result_str}"
-        with open(filename) as f:
+        with open(filename, 'w') as f:
             f.write(runtime)
 
         return result

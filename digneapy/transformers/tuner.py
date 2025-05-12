@@ -25,7 +25,6 @@ from deap import algorithms, base, cma, creator, tools
 from digneapy._core.types import RNG
 
 from .._core._constants import Direction
-from ._base import Transformer
 from .neural import KerasNN, TorchNN
 import fcmaes
 
@@ -37,6 +36,7 @@ class NNTuner:
         self,
         eval_fn: Callable,
         dimension: int,
+        transformer: KerasNN | TorchNN,
         centroid: Optional[Sequence[float]] = None,
         sigma: float = 1.0,
         lambda_: int = 50,
@@ -52,6 +52,11 @@ class NNTuner:
         self.eval_fn = eval_fn
 
         self.dimension = dimension
+        if transformer is None:
+            raise ValueError(
+                "transformer cannot be None in NNTuner. Please give a valid transformer."
+            )
+        self.transformer = transformer
         self.centroid = centroid if centroid is not None else [0.0] * self.dimension
         self.sigma = sigma
         self._lambda = lambda_ if lambda_ != 0 else 50
@@ -99,15 +104,13 @@ class NNTuner:
         Returns:
             tuple[float]: Space coverage of the space create from the NN transformer
         """
-        #self.transformer.update_weights(individual)
-        #filename = f"dataset_generation_{self.__performed_gens}_individual_{self.__evaluated_inds}.csv"
+        self.transformer.update_weights(individual)
         self.__evaluated_inds += 1
         if self.__evaluated_inds == self._lambda:
             self.__performed_gens += 1
             self.__evaluated_inds = 0
 
-        #fitness = self.eval_fn(self.transformer, filename)
-        fitness = self.eval_fn(individual)
+        fitness = self.eval_fn(self.transformer)
         return (fitness,)
 
     def __call__(self):

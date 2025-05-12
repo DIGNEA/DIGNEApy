@@ -106,3 +106,4 @@ ENV/
 .idea/
 gecco_env/
 uv.lock
+site/

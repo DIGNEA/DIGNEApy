@@ -11,3 +11,4 @@ matplotlib>=3.8.4
 cython
 pyarrow
 fastparquet
+fcmaes

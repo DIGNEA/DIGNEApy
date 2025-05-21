@@ -27,6 +27,11 @@ class SupportsTransform(Protocol):
 
 
 class Transformer(ABC, SupportsTransform):
+    """Transformer is any callable type that receives a sequence and transforms it
+    to other sequence. Ussually, the transformer is a model that is trained to transform
+    the input data to a new space. The transformer is a subclass of the SupportsTransform
+    protocol.
+    """
     def __init__(self, name: str):
         self._name = name
 

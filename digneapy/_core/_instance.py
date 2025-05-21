@@ -21,7 +21,6 @@ import pandas as pd
 
 class Instance:
     __slots__ = ("_vars", "_fit", "_p", "_s", "_features", "_desc", "_pscores")
-
     def __init__(
         self,
         variables: Optional[npt.ArrayLike] = None,
@@ -32,6 +31,26 @@ class Instance:
         descriptor: Optional[tuple[float]] = None,
         portfolio_scores: Optional[tuple[float]] = None,
     ):
+        """Creates an instance of a Instance (unstructured) for QD algorithms
+        This class is used to represent a solution in a QD algorithm. It contains the
+        variables, fitness, performance, novelty, features, descriptor and portfolio scores
+        of the solution.
+        The variables are stored as a numpy array, and the fitness, performance and novelty
+        are stored as floats. The features, descriptor and portfolio scores are stored as
+        numpy arrays.
+        
+        Args:
+            variables (Optional[npt.ArrayLike], optional): Variables or genome of the instance. Defaults to None.
+            fitness (float, optional): Fitness of the instance. Defaults to 0.0.
+            p (float, optional): Performance score. Defaults to 0.0.
+            s (float, optional): Novelty score. Defaults to 0.0.
+            features (Optional[tuple[float]], optional): Tuple of features extracted from the domain. Defaults to None.
+            descriptor (Optional[tuple[float]], optional): Tuple with the descriptor information of the instance. Defaults to None.
+            portfolio_scores (Optional[tuple[float]], optional): Scores of the solvers in the portfolio. Defaults to None.
+
+        Raises:
+            ValueError: If fitness, p or s are not convertible to float.
+        """
         try:
             fitness = float(fitness)
             p = float(p)
@@ -52,6 +71,11 @@ class Instance:
         self._desc = np.array(descriptor) if descriptor is not None else np.empty(0)
 
     def clone(self) -> Self:
+        """Create a clone of the current instance. More efficient than using copy.deepcopy.
+
+        Returns:
+            Self: Instance object
+        """
         return Instance(
             variables=list(self._vars),
             fitness=self._fit,
@@ -221,6 +245,17 @@ class Instance:
         features_names: Optional[Sequence[str]] = None,
         score_names: Optional[Sequence[str]] = None,
     ) -> dict:
+        """Convert the instance to a dictionary. The keys are the names of the attributes
+        and the values are the values of the attributes. 
+
+        Args:
+            variables_names (Optional[Sequence[str]], optional): Names of the variables in the dictionary, otherwise v_i. Defaults to None.
+            features_names (Optional[Sequence[str]], optional): Name of the features in the dictionary, otherwise f_i. Defaults to None.
+            score_names (Optional[Sequence[str]], optional): Name of the solvers, otherwise solver_i. Defaults to None.
+
+        Returns:
+            dict: Dictionary with the attributes of the instance as keys and the values of the attributes as values.
+        """
         sckeys = (
             [f"solver_{i}" for i in range(len(self._pscores))]
             if score_names is None
@@ -264,6 +299,12 @@ class Instance:
         return _data
 
     def to_json(self) -> str:
+        """Convert the instance to a JSON string. The keys are the names of the attributes
+        and the values are the values of the attributes.
+
+        Returns:
+            str: JSON string with the attributes of the instance as keys and the values of the attributes as values.
+        """
         import json
 
         return json.dumps(self.asdict(), sort_keys=True, indent=4)
@@ -274,6 +315,16 @@ class Instance:
         features_names: Optional[Sequence[str]] = None,
         score_names: Optional[Sequence[str]] = None,
     ) -> pd.Series:
+        """Creates a pandas Series from the instance.
+
+        Args:
+            variables_names (Optional[Sequence[str]], optional): Names of the variables in the dictionary, otherwise v_i. Defaults to None.
+            features_names (Optional[Sequence[str]], optional): Name of the features in the dictionary, otherwise f_i. Defaults to None.
+            score_names (Optional[Sequence[str]], optional): Name of the solvers, otherwise solver_i. Defaults to None.
+
+        Returns:
+            pd.Series: Pandas Series with the attributes of the instance as keys and the values of the attributes as values.
+        """
         _flatten_data = {}
         for key, value in self.asdict(
             variables_names=variables_names,

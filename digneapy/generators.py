@@ -14,7 +14,7 @@ __all__ = ["GenResult", "EAGenerator", "MapElitesGenerator", "DEAGenerator"]
 
 from collections.abc import Iterable, Sequence
 from operator import attrgetter
-from typing import Optional, Tuple, Protocol
+from typing import Optional,  Protocol
 from dataclasses import dataclass
 import random
 import numpy as np
@@ -90,26 +90,33 @@ class EAGenerator(Generator, RNG):
         seed: int = 42,
     ):
         """Creates a Evolutionary Instance Generator based on Novelty Search
-            The target solver is the first solver in the portfolio.
+        The generator uses a set of solvers to evaluate the instances and
+        a novelty search algorithm to guide the evolution of the instances.
 
-        Args: TODO: Update the references
-            pop_size (int, optional): Number of instances in the population to evolve. Defaults to 100.
-            evaluations (int, optional): Number of total evaluations to perform. Defaults to 1000.
-            archive (Archive): Archive to store the instances to guide the evolution.
-            solution_set (Archive): Solution set to store the instances. Defaults to None.
-            k (int, optional): Number of neighbours to calculate the sparseness. Defaults to 15.
-            descriptor_strategy (str, optional): Descriptor used to calculate the diversity. The options available are defined in the dictionary digneapy.qd.descriptor_strategies. Defaults to "features".
-            transformer (callable, optional): Define a strategy to transform the high-dimensional descriptors to low-dimensional.Defaults to None.
-            dist_metric (str, optional): Defines the distance metric used by NearestNeighbor in the archives. Defaults to Euclidean.
+
+        Args:
             domain (Domain): Domain for which the instances are generated for.
             portfolio (Iterable[SupportSolve]): Iterable item of callable objects that can evaluate a instance.
+            novelty_approach (NS): Novelty Search algorithm to use. It can be DominatedNS or NS.
+            pop_size (int, optional): Number of instances in the population to evolve. Defaults to 100.
+            generations (int, optional): Number of generations to perform. Defaults to 1000.
+            solution_set (Optional[Archive], optional): Solution set to store the instances. Defaults to None.
+            descriptor_strategy (str, optional): Descriptor used to calculate the diversity. The options available are defined in the dictionary digneapy.qd.descriptor_strategies. Defaults to "features".
+            transformer (callable, optional): Define a strategy to transform the high-dimensional descriptors to low-dimensional.Defaults to None.
             repetitions (int, optional): Number times a solver in the portfolio must be run over the same instance. Defaults to 1.
             cxrate (float, optional): Crossover rate. Defaults to 0.5.
             mutrate (float, optional): Mutation rate. Defaults to 0.8.
+            crossover (Crossover, optional): Crossover operator. Defaults to uniform_crossover.
+            mutation (Mutation, optional): Mutation operator. Defaults to uniform_one_mutation.
+            selection (Selection, optional): Selection operator. Defaults to binary_tournament_selection.
+            replacement (Replacement, optional): Replacement operator. Defaults to generational_replacement.
+            performance_function (PerformanceFn, optional): Performance function to calculate the performance score. Defaults to max_gap_target.
             phi (float, optional): Phi balance value for the weighted fitness function. Defaults to 0.85.
+            seed (int, optional): Seed for the RNG protocol. Defaults to 42.
 
         Raises:
             ValueError: Raises error if phi is not a floating point value or it is not in the range [0.0-1.0]
+            KeyError: Raises error if the descriptor strategy is not available in the DESCRIPTORS dictionary
         """
 
         try:
@@ -338,6 +345,25 @@ class MapElitesGenerator(Generator, RNG):
         performance_function: PerformanceFn = max_gap_target,
         seed: int = 42,
     ):
+        """Creates a MAP-Elites instance generator.
+        The generator uses a set of solvers to evaluate the instances and MAP-Elites
+        to guide the evolution of the instances.
+
+        Args:
+            domain (Domain): Domain for which the instances are generated for.
+            portfolio (Iterable[SupportSolve]): Iterable item of callable objects that can evaluate a instance.
+            initial_pop_size (int): Number of instances in the population to evolve. Defaults to 100.
+            generations (int): Number of generations to perform. Defaults to 1000.
+            archive (GridArchive | CVTArchive): Archive to store the instances. It can be a GridArchive or a CVTArchive.
+            mutation (Mutation): Mutation operator
+            repetitions (int):  Number times a solver in the portfolio must be run over the same instance. Defaults to 1.
+            descriptor (str): Descriptor used to calculate the diversity. The options available are defined in the dictionary digneapy.qd.descriptor_strategies.
+            performance_function (PerformanceFn, optional): Performance function to calculate the performance score. Defaults to max_gap_target.
+            seed (int, optional): Seed for the RNG protocol. Defaults to 42.
+
+        Raises:
+            ValueError: If the archive is not a GridArchive or CVTArchive
+        """
         if not isinstance(archive, (GridArchive, CVTArchive)):
             raise ValueError(
                 f"MapElitesGenerator expects an archive of class GridArchive or CVTArchive and got {archive.__class__.__name__}"
@@ -490,14 +516,17 @@ class DEAGenerator(EAGenerator):
             portfolio (Iterable[SupportSolve]): Iterable item of callable objects that can evaluate a instance.
             pop_size (int, optional): Number of instances in the population to evolve. Defaults to 128.
             offspring_size (int, optional): Number of instances in the offspring population. Defaults to 128.
-            evaluations (int, optional): Number of total evaluations to perform. Defaults to 1000.
+            generations (int, optional): Number of total generations to perform. Defaults to 1000.
             k (int, optional): Number of neighbours to calculate the sparseness. Defaults to 15.
             descriptor_strategy (str, optional): Descriptor used to calculate the diversity. The options available are defined in the dictionary digneapy.qd.descriptor_strategies. Defaults to "features".
             transformer (callable, optional): Define a strategy to transform the high-dimensional descriptors to low-dimensional.Defaults to None.
             repetitions (int, optional): Number times a solver in the portfolio must be run over the same instance. Defaults to 1.
             cxrate (float, optional): Crossover rate. Defaults to 0.5.
             mutrate (float, optional): Mutation rate. Defaults to 0.8.
-
+            crossover (Crossover, optional): Crossover operator. Defaults to uniform_crossover.
+            mutation (Mutation, optional): Mutation operator. Defaults to uniform_one_mutation.
+            selection (Selection, optional): Selection operator. Defaults to binary_tournament_selection.
+            performance_function (PerformanceFn, optional): Performance function to calculate the performance score. Defaults to max_gap_target.
         """
         super().__init__(
             domain=domain,

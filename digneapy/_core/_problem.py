@@ -31,6 +31,16 @@ class Problem(ABC, RNG):
         *args,
         **kwargs,
     ):
+        """Creates a new problem instance.
+        The problem is defined by its dimension and the bounds of each variable.
+
+        Args:
+            dimension (int): Number of variables in the problem
+            bounds (Sequence[tuple]): Bounds of each variable in the problem
+            name (str, optional): Name of the problem for printing and logging purposes. Defaults to "DefaultProblem".
+            dtype (_type_, optional): Type of the variables. Defaults to np.float64.
+            seed (int, optional): Seed for the RNG. Defaults to 42.
+        """
         self._name = name
         self.__name__ = name
         self._dimension = dimension

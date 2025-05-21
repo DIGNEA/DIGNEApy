@@ -22,6 +22,12 @@ from .types import RNG
 
 
 class Domain(ABC, RNG):
+    """Domain is a class that defines the domain of the problem.
+    The domain is defined by its dimension and the bounds of each variable.
+
+    Args:
+        RNG: Subclass that implements the RNG protocol
+    """
     def __init__(
         self,
         dimension: int,

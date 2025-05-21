@@ -18,6 +18,11 @@ import numpy as np
 
 
 class Solution:
+    """
+    Class representing a solution in a genetic algorithm.
+    It contains the chromosome, objectives, constraints, and fitness of the solution.
+    """
+
     def __init__(
         self,
         chromosome: Optional[Iterable] = None,
@@ -25,6 +30,17 @@ class Solution:
         constraints: Optional[Iterable] = None,
         fitness: float = 0.0,
     ):
+        """Creates a new solution object.
+        The chromosome is a numpy array of the solution's genes.
+        The objectives and constraints are numpy arrays of the solution's objectives and constraints.
+        The fitness is a float representing the solution's fitness value.
+
+        Args:
+            chromosome (Optional[Iterable], optional): Tuple or any other iterable with the chromosome/variables. Defaults to None.
+            objectives (Optional[Iterable], optional): Tuple or any other iterable with the objectives values. Defaults to None.
+            constraints (Optional[Iterable], optional): Tuple or any other iterable with the constraint values. Defaults to None.
+            fitness (float, optional): Fitness of the solution. Defaults to 0.0.
+        """
         if chromosome is not None:
             self.chromosome = np.asarray(chromosome)
         else:
@@ -34,6 +50,11 @@ class Solution:
         self.fitness = fitness
 
     def clone(self) -> Self:
+        """Returns a deep copy of the solution. It is more efficient than using the copy module.
+
+        Returns:
+            Self: Solution object
+        """
         return Solution(
             chromosome=list(self.chromosome),
             objectives=list(self.objectives),

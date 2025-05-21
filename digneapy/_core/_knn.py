@@ -20,6 +20,16 @@ from digneapy._core import Instance
 def sparseness_only_values(
     instances: Sequence[Instance], archive: Sequence[Instance], k: int = 15
 ) -> np.ndarray:
+    """Computes the sparseness of the instances in the population.
+
+    Args:
+        instances (Sequence[Instance]): Sequence of instances to compute the sparseness.
+        archive (Sequence[Instance]): Archive of instances to compute the sparseness.
+        k (int, optional): Number of neighbours to use in KNN. Defaults to 15.
+
+    Returns:
+        np.ndarray: Numpy array with the sparseness value assigned to each instance.
+    """
     _instance_desc = np.array([instance.descriptor for instance in instances])
     _archive_desc = np.array([instance.descriptor for instance in archive])
     combined = (
@@ -49,6 +59,16 @@ def sparseness_only_values(
 def sparseness(
     instances: Sequence[Instance], archive: Sequence[Instance], k: int = 15
 ) -> Sequence[Instance]:
+    """Computes the sparseness of the instances in the population.
+
+    Args:
+        instances (Sequence[Instance]): Sequence of instances to compute the sparseness.
+        archive (Sequence[Instance]): Archive of instances to compute the sparseness.
+        k (int, optional): Number of neighbours to use in KNN. Defaults to 15.
+
+    Returns:
+        Sequence[Instance]: Sequence of instances with the sparseness value assigned to each instance.
+    """
     num_instances = len(instances)
     _instance_desc = np.array([instance.descriptor for instance in instances])
     _archive_desc = np.array([instance.descriptor for instance in archive])

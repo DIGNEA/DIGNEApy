@@ -20,7 +20,7 @@ from sklearn.metrics import mean_squared_error
 
 from digneapy import Direction
 from digneapy.transformers.neural import KerasNN
-from digneapy.transformers.tuner import NNTuner
+from digneapy.transformers.tuner import NNEATuner
 
 dir, _ = os.path.split(__file__)
 
@@ -59,7 +59,7 @@ def test_hyper_cmaes_bpp():
         shape=shapes,
         activations=activations,
     )
-    cma_es = NNTuner(
+    cma_es = NNEATuner(
         dimension=dimension,
         direction=Direction.MAXIMISE,
         transformer=transformer,
@@ -84,7 +84,7 @@ def test_hyper_cmaes_bpp_maximises():
         shape=shapes,
         activations=activations,
     )
-    cma_es = NNTuner(
+    cma_es = NNEATuner(
         dimension=dimension,
         direction=Direction.MINIMISE,
         transformer=transformer,
@@ -112,7 +112,7 @@ def test_hyper_cmaes_raises():
 
     # Raises because we do not specify any valid direction
     with pytest.raises(ValueError):
-        _ = NNTuner(
+        _ = NNEATuner(
             dimension=dimension,
             generations=5,
             eval_fn=experimental_work_test,
@@ -122,7 +122,7 @@ def test_hyper_cmaes_raises():
 
     # Raises because we do not specify any transformer
     with pytest.raises(TypeError):
-        _ = NNTuner(
+        _ = NNEATuner(
             transformer=None,
             dimension=dimension,
             direction=Direction.MAXIMISE,
@@ -132,7 +132,7 @@ def test_hyper_cmaes_raises():
 
     # Raises because we do not specify any eval_fn
     with pytest.raises(ValueError):
-        _ = NNTuner(
+        _ = NNEATuner(
             dimension=dimension,
             direction=Direction.MAXIMISE,
             generations=5,
@@ -142,7 +142,7 @@ def test_hyper_cmaes_raises():
 
     # Raises because we n_jobs < 1
     with pytest.raises(ValueError):
-        _ = NNTuner(
+        _ = NNEATuner(
             dimension=dimension,
             direction=Direction.MAXIMISE,
             generations=5,
@@ -151,7 +151,7 @@ def test_hyper_cmaes_raises():
             n_jobs=-1,
         )
 
-    cma_es = NNTuner(
+    cma_es = NNEATuner(
         dimension=dimension,
         direction=Direction.MAXIMISE,
         generations=5,

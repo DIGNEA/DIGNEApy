@@ -1,5 +1,5 @@
 {%
-    include-markdown "../AUTHORS.md"
+    include-markdown "../LICENSE"
     start="<!--intro-start-->"
     end="<!--intro-end-->"
 %}

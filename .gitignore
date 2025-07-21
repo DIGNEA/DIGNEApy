@@ -107,3 +107,4 @@ ENV/
 gecco_env/
 uv.lock
 scripts/
+site/

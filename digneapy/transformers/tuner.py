@@ -10,28 +10,25 @@
 @Desc    :   None
 """
 
-__all__ = ["NNTuner", "Tunner"]
+__all__ = ["NNEATuner", "Tuner"]
 
 from collections.abc import Callable, Sequence
 from multiprocessing.pool import ThreadPool as Pool
 from typing import Optional, Tuple
 
-import fcmaes.cmaes
-import fcmaes.crfmnes
-import fcmaes.crfmnescpp
 import numpy as np
 from deap import algorithms, base, cma, creator, tools
 
 from digneapy._core.types import RNG
 
 from .._core._constants import Direction
-from .neural import KerasNN, TorchNN
-import fcmaes
+from fcmaes import crfmnes
 
 from fcmaes.optimizer import wrapper
 from scipy.optimize import Bounds
 
-class NNTuner:
+
+class NNEATuner:
     def __init__(
         self,
         eval_fn: Callable,
@@ -44,7 +41,6 @@ class NNTuner:
         direction: Direction = Direction.MAXIMISE,
         n_jobs: int = 1,
     ):
-
         if eval_fn is None:
             raise ValueError(
                 "eval_fn cannot be None in NNTuner. Please give a valid evaluation function."
@@ -104,13 +100,15 @@ class NNTuner:
         Returns:
             tuple[float]: Space coverage of the space create from the NN transformer
         """
-        self.transformer.update_weights(individual)
+        # self.transformer.update_weights(individual)
+        # filename = f"dataset_generation_{self.__performed_gens}_individual_{self.__evaluated_inds}.csv"
         self.__evaluated_inds += 1
         if self.__evaluated_inds == self._lambda:
             self.__performed_gens += 1
             self.__evaluated_inds = 0
 
-        fitness = self.eval_fn(self.transformer)
+        # fitness = self.eval_fn(self.transformer, filename)
+        fitness = self.eval_fn(individual)
         return (fitness,)
 
     def __call__(self):
@@ -124,7 +122,7 @@ class NNTuner:
         return (self.hof[0], population, logbook)
 
 
-class Tunner(RNG):
+class Tuner(RNG):
     def __init__(
         self,
         dimension: int,
@@ -132,20 +130,34 @@ class Tunner(RNG):
         lambda_: int = 100,
         generations: int = 10,
         seed: int = 42,
+        workers: int = 4,
     ):
         self._dimension = dimension
-        self._bounds = Bounds([ranges[0]] * self._dimension, [ranges[1]] * self._dimension)
+        self._bounds = Bounds(
+            [ranges[0]] * self._dimension, [ranges[1]] * self._dimension
+        )
         self._pop_size = lambda_
         self._max_generations = generations
         self._seed = seed
+        self.workers = workers
         self.initialize_rng(seed=seed)
+
     def __call__(self, eval_fn: Callable):
-        print(f'Starting the tunning process with {self._pop_size} individuals and {self._max_generations} generations.')
-        solutions = fcmaes.cmaes.minimize(
-                wrapper(eval_fn),
-                x0=self._rng.uniform(self._bounds.lb, self._bounds.ub, size=self._dimension),
-                max_iterations=(self._max_generations),
-                #bounds=self._bounds,
-                rg=self._rng, workers=4
-        )      
+        print(
+            f"""Starting the tunning process with:
+                - Pop size: {self._pop_size} individuals 
+                - Evaluations: {self._max_generations * self._pop_size}
+                - Workers: {self.workers}\n"""
+        )
+        solutions = crfmnes.minimize(
+            wrapper(eval_fn),
+            x0=self._rng.uniform(
+                self._bounds.lb, self._bounds.ub, size=self._dimension
+            ),
+            max_evaluations=(self._max_generations * self._pop_size),
+            bounds=self._bounds,
+            rg=self._rng,
+            workers=self.workers,
+        )
+
         return solutions

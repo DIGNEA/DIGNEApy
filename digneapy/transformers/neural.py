@@ -17,7 +17,7 @@ import os
 os.environ["KERAS_BACKEND"] = "torch"
 
 from collections.abc import Sequence
-from typing import Optional
+from typing import Optional, Callable
 
 import keras
 import numpy as np
@@ -36,6 +36,8 @@ class KerasNN(Transformer):
         shape: Sequence[int],
         activations: Sequence[Optional[str]],
         scale: bool = True,
+        custom_loss: Optional[Callable] = None,
+        optimizer: Optional[keras.Optimizer] = keras.optimizers.Adam(),
     ):
         """Neural Network used to transform a space into another. This class uses a Keras backend.
 
@@ -59,15 +61,15 @@ class KerasNN(Transformer):
         self.input_shape = input_shape
         self._shape = shape
         self._activations = activations
+        self._custom_loss = custom_loss
+        self._optimizer = optimizer
         self._scaler = StandardScaler() if scale else None
 
         self._model = keras.models.Sequential()
         self._model.add(keras.layers.InputLayer(shape=input_shape))
         for d, act in zip(shape, activations):
             self._model.add(keras.layers.Dense(d, activation=act))
-        self._model.compile(
-            loss="mse", optimizer=keras.optimizers.SGD(learning_rate=0.001)
-        )
+        self._model.compile(loss=custom_loss, optimizer=optimizer)
 
     def __str__(self) -> str:
         tokens = []

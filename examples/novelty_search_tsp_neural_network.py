@@ -19,11 +19,13 @@ from digneapy.operators import generational_replacement
 from digneapy.domains import TSPDomain
 from digneapy.solvers import two_opt, greedy, nneighbour
 from digneapy.utils import save_results_to_files
-from digneapy.transformers import KerasNN
+from digneapy.transformers.neural import KerasNN
 from multiprocessing.pool import Pool
 from functools import partial
 import numpy as np
 import itertools
+import multiprocessing as mp
+from pathlib import Path
 
 def generate_instances(
     portfolio,
@@ -36,15 +38,14 @@ def generate_instances(
     verbose,
 ):
     nn = KerasNN(
-        name="NN_transformer_BPP.keras",
-        input_shape=[10],
+        name="NN_transformer_TSP.keras",
+        input_shape=[11],
         shape=(5, 2),
         activations=("relu", None),
         scale=True,
     )
-    best_weights = np.zeros(67)
+    best_weights = np.load(Path(__file__).with_name("tsp_NN_weights_N_50_2D_best.npy"))
     nn.update_weights(best_weights)
-
     domain = TSPDomain(
         dimension=dimension
     )
@@ -75,7 +76,6 @@ if __name__ == "__main__":
         "-n",
         "-number_of_items",
         type=int,
-        required=True,
         help="Size of the TSP problem.",
         default=50,
     )
@@ -83,7 +83,6 @@ if __name__ == "__main__":
     parser.add_argument(
         "-k",
         type=int,
-        required=True,
         help="Number of neighbors to use for the NS.",
         default=15,
     )
@@ -97,7 +96,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "-s",
         "--solution_set_threshold",
-        default=1e-10,
+        default=1e-7,
         type=float,
         help="Threshold for the Archive.",
     )
@@ -106,7 +105,6 @@ if __name__ == "__main__":
         "--population_size",
         default=128,
         type=int,
-        required=True,
         help="Number of instances to evolve.",
     )
     parser.add_argument(
@@ -114,7 +112,6 @@ if __name__ == "__main__":
         "--generations",
         default=1000,
         type=int,
-        required=True,
         help="Number of generations to perform.",
     )
     parser.add_argument(
@@ -141,6 +138,8 @@ if __name__ == "__main__":
         [nneighbour, greedy, two_opt],
         [two_opt, greedy, nneighbour],
     ]
+    mp.set_start_method("spawn", force=True)
+
     with Pool(4) as pool:
         results = pool.map(
             partial(

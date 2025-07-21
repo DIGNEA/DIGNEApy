@@ -18,10 +18,12 @@ from digneapy.operators import generational_replacement
 from digneapy.domains import BPPDomain
 from digneapy.solvers import first_fit, next_fit, worst_fit, best_fit
 from digneapy.utils import save_results_to_files
-from digneapy.transformers import KerasNN
+from digneapy.transformers.neural import KerasNN
 from multiprocessing.pool import Pool
 from functools import partial
 import numpy as np
+import multiprocessing as mp
+from pathlib import Path
 
 def generate_instances(
     portfolio,
@@ -40,7 +42,9 @@ def generate_instances(
         activations=("relu", None),
         scale=True,
     )
-    best_weights = np.zeros(67)
+    best_weights = np.load(
+        Path(__file__).with_name("bin_packing_NN_weights_N_120_2D_best.npy")
+    )
     nn.update_weights(best_weights)
 
     domain= BPPDomain (
@@ -77,7 +81,6 @@ if __name__ == "__main__":
         "-n",
         "-number_of_items",
         type=int,
-        required=True,
         help="Size of the BP problem.",
         default=120,
     )
@@ -85,21 +88,20 @@ if __name__ == "__main__":
     parser.add_argument(
         "-k",
         type=int,
-        required=True,
         help="Number of neighbors to use for the NS.",
         default=15,
     )
     parser.add_argument(
         "-a",
         "--archive_threshold",
-        default=1e-3,
+        default=1e-7,
         type=float,
         help="Threshold for the Archive.",
     )
     parser.add_argument(
         "-s",
         "--solution_set_threshold",
-        default=1e-7,
+        default=1e-10,
         type=float,
         help="Threshold for the Archive.",
     )
@@ -108,7 +110,6 @@ if __name__ == "__main__":
         "--population_size",
         default=128,
         type=int,
-        required=True,
         help="Number of instances to evolve.",
     )
     parser.add_argument(
@@ -116,7 +117,6 @@ if __name__ == "__main__":
         "--generations",
         default=1000,
         type=int,
-        required=True,
         help="Number of generations to perform.",
     )
     parser.add_argument(
@@ -144,6 +144,8 @@ if __name__ == "__main__":
         [next_fit, best_fit, first_fit, worst_fit],
         [worst_fit, best_fit, first_fit, next_fit],
     ]
+    mp.set_start_method("spawn", force=True)
+
     with Pool(4) as pool:
         results = pool.map(
             partial(

@@ -10,18 +10,19 @@
 @Desc    :   None
 """
 
-from digneapy import SupportsSolve
-from digneapy.transformers.tuner import Tuner
-from digneapy.generators import EAGenerator
-from digneapy import NS
-from digneapy.archives import Archive
-from digneapy.operators import generational_replacement
-from digneapy.domains import KnapsackDomain
-from digneapy.solvers import default_kp, map_kp, miw_kp, mpw_kp
-from digneapy.transformers.neural import KerasNN
-import numpy as np
 import argparse
 import multiprocessing as mp
+
+import numpy as np
+
+from digneapy import NS, SupportsSolve
+from digneapy.archives import Archive
+from digneapy.domains import KnapsackDomain
+from digneapy.generators import EAGenerator
+from digneapy.operators import generational_replacement
+from digneapy.solvers import default_kp, map_kp, miw_kp, mpw_kp
+from digneapy.transformers.neural import KerasNN
+from digneapy.transformers.tuner import Tuner
 
 
 class Evaluation(object):

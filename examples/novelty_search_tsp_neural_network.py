@@ -1,31 +1,32 @@
 #!/usr/bin/env python
 # -*-coding:utf-8 -*-
-'''
+"""
 @File    :   novelty_search_tsp_neural_network.py
 @Time    :   2025/04/29 14:59:33
-@Author  :   Alejandro Marrero 
+@Author  :   Alejandro Marrero
 @Version :   1.0
 @Contact :   amarrerd@ull.edu.es
 @License :   (C)Copyright 2025, Alejandro Marrero
 @Desc    :   None
-'''
-
-
+"""
 
 import argparse
-from digneapy import NS, Archive
-from digneapy.generators import EAGenerator
-from digneapy.operators import generational_replacement
-from digneapy.domains import TSPDomain
-from digneapy.solvers import two_opt, greedy, nneighbour
-from digneapy.utils import save_results_to_files
-from digneapy.transformers.neural import KerasNN
-from multiprocessing.pool import Pool
-from functools import partial
-import numpy as np
 import itertools
 import multiprocessing as mp
+from functools import partial
+from multiprocessing.pool import Pool
 from pathlib import Path
+
+import numpy as np
+
+from digneapy import NS, Archive
+from digneapy.domains import TSPDomain
+from digneapy.generators import EAGenerator
+from digneapy.operators import generational_replacement
+from digneapy.solvers import greedy, nneighbour, two_opt
+from digneapy.transformers.neural import KerasNN
+from digneapy.utils import save_results_to_files
+
 
 def generate_instances(
     portfolio,
@@ -46,9 +47,7 @@ def generate_instances(
     )
     best_weights = np.load(Path(__file__).with_name("tsp_NN_weights_N_50_2D_best.npy"))
     nn.update_weights(best_weights)
-    domain = TSPDomain(
-        dimension=dimension
-    )
+    domain = TSPDomain(dimension=dimension)
     eig = EAGenerator(
         pop_size=pop_size,
         generations=generations,
@@ -157,7 +156,9 @@ if __name__ == "__main__":
 
     pool.close()
     pool.join()
-    features_names = "size,std_distances,centroid_x,centroid_y,radius,fraction_distances,area,variance_nnNds,variation_nnNds,cluster_ratio,mean_cluster_radius".split(',')
+    features_names = "size,std_distances,centroid_x,centroid_y,radius,fraction_distances,area,variance_nnNds,variation_nnNds,cluster_ratio,mean_cluster_radius".split(
+        ","
+    )
     vars_names = list(
         itertools.chain.from_iterable([(f"x_{i}", f"y_{i}") for i in range(dimension)])
     )

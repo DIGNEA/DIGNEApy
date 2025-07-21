@@ -15,7 +15,6 @@ from typing import Optional, Self, Sequence
 
 import numpy as np
 import numpy.typing as npt
-import polars as pl
 import pandas as pd
 
 

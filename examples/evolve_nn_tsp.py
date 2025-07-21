@@ -10,18 +10,20 @@
 @Desc    :   None
 """
 
-from digneapy import SupportsSolve
-from digneapy.transformers.tuner import Tuner
-from digneapy.generators import EAGenerator
-from digneapy import NS
-from digneapy.archives import Archive
-from digneapy.operators import generational_replacement
-from digneapy.domains import TSPDomain
-from digneapy.solvers import two_opt, greedy, nneighbour
-from digneapy.transformers.neural import KerasNN
-import numpy as np
 import argparse
 import multiprocessing as mp
+
+import numpy as np
+
+from digneapy import NS, SupportsSolve
+from digneapy.archives import Archive
+from digneapy.domains import TSPDomain
+from digneapy.generators import EAGenerator
+from digneapy.operators import generational_replacement
+from digneapy.solvers import greedy, nneighbour, two_opt
+from digneapy.transformers.neural import KerasNN
+from digneapy.transformers.tuner import Tuner
+
 
 class Evaluation(object):
     def __init__(
@@ -57,7 +59,7 @@ class Evaluation(object):
                 if solutions.metrics is not None
                 else 0.0
             )
-        
+
         return np.mean(results)
 
 
@@ -101,12 +103,13 @@ def main():
         np.save(f, np.asarray(solution.x))
     with open(f"tsp_fitness_NN_N_50_2D_{repetition}.npy", "wb") as f:
         np.save(f, np.asarray(solution.fun))
-    
+
     with open(f"tsp_fitness_NN_N_50_2D_{repetition}.txt", "w") as f:
         f.write(str(solution.fun))
     # Save the model itself
     nn.update_weights(solution.x)
     nn.save(f"TSP_NN_best_transformer_N_50_to_2D_{repetition}.keras")
+
 
 if __name__ == "__main__":
     main()

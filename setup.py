@@ -3,11 +3,11 @@
 """The setup script."""
 
 from glob import glob
-from setuptools import Extension, find_packages, setup
-from setuptools.command.build_ext import build_ext
-from Cython.Build import cythonize
 
 import numpy as np
+from Cython.Build import cythonize
+from setuptools import Extension, find_packages, setup
+from setuptools.command.build_ext import build_ext
 
 with open("README.md") as readme_file:
     readme = readme_file.read()

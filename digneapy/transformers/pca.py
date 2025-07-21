@@ -11,11 +11,13 @@
 """
 
 import os
+import pickle
+import warnings
+
 import numpy as np
 import numpy.typing as npt
-import pickle
+
 from digneapy.transformers._base import Transformer
-import warnings
 
 warnings.filterwarnings("ignore")
 

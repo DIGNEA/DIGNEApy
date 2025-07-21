@@ -11,16 +11,18 @@
 """
 
 import argparse
-from digneapy.generators import DEAGenerator
-from digneapy.domains import BPPDomain
-from digneapy.solvers import first_fit, next_fit, worst_fit, best_fit
-from digneapy.utils import save_results_to_files
-from digneapy.transformers.neural import KerasNN
-from multiprocessing.pool import Pool
-from functools import partial
-import numpy as np
 import multiprocessing as mp
+from functools import partial
+from multiprocessing.pool import Pool
 from pathlib import Path
+
+import numpy as np
+
+from digneapy.domains import BPPDomain
+from digneapy.generators import DEAGenerator
+from digneapy.solvers import best_fit, first_fit, next_fit, worst_fit
+from digneapy.transformers.neural import KerasNN
+from digneapy.utils import save_results_to_files
 
 
 def generate_instances(

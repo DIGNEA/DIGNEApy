@@ -18,22 +18,26 @@ from typing import Optional, Tuple
 
 import numpy as np
 from deap import algorithms, base, cma, creator, tools
-
-from digneapy._core.types import RNG
-
-from .._core._constants import Direction
 from fcmaes import crfmnes
-
 from fcmaes.optimizer import wrapper
 from scipy.optimize import Bounds
 
+from digneapy import RNG
+from digneapy.transformers.neural import KerasNN, TorchNN
+from .._core._constants import Direction
+
 
 class NNEATuner:
+    """Neural Network Evolutionary Algorithm Tuner
+    This class implements a CMA-ES based tuner for neural networks.
+    It allows to optimize the weights of a neural network to generate
+    transformed spaces in optimization domains. 
+    It uses the DEAP library for the evolutionary algorithm"""
     def __init__(
         self,
         eval_fn: Callable,
         dimension: int,
-        transformer: KerasNN | TorchNN,
+        transformer: KerasNN | TorchNN, 
         centroid: Optional[Sequence[float]] = None,
         sigma: float = 1.0,
         lambda_: int = 50,
@@ -41,17 +45,34 @@ class NNEATuner:
         direction: Direction = Direction.MAXIMISE,
         n_jobs: int = 1,
     ):
+        """Creates a new NNEATuner instance
+
+        Args:
+            eval_fn (Callable): Funtion to evaluate the fitness of a neural network
+            weights. It must return a single float value representing the fitness.
+            This function will be called with a list of weights as input.
+            It must be defined before creating the tuner instance.
+            dimension (int): Number of weights in the neural network.
+            centroid (Optional[Sequence[float]], optional): Starting point for the CMA-ES algorithm.
+            sigma (float, optional): Defaults to 1.0.
+            lambda_ (int, optional): Population size. Defaults to 50.
+            generations (int, optional): Number of generatios to perform. Defaults to 250.
+            direction (Direction, optional): Optimisation direction. Defaults to Direction.MAXIMISE.
+            n_jobs (int, optional): Number of workers. Defaults to 1.
+
+        Raises:
+            ValueError: If eval_fn is None or if direction is not a valid Direction.
+        """
         if eval_fn is None:
             raise ValueError(
                 "eval_fn cannot be None in NNTuner. Please give a valid evaluation function."
             )
-        self.eval_fn = eval_fn
-
-        self.dimension = dimension
-        if transformer is None:
+        if transformer is None or not isinstance(transformer, (KerasNN, TorchNN)):
             raise ValueError(
-                "transformer cannot be None in NNTuner. Please give a valid transformer."
+                "transformer cannot be None in NNTuner. Please give a valid transformer (KerasNN or TorchNN)."
             )
+        self.eval_fn = eval_fn
+        self.dimension = dimension
         self.transformer = transformer
         self.centroid = centroid if centroid is not None else [0.0] * self.dimension
         self.sigma = sigma
@@ -100,15 +121,14 @@ class NNEATuner:
         Returns:
             tuple[float]: Space coverage of the space create from the NN transformer
         """
-        # self.transformer.update_weights(individual)
+        self.transformer.update_weights(individual)
         # filename = f"dataset_generation_{self.__performed_gens}_individual_{self.__evaluated_inds}.csv"
         self.__evaluated_inds += 1
         if self.__evaluated_inds == self._lambda:
             self.__performed_gens += 1
             self.__evaluated_inds = 0
 
-        # fitness = self.eval_fn(self.transformer, filename)
-        fitness = self.eval_fn(individual)
+        fitness = self.eval_fn(self.transformer)
         return (fitness,)
 
     def __call__(self):

@@ -1,26 +1,26 @@
 #!/usr/bin/env python
 # -*-coding:utf-8 -*-
-'''
+"""
 @File    :   novelty_search_tsp.py
 @Time    :   2025/04/22 09:49:19
-@Author  :   Alejandro Marrero 
+@Author  :   Alejandro Marrero
 @Version :   1.0
 @Contact :   amarrerd@ull.edu.es
 @License :   (C)Copyright 2025, Alejandro Marrero
 @Desc    :   None
-'''
-
+"""
 
 import argparse
+import itertools
+from functools import partial
+from multiprocessing.pool import Pool
+
 from digneapy import NS, Archive
 from digneapy.domains import TSPDomain
 from digneapy.generators import EAGenerator
 from digneapy.operators import generational_replacement
-from digneapy.solvers import two_opt, greedy, nneighbour
+from digneapy.solvers import greedy, nneighbour, two_opt
 from digneapy.utils import save_results_to_files
-import itertools
-from multiprocessing.pool import Pool
-from functools import partial
 
 
 def generate_instances(
@@ -130,7 +130,9 @@ if __name__ == "__main__":
         [nneighbour, greedy, two_opt],
         [two_opt, greedy, nneighbour],
     ]
-    print(f'Running with parameters:\ndimension={dimension}, k={k}, archive_threshold={archive_threshold}, solution_set_threshold={solution_set_threshold}, population_size={population_size}, generations={generations}, descriptor={descriptor}, verbose={verbose}')
+    print(
+        f"Running with parameters:\ndimension={dimension}, k={k}, archive_threshold={archive_threshold}, solution_set_threshold={solution_set_threshold}, population_size={population_size}, generations={generations}, descriptor={descriptor}, verbose={verbose}"
+    )
     with Pool(4) as pool:
         results = pool.map(
             partial(

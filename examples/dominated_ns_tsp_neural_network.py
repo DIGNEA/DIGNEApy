@@ -11,17 +11,19 @@
 """
 
 import argparse
-from digneapy.generators import DEAGenerator
-from digneapy.domains import TSPDomain
-from digneapy.solvers import two_opt, greedy, nneighbour
-from digneapy.utils import save_results_to_files
-from digneapy.transformers.neural import KerasNN
-from multiprocessing.pool import Pool
-from functools import partial
-import numpy as np
 import itertools
 import multiprocessing as mp
+from functools import partial
+from multiprocessing.pool import Pool
 from pathlib import Path
+
+import numpy as np
+
+from digneapy.domains import TSPDomain
+from digneapy.generators import DEAGenerator
+from digneapy.solvers import greedy, nneighbour, two_opt
+from digneapy.transformers.neural import KerasNN
+from digneapy.utils import save_results_to_files
 
 
 def generate_instances(
@@ -78,7 +80,7 @@ if __name__ == "__main__":
         help="Number of neighbors to use for the NS.",
         default=15,
     )
-   
+
     parser.add_argument(
         "-p",
         "--population_size",

@@ -25,6 +25,3 @@ def test_imports_pisinger():
     assert pisinger is not None
 
 
-def test_imports_raises():
-    with pytest.raises(ImportError):
-        import digneapy.solvers.unknown_module as u

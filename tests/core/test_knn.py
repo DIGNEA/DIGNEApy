@@ -10,10 +10,11 @@
 @Desc    :   None
 """
 
-import pytest
-from digneapy._core import sparseness, sparseness_only_values
-from digneapy import Instance
 import numpy as np
+import pytest
+
+from digneapy import Instance
+from digneapy._core import sparseness, sparseness_only_values
 
 
 @pytest.fixture

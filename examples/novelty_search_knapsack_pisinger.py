@@ -11,15 +11,16 @@
 """
 
 import argparse
+import itertools
+from functools import partial
+from multiprocessing.pool import Pool
+
 from digneapy import NS, Archive, runtime_score
 from digneapy.domains import KnapsackDomain
 from digneapy.generators import EAGenerator
 from digneapy.operators import first_improve_replacement
 from digneapy.solvers.pisinger import combo, expknap, minknap
 from digneapy.utils import save_results_to_files
-import itertools
-from multiprocessing.pool import Pool
-from functools import partial
 
 
 def generate_instances(

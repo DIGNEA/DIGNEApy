@@ -15,9 +15,10 @@ from collections.abc import Sequence
 from typing import Tuple, TypeVar
 
 import numpy as np
-from .types import RNG
-from ._solution import Solution
+
 from ._instance import Instance
+from ._solution import Solution
+from .types import RNG
 
 
 class Problem(ABC, RNG):

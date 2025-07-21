@@ -11,8 +11,9 @@
 """
 
 import numpy as np
-from digneapy import qd_score, qd_score_auc, Statistics
 import pytest
+
+from digneapy import Statistics, qd_score, qd_score_auc
 
 
 def test_qd_score():

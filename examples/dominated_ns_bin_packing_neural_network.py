@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 # -*-coding:utf-8 -*-
 """
-@File    :   dominated_ns_bin_packing.py
-@Time    :   2025/04/21 11:05:57
+@File    :   novelty_search_bin_packing_neural_network.py
+@Time    :   2025/04/29 14:53:01
 @Author  :   Alejandro Marrero
 @Version :   1.0
 @Contact :   amarrerd@ull.edu.es
@@ -11,12 +11,16 @@
 """
 
 import argparse
+from digneapy.generators import DEAGenerator
 from digneapy.domains import BPPDomain
+from digneapy.solvers import first_fit, next_fit, worst_fit, best_fit
 from digneapy.utils import save_results_to_files
+from digneapy.transformers.neural import KerasNN
 from multiprocessing.pool import Pool
 from functools import partial
-from digneapy.generators import DEAGenerator
-from digneapy.solvers import best_fit, worst_fit, next_fit, first_fit
+import numpy as np
+import multiprocessing as mp
+from pathlib import Path
 
 
 def generate_instances(
@@ -25,9 +29,20 @@ def generate_instances(
     pop_size: int,
     generations: int,
     k: int,
-    descriptor: str,
     verbose,
 ):
+    nn = KerasNN(
+        name="NN_transformer_BPP.keras",
+        input_shape=[10],
+        shape=(5, 2),
+        activations=("relu", None),
+        scale=True,
+    )
+    best_weights = np.load(
+        Path(__file__).with_name("bin_packing_NN_weights_N_120_2D_best.npy")
+    )
+    nn.update_weights(best_weights)
+
     domain = BPPDomain(
         dimension=dimension,
         min_i=20,
@@ -35,17 +50,19 @@ def generate_instances(
         max_capacity=150,
         capacity_approach="fixed",
     )
-    deig = DEAGenerator(
+    eig = DEAGenerator(
         pop_size=pop_size,
         offspring_size=pop_size,
         generations=generations,
         domain=domain,
         portfolio=portfolio,
-        k=k,
         repetitions=1,
-        descriptor_strategy=descriptor,
+        k=k,
+        descriptor_strategy="features",
+        transformer=nn,
     )
-    result = deig()
+
+    result = eig()
     if verbose:
         print(f"Target: {result.target} completed.")
     return result
@@ -53,33 +70,27 @@ def generate_instances(
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
-        description="Generate instances for the BP problem with different solvers using Dominated Novelty Search."
+        description="Generate instances for the BP with different solvers using a Neural Network as Transformer."
     )
     parser.add_argument(
         "-n",
         "-number_of_items",
         type=int,
-        required=True,
-        help="Size of the BPP problem.",
+        help="Size of the BP problem.",
         default=120,
     )
-    parser.add_argument(
-        "-d", "--descriptor", type=str, required=True, help="Descriptor to use."
-    )
+
     parser.add_argument(
         "-k",
         type=int,
-        required=True,
         help="Number of neighbors to use for the NS.",
-        default=3,
+        default=15,
     )
-
     parser.add_argument(
         "-p",
         "--population_size",
         default=128,
         type=int,
-        required=True,
         help="Number of instances to evolve.",
     )
     parser.add_argument(
@@ -87,7 +98,6 @@ if __name__ == "__main__":
         "--generations",
         default=1000,
         type=int,
-        required=True,
         help="Number of generations to perform.",
     )
     parser.add_argument(
@@ -101,7 +111,6 @@ if __name__ == "__main__":
         help="Print the evolution logbook.",
     )
     args = parser.parse_args()
-    descriptor = args.descriptor
     generations = args.generations
     population_size = args.population_size
     dimension = args.n
@@ -114,6 +123,7 @@ if __name__ == "__main__":
         [next_fit, best_fit, first_fit, worst_fit],
         [worst_fit, best_fit, first_fit, next_fit],
     ]
+    mp.set_start_method("spawn", force=True)
 
     with Pool(4) as pool:
         results = pool.map(
@@ -123,22 +133,20 @@ if __name__ == "__main__":
                 pop_size=population_size,
                 generations=generations,
                 k=k,
-                descriptor=descriptor,
-                verbose=verbose,
+                verbose=True,
             ),
             portfolios,
         )
 
     pool.close()
     pool.join()
-    features_names = BPPDomain().feat_names if descriptor == "features" else None
+    features_names = "mean,std,median,max,min,tiny,small,medium,large,huge".split(",")
     vars_names = ["Q", *[f"w_{i}" for i in range(dimension)]]
-
     for i, result in enumerate(results):
         solvers_names = [p.__name__ for p in portfolios[i]]
 
         save_results_to_files(
-            f"dns_{descriptor}_N_{dimension}_target_{result.target}_rep_{rep}",
+            f"BP_dns_NN_bin_packing_N_{dimension}_target_{result.target}_rep_{rep}",
             result,
             solvers_names,
             features_names,

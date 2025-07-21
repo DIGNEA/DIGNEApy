@@ -29,6 +29,8 @@ def generate_instances(
     generations: int = 1000,
     population_size: int = 128,
     k: int = 15,
+    archive_threshold: float = 1e-7,
+    ss_threshold: float = 1e-7,
     verbose: bool = False,
 ):
     domain = BPPDomain(
@@ -44,8 +46,8 @@ def generate_instances(
         generations=generations,
         domain=domain,
         portfolio=portfolio,
-        novelty_approach=NS(Archive(threshold=1e-7), k=k),
-        solution_set=Archive(threshold=1e-7),
+        novelty_approach=NS(Archive(threshold=archive_threshold), k=k),
+        solution_set=Archive(threshold=ss_threshold),
         repetitions=1,
         descriptor_strategy=descriptor,
         replacement=generational_replacement,
@@ -66,19 +68,17 @@ if __name__ == "__main__":
         "-n",
         "-number_of_items",
         type=int,
-        required=True,
         help="Size of the BP problem.",
         default=120,
     )
     parser.add_argument(
-        "-d", "--descriptor", type=str, required=True, help="Descriptor to use."
+        "-d", "--descriptor", type=str, default="features", help="Descriptor to use."
     )
     parser.add_argument(
         "-k",
         type=int,
-        required=True,
         help="Number of neighbors to use for the NS.",
-        default=3,
+        default=15,
     )
 
     parser.add_argument(
@@ -86,7 +86,6 @@ if __name__ == "__main__":
         "--population_size",
         default=128,
         type=int,
-        required=True,
         help="Number of instances to evolve.",
     )
     parser.add_argument(
@@ -94,8 +93,21 @@ if __name__ == "__main__":
         "--generations",
         default=1000,
         type=int,
-        required=True,
         help="Number of generations to perform.",
+    )
+    parser.add_argument(
+        "-a",
+        "--archive_threshold",
+        default=0.489739445237057,
+        type=float,
+        help="Threshold for the Archive.",
+    )
+    parser.add_argument(
+        "-s",
+        "--solution_set_threshold",
+        default=0.040663809390192,
+        type=float,
+        help="Threshold for the Archive.",
     )
     parser.add_argument(
         "-r", "--repetition", type=int, required=True, help="Repetition index."
@@ -122,7 +134,11 @@ if __name__ == "__main__":
     k = args.k
     rep = args.repetition
     verbose = args.verbose
+    archive_threshold = args.archive_threshold
+    solution_set_threshold = args.solution_set_threshold
     pool = Pool(4)
+    print(f"Running with {len(portfolios)} portfolios and rep {rep}.")
+    
     results = pool.map(
         partial(
             generate_instances,
@@ -131,6 +147,9 @@ if __name__ == "__main__":
             generations=generations,
             population_size=population_size,
             k=k,
+            archive_threshold=archive_threshold,
+            ss_threshold=solution_set_threshold,
+            verbose=verbose,
         ),
         portfolios,
     )
@@ -142,7 +161,7 @@ if __name__ == "__main__":
         solvers_names = [p.__name__ for p in portfolios[i]]
 
         save_results_to_files(
-            f"ns_{descriptor}_bin_packing_N_{dimension}_target_{result.target}_rep_{rep}",
+            f"best_irace_ns_{descriptor}_bin_packing_N_{dimension}_target_{result.target}_rep_{rep}",
             result,
             solvers_names,
             features_names,

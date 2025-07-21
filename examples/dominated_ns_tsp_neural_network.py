@@ -1,26 +1,27 @@
 #!/usr/bin/env python
 # -*-coding:utf-8 -*-
 """
-@File    :   knapsack_domain_map_elites.py
-@Time    :   2024/06/17 10:46:48
+@File    :   novelty_search_tsp_neural_network.py
+@Time    :   2025/04/29 14:59:33
 @Author  :   Alejandro Marrero
 @Version :   1.0
 @Contact :   amarrerd@ull.edu.es
-@License :   (C)Copyright 2024, Alejandro Marrero
+@License :   (C)Copyright 2025, Alejandro Marrero
 @Desc    :   None
 """
 
 import argparse
-
-from digneapy import GridArchive
-from digneapy.domains import KnapsackDomain
-from digneapy.generators import MapElitesGenerator
-from digneapy.operators import uniform_one_mutation
-from digneapy.solvers import default_kp, map_kp, miw_kp, mpw_kp
+from digneapy.generators import DEAGenerator
+from digneapy.domains import TSPDomain
+from digneapy.solvers import two_opt, greedy, nneighbour
 from digneapy.utils import save_results_to_files
-import itertools
+from digneapy.transformers.neural import KerasNN
 from multiprocessing.pool import Pool
 from functools import partial
+import numpy as np
+import itertools
+import multiprocessing as mp
+from pathlib import Path
 
 
 def generate_instances(
@@ -28,26 +29,32 @@ def generate_instances(
     dimension: int,
     pop_size: int,
     generations: int,
+    k: int,
     verbose,
 ):
-    archive = GridArchive(
-        dimensions=(10,) * 101,
-        ranges=[(0.0, 10000), *[(1.0, 1000) for _ in range(dimension * 2)]],
+    nn = KerasNN(
+        name="NN_transformer_TSP.keras",
+        input_shape=[11],
+        shape=(5, 2),
+        activations=("relu", None),
+        scale=True,
     )
-
-    domain = KnapsackDomain(dimension=dimension, capacity_approach="evolved")
-    map_elites = MapElitesGenerator(
-        domain,
-        portfolio=portfolio,
-        archive=archive,
-        initial_pop_size=pop_size,
-        mutation=uniform_one_mutation,
+    best_weights = np.load(Path(__file__).with_name("tsp_NN_weights_N_50_2D_best.npy"))
+    nn.update_weights(best_weights)
+    domain = TSPDomain(dimension=dimension)
+    eig = DEAGenerator(
+        pop_size=pop_size,
+        offspring_size=pop_size,
         generations=generations,
-        descriptor="instance",
+        domain=domain,
+        portfolio=portfolio,
         repetitions=1,
+        k=k,
+        descriptor_strategy="features",
+        transformer=nn,
     )
 
-    result = map_elites(verbose=verbose)
+    result = eig()
     if verbose:
         print(f"Target: {result.target} completed.")
     return result
@@ -55,23 +62,28 @@ def generate_instances(
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
-        description="Generate instances for the knapsack problem with different solvers using MapElites."
+        description="Generate instances for the TSP with different solvers using a Neural Network as Transformer."
     )
     parser.add_argument(
         "-n",
         "-number_of_items",
         type=int,
-        required=True,
-        help="Size of the knapsack problem.",
+        help="Size of the TSP problem.",
         default=50,
     )
 
+    parser.add_argument(
+        "-k",
+        type=int,
+        help="Number of neighbors to use for the NS.",
+        default=15,
+    )
+   
     parser.add_argument(
         "-p",
         "--population_size",
         default=128,
         type=int,
-        required=True,
         help="Number of instances to evolve.",
     )
     parser.add_argument(
@@ -79,7 +91,6 @@ if __name__ == "__main__":
         "--generations",
         default=1000,
         type=int,
-        required=True,
         help="Number of generations to perform.",
     )
     parser.add_argument(
@@ -96,15 +107,15 @@ if __name__ == "__main__":
     generations = args.generations
     population_size = args.population_size
     dimension = args.n
+    k = args.k
     rep = args.repetition
     verbose = args.verbose
-
     portfolios = [
-        [default_kp, map_kp, miw_kp, mpw_kp],
-        [map_kp, default_kp, miw_kp, mpw_kp],
-        [miw_kp, default_kp, map_kp, mpw_kp],
-        [mpw_kp, default_kp, map_kp, miw_kp],
+        [greedy, nneighbour, two_opt],
+        [nneighbour, greedy, two_opt],
+        [two_opt, greedy, nneighbour],
     ]
+    mp.set_start_method("spawn", force=True)
 
     with Pool(4) as pool:
         results = pool.map(
@@ -113,24 +124,28 @@ if __name__ == "__main__":
                 dimension=dimension,
                 pop_size=population_size,
                 generations=generations,
-                verbose=verbose,
+                k=k,
+                verbose=True,
             ),
             portfolios,
         )
 
     pool.close()
     pool.join()
-    vars_names = ["Q"] + list(
-        itertools.chain.from_iterable([(f"w_{i}", f"p_{i}") for i in range(dimension)])
+    features_names = "size,std_distances,centroid_x,centroid_y,radius,fraction_distances,area,variance_nnNds,variation_nnNds,cluster_ratio,mean_cluster_radius".split(
+        ","
+    )
+    vars_names = list(
+        itertools.chain.from_iterable([(f"x_{i}", f"y_{i}") for i in range(dimension)])
     )
 
     for i, result in enumerate(results):
         solvers_names = [p.__name__ for p in portfolios[i]]
 
         save_results_to_files(
-            f"mapelites_grid_N_{dimension}_target_{result.target}_rep_{rep}",
-            result=result,
-            solvers_names=solvers_names,
-            vars_names=vars_names,
-            features_names=None,
+            f"TSP_dns_NN_N_{dimension}_target_{result.target}_rep_{rep}",
+            result,
+            solvers_names,
+            features_names,
+            vars_names,
         )

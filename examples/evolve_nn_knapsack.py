@@ -16,12 +16,13 @@ from digneapy.generators import EAGenerator
 from digneapy import NS
 from digneapy.archives import Archive
 from digneapy.operators import generational_replacement
-from digneapy.domains import TSPDomain
-from digneapy.solvers import two_opt, greedy, nneighbour
+from digneapy.domains import KnapsackDomain
+from digneapy.solvers import default_kp, map_kp, miw_kp, mpw_kp
 from digneapy.transformers.neural import KerasNN
 import numpy as np
 import argparse
 import multiprocessing as mp
+
 
 class Evaluation(object):
     def __init__(
@@ -37,17 +38,16 @@ class Evaluation(object):
     def __call__(self, X):
         self._transformer.update_weights(X)
         results = np.zeros(4)
-
         for i, portfolio in enumerate(self._portfolios):
             eig = EAGenerator(
-                pop_size=10,
-                generations=100,
+                pop_size=128,
+                generations=1000,
                 domain=self._domain,
                 portfolio=portfolio,
-                novelty_approach=NS(Archive(threshold=1e-7), k=3),
-                solution_set=Archive(threshold=1e-7),
+                novelty_approach=NS(Archive(threshold=7.095008759640369), k=15),
+                solution_set=Archive(threshold=3.5748959942854674),
                 repetitions=1,
-                descriptor_strategy="features",
+                descriptor_strategy="instance",
                 replacement=generational_replacement,
                 transformer=self._transformer,
             )
@@ -57,13 +57,12 @@ class Evaluation(object):
                 if solutions.metrics is not None
                 else 0.0
             )
-        
         return np.mean(results)
 
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Evolve NNs to encoder 11D descriptors of the TSP to 2D."
+        description="Evolve NNs to encoder full KP instances to 2D."
     )
 
     parser.add_argument(
@@ -75,38 +74,47 @@ def main():
     seed = args.seed
     mp.set_start_method("spawn", force=True)
 
-    dimension = 72
+    dimension = 5202
     nn = KerasNN(
-        name="NN_transformer_TSP_domain.keras",
-        input_shape=[11],
-        shape=(5, 2),
+        name="NN_transformer_knapsack_domain.keras",
+        input_shape=[101],
+        shape=(50, 2),
         activations=("relu", None),
         scale=True,
     )
 
     fitness = Evaluation(
         transformer=nn,
-        domain=TSPDomain(dimension=50),
+        domain=KnapsackDomain(dimension=50),
         portfolios=[
-            [greedy, nneighbour, two_opt],
-            [nneighbour, greedy, two_opt],
-            [two_opt, greedy, nneighbour],
+            [default_kp, map_kp, miw_kp, mpw_kp],
+            [map_kp, default_kp, miw_kp, mpw_kp],
+            [miw_kp, default_kp, map_kp, mpw_kp],
+            [mpw_kp, default_kp, map_kp, miw_kp],
         ],
     )
     cma_es = Tuner(
-        dimension=dimension, ranges=(-1.0, 1.0), generations=250, lambda_=64, seed=seed
+        dimension=dimension,
+        ranges=(0.0, 1.0),
+        generations=512,
+        lambda_=64,
+        seed=seed,
+        workers=32,
     )
+
     solution = cma_es(eval_fn=fitness)
-    with open(f"tsp_NN_weights_N_50_2D_{repetition}.npy", "wb") as f:
+    with open(f"knapsack_NN_weights_N_50_2D_{repetition}.npy", "wb") as f:
         np.save(f, np.asarray(solution.x))
-    with open(f"tsp_fitness_NN_N_50_2D_{repetition}.npy", "wb") as f:
+    with open(f"knapsack_fitness_NN_N_50_2D_{repetition}.npy", "wb") as f:
         np.save(f, np.asarray(solution.fun))
-    
-    with open(f"tsp_fitness_NN_N_50_2D_{repetition}.txt", "w") as f:
+
+    with open(f"knapsack_fitness_NN_N_50_2D_{repetition}.txt", "w") as f:
         f.write(str(solution.fun))
+
     # Save the model itself
     nn.update_weights(solution.x)
-    nn.save(f"TSP_NN_best_transformer_N_50_to_2D_{repetition}.keras")
+    nn.save(f"KP_NN_best_transformer_N_50_to_2D_{repetition}.keras")
+
 
 if __name__ == "__main__":
     main()

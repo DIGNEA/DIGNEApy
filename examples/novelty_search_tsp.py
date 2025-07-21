@@ -130,7 +130,7 @@ if __name__ == "__main__":
         [nneighbour, greedy, two_opt],
         [two_opt, greedy, nneighbour],
     ]
-
+    print(f'Running with parameters:\ndimension={dimension}, k={k}, archive_threshold={archive_threshold}, solution_set_threshold={solution_set_threshold}, population_size={population_size}, generations={generations}, descriptor={descriptor}, verbose={verbose}')
     with Pool(4) as pool:
         results = pool.map(
             partial(

@@ -138,7 +138,7 @@ if __name__ == "__main__":
     solution_set_threshold = args.solution_set_threshold
     pool = Pool(4)
     print(f"Running with {len(portfolios)} portfolios and rep {rep}.")
-    
+
     results = pool.map(
         partial(
             generate_instances,

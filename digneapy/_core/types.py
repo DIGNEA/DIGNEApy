@@ -10,7 +10,8 @@
 @Desc    :   None
 """
 
-from typing import Protocol, Optional
+from typing import Optional, Protocol
+
 import numpy as np
 
 

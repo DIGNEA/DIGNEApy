@@ -1,29 +1,31 @@
 #!/usr/bin/env python
 # -*-coding:utf-8 -*-
-'''
+"""
 @File    :   novelty_search_bin_packing_neural_network.py
 @Time    :   2025/04/29 14:53:01
-@Author  :   Alejandro Marrero 
+@Author  :   Alejandro Marrero
 @Version :   1.0
 @Contact :   amarrerd@ull.edu.es
 @License :   (C)Copyright 2025, Alejandro Marrero
 @Desc    :   None
-'''
-
+"""
 
 import argparse
+import multiprocessing as mp
+from functools import partial
+from multiprocessing.pool import Pool
+from pathlib import Path
+
+import numpy as np
+
 from digneapy import NS, Archive
+from digneapy.domains import BPPDomain
 from digneapy.generators import EAGenerator
 from digneapy.operators import generational_replacement
-from digneapy.domains import BPPDomain
-from digneapy.solvers import first_fit, next_fit, worst_fit, best_fit
-from digneapy.utils import save_results_to_files
+from digneapy.solvers import best_fit, first_fit, next_fit, worst_fit
 from digneapy.transformers.neural import KerasNN
-from multiprocessing.pool import Pool
-from functools import partial
-import numpy as np
-import multiprocessing as mp
-from pathlib import Path
+from digneapy.utils import save_results_to_files
+
 
 def generate_instances(
     portfolio,
@@ -47,13 +49,13 @@ def generate_instances(
     )
     nn.update_weights(best_weights)
 
-    domain= BPPDomain (
-            dimension=dimension,
-            min_i=20,
-            max_i=100,
-            max_capacity=150,
-            capacity_approach="fixed",
-    )    
+    domain = BPPDomain(
+        dimension=dimension,
+        min_i=20,
+        max_i=100,
+        max_capacity=150,
+        capacity_approach="fixed",
+    )
     eig = EAGenerator(
         pop_size=pop_size,
         generations=generations,
@@ -163,14 +165,15 @@ if __name__ == "__main__":
 
     pool.close()
     pool.join()
-    features_names = "mean,std,median,max,min,tiny,small,medium,large,huge".split(',')
+    features_names = "mean,std,median,max,min,tiny,small,medium,large,huge".split(",")
     vars_names = ["Q", *[f"w_{i}" for i in range(dimension)]]
     for i, result in enumerate(results):
         solvers_names = [p.__name__ for p in portfolios[i]]
 
         save_results_to_files(
             f"BP_ns_NN_bin_packing_N_{dimension}_target_{result.target}_rep_{rep}",
-                result,
-                solvers_names,
-                features_names,
-                vars_names)
+            result,
+            solvers_names,
+            features_names,
+            vars_names,
+        )

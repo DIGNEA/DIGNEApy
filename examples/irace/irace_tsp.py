@@ -1,33 +1,35 @@
 #!/usr/bin/env python
 # -*-coding:utf-8 -*-
-'''
+"""
 @File    :   tuning.py
 @Time    :   2025/05/07 08:51:16
-@Author  :   Alejandro Marrero 
+@Author  :   Alejandro Marrero
 @Version :   1.0
 @Contact :   amarrerd@ull.edu.es
 @License :   (C)Copyright 2025, Alejandro Marrero
 @Desc    :   None
-'''
+"""
 
-from irace import irace, ParameterSpace, Scenario, Experiment, Real
+from functools import partial
+from multiprocessing.pool import Pool
+
+import joblib
+import numpy as np
+import pandas as pd
+from irace import Experiment, ParameterSpace, Real, Scenario, irace
+from numpy import linalg as nplinalg
+from scipy import stats as spstat
+from sklearn.pipeline import Pipeline
+
 from digneapy import NS, Archive
-from digneapy.domains import  TSPDomain
+from digneapy.domains import TSPDomain
 from digneapy.generators import EAGenerator
 from digneapy.operators import generational_replacement
-from digneapy.solvers import two_opt, greedy, nneighbour
-
-from multiprocessing.pool import Pool
-from functools import partial
-import numpy as np
-import joblib
-from scipy import stats as spstat
-from numpy import linalg as nplinalg
-import pandas as pd
-from sklearn.pipeline import Pipeline
+from digneapy.solvers import greedy, nneighbour, two_opt
 
 BINS = 20
 LIMITS = (-10_000, 10_000)
+
 
 def create_2d_histograms(x, y, x_min, y_min, x_max, y_max, bins):
     gridx = np.linspace(x_min, x_max, bins)
@@ -44,7 +46,7 @@ def JSD(P, Q):
 
 
 def compute_uniform_dist_score(data, xmin, ymin, xmax, ymax, bins):
-    hist = create_2d_histograms(data[:,0], data[:,1], xmin, ymin, xmax, ymax, bins)
+    hist = create_2d_histograms(data[:, 0], data[:, 1], xmin, ymin, xmax, ymax, bins)
     hist1D = [0 for _ in range(len(hist) * len(hist))]
     sum = 0
     i = 0
@@ -70,7 +72,6 @@ def generate_instances(
     pipeline: Pipeline,
     verbose,
 ):
-
     domain = TSPDomain(dimension=dimension)
     eig = EAGenerator(
         pop_size=pop_size,
@@ -87,7 +88,7 @@ def generate_instances(
     result = eig()
     if len(result.instances) == 0:
         return 0
-    
+
     df = pd.DataFrame([pd.Series(i) for i in result.instances])
     # Reduce the dataset and keep only the first two dimensions
     reduced_df = pipeline.transform(df)
@@ -102,12 +103,13 @@ def generate_instances(
     print(len(result.instances), score)
     return -1.0 * score
 
+
 def target_runner(experiment: Experiment, scenario: Scenario) -> float:
-    portfolios=[
-            [greedy, nneighbour, two_opt],
-            [nneighbour, greedy, two_opt],
-            [two_opt, greedy, nneighbour],
-        ]
+    portfolios = [
+        [greedy, nneighbour, two_opt],
+        [nneighbour, greedy, two_opt],
+        [two_opt, greedy, nneighbour],
+    ]
     with Pool(4) as pool:
         pipeline = joblib.load("pipeline_tsp_N_50.pkl")
         results = pool.map(
@@ -116,10 +118,10 @@ def target_runner(experiment: Experiment, scenario: Scenario) -> float:
                 dimension=50,
                 pop_size=128,
                 generations=100,
-                archive_threshold=experiment.configuration['t_a'],
-                ss_threshold=experiment.configuration['t_ss'],
+                archive_threshold=experiment.configuration["t_a"],
+                ss_threshold=experiment.configuration["t_ss"],
                 k=15,
-                descriptor='features',
+                descriptor="features",
                 pipeline=pipeline,
                 verbose=False,
             ),
@@ -129,7 +131,6 @@ def target_runner(experiment: Experiment, scenario: Scenario) -> float:
     pool.close()
     pool.join()
     return np.mean(np.asarray(results))
-
 
 
 if __name__ == "__main__":

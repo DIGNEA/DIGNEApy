@@ -11,14 +11,15 @@
 """
 
 import argparse
+import itertools
+from functools import partial
+from multiprocessing.pool import Pool
+
 from digneapy.domains import KnapsackDomain
 from digneapy.generators import DEAGenerator
 from digneapy.solvers import default_kp, map_kp, miw_kp, mpw_kp
-from digneapy.utils import save_results_to_files
 from digneapy.transformers.neural import KerasNN
-import itertools
-from multiprocessing.pool import Pool
-from functools import partial
+from digneapy.utils import save_results_to_files
 
 
 def generate_instances(

@@ -14,7 +14,7 @@ from typing import Sequence, Tuple
 
 import pytest
 
-from digneapy import Problem, Solution
+from digneapy import Problem, Solution, Instance
 
 
 class Sample(Problem):
@@ -35,6 +35,8 @@ class Sample(Problem):
     def to_file(self, filename: str):
         return super().to_file(filename)
 
+    def to_instance() -> Instance:
+        return Instance()
 
 @pytest.fixture
 def sample_problem():

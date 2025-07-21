@@ -12,6 +12,7 @@
 
 import os
 from collections import deque
+
 import numpy as np
 import pytest
 
@@ -22,10 +23,9 @@ from digneapy import (
     GridArchive,
     Instance,
     max_gap_target,
-    runtime_score,
 )
 from digneapy.domains import BPPDomain, KnapsackDomain
-from digneapy.generators import EAGenerator, MapElitesGenerator, DEAGenerator
+from digneapy.generators import DEAGenerator, EAGenerator, MapElitesGenerator
 from digneapy.operators import (
     binary_tournament_selection,
     generational_replacement,
@@ -41,7 +41,6 @@ from digneapy.solvers import (
     mpw_kp,
     worst_fit,
 )
-from digneapy.solvers.pisinger import combo, expknap, minknap
 from digneapy.visualize import ea_generator_evolution_plot, map_elites_evolution_plot
 
 

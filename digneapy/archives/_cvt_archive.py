@@ -13,7 +13,7 @@
 import json
 from collections.abc import Iterable, Sequence
 from typing import Dict, Optional, Tuple
-from operator import attrgetter
+
 import numpy as np
 import numpy.typing as npt
 from sklearn.cluster import KMeans

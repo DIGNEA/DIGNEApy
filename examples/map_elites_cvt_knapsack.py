@@ -11,15 +11,16 @@
 """
 
 import argparse
+import itertools
+from functools import partial
+from multiprocessing.pool import Pool
+
 from digneapy import CVTArchive
 from digneapy.domains import KnapsackDomain
 from digneapy.generators import MapElitesGenerator
 from digneapy.operators import uniform_one_mutation
 from digneapy.solvers import default_kp, map_kp, miw_kp, mpw_kp
 from digneapy.utils import save_results_to_files
-import itertools
-from multiprocessing.pool import Pool
-from functools import partial
 
 
 def generate_instances(

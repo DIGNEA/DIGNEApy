@@ -10,11 +10,12 @@
 @Desc    :   None
 """
 
-from typing import Optional
 from collections.abc import Sequence
-from digneapy.generators import GenResult
+from typing import Literal, Optional
+
 import pandas as pd
-from typing import Literal
+
+from digneapy.generators import GenResult
 
 
 def save_results_to_files(

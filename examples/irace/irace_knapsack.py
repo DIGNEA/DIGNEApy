@@ -10,24 +10,26 @@
 @Desc    :   None
 """
 
-from irace import irace, ParameterSpace, Scenario, Experiment, Real
+from functools import partial
+from multiprocessing.pool import Pool
+
+import joblib
+import numpy as np
+import pandas as pd
+from irace import Experiment, ParameterSpace, Real, Scenario, irace
+from numpy import linalg as nplinalg
+from scipy import stats as spstat
+from sklearn.pipeline import Pipeline
+
 from digneapy import NS, Archive
 from digneapy.domains import KnapsackDomain
 from digneapy.generators import EAGenerator
 from digneapy.operators import generational_replacement
 from digneapy.solvers import default_kp, map_kp, miw_kp, mpw_kp
 
-from multiprocessing.pool import Pool
-from functools import partial
-import numpy as np
-import joblib
-from scipy import stats as spstat
-from numpy import linalg as nplinalg
-import pandas as pd
-from sklearn.pipeline import Pipeline
-
 BINS = 20
 LIMITS = (-10_000, 10_000)
+
 
 def create_2d_histograms(x, y, x_min, y_min, x_max, y_max, bins):
     gridx = np.linspace(x_min, x_max, bins)

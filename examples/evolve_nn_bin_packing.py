@@ -10,18 +10,20 @@
 @Desc    :   None
 """
 
-from digneapy import SupportsSolve
-from digneapy.transformers.tuner import Tuner
-from digneapy.generators import EAGenerator
-from digneapy import NS
-from digneapy.archives import Archive
-from digneapy.operators import generational_replacement
-from digneapy.domains import BPPDomain
-from digneapy.solvers import first_fit, next_fit, worst_fit, best_fit
-from digneapy.transformers.neural import KerasNN
-import numpy as np
 import argparse
 import multiprocessing as mp
+
+import numpy as np
+
+from digneapy import NS, SupportsSolve
+from digneapy.archives import Archive
+from digneapy.domains import BPPDomain
+from digneapy.generators import EAGenerator
+from digneapy.operators import generational_replacement
+from digneapy.solvers import best_fit, first_fit, next_fit, worst_fit
+from digneapy.transformers.neural import KerasNN
+from digneapy.transformers.tuner import Tuner
+
 
 class Evaluation(object):
     def __init__(
@@ -113,6 +115,7 @@ def main():
     # Save the model itself
     nn.update_weights(solution.x)
     nn.save(f"BP_NN_best_transformer_N_120_to_2D_{repetition}.keras")
+
 
 if __name__ == "__main__":
     main()

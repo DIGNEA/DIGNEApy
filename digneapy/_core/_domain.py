@@ -18,6 +18,7 @@ import numpy as np
 
 from digneapy._core._instance import Instance
 from digneapy._core._problem import Problem
+
 from .types import RNG
 
 

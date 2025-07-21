@@ -121,7 +121,7 @@ def test_hyper_cmaes_raises():
         )
 
     # Raises because we do not specify any transformer
-    with pytest.raises(TypeError):
+    with pytest.raises(ValueError):
         _ = NNEATuner(
             transformer=None,
             dimension=dimension,

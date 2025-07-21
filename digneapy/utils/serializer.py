@@ -13,8 +13,9 @@
 __all__ = ["to_json"]
 
 import json
-import numpy as np
 from types import FunctionType
+
+import numpy as np
 
 
 def serialize(obj):

@@ -17,7 +17,7 @@ import os
 os.environ["KERAS_BACKEND"] = "torch"
 
 from collections.abc import Sequence
-from typing import Optional, Callable
+from typing import Callable, Optional
 
 import keras
 import numpy as np

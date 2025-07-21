@@ -12,15 +12,16 @@
 
 __all__ = ["GenResult", "EAGenerator", "MapElitesGenerator", "DEAGenerator"]
 
-from collections.abc import Iterable, Sequence
-from operator import attrgetter
-from typing import Optional, Tuple, Protocol
-from dataclasses import dataclass
 import random
+from collections.abc import Iterable, Sequence
+from dataclasses import dataclass
+from operator import attrgetter
+from typing import Optional, Protocol
+
 import numpy as np
 import pandas as pd
 
-from ._core import NS, Domain, DominatedNS, Instance, P, SupportsSolve, RNG
+from ._core import NS, RNG, Domain, DominatedNS, Instance, P, SupportsSolve
 from ._core._metrics import Logbook, Statistics
 from ._core.descriptors import DESCRIPTORS
 from ._core.scores import PerformanceFn, max_gap_target
@@ -35,7 +36,6 @@ from .operators import (
     uniform_crossover,
     uniform_one_mutation,
 )
-
 from .transformers import SupportsTransform
 
 

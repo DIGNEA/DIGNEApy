@@ -1,4 +1,3 @@
-
 #!/usr/bin/env python
 # -*-coding:utf-8 -*-
 """
@@ -11,21 +10,22 @@
 @Desc    :   None
 """
 
-from irace import irace, ParameterSpace, Scenario, Experiment, Real
+from functools import partial
+from multiprocessing.pool import Pool
+
+import joblib
+import numpy as np
+import pandas as pd
+from irace import Experiment, ParameterSpace, Real, Scenario, irace
+from numpy import linalg as nplinalg
+from scipy import stats as spstat
+from sklearn.pipeline import Pipeline
+
 from digneapy import NS, Archive
 from digneapy.domains import BPPDomain
 from digneapy.generators import EAGenerator
 from digneapy.operators import generational_replacement
-from digneapy.solvers import first_fit, next_fit, worst_fit, best_fit
-
-from multiprocessing.pool import Pool
-from functools import partial
-import numpy as np
-import joblib
-from scipy import stats as spstat
-from numpy import linalg as nplinalg
-import pandas as pd
-from sklearn.pipeline import Pipeline
+from digneapy.solvers import best_fit, first_fit, next_fit, worst_fit
 
 BINS = 20
 LIMITS = (-10_000, 10_000)
@@ -111,7 +111,6 @@ def generate_instances(
 
 
 def target_runner(experiment: Experiment, scenario: Scenario) -> float:
-
     portfolios = [
         [best_fit, first_fit, next_fit, worst_fit],
         [first_fit, best_fit, next_fit, worst_fit],

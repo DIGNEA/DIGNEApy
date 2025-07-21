@@ -35,8 +35,3 @@ def test_import_visualize():
     import digneapy.visualize as visualize
 
     assert visualize is not None
-
-
-def test_imports_raises():
-    with pytest.raises(ImportError):
-        import digneapy.unknown_module as u

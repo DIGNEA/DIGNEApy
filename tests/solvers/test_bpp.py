@@ -10,8 +10,9 @@
 @Desc    :   None
 """
 
-import pytest
 import numpy as np
+import pytest
+
 from digneapy.domains.bpp import BPP
 from digneapy.solvers import best_fit, first_fit, next_fit, worst_fit
 

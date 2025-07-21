@@ -32,6 +32,7 @@ class Transformer(ABC, SupportsTransform):
     the input data to a new space. The transformer is a subclass of the SupportsTransform
     protocol.
     """
+
     def __init__(self, name: str):
         self._name = name
 

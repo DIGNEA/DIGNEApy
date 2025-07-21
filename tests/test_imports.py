@@ -10,8 +10,6 @@
 @Desc    :   None
 """
 
-import pytest
-
 
 def test_imports_utils():
     import digneapy.utils as utils

@@ -24,6 +24,7 @@ from scipy.optimize import Bounds
 
 from digneapy import RNG
 from digneapy.transformers.neural import KerasNN, TorchNN
+
 from .._core._constants import Direction
 
 
@@ -31,13 +32,14 @@ class NNEATuner:
     """Neural Network Evolutionary Algorithm Tuner
     This class implements a CMA-ES based tuner for neural networks.
     It allows to optimize the weights of a neural network to generate
-    transformed spaces in optimization domains. 
+    transformed spaces in optimization domains.
     It uses the DEAP library for the evolutionary algorithm"""
+
     def __init__(
         self,
         eval_fn: Callable,
         dimension: int,
-        transformer: KerasNN | TorchNN, 
+        transformer: KerasNN | TorchNN,
         centroid: Optional[Sequence[float]] = None,
         sigma: float = 1.0,
         lambda_: int = 50,

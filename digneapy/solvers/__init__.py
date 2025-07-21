@@ -10,11 +10,11 @@
 @Desc    :   None
 """
 
-from . import bpp, tsp, _kp, _tsp_opt
-from .bpp import best_fit, first_fit, next_fit, worst_fit
+from . import _kp, _tsp_opt, bpp, tsp
 from ._kp import default_kp, map_kp, miw_kp, mpw_kp
-from .tsp import greedy, nneighbour, three_opt
 from ._tsp_opt import two_opt
+from .bpp import best_fit, first_fit, next_fit, worst_fit
+from .tsp import greedy, nneighbour, three_opt
 
 __all__ = list(
     set(bpp.__all__) | set(_kp.__all__) | set(tsp.__all__) | set(_tsp_opt.__all__)

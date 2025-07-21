@@ -20,6 +20,7 @@ import pandas as pd
 
 class Instance:
     __slots__ = ("_vars", "_fit", "_p", "_s", "_features", "_desc", "_pscores")
+
     def __init__(
         self,
         variables: Optional[npt.ArrayLike] = None,
@@ -37,7 +38,7 @@ class Instance:
         The variables are stored as a numpy array, and the fitness, performance and novelty
         are stored as floats. The features, descriptor and portfolio scores are stored as
         numpy arrays.
-        
+
         Args:
             variables (Optional[npt.ArrayLike], optional): Variables or genome of the instance. Defaults to None.
             fitness (float, optional): Fitness of the instance. Defaults to 0.0.
@@ -245,7 +246,7 @@ class Instance:
         score_names: Optional[Sequence[str]] = None,
     ) -> dict:
         """Convert the instance to a dictionary. The keys are the names of the attributes
-        and the values are the values of the attributes. 
+        and the values are the values of the attributes.
 
         Args:
             variables_names (Optional[Sequence[str]], optional): Names of the variables in the dictionary, otherwise v_i. Defaults to None.

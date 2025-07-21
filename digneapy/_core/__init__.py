@@ -13,13 +13,13 @@
 from ._constants import Direction, IndType
 from ._domain import Domain
 from ._instance import Instance
-from ._metrics import Logbook, qd_score, qd_score_auc, Statistics
+from ._knn import sparseness, sparseness_only_values
+from ._metrics import Logbook, Statistics, qd_score, qd_score_auc
 from ._novelty_search import NS, DominatedNS
 from ._problem import P, Problem
 from ._solution import Solution
 from ._solver import Solver, SupportsSolve
 from .types import RNG
-from ._knn import sparseness, sparseness_only_values
 
 __all__ = [
     "Domain",

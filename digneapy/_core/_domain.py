@@ -29,6 +29,7 @@ class Domain(ABC, RNG):
     Args:
         RNG: Subclass that implements the RNG protocol
     """
+
     def __init__(
         self,
         dimension: int,

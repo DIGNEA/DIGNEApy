@@ -12,13 +12,12 @@
 
 import json
 import operator
-from collections.abc import Callable, Iterable
-from functools import reduce
+from collections.abc import Iterable
 from typing import Optional
 
 import numpy as np
 
-from digneapy.core import Instance
+from digneapy._core import Instance
 
 
 class Archive:
@@ -27,7 +26,10 @@ class Archive:
     """
 
     def __init__(
-        self, threshold: float, instances: Optional[Iterable[Instance]] = None
+        self,
+        threshold: float,
+        instances: Optional[Iterable[Instance]] = None,
+        dtype=np.float64,
     ):
         """Creates an instance of a Archive (unstructured) for QD algorithms
 
@@ -41,6 +43,7 @@ class Archive:
             self._instances = []
 
         self._threshold = threshold
+        self._dtype = dtype
 
     @property
     def instances(self):
@@ -68,7 +71,7 @@ class Archive:
     def __repr__(self):
         return f"Archive(threshold={self._threshold},data=(|{len(self)}|))"
 
-    def __array__(self) -> np.ndarray:
+    def __array__(self, dtype=Instance, copy=True) -> np.ndarray:
         """Creates a ndarray with the descriptors
 
         >>> import numpy as np
@@ -78,7 +81,7 @@ class Archive:
         >>> assert len(np_archive) == len(archive)
         >>> assert type(np_archive) == type(np.zeros(1))
         """
-        return np.array(self._instances)
+        return np.array(self._instances, dtype=Instance, copy=copy)
 
     def __eq__(self, other):
         """Compares whether to Archives are equal
@@ -96,6 +99,8 @@ class Archive:
         return len(self) == len(other) and all(a == b for a, b in zip(self, other))
 
     def __hash__(self):
+        from functools import reduce
+
         hashes = (hash(i) for i in self.instances)
         return reduce(lambda a, b: a ^ b, hashes, 0)
 
@@ -122,35 +127,17 @@ class Archive:
         return self.instances[index]
 
     def append(self, i: Instance):
-        if isinstance(i, Instance):
+        if i.s > self.threshold:
             self.instances.append(i)
-        else:
-            msg = f"Only objects of type {Instance.__class__.__name__} can be inserted into an archive"
-            raise TypeError(msg)
 
-    def __default_filter(self, instance: Instance):
-        return instance.s >= self._threshold
-
-    def extend(
-        self, iterable: Iterable[Instance], filter_fn: Optional[Callable] = None
-    ):
+    def extend(self, iterable: Iterable[Instance]):
         """Extends the current archive with all the individuals inside iterable that have
         a sparseness value greater than the archive threshold.
 
         Args:
             iterable (Iterable[Instance]): Iterable of instances to be include in the archive.
-            filter_fn (Callable, optional): A function that takes an instance and returns a boolean.
-                                             Defaults to filtering by sparseness.
         """
-        if not all(isinstance(i, Instance) for i in iterable):
-            msg = "Only objects of type Instance can be inserted into an archive"
-            raise TypeError(msg)
-
-        default_filter = self.__default_filter
-        actual_filter = filter_fn if filter_fn is not None else default_filter
-
-        for i in filter(actual_filter, iterable):
-            self.instances.append(i)
+        self.instances.extend(i for i in iterable if i.s >= self._threshold)
 
     def __format__(self, fmt_spec=""):
         variables = self
@@ -158,11 +145,19 @@ class Archive:
         components = (format(c, fmt_spec) for c in variables)
         return outer_fmt.format(", ".join(components))
 
+    def asdict(self) -> dict:
+        return {
+            "threshold": self._threshold,
+            "instances": {
+                i: instance.asdict() for i, instance in enumerate(self.instances)
+            },
+        }
+
     def to_json(self) -> str:
         """Converts the archive into a JSON object
 
         Returns:
             str: JSON str of the archive content
         """
-        data = {"threshold": self._threshold, "instances": self._instances}
-        return json.dumps(data, indent=4)
+
+        return json.dumps(self.asdict(), indent=4)

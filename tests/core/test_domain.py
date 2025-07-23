@@ -14,7 +14,7 @@ from typing import Mapping, Tuple
 
 import pytest
 
-from digneapy.core import Domain, Instance, Problem
+from digneapy import Domain, Instance, Problem
 
 
 class FixturedDomain(Domain):

@@ -17,7 +17,7 @@ from typing import Dict, Optional, Tuple
 
 import numpy as np
 
-from digneapy.core import Instance
+from digneapy._core import Instance
 
 from ._base_archive import Archive
 
@@ -64,9 +64,9 @@ class GridArchive(Archive):
         Raises:
             ValueError: ``dimensions`` and ``ranges`` are not the same length
         """
-        Archive.__init__(self, threshold=np.inf)
+        Archive.__init__(self, threshold=np.finfo(np.float32).max, dtype=dtype)
         if len(ranges) == 0 or len(dimensions) == 0:
-            raise ValueError("dimensions or ranges must have length >= 1")
+            raise ValueError("dimensions and ranges must have length >= 1")
         if len(ranges) != len(dimensions):
             raise ValueError(
                 f"len(dimensions) = {len(dimensions)} != len(ranges) = {len(ranges)} in GridArchive.__init__()"
@@ -78,7 +78,7 @@ class GridArchive(Archive):
         self._upper_bounds = np.array(ranges[1], dtype=dtype)
         self._interval = self._upper_bounds - self._lower_bounds
         self._eps = eps
-        self._cells = np.prod(self._dimensions, dtype=int)
+        self._cells = np.prod(self._dimensions, dtype=object)
         self._grid: Dict[int, Instance] = {}
 
         _bounds = []
@@ -223,7 +223,7 @@ class GridArchive(Archive):
         if isinstance(instance, Instance):
             index = self.index_of(np.asarray(instance.descriptor))
             if index not in self._grid or instance > self._grid[index]:
-                self._grid[index] = copy.deepcopy(instance)
+                self._grid[index] = instance.clone()
 
         else:
             msg = "Only objects of type Instance can be inserted into a GridArchive"
@@ -242,7 +242,18 @@ class GridArchive(Archive):
         indeces = self.index_of([i.descriptor for i in iterable])
         for idx, instance in zip(indeces, iterable, strict=True):
             if idx not in self._grid or instance.fitness > self._grid[idx].fitness:
-                self._grid[idx] = copy.deepcopy(instance)
+                self._grid[idx] = instance.clone()
+
+    def remove(self, iterable: Iterable[Instance]):
+        """Removes all the instances in iterable from the grid"""
+        if not all(isinstance(i, Instance) for i in iterable):
+            msg = "Only objects of type Instance can be removed from a CVTArchive"
+            raise TypeError(msg)
+
+        indeces_to_remove = self.index_of([i.descriptor for i in iterable])
+        for index in indeces_to_remove:
+            if index in self._grid:
+                del self._grid[index]
 
     def index_of(self, descriptors):
         """Computes the indeces of a batch of descriptors.
@@ -256,6 +267,9 @@ class GridArchive(Archive):
         Returns:
             np.ndarray:  (batch_size, ) array of integer indices representing the flattened grid coordinates.
         """
+        if len(descriptors) == 0:
+            return np.empty(0)
+
         descriptors = np.asarray(descriptors)
         if (
             descriptors.ndim == 1
@@ -281,22 +295,48 @@ class GridArchive(Archive):
 
     def _grid_to_int_index(self, grid_indices) -> np.ndarray:
         grid_indices = np.asarray(grid_indices)
-        return np.ravel_multi_index(grid_indices.T, self._dimensions).astype(int)
+        if len(self._dimensions) > 64:
+            strides = np.cumprod((1,) + tuple(self._dimensions[::-1][:-1]))[::-1]
+            # Reshape strides to (1, num_dimensions) to make it broadcastable with grid_indices
+            strides = strides.reshape(1, -1)
+            flattened_indeces = np.sum(grid_indices * strides, axis=1, dtype=object)
+        else:
+            flattened_indeces = np.ravel_multi_index(
+                grid_indices.T, self._dimensions
+            ).astype(int)
+        return flattened_indeces
 
     def int_to_grid_index(self, int_indices) -> np.ndarray:
         int_indices = np.asarray(int_indices)
-        return np.asarray(
-            np.unravel_index(
-                int_indices,
-                self._dimensions,
-            )
-        ).T.astype(int)
+        if len(self._dimensions) > 64:
+            # Manually unravel the index for dimensions > 64
+            unravel_indices = []
+            remaining_indices = int_indices.astype(object)
 
-    def to_json(self):
-        data = {
+            for dim_size in self._dimensions[::-1]:
+                unravel_indices.append(remaining_indices % dim_size)
+                remaining_indices //= dim_size
+
+            unravel_indices = np.array(unravel_indices[::-1]).T
+        else:
+            unravel_indices = np.asarray(
+                np.unravel_index(
+                    int_indices,
+                    self._dimensions,
+                )
+            ).T.astype(int)
+        return unravel_indices
+
+    def asdict(self) -> dict:
+        return {
             "dimensions": self._dimensions.tolist(),
             "lbs": self._lower_bounds.tolist(),
             "ubs": self._upper_bounds.tolist(),
-            "n_cells": self._cells.astype(int),
+            "n_cells": self._cells,
+            "instances": {
+                i: instance.asdict() for i, instance in enumerate(self._grid.values())
+            },
         }
-        return json.dumps(data, indent=4)
+
+    def to_json(self) -> str:
+        return json.dumps(self.asdict(), indent=4)

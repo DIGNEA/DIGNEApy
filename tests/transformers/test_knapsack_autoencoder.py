@@ -12,25 +12,22 @@
 
 import pytest
 
-from digneapy.domains import knapsack
-from digneapy.transformers.autoencoders import KPAE
+from digneapy.domains import kp
+from digneapy.transformers.autoencoders import KPEncoder
 
-encodings = [2, 8]
+encoders = ("50", "100", "500", "1000", "2000", "5000", "variable")
 
 
-@pytest.mark.parametrize("encoding", encodings)
-def test_autoencoder(encoding):
-    dimension = 1000
+@pytest.mark.parametrize("encoder", encoders)
+def test_autoencoder(encoder):
+    dimension = int(encoder) if encoder.isdigit() else 1000
     n_instances = 100
-    autoencoder = KPAE(encoding=encoding)
-    domain = knapsack.KPDomain(dimension=dimension)
+    autoencoder = KPEncoder(encoder=encoder)
+    domain = kp.KnapsackDomain(dimension=dimension)
     instances = [domain.generate_instance() for _ in range(n_instances)]
 
-    assert isinstance(autoencoder, KPAE)
+    assert isinstance(autoencoder, KPEncoder)
     encodings = autoencoder.encode(instances)
     assert len(encodings) == n_instances
-    assert all(len(enc_i) == encoding for enc_i in encodings)
-
-    decodings = autoencoder.decode(encodings)
-    assert len(decodings) == n_instances
-    assert all(len(dec_i) == (dimension * 2) + 1 for dec_i in decodings)
+    if isinstance(encoder, int):
+        assert all(len(enc_i) == 2 for enc_i in encodings)

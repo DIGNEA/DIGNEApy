@@ -19,9 +19,8 @@ import pandas as pd
 import pytest
 from sklearn.metrics import mean_squared_error
 
-from digneapy.transformers.base import Transformer
-from digneapy.transformers.keras_nn import KerasNN
-from digneapy.transformers.torch_nn import TorchNN
+from digneapy.transformers import Transformer
+from digneapy.transformers.neural import KerasNN, TorchNN
 
 dir, _ = os.path.split(__file__)
 
@@ -41,6 +40,7 @@ features = [
 ]
 X = pd.read_csv(os.path.join(dir, "data/eig_bpp_instances_only_features.csv"))
 X = X[features]
+rng = np.random.default_rng(seed=42)
 
 
 @pytest.fixture
@@ -119,14 +119,14 @@ def test_KerasNN_transformer_bpp():
         activations=activations,
     )
 
-    weights = np.random.random_sample(size=204)
+    weights = rng.random(size=204)
     assert transformer is not None
     assert transformer.update_weights(weights)
     with pytest.raises(Exception):
-        weights = np.random.random_sample(size=1000)
+        weights = rng.random(size=1000)
         transformer.update_weights(weights)
 
-    x = np.array([np.random.sample(size=11) for _ in range(100)])
+    x = np.array([rng.random(size=11) for _ in range(100)])
     predicted = transformer.predict(x)
     assert len(predicted) == 100
     assert all(len(x_i) == 2 for x_i in predicted)
@@ -153,11 +153,11 @@ def test_KerasNN_transformer_kp():
         activations=activations,
     )
 
-    weights = np.random.random_sample(size=118)
+    weights = rng.random(size=118)
     assert transformer is not None
     assert transformer.update_weights(weights)
     with pytest.raises(Exception):
-        weights = np.random.random_sample(size=1000)
+        weights = rng.random(size=1000)
         transformer.update_weights(weights)
 
     x = np.array([np.random.sample(size=8) for _ in range(100)])
@@ -181,14 +181,14 @@ def test_KerasNN_reduced_transformer_kp():
         activations=activations,
     )
 
-    weights = np.random.random_sample(size=46)
+    weights = rng.random(size=46)
     assert transformer is not None
     assert transformer.update_weights(weights)
     with pytest.raises(Exception):
-        weights = np.random.random_sample(size=1000)
+        weights = rng.random(size=1000)
         transformer.update_weights(weights)
 
-    x = np.array([np.random.sample(size=8) for _ in range(100)])
+    x = np.array([rng.random(size=8) for _ in range(100)])
     predicted = transformer.predict(x)
     assert len(predicted) == 100
     assert all(len(x_i) == 2 for x_i in predicted)
@@ -209,11 +209,11 @@ def test_KerasNN_autoencoder_bpp():
         activations=activations,
     )
 
-    weights = np.random.random_sample(size=291)
+    weights = rng.random(size=291)
     assert transformer is not None
     assert transformer.update_weights(weights)
     with pytest.raises(Exception):
-        weights = np.random.random_sample(size=1000)
+        weights = rng.random(size=1000)
         transformer.update_weights(weights)
 
 
@@ -256,14 +256,14 @@ def test_TorchNN_transformer_bpp():
         output_size=2,
     )
 
-    weights = np.random.random_sample(size=72)
+    weights = rng.random(size=72)
     assert transformer is not None
     assert transformer.update_weights(weights)
     with pytest.raises(Exception):
-        weights = np.random.random_sample(size=1000)
+        weights = rng.random(size=1000)
         transformer.update_weights(weights)
 
-    x = np.array([np.random.sample(size=11) for _ in range(100)])
+    x = np.array([rng.random(size=11) for _ in range(100)])
     predicted = transformer.predict(x)
     assert len(predicted) == 100
     assert all(len(x_i) == 2 for x_i in predicted)
@@ -288,14 +288,14 @@ def test_TorchNN_transformer_kp():
         shape=(4,),
     )
 
-    weights = np.random.random_sample(size=46)
+    weights = rng.random(size=46)
     assert transformer is not None
     assert transformer.update_weights(weights)
     with pytest.raises(Exception):
-        weights = np.random.random_sample(size=1000)
+        weights = rng.random(size=1000)
         transformer.update_weights(weights)
 
-    x = np.array([np.random.sample(size=8) for _ in range(100)])
+    x = np.array([rng.random(size=8) for _ in range(100)])
     predicted = transformer.predict(x)
     assert len(predicted) == 100
     assert all(len(x_i) == 2 for x_i in predicted)
@@ -314,11 +314,11 @@ def test_TorchNN_autoencoder_bpp():
         shape=(5, 2, 5),
     )
 
-    weights = np.random.random_sample(size=138)
+    weights = rng.random(size=138)
     assert transformer is not None
     assert transformer.update_weights(weights)
     with pytest.raises(Exception):
-        weights = np.random.random_sample(size=1000)
+        weights = rng.random(size=1000)
         transformer.update_weights(weights)
 
 

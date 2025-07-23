@@ -12,10 +12,10 @@
 
 from typing import Sequence, Tuple
 
+import numpy as np
 import pytest
 
-from digneapy.core import Problem
-from digneapy.core.solution import Solution
+from digneapy import Instance, Problem, Solution
 
 
 class Sample(Problem):
@@ -36,6 +36,9 @@ class Sample(Problem):
     def to_file(self, filename: str):
         return super().to_file(filename)
 
+    def to_instance(self) -> Instance:
+        return Instance(np.zeros(self.dimension))
+
 
 @pytest.fixture
 def sample_problem():
@@ -50,6 +53,9 @@ def test_problem_methods(sample_problem):
     expected_bounds = list((0, 10) for _ in range(100))
     assert sample_problem.bounds == expected_bounds
     assert all(sample_problem.get_bounds_at(i) == (0.0, 10.0) for i in range(100))
+    instance = sample_problem.to_instance()
+    assert isinstance(instance, Instance)
+    assert len(instance) == sample_problem.dimension
 
     with pytest.raises(NotImplementedError):
         sample_problem.create_solution()

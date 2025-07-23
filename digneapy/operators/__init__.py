@@ -10,11 +10,26 @@
 @Desc    :   None
 """
 
-from digneapy.operators import crossover, mutation, replacement, selection
+from ._crossover import Crossover, one_point_crossover, uniform_crossover
+from ._mutation import Mutation, uniform_one_mutation
+from ._replacement import (
+    Replacement,
+    elitist_replacement,
+    first_improve_replacement,
+    generational_replacement,
+)
+from ._selection import Selection, binary_tournament_selection
 
 __all__ = [
-    "crossover",
-    "mutation",
-    "selection",
-    "replacement",
+    "Crossover",
+    "Mutation",
+    "Selection",
+    "Replacement",
+    "one_point_crossover",
+    "uniform_crossover",
+    "uniform_one_mutation",
+    "elitist_replacement",
+    "first_improve_replacement",
+    "generational_replacement",
+    "binary_tournament_selection",
 ]

@@ -10,6 +10,8 @@
 @Desc    :   None
 """
 
-from ._timers import clock
+from ._timers import clock, clock_to_file
+from .save_data import save_results_to_files
+from .serializer import to_json
 
-__all__ = ["clock"]
+__all__ = ["clock", "clock_to_file", "save_results_to_files", "to_json"]

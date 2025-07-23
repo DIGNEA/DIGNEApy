@@ -30,3 +30,24 @@ def clock(func):
         return result
 
     return clocked
+
+
+def clock_to_file(func, filename: str = "clocked_fun.txt"):
+    def clocked(*args):
+        start = time.perf_counter()
+        result = func(*args)
+        elapsed = time.perf_counter() - start
+        name = func.__name__
+        args_str = ",  ".join(repr(arg) for arg in args)
+        result_str = (
+            "\n" + "\n - ".join(repr(r) for r in result)
+            if isinstance(result, Iterable)
+            else repr(result)
+        )
+        runtime = f"[{elapsed:0.8f}s] {name}({args_str}) -> {result_str}"
+        with open(filename, "w") as f:
+            f.write(runtime)
+
+        return result
+
+    return clocked

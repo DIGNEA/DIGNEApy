@@ -10,14 +10,24 @@
 @Desc    :   None
 """
 
-import os
+from ._base import SupportsTransform, Transformer
+from .pca import PCAEncoder
 
-from digneapy.transformers.autoencoders import KPAE, KPAE50
-from digneapy.transformers.base import SupportsTransform, Transformer
-from digneapy.transformers.keras_nn import KerasNN
-from digneapy.transformers.torch_nn import TorchNN
-from digneapy.transformers.tuner import NNTuner
+__transformer_submodules = {"neural", "autoencoders", "tuner", "pca"}
 
-os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
+__all__ = ["Transformer", "SupportsTransform", "PCAEncoder"]
 
-__all__ = ["Transformer", "SupportsTransform", "KerasNN", "TorchNN", "NNTuner", "KPAE", "KPAE50"]
+
+# Lazy import function
+def __getattr__(attr_name):
+    import importlib
+    import sys
+
+    if attr_name in __transformer_submodules:
+        full_name = f"digneapy.transformers.{attr_name}"
+        submodule = importlib.import_module(full_name)
+        sys.modules[full_name] = submodule
+        return submodule
+
+    else:
+        raise ImportError(f"module digneapy.transformers has no attribute {attr_name}")

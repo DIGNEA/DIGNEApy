@@ -15,8 +15,8 @@ import copy
 import numpy as np
 import pytest
 
-from digneapy.core import Instance, Solution
-from digneapy.operators import mutation
+from digneapy import Instance, Solution
+from digneapy.operators import uniform_one_mutation
 
 
 @pytest.fixture
@@ -27,8 +27,9 @@ def default_instance():
 @pytest.fixture
 def initialised_instances():
     N = 100
-    chr_1 = np.random.randint(low=0, high=100, size=N)
-    chr_2 = np.random.randint(low=0, high=100, size=N)
+    rng = np.random.default_rng(42)
+    chr_1 = rng.integers(low=0, high=100, size=N)
+    chr_2 = rng.integers(low=0, high=100, size=N)
     instance_1 = Instance(chr_1)
     instance_2 = Instance(chr_2)
     return (instance_1, instance_2)
@@ -42,8 +43,9 @@ def default_solution():
 @pytest.fixture
 def initialised_solutions():
     N = 100
-    chr_1 = np.random.randint(low=0, high=100, size=N)
-    chr_2 = np.random.randint(low=0, high=100, size=N)
+    rng = np.random.default_rng(42)
+    chr_1 = rng.integers(low=0, high=100, size=N)
+    chr_2 = rng.integers(low=0, high=100, size=N)
     solution_1 = Solution(chromosome=chr_1)
     solution_2 = Solution(chromosome=chr_2)
     return (solution_1, solution_2)
@@ -54,7 +56,7 @@ def test_uniform_one_mutation_instances(initialised_instances):
     instance, _ = initialised_instances
     original = copy.deepcopy(instance)
 
-    new_instance = mutation.uniform_one_mutation(instance, bounds)
+    new_instance = uniform_one_mutation(instance, bounds)
     assert new_instance != original
     assert sum(1 for i, j in zip(original, new_instance) if i != j) == 1
 
@@ -64,18 +66,13 @@ def test_uniform_one_mutation_solutions(initialised_solutions):
     solution, _ = initialised_solutions
     original = copy.deepcopy(solution)
 
-    new_solution = mutation.uniform_one_mutation(solution, bounds)
+    new_solution = uniform_one_mutation(solution, bounds)
     assert new_solution != original
     assert sum(1 for i, j in zip(original, new_solution) if i != j) == 1
 
 
-def test_uniform_one_mutation_raises():
-    bounds = [(0, 100) for _ in range(100)]
-    with pytest.raises(Exception):
-        mutation.uniform_one_mutation(list(), bounds)
-
-
-def test_uniform_one_mutation_raises_bounds():
-    bounds = [(0, 1, 2) for _ in range(100)]
-    with pytest.raises(Exception):
-        mutation.uniform_one_mutation(list(range(100)), bounds)
+def test_uniform_one_raises(initialised_solutions):
+    bounds = [(0, 100) for _ in range(len(initialised_solutions[0]) // 2)]
+    solution, _ = initialised_solutions
+    with pytest.raises(ValueError):
+        _ = uniform_one_mutation(solution, bounds=bounds)

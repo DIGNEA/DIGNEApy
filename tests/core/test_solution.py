@@ -15,22 +15,23 @@ import copy
 import numpy as np
 import pytest
 
-from digneapy.core import Solution
+from digneapy import Solution
 
 
 @pytest.fixture
 def default_solution():
+    rng = np.random.default_rng(42)
     return Solution(
-        chromosome=np.random.randint(low=0, high=100, size=100),
+        chromosome=rng.integers(low=0, high=100, size=100),
         objectives=(
-            np.random.uniform(low=0, high=10),
-            np.random.uniform(low=0, high=10),
+            rng.uniform(low=0, high=10),
+            rng.uniform(low=0, high=10),
         ),
         constraints=(
-            np.random.uniform(low=0, high=10),
-            np.random.uniform(low=0, high=10),
+            rng.uniform(low=0, high=10),
+            rng.uniform(low=0, high=10),
         ),
-        fitness=np.random.random(),
+        fitness=rng.random(),
     )
 
 
@@ -66,7 +67,7 @@ def test_default_solution_attrs(default_solution):
     # Str comparison
     assert (
         other_solution.__str__()
-        == "Solution(dim=200,f=100.0,objs=(1.0, 1.0),const=(0.0, 0.0))"
+        == "Solution(dim=200,f=100.0,objs=[1. 1.],const=[0. 0.])"
     )
     # Equal comparison
     assert default_solution.__eq__(list()) == NotImplemented

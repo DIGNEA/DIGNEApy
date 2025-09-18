@@ -150,16 +150,16 @@ class Tuner(RNG):
         dimension: int,
         ranges: Tuple[float, float],
         lambda_: int = 100,
-        generations: int = 10,
+        evaluations: int = 10,
         seed: int = 42,
-        workers: int = 4,
+        workers: int = 1,
     ):
         self._dimension = dimension
         self._bounds = Bounds(
             [ranges[0]] * self._dimension, [ranges[1]] * self._dimension
         )
         self._pop_size = lambda_
-        self._max_generations = generations
+        self._max_evals = evaluations
         self._seed = seed
         self.workers = workers
         self.initialize_rng(seed=seed)
@@ -168,7 +168,7 @@ class Tuner(RNG):
         print(
             f"""Starting the tunning process with:
                 - Pop size: {self._pop_size} individuals 
-                - Evaluations: {self._max_generations * self._pop_size}
+                - Evaluations: {self._max_evals}
                 - Workers: {self.workers}\n"""
         )
         solutions = crfmnes.minimize(
@@ -176,7 +176,8 @@ class Tuner(RNG):
             x0=self._rng.uniform(
                 self._bounds.lb, self._bounds.ub, size=self._dimension
             ),
-            max_evaluations=(self._max_generations * self._pop_size),
+            max_evaluations=self._max_evals,
+            popsize=self._pop_size,
             bounds=self._bounds,
             rg=self._rng,
             workers=self.workers,

@@ -14,51 +14,47 @@ import argparse
 import multiprocessing as mp
 
 import numpy as np
-
-from digneapy import NS, SupportsSolve
-from digneapy.archives import Archive
-from digneapy.domains import KnapsackDomain
-from digneapy.generators import EAGenerator
-from digneapy.operators import generational_replacement
-from digneapy.solvers import default_kp, map_kp, miw_kp, mpw_kp
+import joblib
+import numpy.linalg as nplinalg
+import scipy.stats as spstat
 from digneapy.transformers.neural import KerasNN
 from digneapy.transformers.tuner import Tuner
 
+BINS = 20
+LIMITS = (-10_000, 10_000)
+GRID_X = np.linspace(LIMITS[0], LIMITS[1], BINS)
+GRID_Y = np.linspace(LIMITS[0], LIMITS[1], BINS)
+
+
+def JSD(P, Q):
+    P = P / nplinalg.norm(P, ord=1)
+    Q = Q / nplinalg.norm(Q, ord=1)
+    M = (P + Q) * 0.5
+    return (spstat.entropy(P, M) + spstat.entropy(Q, M)) * 0.5
+
+
+def compute_uniform_dist_score(x0, x1):
+    hist, _, _ = np.histogram2d(x0, x1, bins=[GRID_X, GRID_Y])
+    hist1D = hist.flatten()
+    uni_val = 1.0 / hist1D.size
+    uni_hist = np.full(hist1D.shape, uni_val)
+    return 1.0 - JSD(uni_hist, hist1D)
+
 
 class Evaluation(object):
-    def __init__(
-        self,
-        transformer,
-        domain,
-        portfolios: list[list[SupportsSolve]],
-    ):
+    def __init__(self, transformer):
         self._transformer = transformer
-        self._domain = domain
-        self._portfolios = portfolios
-
+        self._scaler = joblib.load("scaler_for_autoencoder_N_50.pkl")
+        self._dataset = np.load("knapsack_qd_N_50_all_descriptors.npy")
+        self._dataset = np.stack(self._scaler.transform(self._dataset))
+        print(self._dataset)
+        input()
     def __call__(self, X):
         self._transformer.update_weights(X)
-        results = np.zeros(4)
-        for i, portfolio in enumerate(self._portfolios):
-            eig = EAGenerator(
-                pop_size=128,
-                generations=1000,
-                domain=self._domain,
-                portfolio=portfolio,
-                novelty_approach=NS(Archive(threshold=7.095008759640369), k=15),
-                solution_set=Archive(threshold=3.5748959942854674),
-                repetitions=1,
-                descriptor_strategy="instance",
-                replacement=generational_replacement,
-                transformer=self._transformer,
-            )
-            solutions = eig()
-            results[i] = (
-                solutions.metrics["s_qd_score"]
-                if solutions.metrics is not None
-                else 0.0
-            )
-        return np.mean(results)
+        y_pred = self._transformer._model.predict(
+            self._dataset, batch_size=1024, verbose=2
+        )
+        return -compute_uniform_dist_score(y_pred[:, 0], y_pred[:, 1])
 
 
 def main():
@@ -81,21 +77,16 @@ def main():
         input_shape=[101],
         shape=(50, 2),
         activations=("relu", None),
-        scale=True,
     )
 
-    fitness = Evaluation(
-        transformer=nn,
-        domain=KnapsackDomain(dimension=50),
-        portfolios=[
-            [default_kp, map_kp, miw_kp, mpw_kp],
-            [map_kp, default_kp, miw_kp, mpw_kp],
-            [miw_kp, default_kp, map_kp, mpw_kp],
-            [mpw_kp, default_kp, map_kp, miw_kp],
-        ],
-    )
+    fitness = Evaluation(transformer=nn)
     cma_es = Tuner(
-        dimension=dimension, ranges=(-1.0, 1.0), generations=512, lambda_=64, seed=seed
+        dimension=dimension,
+        ranges=(-1.0, 1.0),
+        generations=100,
+        lambda_=32,
+        seed=seed,
+        workers=4,
     )
 
     solution = cma_es(eval_fn=fitness)

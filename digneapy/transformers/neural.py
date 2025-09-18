@@ -23,7 +23,6 @@ import keras
 import numpy as np
 import numpy.typing as npt
 import torch
-from sklearn.preprocessing import StandardScaler
 
 from ._base import Transformer
 
@@ -35,8 +34,8 @@ class KerasNN(Transformer):
         input_shape: Sequence[int],
         shape: Sequence[int],
         activations: Sequence[Optional[str]],
-        scale: bool = True,
-        custom_loss: Optional[Callable] = None,
+        evaluation_metric: Optional[Callable] = None,
+        loss_fn: Optional[Callable] = None,
         optimizer: Optional[keras.Optimizer] = keras.optimizers.Adam(),
     ):
         """Neural Network used to transform a space into another. This class uses a Keras backend.
@@ -45,8 +44,6 @@ class KerasNN(Transformer):
             name (str): Name of the model to be saved with. Expected a .keras extension.
             shape (Tuple[int]): Tuple with the number of cells per layer.
             activations (Tuple[str]): Activation functions for each layer.
-            scale (bool, optional): Includes scaler step before prediction. Defaults to True.
-
         Raises:
             ValueError: Raises if any attribute is not valid.
         """
@@ -61,15 +58,20 @@ class KerasNN(Transformer):
         self.input_shape = input_shape
         self._shape = shape
         self._activations = activations
-        self._custom_loss = custom_loss
+        self._eval_metric = evaluation_metric
+        self._loss_fn = loss_fn
         self._optimizer = optimizer
-        self._scaler = StandardScaler() if scale else None
 
         self._model = keras.models.Sequential()
         self._model.add(keras.layers.InputLayer(shape=input_shape))
         for d, act in zip(shape, activations):
             self._model.add(keras.layers.Dense(d, activation=act))
-        self._model.compile(loss=custom_loss, optimizer=optimizer)
+        self._model.compile(
+            loss=self._loss_fn, optimizer=optimizer, metrics=[self._eval_metric]
+        )
+        self._expected_shapes = [v.shape for v in self._model.trainable_variables]
+        self._expected_sizes = [np.prod(s) for s in self._expected_shapes]
+        self._size = np.sum(self._expected_sizes)
 
     def __str__(self) -> str:
         tokens = []
@@ -86,33 +88,36 @@ class KerasNN(Transformer):
             self._model.save(self._name)
 
     def update_weights(self, weights: Sequence[float]):
-        expected = np.sum([np.prod(v.shape) for v in self._model.trainable_variables])
-        if len(weights) != expected:
-            msg = f"Error in the amount of weights in NN.update_weigths. Expected {expected} and got {len(weights)}"
+        if len(weights) != self._size:
+            msg = f"Error in the amount of weights in NN.update_weigths. Expected {self._size} and got {len(weights)}"
             raise ValueError(msg)
-        start = 0
-        new_weights = []
-        for v in self._model.trainable_variables:
-            stop = start + np.prod(v.shape)
-            new_weights.append(np.reshape(weights[start:stop], v.shape))
-            start = stop
+        
+        new_weights = [None] * len(self._expected_shapes)
+        idx = 0
+        i = 0
+        for shape, size in zip(self._expected_shapes, self._expected_sizes):
+            new_weights[i] = np.reshape(weights[idx:idx+size], shape)
+            idx += size
+            i += 1
 
-        reshaped_weights = np.array(new_weights, dtype=object)
-        self._model.set_weights(reshaped_weights)
+        self._model.set_weights(new_weights)
         return True
 
-    def predict(self, x: npt.NDArray) -> np.ndarray:
-        if len(x) == 0:
+    def predict(self, x: npt.NDArray, batch_size: int = 1024) -> np.ndarray:
+        if x is None or len(x) == 0:
             msg = "x cannot be None in KerasNN predict"
             raise RuntimeError(msg)
-        x = np.vstack(x)
-        if self._scaler is not None:
-            x = self._scaler.fit_transform(x)
+        if isinstance(x, list):
+            x = np.vstack(x)
+        elif x.ndim == 1:
+            x.reshape(1, -1)
 
-        return self._model.predict(x, verbose=0)
+        return self._model.predict(x, batch_size=batch_size, verbose=2)
 
     def __call__(self, x: npt.NDArray) -> np.ndarray:
         return self.predict(x)
+    
+    
 
 
 class TorchNN(Transformer, torch.nn.Module):
@@ -122,7 +127,6 @@ class TorchNN(Transformer, torch.nn.Module):
         input_size: int,
         shape: Sequence[int],
         output_size: int,
-        scale: bool = True,
     ):
         """Neural Network used to transform a space into another. This class uses a PyTorch backend.
 
@@ -131,7 +135,6 @@ class TorchNN(Transformer, torch.nn.Module):
             input_size (int): Number of neurons in the input layer.
             shape (Tuple[int]): Tuple with the number of cells per layer.
             output_size (int): Number of neurons in the output layer.
-            scale (bool, optional): Includes scaler step before prediction. Defaults to True.
         Raises:
             ValueError: Raises if any attribute is not valid.
         """
@@ -141,7 +144,6 @@ class TorchNN(Transformer, torch.nn.Module):
 
         Transformer.__init__(self, name)
         torch.nn.Module.__init__(self)
-        self._scaler = StandardScaler() if scale else None
         self._model = torch.nn.ModuleList([torch.nn.Linear(input_size, shape[0])])
         self._model.append(torch.nn.ReLU())
         for i in range(len(shape[1:-1])):
@@ -207,9 +209,6 @@ class TorchNN(Transformer, torch.nn.Module):
         if len(x) == 0:
             msg = "x cannot be None in TorchNN forward"
             raise RuntimeError(msg)
-        if self._scaler is not None:
-            x = self._scaler.fit_transform(x)
-
         x = torch.tensor(x, dtype=torch.float32)
         y = x
         for layer in self._model:

@@ -108,3 +108,9 @@ gecco_env/
 uv.lock
 scripts/
 site/
+*.npy
+*.keras
+*.pkl
+*.history
+*.pkl
+*.h5

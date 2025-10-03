@@ -21,7 +21,7 @@ from digneapy.domains import TSPDomain
 from digneapy.generators import EAGenerator
 from digneapy.operators import generational_replacement
 from digneapy.solvers import greedy, nneighbour, two_opt
-from digneapy.transformers.neural import KerasNN
+from digneapy.transformers.neural import NNEncoder
 from digneapy.transformers.tuner import Tuner
 
 
@@ -78,7 +78,7 @@ def main():
     mp.set_start_method("spawn", force=True)
 
     dimension = 72
-    nn = KerasNN(
+    nn = NNEncoder(
         name="NN_transformer_TSP_domain.keras",
         input_shape=[11],
         shape=(5, 2),

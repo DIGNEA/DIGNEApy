@@ -9,11 +9,12 @@
 @License :   (C)Copyright 2023, Alejandro Marrero
 @Desc    :   None
 """
+
 import torch
 import numpy as np
 import numpy.linalg as nplinalg
 import scipy.stats as spstat
-from digneapy.transformers.neural import KerasNN
+from digneapy.transformers.neural import NNEncoder
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 import joblib
@@ -64,6 +65,7 @@ def repulsion_loss(y_true, y_pred, eps=1e-8):
     loss = inv_dist.sum() / (len(z) * (len(z) - 1))
     return loss
 
+
 def spread_loss(y_true, y_pred):
     return -torch.var(y_pred, dim=0).mean()
 
@@ -71,26 +73,27 @@ def spread_loss(y_true, y_pred):
 def uniformity_loss(y_true, y_pred):
     return spread_loss(y_true, y_pred) + repulsion_loss(y_true, y_pred)
 
-if __name__ == '__main__':
-    nn = KerasNN(
+
+if __name__ == "__main__":
+    nn = NNEncoder(
         name="NN_transformer_knapsack_domain_N_50.keras",
         input_shape=[101],
         shape=(50, 2),
         activations=("relu", None),
         evaluation_metric=uniform_distribution,
-        loss_fn=uniformity_loss
+        loss_fn=uniformity_loss,
     )
     X = np.load("knapsack_qd_N_50_all_descriptors.npy")
     X_train, X_test = train_test_split(X, train_size=0.6, random_state=42)
     X_train, X_val = train_test_split(X_train, train_size=0.5, random_state=13)
-    y_train = X_train[:,2:3]
-    y_val = X_val[:,2:3]
+    y_train = X_train[:, 2:3]
+    y_val = X_val[:, 2:3]
     scaler = StandardScaler()
 
     X_train_scaled = scaler.fit_transform(X_train)
     X_test_scaled = scaler.transform(X_test)
     X_val_scaled = scaler.transform(X_val)
-    joblib.dump(scaler, "scaler_for_autoencoder_N_50.pkl")    
+    joblib.dump(scaler, "scaler_for_autoencoder_N_50.pkl")
     nn._model.fit(
         X_train_scaled,
         y_train,

@@ -21,7 +21,7 @@ from digneapy.generators import EAGenerator
 from digneapy.operators import first_improve_replacement
 from digneapy.solvers import default_kp, map_kp, miw_kp, mpw_kp
 from digneapy.transformers.neural import TorchNN
-from digneapy.transformers.tuner import NNEATuner
+from digneapy.transformers.tuner import DeapTuner
 
 
 def save_best_nn_results(filename, best_nn):
@@ -135,7 +135,7 @@ def main():
     # NSEval is the evaluation/fitness function used to measure the NNs in CMA-Es
     ns_eval = NSEval(features_info, resolution=R)
     # Custom CMA-ES derived from DEAP to evolve NNs weights
-    cma_es = NNEATuner(
+    cma_es = DeapTuner(
         dimension=dimension,
         direction=Direction.MAXIMISE,
         lambda_=64,

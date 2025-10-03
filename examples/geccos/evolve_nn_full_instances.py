@@ -17,8 +17,8 @@ from digneapy.domains import KnapsackDomain
 from digneapy.generators import EAGenerator
 from digneapy.operators import generational_replacement
 from digneapy.solvers import default_kp, map_kp, miw_kp
-from digneapy.transformers.neural import KerasNN
-from digneapy.transformers.tuner import NNEATuner
+from digneapy.transformers.neural import NNEncoder
+from digneapy.transformers.tuner import DeapTuner
 
 
 def save_best_nn_results(filename, best_nn):
@@ -42,7 +42,7 @@ class EvalNN:
 
         self.kp_domain = KnapsackDomain(dimension=50, capacity_approach="percentage")
 
-    def __call__(self, transformer: KerasNN, filename: str = ""):
+    def __call__(self, transformer: NNEncoder, filename: str = ""):
         """This method runs the Novelty Search using a KerasNN as a transformer
         for searching novelty. It generates KP instances for each of the solvers in
         the portfolio [Default, MaP, MiW].
@@ -86,7 +86,7 @@ class EvalNN:
 def main():
     R = 20  # Resolution/Number of bins for each of the 8 features
     dimension = 15_504  # Number of weights of the NN for this architecture
-    nn = KerasNN(
+    nn = NNEncoder(
         name="NN_transformer_for_N_50_to_2D_kp_domain.keras",
         input_shape=(101,),
         shape=(50, 2),
@@ -99,7 +99,7 @@ def main():
     # EvalNN is the evaluation/fitness function used to measure the NNs in CMA-Es
     ns_eval = EvalNN(ranges, resolution=R)
     # Custom CMA-ES derived from DEAP to evolve NNs weights
-    cma_es = NNEATuner(
+    cma_es = DeapTuner(
         dimension=dimension,
         direction=Direction.MAXIMISE,
         lambda_=32,

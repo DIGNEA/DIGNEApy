@@ -20,7 +20,7 @@ import pytest
 from sklearn.metrics import mean_squared_error
 
 from digneapy.transformers import Transformer
-from digneapy.transformers.neural import KerasNN, TorchNN
+from digneapy.transformers.neural import NNEncoder, TorchNN
 
 dir, _ = os.path.split(__file__)
 
@@ -74,7 +74,7 @@ def test_KerasNN_transformer_raises():
     shapes = (11, 5, 2)
     activations = ("relu", "relu", None)
     expected_filename = "nn_transformer_bpp"
-    transformer = KerasNN(
+    transformer = NNEncoder(
         expected_filename,
         input_shape=[11],
         shape=shapes,
@@ -88,7 +88,7 @@ def test_KerasNN_transformer_raises():
     with pytest.raises(Exception):
         # Raises exception because
         # len(activations) != len(shape)
-        transformer = KerasNN(
+        transformer = NNEncoder(
             expected_filename,
             input_shape=[11],
             shape=shapes,
@@ -112,7 +112,7 @@ def test_KerasNN_transformer_bpp():
     shapes = (11, 5, 2)
     activations = ("relu", "relu", None)
     expected_filename = "nn_transformer_bpp.keras"
-    transformer = KerasNN(
+    transformer = NNEncoder(
         expected_filename,
         input_shape=[11],
         shape=shapes,
@@ -146,7 +146,7 @@ def test_KerasNN_transformer_kp():
     shapes = (8, 4, 2)
     activations = ("relu", "relu", None)
     expected_filename = "nn_transformer_kp.keras"
-    transformer = KerasNN(
+    transformer = NNEncoder(
         expected_filename,
         input_shape=[8],
         shape=shapes,
@@ -174,7 +174,7 @@ def test_KerasNN_reduced_transformer_kp():
     shapes = (4, 2)
     activations = ("relu", None)
     expected_filename = "nn_transformer_kp.keras"
-    transformer = KerasNN(
+    transformer = NNEncoder(
         expected_filename,
         input_shape=[8],
         shape=shapes,
@@ -202,7 +202,7 @@ def test_KerasNN_autoencoder_bpp():
     shapes = (11, 5, 2, 2, 5, 11)
     activations = ("relu", "relu", None, "relu", "relu", None)
     expected_filename = "nn_autoencoder_bpp.keras"
-    transformer = KerasNN(
+    transformer = NNEncoder(
         expected_filename,
         input_shape=[11],
         shape=shapes,
@@ -322,7 +322,7 @@ def test_TorchNN_autoencoder_bpp():
         transformer.update_weights(weights)
 
 
-def experimental_work_test(transformer: KerasNN, *args):
+def experimental_work_test(transformer: NNEncoder, *args):
     predicted = transformer.predict(X)
     loss = mean_squared_error(X, predicted)
     return loss

@@ -21,7 +21,7 @@ import numpy as np
 from digneapy.domains import BPPDomain
 from digneapy.generators import DEAGenerator
 from digneapy.solvers import best_fit, first_fit, next_fit, worst_fit
-from digneapy.transformers.neural import KerasNN
+from digneapy.transformers.neural import NNEncoder
 from digneapy.utils import save_results_to_files
 
 
@@ -33,7 +33,7 @@ def generate_instances(
     k: int,
     verbose,
 ):
-    nn = KerasNN(
+    nn = NNEncoder(
         name="NN_transformer_BPP.keras",
         input_shape=[10],
         shape=(5, 2),

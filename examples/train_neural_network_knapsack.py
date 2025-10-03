@@ -17,7 +17,7 @@ import numpy as np
 import joblib
 import numpy.linalg as nplinalg
 import scipy.stats as spstat
-from digneapy.transformers.neural import KerasNN
+from digneapy.transformers.neural import NNEncoder
 from digneapy.transformers.tuner import Tuner
 
 BINS = 20
@@ -49,6 +49,7 @@ class Evaluation(object):
         self._dataset = np.stack(self._scaler.transform(self._dataset))
         print(self._dataset)
         input()
+
     def __call__(self, X):
         self._transformer.update_weights(X)
         y_pred = self._transformer._model.predict(
@@ -72,7 +73,7 @@ def main():
     mp.set_start_method("spawn", force=True)
 
     dimension = 5202
-    nn = KerasNN(
+    nn = NNEncoder(
         name="NN_transformer_knapsack_domain.keras",
         input_shape=[101],
         shape=(50, 2),

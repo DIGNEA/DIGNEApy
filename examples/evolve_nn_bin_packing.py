@@ -21,7 +21,7 @@ from digneapy.domains import BPPDomain
 from digneapy.generators import EAGenerator
 from digneapy.operators import generational_replacement
 from digneapy.solvers import best_fit, first_fit, next_fit, worst_fit
-from digneapy.transformers.neural import KerasNN
+from digneapy.transformers.neural import NNEncoder
 from digneapy.transformers.tuner import Tuner
 
 
@@ -75,7 +75,7 @@ def main():
     seed = args.seed
     mp.set_start_method("spawn", force=True)
     dimension = 67
-    nn = KerasNN(
+    nn = NNEncoder(
         name="NN_transformer_bin_packing_domain.keras",
         input_shape=[10],
         shape=(5, 2),

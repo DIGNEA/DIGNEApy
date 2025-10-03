@@ -21,8 +21,8 @@ from digneapy.domains import KnapsackDomain
 from digneapy.generators import EAGenerator
 from digneapy.operators import generational_replacement
 from digneapy.solvers import default_kp, map_kp, miw_kp
-from digneapy.transformers.neural import KerasNN
-from digneapy.transformers.tuner import NNEATuner
+from digneapy.transformers.neural import NNEncoder
+from digneapy.transformers.tuner import DeapTuner
 
 
 def save_best_nn_results(filename, best_nn):
@@ -53,7 +53,7 @@ class NSEval:
         self.kp_domain = KnapsackDomain(dimension=50, capacity_approach="percentage")
         self.portfolio = deque([default_kp, map_kp, miw_kp])
 
-    def __call__(self, transformer: KerasNN):
+    def __call__(self, transformer: NNEncoder):
         """This method runs the Novelty Search using a KerasNN as a transformer
         for searching novelty. It generates KP instances for each of the solvers in
         the portfolio [Default, MaP, MiW, MPW] and calculates how many bins of the
@@ -94,7 +94,7 @@ class NSEval:
 def main():
     R = 20  # Resolution/Number of bins for each of the 8 features
     dimension = 118  # Number of weights of the NN for KP
-    nn = KerasNN(
+    nn = NNEncoder(
         name="NN_transformer_kp_domain.keras",
         input_shape=(8,),
         shape=(
@@ -118,7 +118,7 @@ def main():
     # NSEval is the evaluation/fitness function used to measure the NNs in CMA-Es
     ns_eval = NSEval(features_info, resolution=R)
     # Custom CMA-ES derived from DEAP to evolve NNs weights
-    cma_es = NNEATuner(
+    cma_es = DeapTuner(
         dimension=dimension,
         direction=Direction.MAXIMISE,
         lambda_=64,

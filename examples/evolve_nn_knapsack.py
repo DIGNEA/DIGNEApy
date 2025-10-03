@@ -21,7 +21,7 @@ from digneapy.domains import KnapsackDomain
 from digneapy.generators import EAGenerator
 from digneapy.operators import generational_replacement
 from digneapy.solvers import default_kp, map_kp, miw_kp, mpw_kp
-from digneapy.transformers.neural import KerasNN
+from digneapy.transformers.neural import NNEncoder
 from digneapy.transformers.tuner import Tuner
 
 
@@ -76,7 +76,7 @@ def main():
     mp.set_start_method("spawn", force=True)
 
     dimension = 5202
-    nn = KerasNN(
+    nn = NNEncoder(
         name="NN_transformer_knapsack_domain.keras",
         input_shape=[101],
         shape=(50, 2),

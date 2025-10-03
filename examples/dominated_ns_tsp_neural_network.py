@@ -22,7 +22,7 @@ import numpy as np
 from digneapy.domains import TSPDomain
 from digneapy.generators import DEAGenerator
 from digneapy.solvers import greedy, nneighbour, two_opt
-from digneapy.transformers.neural import KerasNN
+from digneapy.transformers.neural import NNEncoder
 from digneapy.utils import save_results_to_files
 
 
@@ -34,7 +34,7 @@ def generate_instances(
     k: int,
     verbose,
 ):
-    nn = KerasNN(
+    nn = NNEncoder(
         name="NN_transformer_TSP.keras",
         input_shape=[11],
         shape=(5, 2),

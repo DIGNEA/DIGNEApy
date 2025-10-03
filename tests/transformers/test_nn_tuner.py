@@ -19,8 +19,8 @@ import pytest
 from sklearn.metrics import mean_squared_error
 
 from digneapy import Direction
-from digneapy.transformers.neural import KerasNN
-from digneapy.transformers.tuner import NNEATuner
+from digneapy.transformers.neural import NNEncoder
+from digneapy.transformers.tuner import DeapTuner
 
 dir, _ = os.path.split(__file__)
 
@@ -42,7 +42,7 @@ X = pd.read_csv(os.path.join(dir, "data/eig_bpp_instances_only_features.csv"))
 X = X[features].values
 
 
-def experimental_work_test(transformer: KerasNN, *args):
+def experimental_work_test(transformer: NNEncoder, *args):
     predicted = transformer.predict(X)
     loss = mean_squared_error(X, predicted)
     return loss
@@ -53,13 +53,13 @@ def test_hyper_cmaes_bpp():
     shapes = (11, 5, 2, 2, 5, 11)
     activations = ("relu", "relu", None, "relu", "relu", None)
     expected_filename = "nn_autoencoder_bpp.keras"
-    transformer = KerasNN(
+    transformer = NNEncoder(
         expected_filename,
         input_shape=[11],
         shape=shapes,
         activations=activations,
     )
-    cma_es = NNEATuner(
+    cma_es = DeapTuner(
         dimension=dimension,
         direction=Direction.MAXIMISE,
         transformer=transformer,
@@ -78,13 +78,13 @@ def test_hyper_cmaes_bpp_maximises():
     shapes = (11, 5, 2, 2, 5, 11)
     activations = ("relu", "relu", None, "relu", "relu", None)
     expected_filename = "nn_autoencoder_bpp.keras"
-    transformer = KerasNN(
+    transformer = NNEncoder(
         expected_filename,
         input_shape=[11],
         shape=shapes,
         activations=activations,
     )
-    cma_es = NNEATuner(
+    cma_es = DeapTuner(
         dimension=dimension,
         direction=Direction.MINIMISE,
         transformer=transformer,
@@ -103,7 +103,7 @@ def test_hyper_cmaes_raises():
     shapes = (11, 5, 2, 2, 5, 11)
     activations = ("relu", "relu", None, "relu", "relu", None)
     expected_filename = "nn_autoencoder_bpp.keras"
-    transformer = KerasNN(
+    transformer = NNEncoder(
         expected_filename,
         input_shape=[11],
         shape=shapes,
@@ -112,7 +112,7 @@ def test_hyper_cmaes_raises():
 
     # Raises because we do not specify any valid direction
     with pytest.raises(ValueError):
-        _ = NNEATuner(
+        _ = DeapTuner(
             dimension=dimension,
             generations=5,
             eval_fn=experimental_work_test,
@@ -122,7 +122,7 @@ def test_hyper_cmaes_raises():
 
     # Raises because we do not specify any transformer
     with pytest.raises(ValueError):
-        _ = NNEATuner(
+        _ = DeapTuner(
             transformer=None,
             dimension=dimension,
             direction=Direction.MAXIMISE,
@@ -132,7 +132,7 @@ def test_hyper_cmaes_raises():
 
     # Raises because we do not specify any eval_fn
     with pytest.raises(ValueError):
-        _ = NNEATuner(
+        _ = DeapTuner(
             dimension=dimension,
             direction=Direction.MAXIMISE,
             generations=5,
@@ -142,7 +142,7 @@ def test_hyper_cmaes_raises():
 
     # Raises because we n_jobs < 1
     with pytest.raises(ValueError):
-        _ = NNEATuner(
+        _ = DeapTuner(
             dimension=dimension,
             direction=Direction.MAXIMISE,
             generations=5,
@@ -151,7 +151,7 @@ def test_hyper_cmaes_raises():
             n_jobs=-1,
         )
 
-    cma_es = NNEATuner(
+    cma_es = DeapTuner(
         dimension=dimension,
         direction=Direction.MAXIMISE,
         generations=5,

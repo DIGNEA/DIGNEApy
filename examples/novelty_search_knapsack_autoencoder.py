@@ -20,14 +20,13 @@ from digneapy.domains import KnapsackDomain
 from digneapy.generators import EAGenerator
 from digneapy.operators import generational_replacement
 from digneapy.solvers import default_kp, map_kp, miw_kp, mpw_kp
-from digneapy.transformers.autoencoders import KPEncoder
+from digneapy.transformers.autoencoders import KPAutoencoder
 from digneapy.utils import save_results_to_files
 
 
 def generate_instances(
     portfolio,
     dimension: int,
-    encoder: str,
     pop_size: int,
     generations: int,
     archive_threshold: float,
@@ -36,7 +35,7 @@ def generate_instances(
     verbose,
 ):
     domain = KnapsackDomain(dimension=dimension, capacity_approach="percentage")
-    autoencoder = KPEncoder(encoder=encoder)
+    autoencoder = KPAutoencoder()
 
     eig = EAGenerator(
         pop_size=pop_size,
@@ -58,7 +57,7 @@ def generate_instances(
 
 
 if __name__ == "__main__":
-    expected_dimensions = (50, 100, 500, 1000)
+    expected_dimensions = (50,)
 
     parser = argparse.ArgumentParser(
         prog="novelty_search_knapsack_autoencoder",
@@ -120,7 +119,6 @@ if __name__ == "__main__":
         help="Print the evolution logbook.",
     )
     args = parser.parse_args()
-    descriptor = args.descriptor
     generations = args.generations
     population_size = args.population_size
     archive_threshold = args.archive_threshold
@@ -130,7 +128,6 @@ if __name__ == "__main__":
     rep = args.repetition
     verbose = args.verbose
 
-    encoder = "variable"
     portfolios = [
         [default_kp, map_kp, miw_kp, mpw_kp],
         [map_kp, default_kp, miw_kp, mpw_kp],
@@ -159,7 +156,7 @@ if __name__ == "__main__":
         solvers_names = [p.__name__ for p in portfolios[i]]
 
         save_results_to_files(
-            f"ns_knapsack_encoder_variable_N_{dimension}_target_{result.target}_rep_{rep}",
+            f"ns_knapsack_autoencoder_N_{dimension}_target_{result.target}_rep_{rep}",
             result,
             solvers_names,
             features_names=None,

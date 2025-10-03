@@ -10,20 +10,19 @@
 @Desc    :   None
 """
 
-import os
 import pickle
 import warnings
 
 import numpy as np
 import numpy.typing as npt
-
+from pathlib import Path
 from digneapy.transformers._base import Transformer
 
 warnings.filterwarnings("ignore")
 
 
 class PCAEncoder(Transformer):
-    _PATH = os.path.dirname(os.path.abspath(__file__)) + "/models/"
+    _PATH = Path(__file__) / "models/"
 
     def __init__(self, name: str = "PCAEncoder"):
         super().__init__(name)

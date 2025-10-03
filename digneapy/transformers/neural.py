@@ -10,11 +10,7 @@
 @Desc    :   None
 """
 
-__all__ = ["KerasNN", "TorchNN"]
-
-import os
-
-os.environ["KERAS_BACKEND"] = "torch"
+__all__ = ["NNEncoder"]
 
 from collections.abc import Sequence
 from typing import Callable, Optional
@@ -22,12 +18,11 @@ from typing import Callable, Optional
 import keras
 import numpy as np
 import numpy.typing as npt
-import torch
 
 from ._base import Transformer
 
 
-class KerasNN(Transformer):
+class NNEncoder(Transformer):
     def __init__(
         self,
         name: str,
@@ -36,7 +31,7 @@ class KerasNN(Transformer):
         activations: Sequence[Optional[str]],
         evaluation_metric: Optional[Callable] = None,
         loss_fn: Optional[Callable] = None,
-        optimizer: Optional[keras.Optimizer] = keras.optimizers.Adam(),
+        optimizer: Optional[keras.Optimizer] = keras.optimizers.Nadam(),
     ):
         """Neural Network used to transform a space into another. This class uses a Keras backend.
 
@@ -91,12 +86,12 @@ class KerasNN(Transformer):
         if len(weights) != self._size:
             msg = f"Error in the amount of weights in NN.update_weigths. Expected {self._size} and got {len(weights)}"
             raise ValueError(msg)
-        
+
         new_weights = [None] * len(self._expected_shapes)
         idx = 0
         i = 0
         for shape, size in zip(self._expected_shapes, self._expected_sizes):
-            new_weights[i] = np.reshape(weights[idx:idx+size], shape)
+            new_weights[i] = np.reshape(weights[idx : idx + size], shape)
             idx += size
             i += 1
 
@@ -116,105 +111,3 @@ class KerasNN(Transformer):
 
     def __call__(self, x: npt.NDArray) -> np.ndarray:
         return self.predict(x)
-    
-    
-
-
-class TorchNN(Transformer, torch.nn.Module):
-    def __init__(
-        self,
-        name: str,
-        input_size: int,
-        shape: Sequence[int],
-        output_size: int,
-    ):
-        """Neural Network used to transform a space into another. This class uses a PyTorch backend.
-
-        Args:
-            name (str): Name of the model to be saved with. Expected a .torch extension.
-            input_size (int): Number of neurons in the input layer.
-            shape (Tuple[int]): Tuple with the number of cells per layer.
-            output_size (int): Number of neurons in the output layer.
-        Raises:
-            ValueError: Raises if any attribute is not valid.
-        """
-
-        if not name.endswith(".torch"):
-            name = name + ".torch"
-
-        Transformer.__init__(self, name)
-        torch.nn.Module.__init__(self)
-        self._model = torch.nn.ModuleList([torch.nn.Linear(input_size, shape[0])])
-        self._model.append(torch.nn.ReLU())
-        for i in range(len(shape[1:-1])):
-            self._model.append(torch.nn.Linear(shape[i], shape[i + 1]))
-            self._model.append(torch.nn.ReLU())
-
-        self._model.append(torch.nn.Linear(shape[-1], output_size))
-
-    def __str__(self) -> str:
-        return self._model.__str__()
-
-    def __repr__(self) -> str:
-        return self.__str__()
-
-    def save(self, filename: Optional[str] = None):
-        name = filename if filename is not None else self._name
-        torch.save(self._model.state_dict(), name)
-
-    def update_weights(self, parameters: Sequence[float]):
-        expected = sum(p.numel() for p in self._model.parameters() if p.requires_grad)
-        if len(parameters) != expected:
-            msg = f"Error in the amount of weights in NN.update_weigths. Expected {expected} and got {len(parameters)}"
-            raise ValueError(msg)
-        start = 0
-        for layer in self._model.children():
-            if isinstance(layer, torch.nn.Linear):
-                weights = layer.weight
-                stop = start + np.sum(
-                    list(len(weights[i]) for i in range(len(weights)))
-                )
-
-                w_ = torch.Tensor(
-                    np.array(parameters[start:stop]).reshape(
-                        len(weights), len(weights[0])
-                    )
-                )
-                start = stop
-                stop = start + layer.out_features
-                biases_ = torch.Tensor(np.array(parameters[start:stop]))
-
-                layer.weight.data = w_
-                layer.bias.data = biases_
-                start = stop
-
-        return True
-
-    def predict(self, x: npt.NDArray) -> np.ndarray:
-        return self.forward(x)
-
-    def forward(self, x: npt.NDArray) -> np.ndarray:
-        """This is a necessary method for the PyTorch module.
-        It works as a predict method in Keras
-
-        Args:
-            x (npt.NDArray): Sequence of instances to evaluate and predict their descriptor
-
-        Raises:
-            RuntimeError: If Sequence is empty
-
-        Returns:
-            Numpy.ndarray: Descriptor of the instances
-        """
-        if len(x) == 0:
-            msg = "x cannot be None in TorchNN forward"
-            raise RuntimeError(msg)
-        x = torch.tensor(x, dtype=torch.float32)
-        y = x
-        for layer in self._model:
-            y = layer(y)
-        y = y.detach().numpy()
-        return y
-
-    def __call__(self, x: npt.NDArray) -> np.ndarray:
-        return self.forward(x)

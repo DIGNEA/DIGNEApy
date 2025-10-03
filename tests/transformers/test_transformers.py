@@ -20,7 +20,7 @@ import pytest
 from sklearn.metrics import mean_squared_error
 
 from digneapy.transformers import Transformer
-from digneapy.transformers.neural import NNEncoder, TorchNN
+from digneapy.transformers.neural import NNEncoder
 
 dir, _ = os.path.split(__file__)
 
@@ -55,7 +55,7 @@ def default_transformer():
     return DTrans()
 
 
-def test_default_transformer(default_transformer):
+def test_default_transformer_construction(default_transformer):
     assert default_transformer._name == "Default"
 
     with pytest.raises(Exception):
@@ -70,7 +70,7 @@ def test_default_transformer(default_transformer):
     np.testing.assert_array_equal(np.zeros(0), default_transformer(list()))
 
 
-def test_KerasNN_transformer_raises():
+def test_NNEncoder_raises_if_incorrect_values():
     shapes = (11, 5, 2)
     activations = ("relu", "relu", None)
     expected_filename = "nn_transformer_bpp"
@@ -108,7 +108,7 @@ def test_KerasNN_transformer_raises():
         transformer(list())
 
 
-def test_KerasNN_transformer_bpp():
+def test_NNEncoder_works_for_BP_domain():
     shapes = (11, 5, 2)
     activations = ("relu", "relu", None)
     expected_filename = "nn_transformer_bpp.keras"
@@ -142,7 +142,7 @@ def test_KerasNN_transformer_bpp():
     os.remove(new_filename)
 
 
-def test_KerasNN_transformer_kp():
+def test_NNEncoder_works_for_Knapsack_domain():
     shapes = (8, 4, 2)
     activations = ("relu", "relu", None)
     expected_filename = "nn_transformer_kp.keras"
@@ -170,7 +170,7 @@ def test_KerasNN_transformer_kp():
     os.remove(os.path.join(os.path.curdir, expected_filename))
 
 
-def test_KerasNN_reduced_transformer_kp():
+def test_NNEncoder_reduced_version_works_for_Knapsack_domain():
     shapes = (4, 2)
     activations = ("relu", None)
     expected_filename = "nn_transformer_kp.keras"
@@ -198,7 +198,7 @@ def test_KerasNN_reduced_transformer_kp():
     os.remove(os.path.join(os.path.curdir, expected_filename))
 
 
-def test_KerasNN_autoencoder_bpp():
+def test_NNEncoder_as_Autoencoder_works_for_BP_domain():
     shapes = (11, 5, 2, 2, 5, 11)
     activations = ("relu", "relu", None, "relu", "relu", None)
     expected_filename = "nn_autoencoder_bpp.keras"
@@ -210,111 +210,6 @@ def test_KerasNN_autoencoder_bpp():
     )
 
     weights = rng.random(size=291)
-    assert transformer is not None
-    assert transformer.update_weights(weights)
-    with pytest.raises(Exception):
-        weights = rng.random(size=1000)
-        transformer.update_weights(weights)
-
-
-###########################################################################################################
-##########################################################################################################
-
-
-def test_TorchNN_transformer_raises():
-    expected_filename = "nn_transformer_bpp"
-    transformer = TorchNN(
-        expected_filename,
-        input_size=11,
-        output_size=2,
-        shape=(5,),
-    )
-
-    assert transformer._name == expected_filename + ".torch"
-    assert isinstance(transformer.__str__(), str)
-    assert isinstance(transformer.__repr__(), str)
-
-    with pytest.raises(Exception):
-        # Raises exception because X is empty
-        transformer.train(list())
-
-    with pytest.raises(Exception):
-        # Raises exception because X is empty
-        transformer.predict(list())
-
-    with pytest.raises(Exception):
-        # Raises exception because X is empty when calling __call__
-        transformer(list())
-
-
-def test_TorchNN_transformer_bpp():
-    expected_filename = "nn_transformer_bpp.torch"
-    transformer = TorchNN(
-        expected_filename,
-        input_size=11,
-        shape=(5,),
-        output_size=2,
-    )
-
-    weights = rng.random(size=72)
-    assert transformer is not None
-    assert transformer.update_weights(weights)
-    with pytest.raises(Exception):
-        weights = rng.random(size=1000)
-        transformer.update_weights(weights)
-
-    x = np.array([rng.random(size=11) for _ in range(100)])
-    predicted = transformer.predict(x)
-    assert len(predicted) == 100
-    assert all(len(x_i) == 2 for x_i in predicted)
-
-    transformer.save()
-    assert os.path.exists(expected_filename)
-    os.remove(expected_filename)
-
-    # Now saving using a different filename
-    new_filename = "random_transformer.torch"
-    transformer.save(filename=new_filename)
-    assert os.path.exists(new_filename)
-    os.remove(new_filename)
-
-
-def test_TorchNN_transformer_kp():
-    expected_filename = "nn_transformer_kp.torch"
-    transformer = TorchNN(
-        expected_filename,
-        input_size=8,
-        output_size=2,
-        shape=(4,),
-    )
-
-    weights = rng.random(size=46)
-    assert transformer is not None
-    assert transformer.update_weights(weights)
-    with pytest.raises(Exception):
-        weights = rng.random(size=1000)
-        transformer.update_weights(weights)
-
-    x = np.array([rng.random(size=8) for _ in range(100)])
-    predicted = transformer.predict(x)
-    assert len(predicted) == 100
-    assert all(len(x_i) == 2 for x_i in predicted)
-
-    transformer.save()
-    assert os.path.exists(os.path.join(os.path.curdir, expected_filename))
-    os.remove(os.path.join(os.path.curdir, expected_filename))
-
-
-def test_TorchNN_autoencoder_bpp():
-    expected_filename = "nn_autoencoder_bpp.torch"
-    transformer = TorchNN(
-        expected_filename,
-        input_size=11,
-        output_size=11,
-        shape=(5, 2, 5),
-    )
-
-    weights = rng.random(size=138)
     assert transformer is not None
     assert transformer.update_weights(weights)
     with pytest.raises(Exception):

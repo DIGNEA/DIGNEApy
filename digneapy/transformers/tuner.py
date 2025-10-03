@@ -10,7 +10,7 @@
 @Desc    :   None
 """
 
-__all__ = ["NNEATuner", "Tuner"]
+__all__ = ["DeapTuner", "Tuner"]
 
 from collections.abc import Callable, Sequence
 from multiprocessing.pool import ThreadPool as Pool
@@ -23,12 +23,12 @@ from fcmaes.optimizer import wrapper
 from scipy.optimize import Bounds
 
 from digneapy import RNG
-from digneapy.transformers.neural import KerasNN, TorchNN
+from digneapy.transformers.neural import NNEncoder
 
 from .._core._constants import Direction
 
 
-class NNEATuner:
+class DeapTuner:
     """Neural Network Evolutionary Algorithm Tuner
     This class implements a CMA-ES based tuner for neural networks.
     It allows to optimize the weights of a neural network to generate
@@ -39,7 +39,7 @@ class NNEATuner:
         self,
         eval_fn: Callable,
         dimension: int,
-        transformer: KerasNN | TorchNN,
+        transformer: NNEncoder,
         centroid: Optional[Sequence[float]] = None,
         sigma: float = 1.0,
         lambda_: int = 50,
@@ -69,7 +69,7 @@ class NNEATuner:
             raise ValueError(
                 "eval_fn cannot be None in NNTuner. Please give a valid evaluation function."
             )
-        if transformer is None or not isinstance(transformer, (KerasNN, TorchNN)):
+        if transformer is None or not isinstance(transformer, (NNEncoder)):
             raise ValueError(
                 "transformer cannot be None in NNTuner. Please give a valid transformer (KerasNN or TorchNN)."
             )

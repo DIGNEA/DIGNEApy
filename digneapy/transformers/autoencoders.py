@@ -10,54 +10,166 @@
 @Desc    :   None
 """
 
-__all__ = ["KPEncoder"]
-
+__all__ = ["KPEncoder", "KPDecoder"]
 import os
 
-os.environ["KERAS_BACKEND"] = "torch"
+os.environ["TF_USE_LEGACY_KERAS"] = "1"
+import tf_keras
+import tensorflow as tf
 
-import joblib
+from pathlib import Path
 import numpy as np
 import numpy.typing as npt
-from keras.utils import pad_sequences
-
 from digneapy.transformers._base import Transformer
+from typing import Any, Tuple
+from scipy.stats import lognorm
+import h5py
+
+MODELS_PATH = Path(__file__).parent / "models/"
+
+
+@tf.keras.utils.register_keras_serializable("var_encoder")
+class Sampling(tf.keras.layers.Layer):
+    def call(self, inputs):
+        mean, log_var = inputs
+        return tf.random.normal(tf.shape(log_var)) * tf.exp(log_var / 2) + mean
 
 
 class KPEncoder(Transformer):
-    _AVAILABLE_ENCODERS = ("50", "100", "500", "1000", "2000", "5000", "variable")
-    _MAX_LENGTH = 2001
-    _MODELS_PATH = os.path.dirname(os.path.abspath(__file__)) + "/models/"
-
-    def __init__(self, name: str = "KPEncoder", encoder: str = "variable"):
+    def __init__(self, name: str = "KPEncoder"):
         super().__init__(name)
 
-        if encoder not in KPEncoder._AVAILABLE_ENCODERS:
-            raise ValueError(
-                f"The encoding alternatives must be of: {KPEncoder._AVAILABLE_ENCODERS}"
-            )
-
-        self._encoder = encoder
-        self._pad = True if self._encoder == "variable" else False
-        pipeline_fn = (
-            f"{KPEncoder._MODELS_PATH}pipeline_scaler_AE_N_{self._encoder}.sav"
+        self._model_fname = "knapsack_var_encoder_qd_instances_N_50_2D.tf"
+        self._weights_fname = "knapsack_var_encoder_qd_instances_N_50.weights.h5"
+        self._expected_input_dim = 101
+        self._encoder = tf.keras.models.load_model(
+            MODELS_PATH / self._model_fname, custom_objects={"Sampling": Sampling}
         )
-        self._pipeline = joblib.load(pipeline_fn)
+        self._encoder.load_weights(MODELS_PATH / self._weights_fname)
 
     @property
-    def encoding(self) -> int:
+    def latent_dimension(self) -> int:
         return 2
 
-    def encode(self, X: npt.NDArray) -> np.ndarray:
-        # Gets an array of instances
-        # Scale and pad the instances
-        # Encode them
-        _X = np.asarray(X)
-        if self._pad:
-            _X = pad_sequences(
-                _X, padding="post", dtype="float32", maxlen=KPEncoder._MAX_LENGTH
-            )
-        return self._pipeline.predict(_X, verbose=0)
+    @property
+    def expected_input_dim(self) -> int:
+        return self._expected_input_dim
 
     def __call__(self, X: npt.NDArray) -> np.ndarray:
-        return self.encode(X)
+        """Encodes a numpy array of 50d-KP instances into 2D encodings.
+
+        Args:
+            X (npt.NDArray): A numpy array with the definitions of the KP instances. Expected to be of shape (M, 101).
+
+        Raises:
+            ValueError: If the shape of X does not match (M, 101)
+
+        Returns:
+            np.ndarray: _description_
+        """
+        if not isinstance(X, np.ndarray):
+            X = np.asarray(X)
+        if X.shape[1] != self._expected_input_dim:
+            raise ValueError(
+                f"Expected a np.ndarray with shape (M, {self._expected_input_dim}). Instead got: {X.shape}"
+            )
+        return np.asarray(self._encoder(X)[0])
+
+
+class KPDecoder(Transformer):
+    def __init__(self, name: str = "KPDecoder", scale_method: str = "learnt"):
+        super().__init__(name)
+        if scale_method not in ("learnt", "sample"):
+            raise ValueError(
+                "KPDecoder expects the scale method to be either learnt or sample"
+            )
+        self._scale_method = scale_method
+        self._model_fname = "knapsack_var_decoder_qd_instances_N_50_2D.tf"
+        self._weights_fname = "knapsack_var_decoder_qd_instances_N_50.weights.h5"
+        self.__scales_fname = "scales_knapsack_N_50.h5"
+        self._expected_latent_dim = 2
+        self._decoder = tf.keras.models.load_model(
+            MODELS_PATH / self._model_fname, custom_objects={"Sampling": Sampling}
+        )
+        self._decoder.load_weights(MODELS_PATH / self._weights_fname)
+
+        with h5py.File(MODELS_PATH / self.__scales_fname, "r") as file:
+            self._max_weights = file["scales"]["max_weights"][:].astype(np.int32)
+            self._max_profits = file["scales"]["max_profits"][:].astype(np.int32)
+            self._sum_of_weights = file["scales"]["sum_of_weights"][:].astype(np.int32)
+        if self._scale_method == "sample":
+            self._weights_fitted_dist = lognorm.fit(self._max_weights, floc=0)
+            self._profits_fitted_dist = lognorm.fit(self._max_profits, floc=0)
+            self._capacity_fitted_dist = lognorm.fit(self._sum_of_weights, floc=0)
+
+    @property
+    def output_dimension(self) -> int:
+        return 101
+
+    def __sample_scaling_factors(self, size: int) -> Tuple[Any, Any, Any]:
+        return (
+            lognorm.rvs(
+                self._weights_fitted_dist[0],
+                loc=self._weights_fitted_dist[1],
+                scale=self._weights_fitted_dist[2],
+                size=size,
+            )[:, None],
+            lognorm.rvs(
+                self._profits_fitted_dist[0],
+                loc=self._profits_fitted_dist[1],
+                scale=self._profits_fitted_dist[2],
+                size=size,
+            )[:, None],
+            lognorm.rvs(
+                self._capacity_fitted_dist[0],
+                loc=self._capacity_fitted_dist[1],
+                scale=self._capacity_fitted_dist[2],
+                size=size,
+            )[:, None],
+        )
+
+    def __scaling_from_training(
+        self, size: int
+    ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+        indexes = np.random.randint(low=0, high=len(self._max_weights), size=size)
+        return (
+            self._max_weights[indexes],
+            self._max_profits[indexes],
+            self._sum_of_weights[indexes],
+        )
+
+    def __denormalise_instances(self, decode_X: np.ndarray) -> np.ndarray:
+        n_instances = decode_X.shape[0]
+        if self._scale_method == "sample":
+            max_w, max_p, scale_Q = self.__sample_scaling_factors(size=n_instances)
+        else:
+            max_w, max_p, scale_Q = self.__scaling_from_training(size=n_instances)
+
+        rescaled_instances = np.zeros_like(decode_X, dtype=np.int32)
+        rescaled_instances[:, 0] = decode_X[:, 0] * scale_Q[:, 0] * 1_000_000
+        rescaled_instances[:, 1::2] = decode_X[:, 1::2] * max_w * 100_000
+        rescaled_instances[:, 2::2] = decode_X[:, 2::2] * max_p * 100_000
+        return rescaled_instances
+
+    def __call__(self, X: npt.NDArray) -> np.ndarray:
+        """Decodes an np.ndarray of shape (M, 2) into KP instances of N = 50.
+        It does not return Knapsack objects but a np.ndarray of shape (M, 101)
+        where 101 corresponds to the capacity (Q) and 50 pairs of weights and profits(w_i, p_i)
+
+        Args:
+            X (npt.NDArray): an np.ndarray of shape (M, 2)
+
+        Raises:
+            ValueError: If X has a difference shape than (M, 2)
+
+        Returns:
+            np.ndarray: numpy array with |M| KP definitions
+        """
+        if not isinstance(X, np.ndarray):
+            X = np.asarray(X)
+        if X.shape[1] != self._expected_latent_dim:
+            raise ValueError(
+                f"Expected a np.ndarray with shape (M, {self._expected_latent_dim}). Instead got: {X.shape}"
+            )
+        y = self._decoder(X).numpy()
+        return self.__denormalise_instances(y)

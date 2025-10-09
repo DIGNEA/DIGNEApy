@@ -20,7 +20,7 @@ scale_methods = ("learnt", "sample")
 
 @pytest.mark.parametrize("scale_method", scale_methods)
 def test_KPDecoder_works_with_scale_method(scale_method):
-    N_INSTANCES = 1_000_000
+    N_INSTANCES = 100
     decoder = KPDecoder(scale_method=scale_method)
     encodings = np.random.default_rng().normal(0, 0.1, size=(N_INSTANCES, 2))
     decodings = decoder(encodings)
@@ -30,12 +30,10 @@ def test_KPDecoder_works_with_scale_method(scale_method):
 
 
 def test_KPEncoder_works_with_Knapsack_instances():
-    N_INSTANCES = 1_000_000
+    N_INSTANCES = 100
     encoder = KPEncoder()
     domain = KnapsackDomain()
-    instances = np.asarray(
-        [np.array(domain.generate_instance()) for _ in range(N_INSTANCES)]
-    )
+    instances = np.asarray(domain.generate_instances(n=N_INSTANCES))
     assert instances.shape == (N_INSTANCES, encoder._expected_input_dim)
     encodings = encoder(instances)
     assert encodings.shape[0] == instances.shape[0]

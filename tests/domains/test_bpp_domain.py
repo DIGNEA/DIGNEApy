@@ -26,17 +26,22 @@ def default_bpp():
     return BPP(items, capacity=100)
 
 
-def test_default_bpp_instance(default_bpp):
+def test_default_bpp_instance_attrs(default_bpp):
     assert len(default_bpp) == 100
     assert default_bpp._capacity == 100
     items = default_bpp._items
     expected_repr = f"BPP<n=100,C=100,I={items}>"
     assert default_bpp.__repr__() == expected_repr
+
+
+def test_default_bpp_instance_to_be_saved_to_disk(default_bpp):
     # Check is able to create a file
     default_bpp.to_file()
     assert os.path.exists("instance.bpp")
     os.remove("instance.bpp")
 
+
+def test_default_bpp_instance_to_raise_evaluate(default_bpp):
     with pytest.raises(Exception):
         # Raises attribute error when passing an empty list
         default_bpp.evaluate([])
@@ -50,7 +55,7 @@ def test_default_bpp_instance(default_bpp):
         default_bpp.evaluate(list(range(1)))
 
 
-def test_default_bpp_domain():
+def test_default_bpp_domain_attrs():
     dimension = 100
     domain = BPPDomain(dimension, capacity_approach="fixed")
     assert len(domain) == dimension
@@ -63,6 +68,8 @@ def test_default_bpp_domain():
         (1, 1000) for _ in range(dimension)
     ]
 
+
+def test_default_bpp_domain_raises_with_wrongs_parameters():
     with pytest.raises(ValueError):
         BPPDomain(dimension=-1)
 
@@ -76,119 +83,81 @@ def test_default_bpp_domain():
         BPPDomain(min_i=100, max_i=1)
 
 
-def test_default_bpp_domain_wrong_args():
+def test_default_bpp_domain_wrong_capacity_approach_fixed():
     dimension = 100
     domain = BPPDomain(dimension, capacity_approach="random", capacity_ratio=-1.0)
     assert domain.capacity_approach == "fixed"
     assert np.isclose(domain.capacity_ratio, 0.8)
-
     domain.capacity_approach = "random"
     assert domain.capacity_approach == "fixed"
 
 
-def test_bpp_domain_to_features():
+@pytest.mark.parametrize("capacity_approach", ("fixed", "evolved", "percentage"))
+def test_bpp_domain_to_extract_features_with_capacity_approach(capacity_approach):
     dimension = 100
-    domain = BPPDomain(dimension, capacity_approach="fixed", max_capacity=100)
-    instance = domain.generate_instance()
-    features = domain.extract_features(instance)
+    domain = BPPDomain(dimension, capacity_approach=capacity_approach, max_capacity=100)
+    instances = np.asarray(domain.generate_instances(100))
+    features = domain.extract_features(instances)
 
-    capacity = instance.variables[0]
-    items = np.asarray(instance.variables[1:])
-    items_norm = items / capacity
-
-    assert isinstance(features, tuple)
-    expected_f = (
-        np.mean(items_norm),
-        np.std(items_norm),
-        np.median(items_norm),
-        np.max(items_norm),
-        np.min(items_norm),
-    )
-    assert expected_f == features[:5]
-
-    domain.capacity_approach = "evolved"
-    features = domain.extract_features(instance)
-    new_capacity = instance.variables[0]
-    items = np.asarray(instance.variables[1:])
-    items_norm = items / new_capacity
-    expected_f = (
-        np.mean(items_norm),
-        np.std(items_norm),
-        np.median(items_norm),
-        np.max(items_norm),
-        np.min(items_norm),
-    )
-    assert expected_f == features[:5]
-
-    domain.capacity_approach = "percentage"
-    features = domain.extract_features(instance)
-    new_capacity = instance.variables[0]
-    items = np.asarray(instance.variables[1:])
-    items_norm = items / new_capacity
-    expected_f = (
-        np.mean(items_norm),
-        np.std(items_norm),
-        np.median(items_norm),
-        np.max(items_norm),
-        np.min(items_norm),
-    )
-    assert expected_f == features[:5]
-    assert instance.variables[0] == new_capacity
+    assert isinstance(features, np.ndarray)
+    norm_variables = instances[:, 1:] / instances[:, 0]
+    expected_features = [
+        np.mean(norm_variables),
+        np.std(norm_variables),
+        np.median(norm_variables),
+        np.max(norm_variables),
+        np.min(norm_variables),
+        np.mean(norm_variables > 0.5),  # Huge
+        np.mean((0.5 >= norm_variables) & (norm_variables > 0.33333333333)),
+        np.mean((0.33333333333 >= norm_variables) & (norm_variables > 0.25)),
+        np.mean(0.25 >= norm_variables),  # Small
+        np.mean(0.1 >= norm_variables),  # Tiny
+    ]
+    np.testing.assert_allclose(features, np.column_stack(expected_features))
 
 
-def test_bpp_domain_to_features_dict():
+@pytest.mark.parametrize("capacity_approach", ("fixed", "evolved", "percentage"))
+def test_bpp_domain_to_features_dict(capacity_approach):
     dimension = 100
-    domain = BPPDomain(dimension, capacity_approach="fixed")
-    instance = domain.generate_instance()
-    features = domain.extract_features_as_dict(instance)
-
-    capacity = instance.variables[0]
-    items = np.asarray(instance.variables[1:])
-    items_norm = items / capacity
-
-    assert isinstance(features, dict)
-    assert features["mean"] == np.mean(items_norm)
-    assert features["std"] == np.std(items_norm)
-    assert features["median"] == np.median(items_norm)
-    assert features["max"] == max(items_norm)
-    assert features["min"] == min(items_norm)
-    assert isinstance(features["tiny"], float)
-    assert isinstance(features["small"], float)
-    assert isinstance(features["medium"], float)
-    assert isinstance(features["large"], float)
-    assert isinstance(features["huge"], float)
+    domain = BPPDomain(dimension, capacity_approach=capacity_approach, max_capacity=100)
+    instances = np.asarray(domain.generate_instances(n=1))
+    features = domain.extract_features_as_dict(instances)
+    assert isinstance(features, list)
+    assert all(isinstance(d, dict) for d in features)
+    features = features[0]
+    normalised_items = instances[0, 1:] / instances[0, 0]
+    assert np.isclose(features["mean"], np.mean(normalised_items))
+    assert np.isclose(features["std"], np.std(normalised_items))
+    assert np.isclose(features["median"], np.median(normalised_items))
+    assert np.isclose(features["max"], np.max(normalised_items))
+    assert np.isclose(features["min"], np.min(normalised_items))
 
 
-def test_bpp_domain_to_instance():
-    rng = np.random.default_rng(seed=42)
+@pytest.mark.parametrize("capacity_approach", ("fixed", "evolved", "percentage"))
+def test_bpp_domain_to_generate_problem_from_instances(capacity_approach):
     dimension = 100
-    variables = rng.integers(low=1, high=1000, size=101)
-    instance = Instance(variables)
 
-    domain = BPPDomain(dimension, capacity_approach="fixed")
-    bpp_instance = domain.from_instance(instance)
-    assert len(bpp_instance) == dimension
-    assert len(bpp_instance._items) == dimension
-    assert bpp_instance._capacity == 100
+    domain = BPPDomain(dimension, capacity_approach=capacity_approach)
+    instance = domain.generate_instances(n=1)
+    problem = domain.generate_problems_from_instances(instance)[0]
+    instance = instance[0]
+    assert len(problem) == dimension
+    assert len(problem._items) == dimension
     assert len(instance) == dimension + 1
 
-    domain.capacity_approach = "evolved"
-    bpp_instance = domain.from_instance(instance)
-    assert len(bpp_instance._items) == dimension
-    assert bpp_instance._capacity == instance[0]
-
-    domain.capacity_approach = "percentage"
-    bpp_instance = domain.from_instance(instance)
-    assert len(bpp_instance._items) == dimension
-    assert len(bpp_instance) == dimension
-    items = instance.variables[1:]
-    expected_q = np.sum(items) * domain.capacity_ratio
-    assert instance.variables[0] == bpp_instance._capacity
-    assert instance.variables[0] == int(expected_q)
-    assert bpp_instance._capacity == int(expected_q)
+    if capacity_approach == "fixed":
+        assert problem._capacity == 100
+    if capacity_approach == "evolved":
+        assert problem._capacity > 0
+        assert problem._capacity == instance[0]
+    if capacity_approach == "percentage":
+        expected_q = (np.sum(instance[1:]) * domain.capacity_ratio).astype(np.int32)
+        assert instance.variables[0] == problem._capacity
+        assert instance.variables[0] == expected_q
+        assert problem._capacity == expected_q
 
 
-def test_bpp_problem(default_bpp):
+def test_bin_packing_problem_to_solve_instance(default_bpp):
     solution = default_bpp.create_solution()
     expected_vars = list(range(100))
     assert all(s_i == e_i for s_i, e_i in zip(solution, expected_vars))

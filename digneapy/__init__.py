@@ -8,10 +8,10 @@ __version__ = "0.2.5"
 from . import _core, archives, domains, operators
 from ._core import (
     NS,
+    dominated_novelty_search,
     RNG,
     Direction,
     Domain,
-    DominatedNS,
     IndType,
     Instance,
     P,

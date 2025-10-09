@@ -10,11 +10,12 @@
 @Desc    :   None
 """
 
-import numpy as np
 import pytest
+
 
 from digneapy import GridArchive, Instance
 from digneapy.domains.kp import KnapsackDomain
+import numpy as np
 
 
 @pytest.fixture
@@ -257,7 +258,7 @@ def test_grid_extend_under_bounds():
     assert filled_cells[0] == 0
 
 
-def test_grid_with_kp_instances():
+def test_grid_archive_with_KP_instances_and_features_descriptor():
     archive = GridArchive(
         dimensions=(20, 20, 20, 20, 20, 20, 20, 20),
         ranges=[
@@ -272,11 +273,15 @@ def test_grid_with_kp_instances():
         ],
     )
     n_instances = 1_000
-    domain = KnapsackDomain(dimension=50, capacity_approach="percentage")
-    instances = [domain.generate_instance() for _ in range(n_instances)]
-    for instance in instances:
-        instance.features = domain.extract_features(instance)
-        instance.descriptor = instance.features
+    domain = KnapsackDomain(dimension=50)
+    raw_instances = domain.generate_instances(n_instances)
+    features = domain.extract_features(raw_instances)
+    instances = [
+        Instance(
+            variables=raw_instances[i], features=features[i], descriptor=features[i]
+        )
+        for i in range(n_instances)
+    ]
 
     assert len(archive) == 0
     assert archive.n_cells == np.prod(np.array((20,) * 8))

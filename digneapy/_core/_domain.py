@@ -12,7 +12,7 @@
 
 from abc import ABC, abstractmethod
 from collections.abc import Sequence
-from typing import Mapping, Optional
+from typing import Dict, Optional, List
 
 import numpy as np
 
@@ -35,9 +35,9 @@ class Domain(ABC, RNG):
         dimension: int,
         bounds: Sequence[tuple],
         dtype=np.float64,
-        seed: int = 42,
         name: str = "Domain",
         feat_names: Optional[Sequence[str]] = None,
+        seed: Optional[int] = None,
         *args,
         **kwargs,
     ):
@@ -48,24 +48,36 @@ class Domain(ABC, RNG):
         self._dtype = dtype
         self.feat_names = feat_names if feat_names else list()
         self.initialize_rng(seed=seed)
+
         if len(self._bounds) != 0:
             ranges = list(zip(*bounds))
             self._lbs = np.array(ranges[0], dtype=dtype)
             self._ubs = np.array(ranges[1], dtype=dtype)
 
     @abstractmethod
-    def generate_instance(self) -> Instance:
-        """Generates a new instances for the domain
+    def generate_instances(self, n: int = 1) -> List[Instance]:
+        """Generates N instances for the domain.
+
+        Args:
+            n (int, optional): Number of instances to generate. Defaults to 1.
 
         Returns:
-            Instance: New randomly generated instance
+            List[Instance]: A list of Instance objects created from the raw numpy generation
         """
-        msg = "generate_instances is not implemented in Domain class."
+        raise NotImplementedError(
+            "generate_n_instances is not implemented in Domain class."
+        )
+
+    @abstractmethod
+    def generate_problems_from_instances(
+        self, instances: Sequence[Instance]
+    ) -> List[Problem]:
+        msg = "generate_problems_from_instances is not implemented in Domain class."
         raise NotImplementedError(msg)
 
     @abstractmethod
-    def extract_features(self, instances: Instance) -> tuple:
-        """Extract the features of the instance based on the domain
+    def extract_features(self, instances: Sequence[Instance]) -> np.ndarray:
+        """Extract the features of the instances based on the domain
 
         Args:
             instance (Instance): Instance to extract the features from
@@ -77,7 +89,9 @@ class Domain(ABC, RNG):
         raise NotImplementedError(msg)
 
     @abstractmethod
-    def extract_features_as_dict(self, instance: Instance) -> Mapping[str, float]:
+    def extract_features_as_dict(
+        self, instances: Sequence[Instance]
+    ) -> List[Dict[str, np.float32]]:
         """Creates a dictionary with the features of the instance.
         The key are the names of each feature and the values are
         the values extracted from instance.
@@ -89,11 +103,6 @@ class Domain(ABC, RNG):
             Mapping[str, float]: Dictionary with the names/values of each feature
         """
         msg = "extract_features_as_dict is not implemented in Domain class."
-        raise NotImplementedError(msg)
-
-    @abstractmethod
-    def from_instance(self, instance: Instance) -> Problem:
-        msg = "from_instance is not implemented in Domain class."
         raise NotImplementedError(msg)
 
     @property

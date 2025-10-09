@@ -10,7 +10,7 @@
 @Desc    :   None
 """
 
-from typing import Sequence, Tuple
+from typing import Sequence, Tuple, Optional
 
 import numpy as np
 import pytest
@@ -32,6 +32,9 @@ class Sample(Problem):
 
     def __call__(self, individual: Sequence) -> Tuple[float]:
         return self.evaluate(individual)
+
+    def __array__(self, dtype=int, copy: Optional[bool] = False) -> np.ndarray:
+        return np.ones(self.dimension)
 
     def to_file(self, filename: str):
         return super().to_file(filename)

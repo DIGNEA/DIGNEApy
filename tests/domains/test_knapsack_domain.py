@@ -28,7 +28,7 @@ def default_kp():
     return kp.Knapsack(p, w, q)
 
 
-def test_default_kp_instance(default_kp):
+def test_default_kp_instance_can_attrs_can_be_modified(default_kp):
     assert len(default_kp) == 100
     assert len(default_kp.weights) == len(default_kp.profits)
     assert default_kp.capacity == 50
@@ -36,11 +36,26 @@ def test_default_kp_instance(default_kp):
     assert default_kp.weights == list(range(1, 101))
     expected_repr = "KP<n=100,C=50>"
     assert default_kp.__repr__() == expected_repr
+
+
+def test_default_kp_instance_can_be_saved_to_file(default_kp):
     # Check is able to create a file
     default_kp.to_file()
     assert os.path.exists("instance.kp")
     os.remove("instance.kp")
 
+
+def test_default_kp_instance_can_evaluate_correctly(default_kp):
+    # Feasible individual evaluation
+    s = np.zeros(100, dtype=int)
+    s[:10] = 1
+
+    np.random.default_rng(seed=42).shuffle(s)
+    profit = default_kp.evaluate(s)
+    assert not np.isclose(profit, 0.0)
+
+
+def test_default_kp_instance_can_raises_when_wrong_evaluation(default_kp):
     with pytest.raises(Exception):
         # Raises attribute error when passing an empty list
         default_kp.evaluate([])
@@ -53,27 +68,19 @@ def test_default_kp_instance(default_kp):
         # Raises attribute error when passing a len(list) != len(kp)
         default_kp.evaluate(list(range(1)))
 
-    # Feasible individual evaluation
-    s = np.zeros(100, dtype=int)
-    s[:10] = 1
 
-    np.random.default_rng(seed=42).shuffle(s)
-    profit = default_kp.evaluate(s)
-    assert not np.isclose(profit, 0.0)
-
-
-def test_default_kp_domain():
+def test_default_kp_domain_attrs_are_as_expected():
     dimension = 100
     domain = kp.KnapsackDomain(dimension, capacity_approach="evolved")
     assert len(domain) == dimension
     assert domain.capacity_approach == "evolved"
-    assert np.isclose(domain.max_capacity, 1e7)
+    assert np.isclose(domain.max_capacity, 1e5)
     assert np.isclose(domain.capacity_ratio, 0.8)
     assert domain.min_p == 1
     assert domain.min_w == 1
     assert domain.max_p == 1000
     assert domain.max_w == 1000
-    assert domain.bounds == [(1.0, 1e7)] + [(1, 1000) for _ in range(2 * dimension)]
+    assert domain.bounds == [(1.0, 1e5)] + [(1, 1000) for _ in range(2 * dimension)]
 
 
 def test_default_kp_domain_wrong_args():
@@ -88,72 +95,73 @@ def test_default_kp_domain_wrong_args():
     assert domain.capacity_approach == "evolved"
 
 
-def test_kp_domain_to_features():
+@pytest.mark.parametrize("capacity_approach", ("fixed", "evolved", "percentage"))
+def test_kp_domain_extract_features_for_N_instances_with_capacity_approach_(
+    capacity_approach,
+):
+    N_INSTANCES = 100
     dimension = 100
-    domain = kp.KnapsackDomain(dimension, capacity_approach="fixed")
-    instance = domain.generate_instance()
-    features = domain.extract_features(instance)
+    domain = kp.KnapsackDomain(dimension, capacity_approach=capacity_approach)
+    instances = np.asarray(domain.generate_instances(N_INSTANCES))
+    features = domain.extract_features(instances)
 
-    assert isinstance(features, tuple)
-    assert np.isclose(features[0], 1e7)
-    assert features[1] <= 1000
-    assert features[2] <= 1000
-    assert features[3] >= 1
-    assert features[4] >= 1
-    assert not np.isclose(features[-3], 0.0)
-    assert features[-2] == np.mean(instance.variables[1:])
-    assert features[-1] == np.std(instance.variables[1:])
+    assert isinstance(features, np.ndarray)
+    assert (features[:, 0] == instances[:, 0]).all()
+    assert (features[:, 1] <= 1000).all()
+    assert (features[:, 2] <= 1000).all()
+    assert (features[:, 3] >= 1).all()
+    assert (features[:, 4] >= 1).all()
 
-    domain.capacity_approach = "evolved"
-    features = domain.extract_features(instance)
-    assert features[0] == instance[0]
-
-    domain.capacity_approach = "percentage"
-    features = domain.extract_features(instance)
-    expected_q = int(np.sum(instance.variables[1::2]) * 0.8)
-    assert features[0] == expected_q
+    expected_eff = np.mean(instances[:, 2::2] / instances[:, 1::2])
+    expected_mean = np.mean(instances[:, 1:], axis=1, dtype=np.float32)
+    expected_std = np.std(instances[:, 1:], axis=1, dtype=np.float32)
+    assert np.isclose(features[:, 5], expected_eff).all()
+    assert np.isclose(features[:, 6], expected_mean).all()
+    assert np.isclose(features[:, 7], expected_std).all()
 
 
-def test_kp_domain_to_features_dict():
+@pytest.mark.parametrize("capacity_approach", ("fixed", "evolved", "percentage"))
+def test_kp_domain_to_features_dict(capacity_approach):
     dimension = 100
-    domain = kp.KnapsackDomain(dimension, capacity_approach="fixed")
-    instance = domain.generate_instance()
-    features = domain.extract_features_as_dict(instance)
-    assert isinstance(features, dict)
-    assert np.isclose(features["capacity"], 1e7)
+    domain = kp.KnapsackDomain(dimension, capacity_approach=capacity_approach)
+    instances = np.asarray(domain.generate_instances(n=100))
+    features = domain.extract_features_as_dict(instances)
+    expected_eff = np.mean(instances[:, 2::2] / instances[:, 1::2])
+
+    assert isinstance(features, list)
+    features = features[0]
+    assert np.isclose(features["capacity"], instances[0, 0])
     assert features["max_p"] <= 1000
     assert features["max_w"] <= 1000
     assert features["min_w"] >= 1
     assert features["min_p"] >= 1
-    assert not np.isclose(features["avg_eff"], 0.0)
-    assert features["mean"] == np.mean(instance.variables[1:])
-    assert features["std"] == np.std(instance.variables[1:])
+    assert np.isclose(features["avg_eff"], expected_eff)
+    assert np.isclose(features["mean"], np.mean(instances[0, 1:], dtype=np.float32))
+    assert np.isclose(features["std"], np.std(instances[0, 1:], dtype=np.float32))
 
 
-def test_kp_domain_to_instance():
+@pytest.mark.parametrize("capacity_approach", ("fixed", "evolved", "percentage"))
+def test_kp_domain_generate_problems_from_instances(capacity_approach):
     dimension = 100
+    n_instances = 100
+    domain = kp.KnapsackDomain(dimension, capacity_approach=capacity_approach)
+    instances = domain.generate_instances(n=n_instances)
 
-    variables = np.random.default_rng(seed=42).integers(low=1, high=1000, size=201)
-    instance = Instance(variables)
+    problems = domain.generate_problems_from_instances(instances)
+    assert all(len(problem.weights) == dimension for problem in problems)
+    assert all(len(problem.profits) == dimension for problem in problems)
 
-    domain = kp.KnapsackDomain(dimension, capacity_approach="fixed")
-    kp_instance = domain.from_instance(instance)
-    assert len(kp_instance.weights) == dimension
-    assert len(kp_instance.profits) == dimension
-    assert np.isclose(kp_instance.capacity, 1e7)
+    if capacity_approach == "fixed":
+        assert all(problem.capacity == 1e5 for problem in problems)
+    if capacity_approach == "evolved":
+        assert all(problems[i].capacity == instances[i][0] for i in range(n_instances))
+    if capacity_approach == "percentage":
+        expected_capacities: np.float32 = (
+            np.sum(np.asarray(instances)[:, 1::2], axis=1) * domain.capacity_ratio
+        ).astype(np.int32)
 
-    domain.capacity_approach = "evolved"
-    kp_instance = domain.from_instance(instance)
-    assert len(kp_instance.weights) == dimension
-    assert len(kp_instance.profits) == dimension
-    assert kp_instance.capacity == instance[0]
-
-    domain.capacity_approach = "percentage"
-    kp_instance = domain.from_instance(instance)
-    assert len(kp_instance.weights) == dimension
-    assert len(kp_instance.profits) == dimension
-    expected_q = int(np.sum(kp_instance.weights) * domain.capacity_ratio)
-    assert kp_instance.capacity == expected_q
+        capacities = np.asarray([problem.capacity for problem in problems])
+        assert np.isclose(capacities, expected_capacities).all()
 
 
 def test_knapsack_problems(default_kp):

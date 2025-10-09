@@ -19,7 +19,16 @@ import pandas as pd
 
 
 class Instance:
-    __slots__ = ("_vars", "_fit", "_p", "_s", "_features", "_desc", "_pscores")
+    __slots__ = (
+        "_vars",
+        "_fit",
+        "_p",
+        "_s",
+        "_features",
+        "_desc",
+        "_pscores",
+        "_otype",
+    )
 
     def __init__(
         self,
@@ -30,6 +39,7 @@ class Instance:
         features: Optional[tuple[float]] = None,
         descriptor: Optional[tuple[float]] = None,
         portfolio_scores: Optional[tuple[float]] = None,
+        otype=np.float64,
     ):
         """Creates an instance of a Instance (unstructured) for QD algorithms
         This class is used to represent a solution in a QD algorithm. It contains the
@@ -51,10 +61,11 @@ class Instance:
         Raises:
             ValueError: If fitness, p or s are not convertible to float.
         """
+        self._otype = otype
         try:
-            fitness = float(fitness)
-            p = float(p)
-            s = float(s)
+            fitness = self._otype(fitness)
+            p = self._otype(p)
+            s = self._otype(s)
         except ValueError:
             raise ValueError(
                 "The fitness, p and s parameters must be convertible to float"
@@ -67,7 +78,7 @@ class Instance:
         self._features = np.array(features) if features is not None else np.empty(0)
         self._pscores = (
             np.array(portfolio_scores) if portfolio_scores is not None else np.empty(0)
-        )
+        ).astype(self._otype)
         self._desc = np.array(descriptor) if descriptor is not None else np.empty(0)
 
     def clone(self) -> Self:

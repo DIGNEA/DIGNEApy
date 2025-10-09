@@ -10,45 +10,33 @@
 @Desc    :   None
 """
 
-from collections.abc import Sequence
-from operator import attrgetter
-from typing import Optional, Tuple
+from typing import Tuple, Optional
 
 import numpy as np
-
-from digneapy._core._instance import Instance
-from digneapy._core._knn import sparseness
+import sys
 from digneapy.archives import Archive
 
 
 class NS:
-    """Descriptor strategies for the Novelty Search algorithm.
-    The current version supports Features, Performance and Instance variations.
-    """
-
-    _EXPECTED_METRICS = "euclidean"
-
     def __init__(
         self,
         archive: Optional[Archive] = None,
-        k: Optional[int] = 15,
-        dist_metric: Optional[str] = "euclidean",
+        k: int = 15,
     ):
-        """Creates an instance of the NoveltySearch Algorithm
+        """Creates an instance of the Novelty Search Algorithm
         Args:
-            archive (Archive, optional): Archive to store the instances to guide the evolution. Defaults to Archive(threshold=0.001).
+            archive (Archive): Archive to store the instances to guide the evolution. Defaults to Archive(threshold=0.001).
             k (int, optional): Number of neighbours to calculate the sparseness. Defaults to 15.
-            dist_metric (str, optional): Defines the distance metric used by NearestNeighbor in the archives. Defaults to euclidean.
         """
         if k < 0:
             raise ValueError(
                 f"{__name__} k must be a positive integer and less than the number of instances."
             )
+
+        if archive is not None and not isinstance(archive, Archive):
+            raise ValueError("You must provide a valid Archive object")
         self._k = k
         self._archive = archive if archive is not None else Archive(threshold=0.001)
-        self._dist_metric = (
-            dist_metric if dist_metric in NS._EXPECTED_METRICS else "euclidean"
-        )
 
     @property
     def archive(self):
@@ -64,91 +52,110 @@ class NS:
     def __repr__(self) -> str:
         return f"NS<k={self._k},A={self._archive}>"
 
-    def __call__(
-        self, instances: Sequence[Instance]
-    ) -> Tuple[list[Instance], list[float]]:
-        """Calculates the sparseness of the given instances against the individuals
-        in the Archive.
+    def __call__(self, instances_descriptors: np.ndarray) -> np.ndarray:
+        """Computes the Novelty Search of the instance descriptors with respect to the archive.
+           It uses the Euclidean distance to compute the sparseness.
 
         Args:
-            instances (Sequence[Instance]): Instances to calculate their sparseness
-            verbose (bool, optional): Flag to show the progress. Defaults to False.
+            instance_descriptors (np.ndarray): Numpy array with the descriptors of the instances
+            archive (Archive): Archive which stores the novelty instances found so far
+            k (int, optional): Number of neighbors to consider in the computation of the sparseness. Defaults to 15.
 
         Raises:
-            ValueError: If len(d) where d is the descriptor of each instance i differs from another
-            ValueError: If NoveltySearch.k >= len(instances)
+            ValueError: If len(instance_descriptors) <= k
 
         Returns:
-            Tuple(list[Instance], list[float]): Tuple with the instances and the list of sparseness values, one for each instance
+            np.ndarray: novelty scores (s) of the instances descriptors
         """
-        num_instances = len(instances)
-        if num_instances <= self._k:
-            msg = f"{self.__class__.__name__} trying to calculate sparseness with k({self._k}) > len(instances)({num_instances})"
+        if len(instances_descriptors) == 0:
+            raise ValueError(
+                f"NS was given an empty population to compute the sparseness. Shape is: {instances_descriptors.shape}"
+            )
+        num_instances = len(instances_descriptors)
+        num_archive = len(self.archive)
+        result = np.zeros(num_instances, dtype=np.float64)
+        if num_archive == 0 and num_instances <= self._k:
+            # Initially, the archive is empty and we may not have enough instances to evaluate
+            print(
+                f"NS has an empty archive at this moment and the given population is not large enough to compute the sparseness. {num_instances} < k ({self._k}). Returning zeros.",
+                file=sys.stderr,
+            )
+            return result
+
+        if num_instances + num_archive <= self._k:
+            msg = f"Trying to calculate novelty search with k({self._k}) >= {num_instances} (instances) + {num_archive} (archive)."
             raise ValueError(msg)
 
-        results = sparseness(instances, self._archive, k=self._k)
-        return instances, results
+        combined = (
+            instances_descriptors
+            if num_archive == 0
+            else np.vstack([instances_descriptors, self._archive.descriptors])
+        )
+        for i in range(num_instances):
+            mask = np.ones(num_instances, bool)
+            mask[i] = False
+            differences = combined[i] - combined[np.nonzero(mask)]
+            distances = np.linalg.norm(differences, axis=1)
+            _neighbors = np.partition(distances, self._k + 1)[1 : self._k + 1]
+            result[i] = np.sum(_neighbors) / self._k
+
+        return result
 
 
-class DominatedNS(NS):
+def dominated_novelty_search(
+    descriptors: np.ndarray, performances: np.ndarray, k: int = 15
+) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
     """
     Dominated Novelty Search (DNS)
-    Bahlous-Boldi, R., Faldor, M., Grillotti, L., Janmohamed, H., Coiffard, L., Spector, L., & Cully, A. (2025).
-    Dominated Novelty Search: Rethinking Local Competition in Quality-Diversity. 1.
-    https://arxiv.org/abs/2502.00593v1
-    Quality-Diversity algorithm that implements local competition through dynamic fitness transformations,
-    eliminating the need for predefined bounds or parameters. The competition fitness, also known as the dominated novelty score,
-    is calculated as the average distance to the k nearest neighbors with higher fitness.
-    The value is set in the ``p'' attribute of the Instance class.
+        Bahlous-Boldi, R., Faldor, M., Grillotti, L., Janmohamed, H., Coiffard, L., Spector, L., & Cully, A. (2025).
+        Dominated Novelty Search: Rethinking Local Competition in Quality-Diversity. 1.
+        https://arxiv.org/abs/2502.00593v1
+
+        Quality-Diversity algorithm that implements local competition through dynamic fitness transformations,
+        eliminating the need for predefined bounds or parameters. The competition fitness, also known as the dominated novelty score,
+        is calculated as the average distance to the k nearest neighbors with higher fitness.
+
+    The method returns a descending sorted list of instances by their competition fitness value.
+    For each instance ``i'' in the sequence, we calculate all the other instances that dominate it.
+    Then, we compute the distances between their descriptors using the norm of the difference for each dimension of the descriptors.
+    Novel instances will get a competition fitness of np.inf (assuring they will survive).
+    Less novel instances will be selected by their competition fitness value. This competition mechanism creates two complementary evolutionary
+    pressures: individuals must either improve their fitness or discover distinct behaviors that differ from better-performing
+    solutions. Solutions that have no fitter neighbors (D𝑖 = ∅) receive an infinite competition fitness, ensuring their preservation in the
+    population.
+
+    Args:
+        descriptors (np.ndarray): Numpy array with the descriptors of the instances
+        performances (np.ndarray): Numpy array with the performance values of the instances
+
+    Raises:
+        ValueError: If len(d) where d is the descriptor of each instance i differs from another
+        ValueError: If k >= len(instances)
+
+    Returns:
+        Tuple[np.ndarray]: Tuple with the descriptors and competition fitness values sorted, plus the sorted indexing (descending order).
     """
+    num_instances = len(descriptors)
+    if num_instances <= k:
+        msg = f"Trying to calculate the dominated novelty search with k({k}) > len(instances) = {num_instances}"
+        raise ValueError(msg)
 
-    def __init__(self, k: Optional[int] = 15):
-        super().__init__(k=k)
-        self._archive = None
+    if len(performances) != len(descriptors):
+        raise ValueError(
+            f"Array mismatch between peformances and descriptors. len(performance) = {len(performances)} != {len(descriptors)} len(descriptors)"
+        )
 
-    def __call__(
-        self, instances: Sequence[Instance]
-    ) -> Tuple[list[Instance], list[float]]:
-        """
+    mask = performances[:, None] > performances
+    dominated_indices = [np.nonzero(row) for row in mask]
+    competition_fitness = np.full(num_instances, np.finfo(np.float32).max)
+    for i in range(num_instances):
+        if dominated_indices[i][0].size > 0:
+            dist = np.linalg.norm(
+                descriptors[i] - descriptors[dominated_indices[i]], axis=1
+            )
+            if len(dist) > k:
+                dist = np.partition(dist, k)[:k]
+            competition_fitness[i] = np.sum(dist) / k
 
-        The method returns a descending sorted list of instances by their competition fitness value (p).
-        For each instance ``i'' in the sequence, we calculate all the other instances that dominate it.
-        Then, we compute the distances between their descriptors using the norm of the difference for each dimension of the descriptors.
-        Novel instances will get a competition fitness of np.inf (assuring they will survive).
-        Less novel instances will be selected by their competition fitness value. This competition mechanism creates two complementary evolutionary
-        pressures: individuals must either improve their fitness or discover distinct behaviors that differ from better-performing
-        solutions. Solutions that have no fitter neighbors (D𝑖 = ∅) receive an infinite competition fitness, ensuring their preservation in the
-        population.
-
-        Args:
-            instances (Sequence[Instance]): Instances to calculate their competition
-
-        Raises:
-            ValueError: If len(d) where d is the descriptor of each instance i differs from another
-            ValueError: If DNS.k >= len(instances)
-
-        Returns:
-            List[Instance]: Numpy array with the instances sorted by their competition fitness value (p). Descending order.
-        """
-        num_instances = len(instances)
-        if num_instances <= self._k:
-            msg = f"{self.__class__.__name__} trying to calculate sparseness with k({self._k}) > len(instances)({num_instances})"
-            raise ValueError(msg)
-
-        perf_values = np.array([instance.p for instance in instances])
-        descriptors = np.array([instance.descriptor for instance in instances])
-        mask = perf_values[:, None] > perf_values
-        dominated_indices = [np.nonzero(row) for row in mask]
-        fitness_values = np.full(num_instances, np.finfo(np.float32).max)
-        for i in range(num_instances):
-            if dominated_indices[i][0].size > 0:
-                dist = np.linalg.norm(
-                    descriptors[i] - descriptors[dominated_indices[i]], axis=1
-                )
-                if len(dist) > self._k:
-                    dist = np.partition(dist, self._k)[: self._k]
-                fitness_values[i] = np.sum(dist) / self._k
-            instances[i].fitness = fitness_values[i]
-
-        instances.sort(key=attrgetter("fitness"), reverse=True)
-        return (instances, fitness_values)
+    indexing = np.argsort(-competition_fitness)
+    return (descriptors[indexing], competition_fitness[indexing], indexing)

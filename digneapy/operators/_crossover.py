@@ -15,7 +15,6 @@ __all__ = ["one_point_crossover", "uniform_crossover", "Crossover"]
 from collections.abc import Callable
 
 import numpy as np
-
 from .._core import IndType
 
 Crossover = Callable[
@@ -24,12 +23,12 @@ Crossover = Callable[
 ]
 
 
-def one_point_crossover(ind: IndType, other: IndType) -> IndType:
+def one_point_crossover(individual: IndType, other: IndType) -> IndType:
     """One point crossover
 
     Args:
-        ind Instance or Solution: First individual to apply crossover. Returned object
-        ind_2 Instance or Solution: Second individual to apply crossover
+        individual Instance or Solution: First individual to apply crossover. Returned object
+        other Instance or Solution: Second individual to apply crossover
 
     Raises:
         ValueError: When the len(ind_1) != len(ind_2)
@@ -37,35 +36,38 @@ def one_point_crossover(ind: IndType, other: IndType) -> IndType:
     Returns:
         Instance or Solution: New individual
     """
-    if len(ind) != len(other):
-        msg = f"Individual of different length in uniform_crossover. len(ind) = {len(ind)} != len(other) = {len(other)}"
+    if len(individual) != len(other):
+        msg = f"Individual of different length in uniform_crossover. len(ind) = {len(individual)} != len(other) = {len(other)}"
         raise ValueError(msg)
-    offspring = ind.clone()
-    cross_point = np.random.default_rng().integers(low=0, high=len(ind))
+
+    offspring = individual.clone()
+    cross_point = np.random.default_rng().integers(low=0, high=len(individual))
     offspring[cross_point:] = other[cross_point:]
     return offspring
 
 
-def uniform_crossover(ind: IndType, other: IndType, cxpb: float = 0.5) -> IndType:
+def uniform_crossover(
+    individual: IndType, other: IndType, cxpb: np.float64 = np.float64(0.5)
+) -> IndType:
     """Uniform Crossover Operator for Instances and Solutions
 
     Args:
-        ind Instance or Solution: First individual to apply crossover. Returned object.
-        ind_2 Instance or Solution: Second individual to apply crossover
-        cxpb (float, optional): _description_. Defaults to 0.5.
+        individual (IndType): First individual to apply crossover. Returned object.
+        other (IndType): Second individual to apply crossover
+        cxpb (float64, optional): Crossover probability. Defaults to 0.5.
 
     Raises:
         ValueError: When the len(ind_1) != len(ind_2)
 
     Returns:
-        Instance or Solution: New individual
+        ndarray: New individual
     """
-    if len(ind) != len(other):
-        msg = f"Individual of different length in uniform_crossover. len(ind) = {len(ind)} != len(other) = {len(other)}"
+    if len(individual) != len(other):
+        msg = f"Individual of different length in uniform_crossover. len(ind) = {len(individual)} != len(other) = {len(other)}"
         raise ValueError(msg)
 
-    probs = np.random.default_rng().random(size=len(ind))
-    chromosome = [i if pb <= cxpb else j for pb, i, j in zip(probs, ind, other)]
-    offspring = ind.clone()
+    probs = np.random.default_rng().random(size=len(individual))
+    offspring = individual.clone()
+    chromosome = np.where(probs <= cxpb, individual, other)
     offspring[:] = chromosome
     return offspring

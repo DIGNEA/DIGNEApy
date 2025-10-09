@@ -11,16 +11,16 @@
 """
 
 from typing import Optional, Protocol
-
 import numpy as np
+from numpy.random import Generator
 
 
 class RNG(Protocol):
     """Protocol to type check all operators have _rng of instances types in digneapy"""
 
-    _rng: np.random.Generator
-    _seed: int
+    _rng: Generator
+    _seed: int | None
 
     def initialize_rng(self, seed: Optional[int] = None):
-        self._seed = seed if seed else 42
-        self._rng = np.random.default_rng(self._seed)
+        self._seed = seed
+        self._rng = np.random.default_rng()

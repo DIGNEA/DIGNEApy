@@ -60,7 +60,7 @@ def compute_uniform_dist_score(data, xmin, ymin, xmax, ymax, bins):
     return 1 - JSD(uni_hist, hist1D)
 
 
-def generate_instances(
+def generate_instancess(
     portfolio,
     dimension: int,
     pop_size: int,
@@ -115,7 +115,7 @@ def target_runner(experiment: Experiment, scenario: Scenario) -> float:
         pipeline = joblib.load("pipeline_knapsack_N_50.pkl")
         results = pool.map(
             partial(
-                generate_instances,
+                generate_instancess,
                 dimension=50,
                 pop_size=128,
                 generations=100,

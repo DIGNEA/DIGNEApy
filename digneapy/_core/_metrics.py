@@ -20,7 +20,7 @@ from deap import tools
 from ._instance import Instance
 
 
-def qd_score(instances_fitness: Sequence[float]) -> np.float64:
+def qd_score(instances_fitness: np.ndarray) -> np.float64:
     """Calculates the Quality Diversity score of a set of instances fitness.
 
     Args:
@@ -32,7 +32,7 @@ def qd_score(instances_fitness: Sequence[float]) -> np.float64:
     return np.sum(instances_fitness)
 
 
-def qd_score_auc(qd_scores: Sequence[float], batch_size: int) -> np.float64:
+def qd_score_auc(qd_scores: np.ndarray, batch_size: int) -> np.float64:
     """Calculates the Quantifying Efficiency in Quality Diversity Optimization
     In quality diversity (QD) optimization, the QD score is a holistic
     metric which sums the objective values of all cells in the archive.

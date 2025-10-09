@@ -25,10 +25,11 @@ class Solution:
 
     def __init__(
         self,
-        chromosome: Optional[Iterable] = None,
-        objectives: Optional[Iterable] = None,
-        constraints: Optional[Iterable] = None,
+        chromosome: Optional[Iterable] = [],
+        objectives: Optional[Iterable] = [],
+        constraints: Optional[Iterable] = [],
         fitness: float = 0.0,
+        otype=np.float64,
     ):
         """Creates a new solution object.
         The chromosome is a numpy array of the solution's genes.
@@ -41,13 +42,12 @@ class Solution:
             constraints (Optional[Iterable], optional): Tuple or any other iterable with the constraint values. Defaults to None.
             fitness (float, optional): Fitness of the solution. Defaults to 0.0.
         """
-        if chromosome is not None:
-            self.chromosome = np.asarray(chromosome)
-        else:
-            self.chromosome = np.empty(0)
-        self.objectives = np.array(objectives) if objectives else np.empty(0)
-        self.constraints = np.array(constraints) if constraints else np.empty(0)
-        self.fitness = fitness
+
+        self.otype = otype
+        self.chromosome = np.asarray(chromosome)
+        self.objectives = np.array(objectives, dtype=self.otype)
+        self.constraints = np.array(constraints, dtype=self.otype)
+        self.fitness = otype(fitness)
 
     def clone(self) -> Self:
         """Returns a deep copy of the solution. It is more efficient than using the copy module.
@@ -60,6 +60,7 @@ class Solution:
             objectives=list(self.objectives),
             constraints=list(self.constraints),
             fitness=self.fitness,
+            otype=self.otype,
         )
 
     def __str__(self) -> str:

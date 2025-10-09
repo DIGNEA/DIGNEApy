@@ -20,7 +20,7 @@ __all__ = [
 import itertools
 from collections.abc import Callable, Sequence
 from operator import attrgetter
-
+import numpy as np
 from .._core import IndType
 
 Replacement = Callable[
@@ -28,19 +28,19 @@ Replacement = Callable[
         Sequence[IndType],
         Sequence[IndType],
     ],
-    list[IndType],
+    Sequence[IndType],
 ]
 
 
 def generational_replacement(
     current_population: Sequence[IndType],
     offspring: Sequence[IndType],
-) -> list[IndType]:
+) -> Sequence[IndType]:
     """Returns the offspring population as the new current population
 
     Args:
-        current_population ( Sequence[IndType],): Current population in the algorithm
-        offspring ( Sequence[IndType],): Offspring population
+        current_population (Sequence[IndType]): Current population in the algorithm
+        offspring (Sequence[IndType]): Offspring population
 
     Raises:
         ValueError: Raises if the sizes of the population are different
@@ -58,25 +58,24 @@ def generational_replacement(
 def first_improve_replacement(
     current_population: Sequence[IndType],
     offspring: Sequence[IndType],
-) -> list[IndType]:
+) -> Sequence[IndType]:
     """Returns a new population produced by a greedy operator.
     Each individual in the current population is compared with its analogous in the offspring population
     and the best survives
 
     Args:
-        current_population ( Sequence[IndType],): Current population in the algorithm
-        offspring ( Sequence[IndType],): Offspring population
+        current_population (Sequence[IndType]): Current population in the algorithm
+        offspring (Sequence[IndType]): Offspring population
 
     Raises:
         ValueError: Raises if the sizes of the population are different
 
     Returns:
-         list[IndType]: New population
+         Sequence[IndType]: New population
     """
     if len(current_population) != len(offspring):
         msg = f"The size of the current population ({len(current_population)}) != size of the offspring ({len(offspring)}) in first_improve_replacement"
         raise ValueError(msg)
-
     return [a if a > b else b for a, b in zip(current_population, offspring)]
 
 

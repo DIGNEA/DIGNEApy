@@ -13,15 +13,23 @@
 __all__ = ["GenResult", "EAGenerator", "MapElitesGenerator", "DEAGenerator"]
 
 import random
-from collections.abc import Iterable, Sequence
+from collections.abc import Iterable
 from dataclasses import dataclass
 from operator import attrgetter
-from typing import Optional, Protocol
-
+from typing import Optional, Protocol, Tuple, Sequence
+from functools import partial
 import numpy as np
 import pandas as pd
 
-from ._core import NS, RNG, Domain, DominatedNS, Instance, P, SupportsSolve
+from ._core import (
+    NS,
+    dominated_novelty_search,
+    RNG,
+    Domain,
+    Instance,
+    P,
+    SupportsSolve,
+)
 from ._core._metrics import Logbook, Statistics
 from ._core.descriptors import DESCRIPTORS
 from ._core.scores import PerformanceFn, max_gap_target
@@ -50,7 +58,7 @@ class GenResult:
     """
 
     target: str
-    instances: Sequence[Instance]
+    instances: np.ndarray
     history: Logbook
     metrics: Optional[pd.Series] = None
 
@@ -97,7 +105,6 @@ class EAGenerator(Generator, RNG):
         Args:
             domain (Domain): Domain for which the instances are generated for.
             portfolio (Iterable[SupportSolve]): Iterable item of callable objects that can evaluate a instance.
-            novelty_approach (NS): Novelty Search algorithm to use. It can be DominatedNS or NS.
             pop_size (int, optional): Number of instances in the population to evolve. Defaults to 100.
             generations (int, optional): Number of generations to perform. Defaults to 1000.
             solution_set (Optional[Archive], optional): Solution set to store the instances. Defaults to None.
@@ -140,7 +147,7 @@ class EAGenerator(Generator, RNG):
 
         self.phi = phi
         self._novelty_search = novelty_approach
-        self._ns_solution_set = None  # By default there's not solution set
+        self._solution_set = None  # By default there's not solution set
         if solution_set is not None:
             self._ns_solution_set = NS(archive=solution_set, k=1)
 
@@ -150,7 +157,7 @@ class EAGenerator(Generator, RNG):
         self.generations = generations
         self.domain = domain
         self.portfolio = tuple(portfolio) if portfolio else ()
-        self.population: list[Instance] = []
+        self.population = []
         self.repetitions = repetitions
         self.cxrate = cxrate
         self.mutrate = mutrate
@@ -185,35 +192,66 @@ class EAGenerator(Generator, RNG):
             raise ValueError(
                 "The portfolio is empty. To run the generator you must provide a valid portfolio of solvers"
             )
-        self.population = [
-            self.domain.generate_instance() for _ in range(self.pop_size)
-        ]
-        self.population = self._evaluate_population(self.population)
-        self.population = self._update_descriptors(self.population)
-
+        self.population = self.domain.generate_instances(n=self.pop_size)
+        perf_biases, portfolio_scores = self.__evaluate_population(self.population)
+        descriptors, features = self.__update_descriptors(
+            self.population, portfolio_scores=portfolio_scores
+        )
         for pgen in range(self.generations):
-            offspring: list[Instance] = self._generate_offspring(self.pop_size)
-            offspring = self._evaluate_population(offspring)
-            offspring = self._update_descriptors(offspring)
-            offspring, _ = self._novelty_search(offspring)
-            offspring = self._compute_fitness(population=offspring)
+            offspring = self.__generate_offspring(self.pop_size)
+            perf_biases, portfolio_scores = self.__evaluate_population(offspring)
+            descriptors, features = self.__update_descriptors(
+                offspring, portfolio_scores=portfolio_scores
+            )
 
+            novelty_scores = self._novelty_search(instances_descriptors=descriptors)
+            offspring_fitness = self.__compute_fitness(perf_biases, novelty_scores)
+
+            # Update to include this
+            # 1. Novelty Scores --> novelty_scores
+            # 2. Performance bias --> perf_biases
+            # 3. Fitness --> oiffspring_fitness
+            # 4. Descriptor --> descriptors
+
+            offspring = [
+                Instance(
+                    variables=offspring[i],
+                    fitness=offspring_fitness[i],
+                    descriptor=descriptors[i],
+                    portfolio_scores=portfolio_scores[i],
+                    p=perf_biases[i],
+                    s=novelty_scores[i],
+                    features=features[i] if features is not None else None,
+                )
+                for i in range(len(offspring))
+            ]
             # Only the feasible instances are considered to be included
             # in the archive and the solution set.
-            # feasible_off_archive = list(filter(lambda i: i.p >= 0, offspring))
-            self._novelty_search.archive.extend(i for i in offspring if i.p >= 0)
+            feasible_indeces = np.where(perf_biases > 0)[0]
+            self._novelty_search.archive.extend(
+                instances=[offspring[i] for i in feasible_indeces],
+                descriptors=descriptors[feasible_indeces],
+                novelty_scores=novelty_scores[feasible_indeces],
+            )
 
             if self._ns_solution_set:
-                offspring, _ = self._ns_solution_set(offspring)
-                self._ns_solution_set.archive.extend(i for i in offspring if i.p >= 0)
+                # TODO: Here I should only compute the feasible individuals
+                novelty_solution_set = self._ns_solution_set(
+                    instances_descriptors=descriptors
+                )
+                self._ns_solution_set.archive.extend(
+                    instances=[offspring[i] for i in feasible_indeces],
+                    descriptors=descriptors[feasible_indeces],
+                    novelty_scores=novelty_solution_set[feasible_indeces],
+                )
 
             # However the whole offspring population is used in the replacement operator
             self.population = self.replacement(self.population, offspring)
-
             # Record the stats and update the performed gens
             self._logbook.update(
                 generation=pgen, population=self.population, feedback=verbose
             )
+
         if verbose:
             # Clear the terminal
             blank = " " * 80
@@ -230,103 +268,113 @@ class EAGenerator(Generator, RNG):
             history=self._logbook,
         )
 
-    def _generate_offspring(self, offspring_size: int) -> list[Instance]:
+    def __generate_offspring(self, offspring_size: int) -> np.ndarray:
         """Generates a offspring population of size |offspring_size| from the current population
 
         Args:
             offspring_size (int): offspring size. Defaults to pop_size.
 
         Returns:
-            list[Instance]: Returns a list of instances, the offspring population.
+            Sequence[Instance]  Returns a sequence with the instances definitions, the offspring population.
         """
-        offspring = np.empty(offspring_size, dtype=object)
+        offspring = [None] * offspring_size  # np.empty(offspring_size, dtype=Instance)
         for i in range(offspring_size):
             p_1 = self.selection(self.population)
             p_2 = self.selection(self.population)
-            off = self._reproduce(p_1, p_2)
-            offspring[i] = off
-        return offspring
+            child = self.__reproduce(p_1, p_2)
+            offspring[i] = child
 
-    def _update_descriptors(self, population: list[Instance]):
+        return np.array(offspring)
+
+    def __update_descriptors(
+        self,
+        population: np.ndarray,
+        portfolio_scores: Optional[np.ndarray] = None,
+    ) -> Tuple[np.ndarray, Optional[np.ndarray]]:
         """Updates the descriptors of the population of instances
 
         Args:
-            population (list[Instance]): Population of instances to update the descriptors.
+            population (Sequence[Instance]): Population of instances to update the descriptors.
         """
-        _desc_arr = np.empty(len(population), dtype=object)
+        descriptors = np.empty(len(population))
+        features = None
         if self._desc_key == "features":
-            for i in range(len(population)):
-                descriptor = np.array(self.domain.extract_features(population[i]))
-                population[i].features = descriptor
-                _desc_arr[i] = descriptor
+            descriptors = self.domain.extract_features(population)
+            features = descriptors.copy()
+        elif self._desc_key == "performance":
+            descriptors = np.mean(portfolio_scores, axis=2)
         else:
-            _desc_arr = self._descriptor_strategy(population)
+            descriptors = self._descriptor_strategy(population)
 
         if self._transformer is not None:
             # Transform the descriptors if necessary
-            _desc_arr = self._transformer(_desc_arr)
-        for i in range(len(population)):
-            population[i].descriptor = _desc_arr[i]
+            descriptors = self._transformer(descriptors)
 
-        return population
+        return (descriptors, features)
 
-    def _evaluate_population(self, population: Iterable[Instance]):
+    def __evaluate_population(
+        self, population: Sequence[Instance]
+    ) -> Tuple[np.ndarray, np.ndarray]:
         """Evaluates the population of instances using the portfolio of solvers.
 
         Args:
-            population (Iterable[Instance]): Population to evaluate
+            population (Sequence[Instance]): Sequence of instances to evaluate
         """
-        for individual in population:
-            solvers_scores = np.zeros((len(self.portfolio), self.repetitions))
-            problem = self.domain.from_instance(individual)
-
+        solvers_scores = np.zeros(
+            shape=(len(population), len(self.portfolio), self.repetitions)
+        )
+        problems_to_solve = self.domain.generate_problems_from_instances(population)
+        for j, problem in enumerate(problems_to_solve):
             for i, solver in enumerate(self.portfolio):
+                # There is no need to change anything in the evaluation code when using Pisinger solvers
+                # because the algs. only return one solution per run (len(solutions) == 1)
+                # The same happens with the simple KP heuristics. However, when using Pisinger solvers
+                # the lower the running time the better they're considered to work an instance
                 scores = np.zeros(self.repetitions)
-                for r in range(self.repetitions):
-                    solutions = solver(problem)
-                    # There is no need to change anything in the evaluation code when using Pisinger solvers
-                    # because the algs. only return one solution per run (len(solutions) == 1)
-                    # The same happens with the simple KP heuristics. However, when using Pisinger solvers
-                    # the lower the running time the better they're considered to work an instance
+                for rep in range(self.repetitions):
+                    scores[rep] = max(
+                        solver(problem), key=attrgetter("fitness")
+                    ).fitness
 
-                    best_solution = max(solutions, key=attrgetter("fitness"))
-                    scores[r] = best_solution.fitness
+                solvers_scores[j, i, :] = scores
 
-                solvers_scores[i] = scores
+        mean_solvers_scores = np.mean(solvers_scores, axis=2)
+        performance_biases = self.performance_function(mean_solvers_scores)
+        return performance_biases, solvers_scores
 
-            individual.portfolio_scores = solvers_scores
-            avg_p_solver = np.mean(solvers_scores, axis=1)
-            individual.p = self.performance_function(avg_p_solver)
-
-        return population
-
-    def _compute_fitness(self, population: Iterable[Instance]):
+    def __compute_fitness(
+        self, performance_biases: np.ndarray, novelty_scores: np.ndarray
+    ) -> np.ndarray:
         """Calculates the fitness of each instance in the population
 
         Args:
-            population (Iterable[Instance], optional): Population of instances to set the fitness. Defaults to None.
+            performance_biases (np.ndarray): Performance biases or scores of each instance
+            novelty_scores (np.ndarray): Novelty scores of each instance
+
+        Returns:
+            fitness of each instance (np.ndarray)
         """
         phi_r = 1.0 - self.phi
-        for individual in population:
-            individual.fitness = individual.p * self.phi + individual.s * phi_r
-        return population
+        fitness = np.zeros(len(performance_biases))
+        fitness = (fitness * self.phi) + (novelty_scores * phi_r)
+        return fitness
 
-    def _reproduce(self, p_1, p_2) -> Instance:
+    def __reproduce(self, parent_1: Instance, parent_2: Instance) -> Instance:
         """Generates a new offspring instance from two parent instances
 
         Args:
-            p_1 (Instance): First Parent
-            p_2 (Instance): Second Parent
+            parent_1 (Instance): First Parent
+            parent_1 (Instance): Second Parent
 
         Returns:
             Instance: New offspring
         """
+        offspring = parent_1.clone()
         if self._rng.random() < self.cxrate:
-            off = self.crossover(p_1, p_2)
-            return self.mutation(off, self.domain.bounds)
+            offspring = self.crossover(offspring, parent_2)
+            return self.mutation(offspring, self.domain.bounds)
         else:
-            off = p_1.clone()
-            return self.mutation(off, self.domain.bounds)
+            return self.mutation(offspring, self.domain.bounds)
 
 
 class MapElitesGenerator(Generator, RNG):
@@ -411,43 +459,46 @@ class MapElitesGenerator(Generator, RNG):
         return f"MapElites<descriptor={self._descriptor},pop_size={self._init_pop_size},gen={self._generations},domain={domain_name},portfolio={port_names!r}>"
 
     def _populate_archive(self):
-        instances = [
-            self._domain.generate_instance() for _ in range(self._init_pop_size)
-        ]
-        instances = self._evaluate_population(instances)
+        instances = self._domain.generate_instances(n=self._init_pop_size)
+        perf_biases, portfolio_scores = self.__evaluate_population(instances)
         # Here we do not care for p >= 0. We are starting the archive
         # Must be removed later on
         self._archive.extend(instances)
+        return instances
 
-    def _evaluate_population(self, population: Iterable[Instance]):
+    def __evaluate_population(
+        self, population: Sequence[Instance]
+    ) -> Tuple[np.ndarray, np.ndarray]:
         """Evaluates the population of instances using the portfolio of solvers.
 
         Args:
-            population (Iterable[Instance]): Population to evaluate
+            population (Sequence[Instance]): Sequence of instances to evaluate
         """
-        for individual in population:
-            solvers_scores = np.zeros((len(self._portfolio), self._repetitions))
-            problem = self._domain.from_instance(individual)
+        solvers_scores = np.zeros(
+            shape=(len(population), len(self._portfolio), self._repetitions)
+        )
+        problems_to_solve = self._domain.generate_problems_from_instances(population)
+        for j, problem in enumerate(problems_to_solve):
             for i, solver in enumerate(self._portfolio):
+                # There is no need to change anything in the evaluation code when using Pisinger solvers
+                # because the algs. only return one solution per run (len(solutions) == 1)
+                # The same happens with the simple KP heuristics. However, when using Pisinger solvers
+                # the lower the running time the better they're considered to work an instance
                 scores = np.zeros(self._repetitions)
-                for r in range(self._repetitions):
-                    solutions = solver(problem)
-                    best_solution = max(solutions, key=attrgetter("fitness"))
-                    scores[r] = best_solution.fitness
+                for rep in range(self._repetitions):
+                    scores[rep] = max(
+                        solver(problem), key=attrgetter("fitness")
+                    ).fitness
 
-                solvers_scores[i] = scores
+                solvers_scores[j, i, :] = scores
 
-            individual.portfolio_scores = solvers_scores
-            individual.p = self._performance_fn(np.mean(solvers_scores, axis=1))
-            individual.fitness = individual.p
-            individual.features = self._descriptor_strategy(individual)
-            individual.descriptor = individual.features
-
-        return population
+        mean_solvers_scores = np.mean(solvers_scores, axis=2)
+        performance_biases = self._performance_fn(mean_solvers_scores)
+        return performance_biases, solvers_scores
 
     def __call__(self, verbose: bool = False) -> GenResult:
-        self._populate_archive()
-        self._logbook.update(generation=0, population=self._archive, feedback=verbose)
+        instances = self._populate_archive()
+        self._logbook.update(generation=0, population=instances, feedback=verbose)
         for generation in range(self._generations):
             parents = [
                 p.clone()
@@ -459,12 +510,23 @@ class MapElitesGenerator(Generator, RNG):
                     parents,
                 )
             )
-
-            offspring = self._evaluate_population(offspring)
+            perf_biases, portfolio_scores = self.__evaluate_population(offspring)
+            feasible_indices = np.where(perf_biases >= 0)[0]
+            feasible_offspring = [
+                Instance(
+                    variables=offspring[i],
+                    fitness=perf_biases[i],
+                    descriptor=offspring[i],
+                    portfolio_scores=portfolio_scores[i],
+                    p=perf_biases[i],
+                )
+                for i in feasible_indices
+            ]
+            print(feasible_indices)
+            print(feasible_offspring)
             # Only the feasible instances are considered to be included
             # in the archive and the solution set.
-
-            self._archive.extend([i for i in offspring if i.p >= 0])
+            self._archive.extend(feasible_offspring)
 
             # Record the stats and update the performed gens
             self._logbook.update(
@@ -532,7 +594,7 @@ class DEAGenerator(EAGenerator):
             domain=domain,
             portfolio=portfolio,
             pop_size=pop_size,
-            novelty_approach=DominatedNS(k=k),
+            novelty_approach=None,
             generations=generations,
             descriptor_strategy=descriptor_strategy,
             transformer=transformer,
@@ -563,19 +625,32 @@ class DEAGenerator(EAGenerator):
             raise ValueError(
                 "The portfolio is empty. To run the generator you must provide a valid portfolio of solvers"
             )
-        self.population = [
-            self.domain.generate_instance() for _ in range(self.pop_size)
-        ]
-        self.population = self._evaluate_population(self.population)
-        self.population = self._update_descriptors(self.population)
+        self.population = self.domain.generate_instances(self.pop_size)
+        perf_biases, portfolio_scores = self.__evaluate_population(self.population)
+        descriptors, features = self.__update_descriptors(
+            self.population, portfolio_scores=portfolio_scores
+        )
         for pgen in range(self.generations):
-            offspring: list[Instance] = self._generate_offspring(self.offspring_size)
-            offspring = self._evaluate_population(offspring)
-            offspring = self._update_descriptors(offspring)
+            offspring = self.__generate_offspring(self.pop_size)
+            perf_biases, portfolio_scores = self.__evaluate_population(offspring)
+            descriptors, features = self.__update_descriptors(
+                offspring, portfolio_scores=portfolio_scores
+            )
             combined_population = list(self.population) + list(offspring)
-            combined_population, _ = self._novelty_search(combined_population)
+            descriptors, performances, sorted_indexing = dominated_novelty_search(
+                combined_population
+            )
             # Both population and offspring are used in the replacement
-            self.population = list(combined_population[: self.pop_size])
+            self.population = [
+                Instance(
+                    variables=combined_population[i],
+                    fitness=perf_biases[i],
+                    descriptor=offspring[i],
+                    portfolio_scores=portfolio_scores[i],
+                    p=perf_biases[i],
+                )
+                for i in sorted_indexing[: self.pop_size]
+            ]
             # Record the stats and update the performed gens
             self._logbook.update(
                 generation=pgen, population=self.population, feedback=verbose

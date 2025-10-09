@@ -12,8 +12,8 @@
 
 import json
 import operator
-from collections.abc import Iterable
-from typing import Optional
+from collections.abc import Sequence
+from typing import Optional, List, Self
 
 import numpy as np
 
@@ -28,7 +28,7 @@ class Archive:
     def __init__(
         self,
         threshold: float,
-        instances: Optional[Iterable[Instance]] = None,
+        instances: Optional[Sequence[Instance]] = None,
         dtype=np.float64,
     ):
         """Creates an instance of a Archive (unstructured) for QD algorithms
@@ -37,17 +37,24 @@ class Archive:
             threshold (float): Minimum value of sparseness to include an Instance into the archive.
             instances (Iterable[Instance], optional): Instances to initialise the archive. Defaults to None.
         """
+        self._storage = {"instances": [], "descriptors": []}
+
         if instances:
-            self._instances = list(i for i in instances)
-        else:
-            self._instances = []
+            self._storage["instances"].extend(instances)
+            self._storage["descriptors"].extend(
+                np.asarray([instance.descriptor for instance in instances])
+            )
 
         self._threshold = threshold
         self._dtype = dtype
 
     @property
-    def instances(self):
-        return self._instances
+    def instances(self) -> Sequence[Instance]:
+        return self._storage["instances"]
+
+    @property
+    def descriptors(self) -> np.ndarray:
+        return np.asarray(self._storage["descriptors"])
 
     @property
     def threshold(self):
@@ -63,7 +70,7 @@ class Archive:
         self._threshold = t_f
 
     def __iter__(self):
-        return iter(self._instances)
+        return iter(self._storage["instances"])
 
     def __str__(self):
         return f"Archive(threshold={self._threshold},data=(|{len(self)}|))"
@@ -71,7 +78,7 @@ class Archive:
     def __repr__(self):
         return f"Archive(threshold={self._threshold},data=(|{len(self)}|))"
 
-    def __array__(self, dtype=Instance, copy=True) -> np.ndarray:
+    def __array__(self, dtype=None, copy=None) -> np.ndarray:
         """Creates a ndarray with the descriptors
 
         >>> import numpy as np
@@ -81,9 +88,9 @@ class Archive:
         >>> assert len(np_archive) == len(archive)
         >>> assert type(np_archive) == type(np.zeros(1))
         """
-        return np.array(self._instances, dtype=Instance, copy=copy)
+        return np.asarray(self._storage["instances"], dtype=dtype, copy=copy)
 
-    def __eq__(self, other):
+    def __eq__(self, other: Self):
         """Compares whether to Archives are equal
 
         >>> import copy
@@ -96,7 +103,10 @@ class Archive:
         >>> assert a1 == archive
         >>> assert empty_archive != archive
         """
-        return len(self) == len(other) and all(a == b for a, b in zip(self, other))
+        return len(self) == len(other) and all(
+            np.array_equal(a, b)
+            for a, b in zip(self._storage["descriptors"], other._storage["descriptors"])
+        )
 
     def __hash__(self):
         from functools import reduce
@@ -124,20 +134,34 @@ class Archive:
             cls = type(self)  # To facilitate subclassing
             return cls(self._threshold, self.instances[key])
         index = operator.index(key)
-        return self.instances[index]
+        return self._storage["instances"][index]
 
-    def append(self, i: Instance):
-        if i.s > self.threshold:
-            self.instances.append(i)
-
-    def extend(self, iterable: Iterable[Instance]):
+    def extend(
+        self,
+        instances: Sequence[Instance],
+        novelty_scores: Optional[np.ndarray] = None,
+        descriptors: Optional[np.ndarray] = None,
+    ):
         """Extends the current archive with all the individuals inside iterable that have
         a sparseness value greater than the archive threshold.
 
         Args:
-            iterable (Iterable[Instance]): Iterable of instances to be include in the archive.
+            instances (Sequence[Instance]): Sequence of instances to be include in the archive.
         """
-        self.instances.extend(i for i in iterable if i.s >= self._threshold)
+        scores = (
+            novelty_scores
+            if novelty_scores is not None
+            else np.asarray([instance.s for instance in instances])
+        )
+
+        descriptors = (
+            descriptors
+            if descriptors is not None
+            else np.asarray([instance.descriptor for instance in instances])
+        )
+        to_insert = np.where(scores >= self.threshold)[0]
+        self._storage["instances"].extend((instances[i] for i in to_insert))
+        self._storage["descriptors"].extend(descriptors[to_insert])
 
     def __format__(self, fmt_spec=""):
         variables = self
@@ -149,7 +173,8 @@ class Archive:
         return {
             "threshold": self._threshold,
             "instances": {
-                i: instance.asdict() for i, instance in enumerate(self.instances)
+                i: instance.asdict()
+                for i, instance in enumerate(self._storage["instances"])
             },
         }
 

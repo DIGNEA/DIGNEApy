@@ -26,8 +26,8 @@ def main(dimension: int, amount: int):
     results.setdefault("greedy", [])
     for _ in tqdm.tqdm(range(amount)):
         domain = TSPDomain(dimension=dimension)
-        instance = domain.generate_instance()
-        problem = domain.from_instance(instance)
+        instance = domain.generate_instances()
+        problem = domain.generate_problem_from_instance(instance)
         two_fitness = two_opt(problem)[0].fitness
         nn_fitness = nneighbour(problem)[0].fitness
         greedy_fitness = greedy(problem)[0].fitness

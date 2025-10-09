@@ -12,9 +12,10 @@
 
 from collections import Counter
 from collections.abc import Sequence
-from typing import Mapping, Self, Tuple
+from typing import Dict, Self, Tuple, List, Optional
 
 import numpy as np
+import numpy.typing as npt
 from sklearn.cluster import DBSCAN
 
 from digneapy._core import Domain, Instance, Problem, Solution
@@ -26,7 +27,7 @@ class TSP(Problem):
     def __init__(
         self,
         nodes: int,
-        coords: Tuple[Tuple[int, int], ...],
+        coords: np.ndarray,
         seed: int = 42,
         *args,
         **kwargs,
@@ -35,22 +36,25 @@ class TSP(Problem):
 
         Args:
             nodes (int): Number of nodes/cities in the instance to solve
-            coords (Tuple[Tuple[int, int], ...]): Coordinates of each node/city.
+            coords (np.ndarray(N, 2)): Coordinates of each node/city.
         """
         self._nodes = nodes
-        self._coords = np.array(coords)
+        if coords.shape[1] != 2:
+            raise ValueError(
+                f"Expected coordinates shape to be (N, 2). Instead coords has the following shape: {coords.shape}"
+            )
+        if not isinstance(coords, np.ndarray):
+            coords = np.asarray(coords)
+
+        self._coords = coords
         x_min, y_min = np.min(self._coords, axis=0)
         x_max, y_max = np.max(self._coords, axis=0)
         bounds = list(((x_min, y_min), (x_max, y_max)) for _ in range(self._nodes))
         super().__init__(dimension=nodes, bounds=bounds, name="TSP", seed=seed)
 
         self._distances = np.zeros((self._nodes, self._nodes))
-        for i in range(self._nodes):
-            for j in range(i + 1, self._nodes):
-                self._distances[i][j] = np.linalg.norm(
-                    self._coords[i] - self._coords[j]
-                )
-                self._distances[j][i] = self._distances[i][j]
+        differences = self._coords[:, np.newaxis, :] - self._coords[np.newaxis, :, :]
+        self._distances = np.sqrt(np.sum(differences**2, axis=-1))
 
     def __evaluate_constraints(self, individual: Sequence | Solution) -> bool:
         counter = Counter(individual)
@@ -102,6 +106,9 @@ class TSP(Problem):
     def __len__(self):
         return self._nodes
 
+    def __array__(self, dtype=np.float32, copy: Optional[bool] = True) -> npt.ArrayLike:
+        return np.asarray(self._coords, dtype=dtype, copy=copy)
+
     def create_solution(self) -> Solution:
         items = [0] + list(range(1, self._nodes)) + [0]
         return Solution(chromosome=items)
@@ -114,17 +121,18 @@ class TSP(Problem):
 
     @classmethod
     def from_file(cls, filename: str) -> Self:
+        # TODO: Improve using np.loadtxt
         with open(filename) as f:
             lines = f.readlines()
             lines = [line.rstrip() for line in lines]
 
         nodes = int(lines[0])
-        coords = []
-        for line in lines[2:]:
+        coords = np.zeros(shape=(nodes, 2), dtype=np.float32)
+        for i, line in enumerate(lines[2:]):
             x, y = line.split()
-            coords.append((int(x), int(y)))
+            coords[i] = [np.float32(x), np.float32(y)]
 
-        return cls(nodes=nodes, coords=tuple(coords))
+        return cls(nodes=nodes, coords=coords)
 
     def to_instance(self) -> Instance:
         return Instance(variables=self._coords.flatten())
@@ -132,6 +140,10 @@ class TSP(Problem):
 
 class TSPDomain(Domain):
     """Domain to generate instances for the Symmetric Travelling Salesman Problem."""
+
+    __FEAT_NAMES = "size,std_distances,centroid_x,centroid_y,radius,fraction_distances,area,variance_nnNds,variation_nnNds,cluster_ratio,mean_cluster_radius".split(
+        ","
+    )
 
     def __init__(
         self,
@@ -178,22 +190,56 @@ class TSPDomain(Domain):
 
         super().__init__(dimension=dimension, bounds=__bounds, name="TSP", seed=seed)
 
-    def generate_instance(self) -> Instance:
+    def generate_instances(self) -> Instance:
         """Generates a new instances for the TSP domain
 
         Returns:
             Instance: New randomly generated instance
         """
-        coords = self._rng.integers(
-            low=(self._x_range[0], self._y_range[0]),
-            high=(self._x_range[1], self._y_range[1]),
-            size=(self.dimension, 2),
-            dtype=int,
+        coords = np.empty(shape=(self.dimension * 2), dtype=np.float32)
+        coords[0::2] = self._rng.uniform(
+            low=self._x_range[0],
+            high=self._x_range[1],
+            size=(self.dimension),
         )
-        coords = coords.flatten()
+        coords[1::2] = self._rng.uniform(
+            low=self._y_range[0],
+            high=self._y_range[1],
+            size=(self.dimension),
+        )
         return Instance(coords)
 
-    def extract_features(self, instance: Instance) -> tuple:
+    def generate_n_instances(
+        self, n: int = 1, cast: bool = False
+    ) -> npt.ArrayLike | List[Instance]:
+        """Generates N instances using numpy. It can return the instances in two formats:
+        1. A numpy ndarray with the definition of the instances
+        2. A list of Instance objects created from the raw numpy generation
+
+        Args:
+            n (int, optional): Number of instances to generate. Defaults to 1.
+            cast (bool, optional): Whether to cast the raw data to Instance objects. Defaults to False.
+
+        Returns:
+            npt.ArrayLike | List[Instance]: Sequence of instances
+        """
+        instances = np.empty(shape=(n, self.dimension * 2), dtype=np.float32)
+        instances[:, 0::2] = self._rng.uniform(
+            low=self._x_range[0],
+            high=self._x_range[1],
+            size=(n, (self.dimension)),
+        )
+        instances[:, 1::2] = self._rng.uniform(
+            low=self._y_range[0],
+            high=self._y_range[1],
+            size=(n, (self.dimension)),
+        )
+        if cast:
+            return list(Instance(coords) for coords in instances)
+
+        return instances
+
+    def extract_features(self, instances: npt.ArrayLike) -> np.ndarray:
         """Extract the features of the instance based on the TSP domain.
            For the TSP the features are:
             - Size
@@ -212,55 +258,74 @@ class TSPDomain(Domain):
         Returns:
             Tuple[float]: Values of each feature
         """
+        if not isinstance(instances, np.ndarray):
+            instances = np.asarray(instances)
 
-        tsp = self.from_instance(instance)
-        xs = instance[0::2]
-        ys = instance[1::2]
-        area = (max(xs) - min(xs)) * (max(ys) - min(ys))
-        std_distances = np.std(tsp._distances)
-        centroid = (np.mean(xs), np.mean(ys))  # (0.01 * np.sum(xs), 0.01 * np.sum(ys))
+        # tsp = self.generate_problem_from_instance(instance)
+        instances_as_coords = instances.reshape((len(instances), 2), copy=True)
+        print(instances_as_coords)
+        xs = instances[:, 0::2]
+        ys = instances[:, 1::2]
+        areas = (np.max(xs, axis=1) - np.min(xs, axis=1)) * (
+            np.max(ys, axis=1) - np.min(ys, axis=1)
+        )
+        print(xs)
+        print(ys)
+        # Compute distances for all instances
+        distances = np.zeros((len(instances), len(instances)))
+        differences = instances[:, np.newaxis, :] - instances[np.newaxis, :, :]
+        distances = np.sqrt(np.sum(differences**2, axis=-1))
+        std_distances = np.std(distances)
 
-        centroid_distance = [np.linalg.norm(city - centroid) for city in tsp._coords]
-        radius = np.mean(centroid_distance)
+        centroids = np.mean(instances, axis=0)
+        centroids_distances = np.linalg.norm(instances - centroids, axis=1)
+        print(centroids)
+        print(centroids_distances)
+        radius = np.mean(centroids_distances, axis=1)
 
-        fraction = len(np.unique(tsp._distances)) / (len(tsp._distances) / 2)
+        fraction = len(np.unique(distances)) / (len(distances) / 2)
         # Top five only
-        norm_distances = np.sort(tsp._distances)[::-1][:5] / np.max(tsp._distances)
+        norm_distances = np.sort(distances, axis=1)[:, ::-1][:, :5] / np.max(
+            distances, axis=1, keepdims=True
+        )
 
-        variance_nnds = np.var(norm_distances)
-        variation_nnds = variance_nnds / np.mean(norm_distances)
+        variance_nnds = np.var(norm_distances, axis=1)
+        variation_nnds = variance_nnds / np.mean(norm_distances, axis=1)
 
         dbscan = DBSCAN()
-        dbscan.fit(tsp._coords)
+        dbscan.fit(instances)
         cluster_ratio = len(set(dbscan.labels_)) / self.dimension
         # Cluster radius
         mean_cluster_radius = 0.0
         for label_id in dbscan.labels_:
-            points_in_cluster = tsp._coords[dbscan.labels_ == label_id]
+            points_in_cluster = instances[dbscan.labels_ == label_id]
             cluster_centroid = (
                 np.mean(points_in_cluster[:, 0]),
                 np.mean(points_in_cluster[:, 1]),
             )
             mean_cluster_radius = np.mean(
-                [np.linalg.norm(city - cluster_centroid) for city in tsp._coords]
+                [np.linalg.norm(city - cluster_centroid) for city in instances]
             )
         mean_cluster_radius /= len(set(dbscan.labels_))
+        return np.column_stack(
+            [
+                np.full(shape=len(instances), fill_value=self.dimension),
+                std_distances,
+                centroids[:, 0],
+                centroids[:, 1],
+                radius,
+                fraction,
+                areas,
+                variance_nnds,
+                variation_nnds,
+                cluster_ratio,
+                mean_cluster_radius,
+            ]
+        ).astype(np.float32)
 
-        return (
-            self.dimension,
-            std_distances,
-            centroid[0],
-            centroid[1],
-            radius,
-            fraction,
-            area,
-            variance_nnds,
-            variation_nnds,
-            cluster_ratio,
-            mean_cluster_radius,
-        )
-
-    def extract_features_as_dict(self, instance: Instance) -> Mapping[str, float]:
+    def extract_features_as_dict(
+        self, instances: npt.ArrayLike
+    ) -> List[Dict[str, np.float32]]:
         """Creates a dictionary with the features of the instance.
         The key are the names of each feature and the values are
         the values extracted from instance.
@@ -271,11 +336,23 @@ class TSPDomain(Domain):
         Returns:
             Mapping[str, float]: Dictionary with the names/values of each feature
         """
-        names = "size,std_distances,centroid_x,centroid_y,radius,fraction_distances,area,variance_nnNds,variation_nnNds,cluster_ratio,mean_cluster_radius"
-        features = self.extract_features(instance)
-        return {k: v for k, v in zip(names.split(","), features)}
+        features = self.extract_features(instances)
+        named_features: list[dict[str, np.float32]] = [{}] * len(features)
+        for i, feats in enumerate(features):
+            named_features[i] = {k: v for k, v in zip(TSPDomain.__FEAT_NAMES, feats)}
+        return named_features
 
-    def from_instance(self, instance: Instance) -> TSP:
+    def generate_problem_from_instance(self, instance: Instance) -> TSP:
         n_nodes = len(instance) // 2
-        coords = tuple([*zip(instance[::2], instance[1::2])])
+        coords = np.array([*zip(instance[::2], instance[1::2])])
         return TSP(nodes=n_nodes, coords=coords)
+
+    def generate_problems_from_instances(self, instances: np.ndarray) -> List[Problem]:
+        if not isinstance(instances, np.ndarray):
+            instances = np.asarray(instances)
+
+        dimension = instances.shape[1]
+        return list(
+            TSP(nodes=dimension, coords=np.array([*zip(instance[::2], instance[1::2])]))
+            for instance in instances
+        )

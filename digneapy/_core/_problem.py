@@ -12,9 +12,10 @@
 
 from abc import ABC, abstractmethod
 from collections.abc import Sequence
-from typing import Tuple, TypeVar
+from typing import Tuple, TypeVar, Optional, Any
 
 import numpy as np
+from numpy import typing as npt
 
 from ._instance import Instance
 from ._solution import Solution
@@ -69,7 +70,7 @@ class Problem(ABC, RNG):
         return (self._lbs[i], self._ubs[i])
 
     @abstractmethod
-    def create_solution(self) -> Solution:
+    def create_solution(self) -> Solution | np.ndarray:
         """Creates a random solution to the problem.
         This method can be used to initialise the solutions
         for any algorithm
@@ -78,23 +79,30 @@ class Problem(ABC, RNG):
         raise NotImplementedError(msg)
 
     @abstractmethod
-    def evaluate(self, individual: Sequence | Solution) -> Tuple[float]:
+    def __array__(
+        self, dtype: Any = None, copy: Optional[bool] = None
+    ) -> npt.ArrayLike:
+        msg = "__array__ method not implemented in Problem"
+        raise NotImplementedError(msg)
+
+    @abstractmethod
+    def evaluate(self, individual: Sequence | Solution | np.ndarray) -> Tuple[float]:
         """Evaluates the candidate individual with the information of the Knapsack
 
         Args:
-            individual (Sequence | Solution): Individual to evaluate
+            individual (Sequence | Solution | np.ndarray): Individual to evaluate
 
         Raises:
             ValueError: Raises an error if the len(individual) != len(instance) / 2
 
         Returns:
-            Tuple[float]: Profit
+            Tuple[float]: fitness
         """
         msg = "evaluate method not implemented in Problem"
         raise NotImplementedError(msg)
 
     @abstractmethod
-    def __call__(self, individual: Sequence | Solution) -> Tuple[float]:
+    def __call__(self, individual: Sequence | Solution | np.ndarray) -> Tuple[float]:
         msg = "__call__ method not implemented in Problem"
         raise NotImplementedError(msg)
 

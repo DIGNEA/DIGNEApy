@@ -17,6 +17,7 @@ __all__ = [
 ]
 
 from collections.abc import Callable, Iterable, MutableMapping
+from typing import Optional
 
 import numpy as np
 
@@ -73,7 +74,7 @@ def __property_strategy(attr: str):
     return strategy
 
 
-def performance_strategy(iterable: Iterable[Instance]) -> np.ndarray:
+def performance_strategy(performances: np.ndarray) -> np.ndarray:
     """It generates the performance descriptor of an instance
     based on the scores of the solvers in the portfolio over such instance
 
@@ -83,7 +84,8 @@ def performance_strategy(iterable: Iterable[Instance]) -> np.ndarray:
     Returns:
         np.ndarray: Array of performance descriptors of each instance
     """
-    return np.asarray([np.mean(i.portfolio_scores, axis=1) for i in iterable])
+    print(performances)
+    return np.mean(performances, axis=1)
 
 
 def instance_strategy(iterable: Iterable[Instance]) -> np.ndarray:
@@ -108,5 +110,4 @@ DESCRIPTORS: MutableMapping[str, DescStrategy] = {
     "features": __property_strategy(attr="features"),
     "performance": performance_strategy,
     "instance": instance_strategy,
-    "transformed": __property_strategy(attr="transformed"),
 }

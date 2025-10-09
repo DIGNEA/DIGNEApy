@@ -22,7 +22,7 @@ from digneapy.transformers.neural import NNEncoder
 from digneapy.utils import save_results_to_files
 
 
-def generate_instances(
+def generate_instancess(
     portfolio,
     dimension: int,
     pop_size: int,
@@ -164,7 +164,7 @@ if __name__ == "__main__":
     with Pool(4) as pool:
         results = pool.map(
             partial(
-                generate_instances,
+                generate_instancess,
                 dimension=dimension,
                 pop_size=population_size,
                 generations=generations,

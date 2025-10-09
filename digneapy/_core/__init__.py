@@ -13,9 +13,8 @@
 from ._constants import Direction, IndType
 from ._domain import Domain
 from ._instance import Instance
-from ._knn import sparseness, sparseness_only_values
 from ._metrics import Logbook, Statistics, qd_score, qd_score_auc
-from ._novelty_search import NS, DominatedNS
+from ._novelty_search import NS, dominated_novelty_search
 from ._problem import P, Problem
 from ._solution import Solution
 from ._solver import Solver, SupportsSolve
@@ -32,7 +31,7 @@ __all__ = [
     "IndType",
     "Direction",
     "NS",
-    "DominatedNS",
+    "dominated_novelty_search",
     "qd_score",
     "qd_score_auc",
     "Statistics",

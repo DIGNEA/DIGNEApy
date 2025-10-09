@@ -225,7 +225,7 @@ class TSP(Problem):
 
 # Creating the Travelling Salesman Problem Domain (TSPDomain)
 
-Once we have created the optimisation problem, we can define the domain of such problem. In this example, we call it TSPDomain. Every domain must define (at least) the ```generate_instance```, ```extract_features```, ```extract_features_as_dict``` and ```from_instance``` methods. The features methods are only relevant if you are planning to use the generators with the features-based descriptors. Otherwise you can return NotImplemented. 
+Once we have created the optimisation problem, we can define the domain of such problem. In this example, we call it TSPDomain. Every domain must define (at least) the ```generate_instances```, ```extract_features```, ```extract_features_as_dict``` and ```from_instance``` methods. The features methods are only relevant if you are planning to use the generators with the features-based descriptors. Otherwise you can return NotImplemented. 
 
 A domain should include all the attributes and relevant information to generate the instances with particular characteristics. In this example, we need the dimension of the instances (number of nodes) and the ranges for the coordinates (xmin, xmax) and (ymin, ymax) for each node in the instance.
 
@@ -280,10 +280,10 @@ class TSPDomain(Domain):
         super().__init__(dimension=dimension, bounds=__bounds, name="TSP", seed=seed)
 ```
 
-The ```generate_instance``` method is quite similar to the ```create_solution``` in the Problem class. Basically, it creates a random instance with the characteristics defined in the domain.
+The ```generate_instances``` method is quite similar to the ```create_solution``` in the Problem class. Basically, it creates a random instance with the characteristics defined in the domain.
 
 ```python
-def generate_instance(self) -> Instance:
+def generate_instances(self) -> Instance:
         """Generates a new instances for the TSP domain
 
         Returns:
@@ -446,7 +446,7 @@ class TSPDomain(Domain):
 
         super().__init__(dimension=dimension, bounds=__bounds, name="TSP", seed=seed)
 
-    def generate_instance(self) -> Instance:
+    def generate_instances(self) -> Instance:
         """Generates a new instances for the TSP domain
 
         Returns:

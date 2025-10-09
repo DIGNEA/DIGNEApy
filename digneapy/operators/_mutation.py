@@ -22,16 +22,15 @@ from .._core import IndType
 Mutation = Callable[[IndType, Sequence[Tuple]], IndType]
 
 
-def uniform_one_mutation(ind: IndType, bounds: Sequence[Tuple]) -> IndType:
-    if len(ind) != len(bounds):
-        msg = f"The size of individual ({len(ind)}) and bounds {len(bounds)} is different in uniform_one_mutation"
+def uniform_one_mutation(individual: IndType, bounds: Sequence[Tuple]) -> IndType:
+    if len(individual) != len(bounds):
+        msg = f"The size of individual ({len(individual)}) and bounds {len(bounds)} is different in uniform_one_mutation"
         raise ValueError(msg)
 
     rng = np.random.default_rng()
-    mutation_point = rng.integers(low=0, high=len(ind))
-
+    mutation_point = rng.integers(low=0, high=len(individual))
     new_value = rng.uniform(
         low=bounds[mutation_point][0], high=bounds[mutation_point][1]
     )
-    ind[mutation_point] = new_value
-    return ind
+    individual[mutation_point] = new_value
+    return individual

@@ -23,7 +23,7 @@ from digneapy.solvers.pisinger import combo, expknap, minknap
 from digneapy.utils import save_results_to_files
 
 
-def generate_instances(
+def generate_instancess(
     portfolio,
     pop_size: int,
     generations: int,
@@ -127,7 +127,7 @@ if __name__ == "__main__":
     with Pool(4) as pool:
         results = pool.map(
             partial(
-                generate_instances,
+                generate_instancess,
                 pop_size=population_size,
                 generations=generations,
                 archive_threshold=archive_threshold,

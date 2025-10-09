@@ -13,10 +13,10 @@
 __all__ = ["BPP", "BPPDomain"]
 
 from collections.abc import Iterable, Sequence
-from typing import Mapping
+from typing import Dict, List, Self, Optional
 
 import numpy as np
-
+from numpy import typing as npt
 from digneapy._core import Domain, Instance, Problem, Solution
 
 
@@ -80,6 +80,9 @@ class BPP(Problem):
     def __len__(self):
         return self._dimension
 
+    def __array__(self, dtype=np.int32, copy: Optional[bool] = False) -> npt.ArrayLike:
+        return np.asarray([self._capacity, *self._items], dtype=dtype, copy=copy)
+
     def create_solution(self) -> Solution:
         items = list(range(self._dimension))
         return Solution(chromosome=items)
@@ -108,6 +111,9 @@ class BPP(Problem):
 
 class BPPDomain(Domain):
     __capacity_approaches = ("evolved", "percentage", "fixed")
+    __feat_names = names = "mean,std,median,max,min,tiny,small,medium,large,huge".split(
+        ","
+    )
 
     def __init__(
         self,
@@ -173,88 +179,97 @@ class BPPDomain(Domain):
         else:
             self._capacity_approach = app
 
-    def generate_instance(self) -> Instance:
-        """Generates a new instances for the BPP domain
+    def generate_instances(self, n: int = 1) -> List[Instance]:
+        """Generates N instances for the domain.
+
+        Args:
+            n (int, optional): Number of instances to generate. Defaults to 1.
 
         Returns:
-            Instance: New randomly generated instance
+            List[Instance]: A list of Instance objects created from the raw numpy generation
         """
-        items = self._rng.integers(
-            low=self._min_i, high=self._max_i, size=self._dimension, dtype=int
+        instances = np.empty(shape=(n, self.dimension + 1), dtype=np.int32)
+        instances = self._rng.integers(
+            low=self._min_i, high=self._max_i, size=(n, self._dimension + 1), dtype=int
         )
-        self._rng.shuffle(items)
-
-        capacity = 0
         # Sets the capacity according to the method
         match self.capacity_approach:
             case "evolved":
-                capacity = self._rng.integers(1, self._max_capacity)
+                instances[:, 0] = self._rng.integers(1, self._max_capacity, size=n)
             case "percentage":
-                capacity = np.sum(items, dtype=int) * self.capacity_ratio
+                instances[:, 0] = (
+                    np.sum(instances[:, 1:], axis=1, dtype=int) * self.capacity_ratio
+                )
             case "fixed":
-                capacity = self._max_capacity
+                instances[:, 0] = self._max_capacity
+        return list(Instance(i) for i in instances)
 
-        variables = [capacity, *items]
-        return Instance(variables)
-
-    def extract_features(self, instance: Instance) -> tuple:
+    def extract_features(self, instances: Sequence[Instance]) -> np.ndarray:
         """Extract the features of the instance based on the BPP domain.
            For the BPP the features are:
            N, Capacity, MeanWeights, MedianWeights, VarianceWeights, MaxWeight,
            MinWeight, Huge, Large, Medium, Small, Tiny
 
         Args:
-            instance (Instance): Instance to extract the features from
+            instances (Instance): Instances to extract the features from
 
         Returns:
-            Tuple[float]: Values of each feature
+            np.ndarray: Values of each feature
         """
-        capacity = instance.variables[0]
-        _vars = np.asarray(instance.variables[1:])
-        vars_norm = _vars / capacity
-        huge = sum(k > 0.5 for k in vars_norm) / self._dimension
-        large = sum(0.5 >= k > 1 / 3 for k in vars_norm) / self._dimension
-        medium = sum(1 / 3 >= k > 0.25 for k in vars_norm) / self._dimension
-        small = sum(0.25 >= k for k in vars_norm) / self._dimension
-        tiny = sum(0.1 >= k for k in vars_norm) / self._dimension
-        return (
-            np.mean(vars_norm),
-            np.std(vars_norm),
-            np.median(vars_norm),
-            np.max(vars_norm),
-            np.min(vars_norm),
-            tiny,
-            small,
-            medium,
-            large,
-            huge,
-        )
+        if not isinstance(instances, np.ndarray):
+            instances = np.asarray(instances)
 
-    def extract_features_as_dict(self, instance: Instance) -> Mapping[str, float]:
-        """Creates a dictionary with the features of the instance.
+        norm_variables = instances[:, 1:] / instances[:, 0]
+        return np.column_stack(
+            [
+                np.mean(norm_variables),
+                np.std(norm_variables),
+                np.median(norm_variables),
+                np.max(norm_variables),
+                np.min(norm_variables),
+                np.mean(norm_variables > 0.5),  # Huge
+                np.mean((0.5 >= norm_variables) & (norm_variables > 0.33333333333)),
+                np.mean((0.33333333333 >= norm_variables) & (norm_variables > 0.25)),
+                np.mean(0.25 >= norm_variables),  # Small
+                np.mean(0.1 >= norm_variables),  # Tiny
+            ]
+        ).astype(np.float32)
+
+    def extract_features_as_dict(
+        self, instances: Sequence[Instance]
+    ) -> List[Dict[str, np.float32]]:
+        """Creates a dictionary with the features of the instances.
         The key are the names of each feature and the values are
         the values extracted from instance.
 
         Args:
-            instance (Instance): Instance to extract the features from
-
+            instances (Sequence[Instance]): Instances to extract the features from.
         Returns:
-            Mapping[str, float]: Dictionary with the names/values of each feature
+            Dict[str, np.float32]: Dictionary with the names/values of each feature
         """
-        names = "mean,std,median,max,min,tiny,small,medium,large,huge"
-        features = self.extract_features(instance)
-        return {k: v for k, v in zip(names.split(","), features)}
+        features = self.extract_features(instances)
+        named_features: list[dict[str, np.float32]] = [{}] * len(features)
+        for i, feats in enumerate(features):
+            named_features[i] = {k: v for k, v in zip(BPPDomain.__feat_names, feats)}
 
-    def from_instance(self, instance: Instance) -> BPP:
-        items = instance.variables[1:]
-        capacity = int(instance.variables[0])
-        # Sets the capacity according to the method
+        return named_features
+
+    def generate_problems_from_instances(
+        self, instances: Sequence[Instance]
+    ) -> List[Problem]:
+        if not isinstance(instances, np.ndarray):
+            instances = np.asarray(instances)
+
+        # Assume evolved capacities
+        capacities = instances[:, 0].astype(np.int32)
         match self.capacity_approach:
             case "percentage":
-                capacity = np.sum(items) * self.capacity_ratio
+                capacities[:] = (
+                    np.sum(instances[:, 1:], axis=1) * self.capacity_ratio
+                ).astype(np.int32)
             case "fixed":
-                capacity = self._max_capacity
-
-        # The BPP capacity must be updated JIC
-        instance.variables[0] = capacity
-        return BPP(items=items, capacity=int(capacity))
+                capacities[:] = self._max_capacity
+        return list(
+            BPP(items=instances[i, 1:], capacity=capacities[i])
+            for i in range(len(instances))
+        )

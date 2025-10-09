@@ -22,7 +22,7 @@ from digneapy.solvers import best_fit, first_fit, next_fit, worst_fit
 from digneapy.utils import save_results_to_files
 
 
-def generate_instances(
+def generate_instancess(
     portfolio,
     dimension: int,
     descriptor: str,
@@ -141,7 +141,7 @@ if __name__ == "__main__":
 
     results = pool.map(
         partial(
-            generate_instances,
+            generate_instancess,
             dimension=dimension,
             descriptor=descriptor,
             generations=generations,

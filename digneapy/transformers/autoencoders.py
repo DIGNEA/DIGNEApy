@@ -40,12 +40,10 @@ class KPEncoder(Transformer):
         super().__init__(name)
 
         self._model_fname = "knapsack_var_encoder_qd_instances_N_50_2D.tf"
-        self._weights_fname = "knapsack_var_encoder_qd_instances_N_50.weights.h5"
         self._expected_input_dim = 101
         self._encoder = tf.keras.models.load_model(
             MODELS_PATH / self._model_fname, custom_objects={"Sampling": Sampling}
         )
-        # self._encoder.load_weights(MODELS_PATH / self._weights_fname)
 
     @property
     def latent_dimension(self) -> int:
@@ -85,13 +83,11 @@ class KPDecoder(Transformer):
             )
         self._scale_method = scale_method
         self._model_fname = "knapsack_var_decoder_qd_instances_N_50_2D.tf"
-        self._weights_fname = "knapsack_var_decoder_qd_instances_N_50.weights.h5"
         self.__scales_fname = "scales_knapsack_N_50.h5"
         self._expected_latent_dim = 2
         self._decoder = tf.keras.models.load_model(
             MODELS_PATH / self._model_fname, custom_objects={"Sampling": Sampling}
         )
-        self._decoder.load_weights(MODELS_PATH / self._weights_fname)
 
         with h5py.File(MODELS_PATH / self.__scales_fname, "r") as file:
             self._max_weights = file["scales"]["max_weights"][:].astype(np.int32)

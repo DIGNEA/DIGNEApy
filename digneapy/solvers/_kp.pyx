@@ -16,7 +16,7 @@ __all__ = ["default_kp", "map_kp", "miw_kp", "mpw_kp"]
 cimport cython
 import numpy as np
 cimport numpy as cnp
-cnp.import_array()  # add this line
+cnp.import_array() 
 
 
 from digneapy._core import Solution

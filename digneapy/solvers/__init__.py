@@ -10,14 +10,19 @@
 @Desc    :   None
 """
 
-from . import _kp, _tsp_opt, bpp, tsp
+from . import _kp, _tsp_opt, bpp, tsp, utils
 from ._kp import default_kp, map_kp, miw_kp, mpw_kp
 from ._tsp_opt import two_opt
 from .bpp import best_fit, first_fit, next_fit, worst_fit
 from .tsp import greedy, nneighbour, three_opt
+from .utils import shuffle_and_run_for_knapsack
 
 __all__ = list(
-    set(bpp.__all__) | set(_kp.__all__) | set(tsp.__all__) | set(_tsp_opt.__all__)
+    set(bpp.__all__)
+    | set(_kp.__all__)
+    | set(tsp.__all__)
+    | set(_tsp_opt.__all__)
+    | set(utils.__all__)
 )
 
 __solvers_modules = {"evolutionary", "pisinger"}

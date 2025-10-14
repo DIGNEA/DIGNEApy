@@ -10,7 +10,7 @@
 @Desc    :   None
 """
 
-__all__ = ["EA", "ParEAKP"]
+__all__ = ["EA"]
 
 from concurrent.futures import ThreadPoolExecutor
 
@@ -166,64 +166,3 @@ class EA(Solver, SupportsSolve[P], RNG):
             fitness=self._hof[0].fitness.values[0],
         )
         return [self._best_found, *cast_pop]
-
-
-class ParEAKP:
-    """Parallel Evolutionary Algorithm for Knapsack Problems
-    It uses Uniform One Mutation and Uniform Mutation as mating operators.
-    The replacement is based on a Greedy strategy. The parent and offspring
-    populations are evaluated pairwise and at each position i, the best individual
-    between parent_i and offspring_i survives for the next_population_i.
-    """
-
-    def __init__(
-        self,
-        pop_size: int = 32,
-        generations: int = 1000,
-        mutpb: float = 0.2,
-        cxpb: float = 0.7,
-        cores: int = 1,
-    ):
-        """Creates an instance of the ParEAKP solver
-
-        Args:
-            pop_size (int, optional): Population size. Defaults to 32.
-            generations (int, optional): Number of generations to perform. Defaults to 1000.
-            mutpb (float, optional): Probability of mutation. Defaults to 0.2.
-            cxpb (float, optional): Probability of crossover between two individuals. Defaults to 0.7.
-            cores (int, optional): Number of cores to use. Defaults to 1.
-        """
-        from parallel_ea import _ParEACpp
-
-        self._pop_size = pop_size
-        self._generations = generations
-        self._mutpb = mutpb
-        self._cxpb = cxpb
-        self._n_cores = cores
-        self.__name__ = (
-            f"ParEAKP_PS_{self._pop_size}_CXPB_{self._cxpb}_MUTPB_{self._mutpb}"
-        )
-        self._runner = _ParEACpp(
-            self._pop_size, self._generations, self._mutpb, self._cxpb, self._n_cores
-        )
-
-    def __call__(self, problem: Knapsack, *args, **kwargs) -> list[Solution]:
-        """Runs the algorithm to solve the KP problem
-
-        Args:
-            kp (Knapsack, optional): Instance of a KP. Defaults to None.
-
-        Raises:
-            ValueError: If no instance is given
-
-        Returns:
-            List[Solution]: Best solution found by the algorithm
-        """
-        if problem is None:
-            msg = "Knapsack Problem is None in ParEAKP.__call__(). Expected a Knapsack instance."
-            raise ValueError(msg)
-
-        x, fitness = self._runner.run(
-            len(problem), problem.weights, problem.profits, problem.capacity
-        )
-        return [Solution(chromosome=x, objectives=(fitness,), fitness=fitness)]

@@ -37,7 +37,7 @@ class get_pybind_include(object):
         return pybind11.get_include(self.user)
 
 
-compile_args = ["-std=c++11", "-fopenmp"]
+compile_args = ["-std=c++11"]
 ext_modules = [
     Extension(
         "pisinger_cpp",
@@ -48,18 +48,6 @@ ext_modules = [
             get_pybind_include(user=True),
         ],
         extra_compile_args=compile_args,
-        language="c++",
-    ),
-    Extension(
-        "parallel_ea",
-        sorted(glob("digneapy/solvers/_parallel_ea/src/*.cpp")),
-        include_dirs=[
-            # Path to pybind11 headers
-            get_pybind_include(),
-            get_pybind_include(user=True),
-        ],
-        extra_compile_args=compile_args,
-        extra_link_args=["-fopenmp"],
         language="c++",
     ),
     Extension(

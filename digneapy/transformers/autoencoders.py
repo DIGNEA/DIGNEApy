@@ -45,7 +45,7 @@ class KPEncoder(Transformer):
         self._encoder = tf.keras.models.load_model(
             MODELS_PATH / self._model_fname, custom_objects={"Sampling": Sampling}
         )
-        self._encoder.load_weights(MODELS_PATH / self._weights_fname)
+        # self._encoder.load_weights(MODELS_PATH / self._weights_fname)
 
     @property
     def latent_dimension(self) -> int:

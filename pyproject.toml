@@ -11,10 +11,6 @@ ext-modules = [
         "digneapy/solvers/_pisinger/src/minknap.cpp",
         "digneapy/solvers/_pisinger/src/pisinger.cpp",
     ] },
-    { name = "parallel_ea", sources = [
-        "digneapy/solvers/_parallel_ea/src/parallel_ea.cpp",
-
-    ] },
     {name="digneapy.solvers._kp", sources=["digneapy/solvers/_kp.pyx"]},
     {name="digneapy.solvers._tsp_opt", sources=["digneapy/solvers/_tsp_opt.pyx"]},
 

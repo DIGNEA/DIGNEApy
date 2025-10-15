@@ -630,28 +630,45 @@ class DEAGenerator(EAGenerator):
         descriptors, features = self.__update_descriptors(
             self.population, portfolio_scores=portfolio_scores
         )
+        self.population = np.asarray(self.population)
         for pgen in range(self.generations):
             offspring = self.__generate_offspring(self.pop_size)
-            perf_biases, portfolio_scores = self.__evaluate_population(offspring)
-            descriptors, features = self.__update_descriptors(
-                offspring, portfolio_scores=portfolio_scores
+            off_perf_biases, off_portfolio_scores = self.__evaluate_population(
+                offspring
             )
-            combined_population = list(self.population) + list(offspring)
-            descriptors, performances, sorted_indexing = dominated_novelty_search(
-                combined_population
+            off_descriptors, off_features = self.__update_descriptors(
+                offspring, portfolio_scores=off_portfolio_scores
             )
+            combined_descriptors = np.asarray([*descriptors, *off_descriptors])
+            combined_performances = np.asarray([*perf_biases, *off_perf_biases])
+            combined_port_scores = np.asarray([*portfolio_scores, *portfolio_scores])
+            combined_perf_biases = np.asarray([*perf_biases, *off_perf_biases])
+            combined_features = np.asarray([*features, off_features])
+            combined_population = np.asarray([*self.population, *offspring])
+            sorted_descriptors, sorted_performances, sorted_indexing = (
+                dominated_novelty_search(
+                    combined_descriptors, performances=combined_performances
+                )
+            )
+
+            fitness = sorted_performances[: self.pop_size]
+            descriptors = sorted_descriptors[: self.pop_size]
+            perf_biases = combined_perf_biases[sorted_indexing[: self.pop_size]]
+            portfolio_scores = combined_port_scores[sorted_indexing[: self.pop_size]]
+            features = combined_features[sorted_indexing[: self.pop_size]]
             # Both population and offspring are used in the replacement
+            # Record the stats and update the performed gens
             self.population = [
                 Instance(
                     variables=combined_population[i],
-                    fitness=perf_biases[i],
-                    descriptor=offspring[i],
+                    fitness=fitness[i],
+                    descriptor=descriptors[i],
                     portfolio_scores=portfolio_scores[i],
                     p=perf_biases[i],
+                    features=features[i],
                 )
-                for i in sorted_indexing[: self.pop_size]
+                for i in range(self.pop_size)
             ]
-            # Record the stats and update the performed gens
             self._logbook.update(
                 generation=pgen, population=self.population, feedback=verbose
             )

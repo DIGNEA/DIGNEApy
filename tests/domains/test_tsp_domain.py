@@ -12,7 +12,6 @@
 
 import pytest
 
-pytestmark = pytest.mark.skip(reason="Impossible to pass this tests now")
 
 import os
 
@@ -124,26 +123,28 @@ def test_default_tsp_domain_raises_if_wrong_args():
 
 
 def test_tsp_domain_to_extract_features_of_instances():
-    dimension = 20
-    n_instances = 10
+    dimension = 100
+    n_instances = 128
     domain = TSPDomain(dimension)
-    instances = domain.generate_n_instances(n=n_instances, cast=False)
+    instances = domain.generate_instances(n=n_instances)
     features = domain.extract_features(instances)
     assert isinstance(features, np.ndarray)
     assert features.shape == (n_instances, 11)
-    assert all(not np.isclose(f, 0.0) for f in features)
-    assert features[:, 0] == dimension
+    # The last two could be zero depending of the instance
+    assert (features[:, :-2] != 0.0).all()
+    assert (features[:, 0] == dimension).all()
 
 
 def test_bpp_domain_to_features_dict():
     dimension = 100
+    n_instances = 128
     domain = TSPDomain(dimension=dimension)
-    instance = domain.generate_instances()
+    instance = domain.generate_instances(n=n_instances)
     features = domain.extract_features_as_dict(instance)
-    assert isinstance(features, dict)
-    assert len(features.keys()) == 11
-    assert all(not np.isclose(f, 0.0) for f in features.values())
-    assert features["size"] == dimension
+    assert isinstance(features, list)
+    assert all(len(f.keys()) == 11 for f in features)
+    assert all(f != 0.0 for feat_set in features for f in feat_set.values())
+    assert all(f["size"] == dimension for f in features)
 
 
 def test_tsp_domain_to_instance():

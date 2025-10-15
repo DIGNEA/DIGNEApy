@@ -16,7 +16,6 @@ import os
 import numpy as np
 import pytest
 
-from digneapy import Instance
 from digneapy.domains import kp
 
 

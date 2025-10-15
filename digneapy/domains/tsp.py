@@ -190,28 +190,7 @@ class TSPDomain(Domain):
 
         super().__init__(dimension=dimension, bounds=__bounds, name="TSP", seed=seed)
 
-    def generate_instances(self) -> Instance:
-        """Generates a new instances for the TSP domain
-
-        Returns:
-            Instance: New randomly generated instance
-        """
-        coords = np.empty(shape=(self.dimension * 2), dtype=np.float32)
-        coords[0::2] = self._rng.uniform(
-            low=self._x_range[0],
-            high=self._x_range[1],
-            size=(self.dimension),
-        )
-        coords[1::2] = self._rng.uniform(
-            low=self._y_range[0],
-            high=self._y_range[1],
-            size=(self.dimension),
-        )
-        return Instance(coords)
-
-    def generate_n_instances(
-        self, n: int = 1, cast: bool = False
-    ) -> npt.ArrayLike | List[Instance]:
+    def generate_instances(self, n: int = 1) -> List[Instance]:
         """Generates N instances using numpy. It can return the instances in two formats:
         1. A numpy ndarray with the definition of the instances
         2. A list of Instance objects created from the raw numpy generation
@@ -221,7 +200,7 @@ class TSPDomain(Domain):
             cast (bool, optional): Whether to cast the raw data to Instance objects. Defaults to False.
 
         Returns:
-            npt.ArrayLike | List[Instance]: Sequence of instances
+            List[Instance]: Sequence of instances
         """
         instances = np.empty(shape=(n, self.dimension * 2), dtype=np.float32)
         instances[:, 0::2] = self._rng.uniform(
@@ -234,12 +213,9 @@ class TSPDomain(Domain):
             high=self._y_range[1],
             size=(n, (self.dimension)),
         )
-        if cast:
-            return list(Instance(coords) for coords in instances)
+        return list(Instance(coords) for coords in instances)
 
-        return instances
-
-    def extract_features(self, instances: npt.ArrayLike) -> np.ndarray:
+    def extract_features(self, instances: Sequence[Instance]) -> np.ndarray:
         """Extract the features of the instance based on the TSP domain.
            For the TSP the features are:
             - Size
@@ -258,73 +234,84 @@ class TSPDomain(Domain):
         Returns:
             Tuple[float]: Values of each feature
         """
-        if not isinstance(instances, np.ndarray):
-            instances = np.asarray(instances)
+        _instances = np.asarray(instances, copy=True)
+        N_INSTANCES = len(_instances)
+        N_CITIES = len(_instances[0]) // 2  # self.dimension // 2
+        assert _instances is not instances
+        coords = np.asarray(_instances, copy=True).reshape((N_INSTANCES, N_CITIES, 2))
+        xs = coords[:, :, 0]
+        ys = coords[:, :, 1]
+        areas = (
+            (np.max(xs, axis=1) - np.min(xs, axis=1))
+            * (np.max(ys, axis=1) - np.min(ys, axis=1))
+        ).astype(np.float64)
 
-        # tsp = self.generate_problem_from_instance(instance)
-        instances_as_coords = instances.reshape((len(instances), 2), copy=True)
-        print(instances_as_coords)
-        xs = instances[:, 0::2]
-        ys = instances[:, 1::2]
-        areas = (np.max(xs, axis=1) - np.min(xs, axis=1)) * (
-            np.max(ys, axis=1) - np.min(ys, axis=1)
-        )
-        print(xs)
-        print(ys)
         # Compute distances for all instances
-        distances = np.zeros((len(instances), len(instances)))
-        differences = instances[:, np.newaxis, :] - instances[np.newaxis, :, :]
+        distances = np.zeros((N_INSTANCES, N_CITIES, N_CITIES))
+        differences = coords[:, :, np.newaxis, :] - coords[:, np.newaxis, :, :]
         distances = np.sqrt(np.sum(differences**2, axis=-1))
-        std_distances = np.std(distances)
+        mask = ~np.eye(N_CITIES, dtype=bool)
+        std_distances = np.std(distances[:, mask], axis=1)
 
-        centroids = np.mean(instances, axis=0)
-        centroids_distances = np.linalg.norm(instances - centroids, axis=1)
-        print(centroids)
-        print(centroids_distances)
+        centroids = np.mean(coords, axis=1)
+        expanded_centroids = centroids[:, np.newaxis, :]
+        centroids_distances = np.linalg.norm(coords - expanded_centroids, axis=-1)
         radius = np.mean(centroids_distances, axis=1)
 
-        fraction = len(np.unique(distances)) / (len(distances) / 2)
+        fractions = np.array(
+            [
+                np.unique(d[np.triu_indices_from(d, k=1)]).size
+                / (N_CITIES * (N_CITIES - 1) / 2)
+                for d in distances
+            ]
+        )
         # Top five only
-        norm_distances = np.sort(distances, axis=1)[:, ::-1][:, :5] / np.max(
-            distances, axis=1, keepdims=True
+        norm_distances = np.sort(distances, axis=2)[:, :, ::-1][:, :, :5] / np.max(
+            distances, axis=(1, 2), keepdims=True
         )
 
-        variance_nnds = np.var(norm_distances, axis=1)
-        variation_nnds = variance_nnds / np.mean(norm_distances, axis=1)
+        variance_nnds = np.var(norm_distances, axis=(1, 2))
+        variation_nnds = variance_nnds / np.mean(norm_distances, axis=(1, 2))
 
-        dbscan = DBSCAN()
-        dbscan.fit(instances)
-        cluster_ratio = len(set(dbscan.labels_)) / self.dimension
-        # Cluster radius
-        mean_cluster_radius = 0.0
-        for label_id in dbscan.labels_:
-            points_in_cluster = instances[dbscan.labels_ == label_id]
-            cluster_centroid = (
-                np.mean(points_in_cluster[:, 0]),
-                np.mean(points_in_cluster[:, 1]),
+        cluster_ratio = np.empty(shape=N_INSTANCES, dtype=np.float64)
+        mean_cluster_radius = np.empty(shape=N_INSTANCES, dtype=np.float64)
+
+        for i in range(N_INSTANCES):
+            scale = np.mean(np.std(coords[i], axis=0))
+            dbscan = DBSCAN(eps=0.2 * scale, min_samples=1)
+            labels = dbscan.fit_predict(coords[i])
+            unique_labels = [label for label in set(labels) if label != -1]
+            cluster_ratio[i] = len(unique_labels) / N_CITIES
+            # Cluster radius
+            cluster_radius = np.empty(shape=len(unique_labels), dtype=np.float64)
+            for j, label_id in enumerate(unique_labels):
+                points_in_cluster = coords[i][labels == label_id]
+                cluster_centroid = np.mean(points_in_cluster, axis=0)
+                cluster_radius[j] = np.mean(
+                    np.linalg.norm(points_in_cluster - cluster_centroid, axis=1)
+                )
+
+            mean_cluster_radius[i] = (
+                np.mean(cluster_radius) if cluster_radius.size > 0 else 0.0
             )
-            mean_cluster_radius = np.mean(
-                [np.linalg.norm(city - cluster_centroid) for city in instances]
-            )
-        mean_cluster_radius /= len(set(dbscan.labels_))
         return np.column_stack(
             [
-                np.full(shape=len(instances), fill_value=self.dimension),
+                np.full(shape=len(_instances), fill_value=N_CITIES),
                 std_distances,
                 centroids[:, 0],
                 centroids[:, 1],
                 radius,
-                fraction,
+                fractions,
                 areas,
                 variance_nnds,
                 variation_nnds,
                 cluster_ratio,
                 mean_cluster_radius,
             ]
-        ).astype(np.float32)
+        ).astype(np.float64)
 
     def extract_features_as_dict(
-        self, instances: npt.ArrayLike
+        self, instances: Sequence[Instance]
     ) -> List[Dict[str, np.float32]]:
         """Creates a dictionary with the features of the instance.
         The key are the names of each feature and the values are
@@ -347,12 +334,16 @@ class TSPDomain(Domain):
         coords = np.array([*zip(instance[::2], instance[1::2])])
         return TSP(nodes=n_nodes, coords=coords)
 
-    def generate_problems_from_instances(self, instances: np.ndarray) -> List[Problem]:
+    def generate_problems_from_instances(
+        self, instances: Sequence[Instance]
+    ) -> List[Problem]:
         if not isinstance(instances, np.ndarray):
             instances = np.asarray(instances)
 
         dimension = instances.shape[1]
         return list(
-            TSP(nodes=dimension, coords=np.array([*zip(instance[::2], instance[1::2])]))
+            TSP(
+                nodes=dimension, coords=np.array([*zip(instance[0::2], instance[1::2])])
+            )
             for instance in instances
         )

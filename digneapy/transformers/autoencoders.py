@@ -10,12 +10,7 @@
 @Desc    :   None
 """
 
-__all__ = ["KPEncoder", "KPDecoder"]
-import os
-
-os.environ["TF_USE_LEGACY_KERAS"] = "1"
-import tf_keras
-import tensorflow as tf
+__all__ = ["VAE", "KPEncoder", "KPDecoder"]
 
 from pathlib import Path
 import numpy as np
@@ -24,26 +19,67 @@ from digneapy.transformers._base import Transformer
 from typing import Any, Tuple
 from scipy.stats import lognorm
 import h5py
+import torch
+from collections import namedtuple
+import torch.nn as nn
+import torch.nn.functional as F
+
 
 MODELS_PATH = Path(__file__).parent / "models/"
+AUTOENCODER_NAME = "variational_autoencoder_qd_instances_N_50.pt"
+VAEOutput = namedtuple("VAEOutput", ["output", "codings_mean", "codings_logvar"])
 
 
-@tf.keras.utils.register_keras_serializable("var_encoder")
-class Sampling(tf.keras.layers.Layer):
-    def call(self, inputs):
-        mean, log_var = inputs
-        return tf.random.normal(tf.shape(log_var)) * tf.exp(log_var / 2) + mean
+def vae_loss(y_pred, y_target, kl_weight=1.0):
+    output, mean, logvar = y_pred
+    kl_div = -0.5 * torch.sum(1 + logvar - logvar.exp() - mean.square(), dim=-1)
+    return F.mse_loss(output, y_target) + kl_weight * kl_div.mean() / 101
+
+
+class VAE(nn.Module):
+    def __init__(self, codings_dim: int = 2):
+        super(VAE, self).__init__()
+        self.codings_dim = codings_dim
+        self.encoder = nn.Sequential(
+            nn.Linear(101, 50),
+            nn.ReLU(),
+            nn.Linear(50, 25),
+            nn.ReLU(),
+            nn.Linear(25, 2 * codings_dim),
+        )
+
+        self.decoder = nn.Sequential(
+            nn.Linear(codings_dim, 25),
+            nn.ReLU(),
+            nn.Linear(25, 50),
+            nn.ReLU(),
+            nn.Linear(50, 101),
+        )
+
+    def encode(self, X):
+        return self.encoder(X).chunk(2, dim=-1)  # returns (mean, logvar)
+
+    def sample_codings(self, codings_mean, codings_logvar):
+        codings_std = torch.exp(0.5 * codings_logvar)
+        noise = torch.randn_like(codings_std)
+        return codings_mean + noise * codings_std
+
+    def decode(self, Z):
+        return self.decoder(Z)
+
+    def forward(self, X):
+        codings_mean, codings_logvar = self.encode(X)
+        codings = self.sample_codings(codings_mean, codings_logvar)
+        output = self.decode(codings)
+        return VAEOutput(output, codings_mean, codings_logvar)
 
 
 class KPEncoder(Transformer):
     def __init__(self, name: str = "KPEncoder"):
         super().__init__(name)
 
-        self._model_fname = "knapsack_var_encoder_qd_instances_N_50_2D.tf"
         self._expected_input_dim = 101
-        self._encoder = tf.keras.models.load_model(
-            MODELS_PATH / self._model_fname, custom_objects={"Sampling": Sampling}
-        )
+        self._encoder = torch.load(MODELS_PATH / AUTOENCODER_NAME, weights_only=False)
 
     @property
     def latent_dimension(self) -> int:
@@ -71,7 +107,7 @@ class KPEncoder(Transformer):
             raise ValueError(
                 f"Expected a np.ndarray with shape (M, {self._expected_input_dim}). Instead got: {X.shape}"
             )
-        return np.asarray(self._encoder(X)[0])
+        return np.asarray(self._encoder.encode(X))
 
 
 class KPDecoder(Transformer):
@@ -82,12 +118,9 @@ class KPDecoder(Transformer):
                 "KPDecoder expects the scale method to be either learnt or sample"
             )
         self._scale_method = scale_method
-        self._model_fname = "knapsack_var_decoder_qd_instances_N_50_2D.tf"
         self.__scales_fname = "scales_knapsack_N_50.h5"
         self._expected_latent_dim = 2
-        self._decoder = tf.keras.models.load_model(
-            MODELS_PATH / self._model_fname, custom_objects={"Sampling": Sampling}
-        )
+        self._decoder = torch.load(MODELS_PATH / AUTOENCODER_NAME, weights_only=False)
 
         with h5py.File(MODELS_PATH / self.__scales_fname, "r") as file:
             self._max_weights = file["scales"]["max_weights"][:].astype(np.int32)
@@ -167,5 +200,5 @@ class KPDecoder(Transformer):
             raise ValueError(
                 f"Expected a np.ndarray with shape (M, {self._expected_latent_dim}). Instead got: {X.shape}"
             )
-        y = self._decoder(X).numpy()
+        y = self._decoder(X)
         return self.__denormalise_instances(y)

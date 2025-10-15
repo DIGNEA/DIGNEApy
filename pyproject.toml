@@ -50,15 +50,24 @@ dependencies = [
     "fcmaes>=1.6.11",
     "keras>=3.5.0",
     "matplotlib>=3.8.4",
-    "numpy==2.2.0",
+    "numpy>=2.2.0",
+    "nvidia-nvtx-cu12==12.6.77",
     "pandas>=2.2.2",
     "pybind11>=2.12.0",
     "scikit-learn==1.5.0",
     "scipy>=1.13.0",
     "seaborn>=0.13.2",
-    "tensorflow[and-cuda]>=2.20.0",
-    "tf-keras>=2.20.1",
+    "torch",
+    "torchvision",
 ]
+
+[[tool.uv.index]]
+name = "pytorch"
+url = "https://download.pytorch.org/whl/cu126"
+
+[tool.uv.sources]
+torch = { index = "pytorch" }
+torchvision = { index = "pytorch" }
 
 [project.urls]
 homepage = "https://github.com/DIGNEA/DIGNEApy"

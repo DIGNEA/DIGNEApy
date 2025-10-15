@@ -25,8 +25,9 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 
+DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 MODELS_PATH = Path(__file__).parent / "models/"
-AUTOENCODER_NAME = "variational_autoencoder_qd_instances_N_50.pt"
+AUTOENCODER_NAME = "variational_autoencoder_qd_instances_N_50_scripted.pt"
 VAEOutput = namedtuple("VAEOutput", ["output", "codings_mean", "codings_logvar"])
 
 
@@ -79,7 +80,9 @@ class KPEncoder(Transformer):
         super().__init__(name)
 
         self._expected_input_dim = 101
-        self._encoder = torch.load(MODELS_PATH / AUTOENCODER_NAME, weights_only=False)
+        self._encoder = torch.jit.load(
+            MODELS_PATH / AUTOENCODER_NAME, map_location=torch.device(DEVICE)
+        )
 
     @property
     def latent_dimension(self) -> int:
@@ -107,7 +110,12 @@ class KPEncoder(Transformer):
             raise ValueError(
                 f"Expected a np.ndarray with shape (M, {self._expected_input_dim}). Instead got: {X.shape}"
             )
-        return np.asarray(self._encoder.encode(X))
+        codings_means, codings_log_var = self._encoder.encode(
+            torch.tensor(X, device=DEVICE, dtype=torch.float32)
+        )
+        codings = self._encoder.sample_codings(codings_means, codings_log_var)
+        # Mean and Logarithm of the variance
+        return codings.cpu().detach().numpy()
 
 
 class KPDecoder(Transformer):
@@ -120,8 +128,9 @@ class KPDecoder(Transformer):
         self._scale_method = scale_method
         self.__scales_fname = "scales_knapsack_N_50.h5"
         self._expected_latent_dim = 2
-        self._decoder = torch.load(MODELS_PATH / AUTOENCODER_NAME, weights_only=False)
-
+        self._decoder = torch.jit.load(
+            MODELS_PATH / AUTOENCODER_NAME, map_location=torch.device(DEVICE)
+        )
         with h5py.File(MODELS_PATH / self.__scales_fname, "r") as file:
             self._max_weights = file["scales"]["max_weights"][:].astype(np.int32)
             self._max_profits = file["scales"]["max_profits"][:].astype(np.int32)
@@ -175,9 +184,9 @@ class KPDecoder(Transformer):
             max_w, max_p, scale_Q = self.__scaling_from_training(size=n_instances)
 
         rescaled_instances = np.zeros_like(decode_X, dtype=np.int32)
-        rescaled_instances[:, 0] = decode_X[:, 0] * scale_Q[:, 0] * 1_000_000
-        rescaled_instances[:, 1::2] = decode_X[:, 1::2] * max_w * 100_000
-        rescaled_instances[:, 2::2] = decode_X[:, 2::2] * max_p * 100_000
+        rescaled_instances[:, 0] = decode_X[:, 0] * scale_Q[:, 0]  # * 1_000_000
+        rescaled_instances[:, 1::2] = decode_X[:, 1::2] * max_w  # * 100_000
+        rescaled_instances[:, 2::2] = decode_X[:, 2::2] * max_p  # * 100_000
         return rescaled_instances
 
     def __call__(self, X: npt.NDArray) -> np.ndarray:
@@ -200,5 +209,10 @@ class KPDecoder(Transformer):
             raise ValueError(
                 f"Expected a np.ndarray with shape (M, {self._expected_latent_dim}). Instead got: {X.shape}"
             )
-        y = self._decoder(X)
+        y = (
+            self._decoder.decode(torch.tensor(X, device=DEVICE, dtype=torch.float32))
+            .cpu()
+            .detach()
+            .numpy()
+        )
         return self.__denormalise_instances(y)

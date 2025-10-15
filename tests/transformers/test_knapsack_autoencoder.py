@@ -11,6 +11,8 @@
 """
 
 import pytest
+
+
 import numpy as np
 from digneapy.domains import KnapsackDomain
 from digneapy.transformers.autoencoders import KPEncoder, KPDecoder
@@ -20,7 +22,7 @@ scale_methods = ("learnt", "sample")
 
 @pytest.mark.parametrize("scale_method", scale_methods)
 def test_KPDecoder_works_with_scale_method(scale_method):
-    N_INSTANCES = 100
+    N_INSTANCES = 128
     decoder = KPDecoder(scale_method=scale_method)
     encodings = np.random.default_rng().normal(0, 0.1, size=(N_INSTANCES, 2))
     decodings = decoder(encodings)
@@ -30,7 +32,7 @@ def test_KPDecoder_works_with_scale_method(scale_method):
 
 
 def test_KPEncoder_works_with_Knapsack_instances():
-    N_INSTANCES = 100
+    N_INSTANCES = 128
     encoder = KPEncoder()
     domain = KnapsackDomain()
     instances = np.asarray(domain.generate_instances(n=N_INSTANCES))

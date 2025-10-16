@@ -104,7 +104,7 @@ class NS:
 
 def dominated_novelty_search(
     descriptors: np.ndarray, performances: np.ndarray, k: int = 15
-) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
     """
     Dominated Novelty Search (DNS)
         Bahlous-Boldi, R., Faldor, M., Grillotti, L., Janmohamed, H., Coiffard, L., Spector, L., & Cully, A. (2025).
@@ -133,7 +133,7 @@ def dominated_novelty_search(
         ValueError: If k >= len(instances)
 
     Returns:
-        Tuple[np.ndarray]: Tuple with the descriptors and competition fitness values sorted, plus the sorted indexing (descending order).
+        Tuple[np.ndarray]: Tuple with the descriptors, performances and competition fitness values sorted, plus the sorted indexing (descending order).
     """
     num_instances = len(descriptors)
     if num_instances <= k:
@@ -145,17 +145,25 @@ def dominated_novelty_search(
             f"Array mismatch between peformances and descriptors. len(performance) = {len(performances)} != {len(descriptors)} len(descriptors)"
         )
 
-    mask = performances[:, None] > performances
+    mask = performances[:, None] < performances
     dominated_indices = [np.nonzero(row) for row in mask]
-    competition_fitness = np.full(num_instances, np.finfo(np.float32).max)
+    competition_fitness = np.full(
+        shape=(num_instances,), fill_value=np.finfo(np.float32).max, dtype=np.float64
+    )
     for i in range(num_instances):
         if dominated_indices[i][0].size > 0:
             dist = np.linalg.norm(
-                descriptors[i] - descriptors[dominated_indices[i]], axis=1
+                descriptors[i] - descriptors[dominated_indices[i][0]], axis=1
             )
             if len(dist) > k:
-                dist = np.partition(dist, k)[:k]
-            competition_fitness[i] = np.sum(dist) / k
+                competition_fitness[i] = np.mean(np.sort(dist)[:k])
+            else:
+                competition_fitness[i] = np.sum(dist) / k
 
     indexing = np.argsort(-competition_fitness)
-    return (descriptors[indexing], competition_fitness[indexing], indexing)
+    return (
+        descriptors[indexing],
+        performances[indexing],
+        competition_fitness[indexing],
+        indexing,
+    )

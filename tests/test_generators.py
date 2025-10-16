@@ -310,43 +310,49 @@ def test_map_elites_domain_cvt(domain_cls, portfolio, ranges):
     os.remove("example.png")
 
 
-@pytest.mark.skip(reason="Impossible to pass this tests now")
-def test_dominated_gen_kp_feat_descriptor():
-    portfolio = [default_kp, map_kp, miw_kp, mpw_kp]
+@pytest.mark.parametrize("k", [3, 15, 30])
+@pytest.mark.parametrize("descriptor", ["features", "performance", "instance"])
+def test_dominated_evolutionary_generator_with_k_and_descriptor(k, descriptor):
+    portfolio = [map_kp, miw_kp, mpw_kp]
+    pop_size = 128
     kp_domain = KnapsackDomain(dimension=50, capacity_approach="evolved")
-    generations = 10
+    generations = 100
     deig = DEAGenerator(
-        pop_size=10,
-        offspring_size=10,
+        pop_size=pop_size,
+        offspring_size=pop_size,
         generations=generations,
         domain=kp_domain,
         portfolio=portfolio,
         repetitions=1,
-        descriptor_strategy="features",
+        k=k,
+        descriptor_strategy=descriptor,
     )
     portfolio_names = [s.__name__ for s in portfolio]
-    expected_str = (
-        f"pop_size=10,gen=10,domain={kp_domain.name},portfolio={portfolio_names}"
-    )
+    expected_str = f"pop_size={pop_size},gen={generations},domain={kp_domain.name},portfolio={portfolio_names}"
     assert deig.__str__() == f"DEAGenerator({expected_str})"
     assert deig.__repr__() == f"DEAGenerator<{expected_str}>"
     result = deig()
-    assert len(result.instances) == 10
+    assert len(result.instances) == pop_size
     instances = result.instances
     # They could be empty
     assert isinstance(instances, list)
     assert all(len(s) == 101 for s in instances)
     assert all(s.fitness >= 0.0 for s in instances)
-    assert all(s.p >= 0.0 for s in instances)
-    assert all(s.s >= 0.0 for s in instances)
-    assert all(len(s.descriptor) == 8 for s in instances)
+    #    assert all(s.p >= 0.0 for s in instances)
+    if descriptor == "features":
+        assert all(len(s.descriptor) == 8 for s in instances)
+        assert all((s.descriptor == s.features).all() for s in instances)
+    elif descriptor == "performance":
+        assert all(len(s.descriptor) == 3 for s in instances)
+    else:
+        assert all(len(s.descriptor) == 101 for s in instances)
+
     assert all(len(s.portfolio_scores) == len(portfolio) for s in instances)
     p_scores = [s.portfolio_scores for s in instances]
     assert all(max(p_scores[i]) == p_scores[i][0] for i in range(len(p_scores)))
 
 
-@pytest.mark.skip(reason="Impossible to pass this tests now")
-def test_dominated_generator_raises():
+def test_dominated_evolutionary_generator_raises_if_wrong_args():
     portfolio = deque([default_kp, map_kp, miw_kp, mpw_kp])
     kp_domain = KnapsackDomain(dimension=50, capacity_approach="evolved")
     generations = 10

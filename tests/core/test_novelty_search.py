@@ -93,10 +93,12 @@ def test_dominated_novelty_search_different_ks(k, random_population):
     descriptors = np.asarray([instance.descriptor for instance in random_population])
     performances = np.asarray([instance.p for instance in random_population])
     assert all(len(d) != 0 for d in descriptors)
-    sorted_descriptors, competition_fitness, indexing = dominated_novelty_search(
-        descriptors, performances=performances, k=k
+    sorted_descriptors, sorted_performances, competition_fitness, indexing = (
+        dominated_novelty_search(descriptors, performances=performances, k=k)
     )
     assert sorted_descriptors.shape == descriptors.shape
+    assert sorted_performances.shape == performances.shape
+    assert np.all(competition_fitness[:-1] >= competition_fitness[1:])
     assert len(indexing) == len(random_population)
     assert all(f != 0.0 for f in competition_fitness)
 

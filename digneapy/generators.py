@@ -193,14 +193,14 @@ class EAGenerator(Generator, RNG):
                 "The portfolio is empty. To run the generator you must provide a valid portfolio of solvers"
             )
         self.population = self.domain.generate_instances(n=self.pop_size)
-        perf_biases, portfolio_scores = self.__evaluate_population(self.population)
-        descriptors, features = self.__update_descriptors(
+        perf_biases, portfolio_scores = self._evaluate_population(self.population)
+        descriptors, features = self._update_descriptors(
             self.population, portfolio_scores=portfolio_scores
         )
         for pgen in range(self.generations):
-            offspring = self.__generate_offspring(self.pop_size)
-            perf_biases, portfolio_scores = self.__evaluate_population(offspring)
-            descriptors, features = self.__update_descriptors(
+            offspring = self._generate_offspring(self.pop_size)
+            perf_biases, portfolio_scores = self._evaluate_population(offspring)
+            descriptors, features = self._update_descriptors(
                 offspring, portfolio_scores=portfolio_scores
             )
 
@@ -268,7 +268,7 @@ class EAGenerator(Generator, RNG):
             history=self._logbook,
         )
 
-    def __generate_offspring(self, offspring_size: int) -> np.ndarray:
+    def _generate_offspring(self, offspring_size: int) -> np.ndarray:
         """Generates a offspring population of size |offspring_size| from the current population
 
         Args:
@@ -286,7 +286,7 @@ class EAGenerator(Generator, RNG):
 
         return np.array(offspring)
 
-    def __update_descriptors(
+    def _update_descriptors(
         self,
         population: np.ndarray,
         portfolio_scores: Optional[np.ndarray] = None,
@@ -312,7 +312,7 @@ class EAGenerator(Generator, RNG):
 
         return (descriptors, features)
 
-    def __evaluate_population(
+    def _evaluate_population(
         self, population: Sequence[Instance]
     ) -> Tuple[np.ndarray, np.ndarray]:
         """Evaluates the population of instances using the portfolio of solvers.
@@ -460,13 +460,13 @@ class MapElitesGenerator(Generator, RNG):
 
     def _populate_archive(self):
         instances = self._domain.generate_instances(n=self._init_pop_size)
-        perf_biases, portfolio_scores = self.__evaluate_population(instances)
+        perf_biases, portfolio_scores = self._evaluate_population(instances)
         # Here we do not care for p >= 0. We are starting the archive
         # Must be removed later on
         self._archive.extend(instances)
         return instances
 
-    def __evaluate_population(
+    def _evaluate_population(
         self, population: Sequence[Instance]
     ) -> Tuple[np.ndarray, np.ndarray]:
         """Evaluates the population of instances using the portfolio of solvers.
@@ -510,7 +510,7 @@ class MapElitesGenerator(Generator, RNG):
                     parents,
                 )
             )
-            perf_biases, portfolio_scores = self.__evaluate_population(offspring)
+            perf_biases, portfolio_scores = self._evaluate_population(offspring)
             feasible_indices = np.where(perf_biases >= 0)[0]
             feasible_offspring = [
                 Instance(
@@ -625,50 +625,81 @@ class DEAGenerator(EAGenerator):
             raise ValueError(
                 "The portfolio is empty. To run the generator you must provide a valid portfolio of solvers"
             )
-        self.population = self.domain.generate_instances(self.pop_size)
-        perf_biases, portfolio_scores = self.__evaluate_population(self.population)
-        descriptors, features = self.__update_descriptors(
+        self.population = self.domain.generate_instances(n=self.pop_size)
+        perf_biases, portfolio_scores = self._evaluate_population(self.population)
+        descriptors, features = self._update_descriptors(
             self.population, portfolio_scores=portfolio_scores
         )
-        self.population = np.asarray(self.population)
-        for pgen in range(self.generations):
-            offspring = self.__generate_offspring(self.pop_size)
-            off_perf_biases, off_portfolio_scores = self.__evaluate_population(
-                offspring
+
+        # Preallocate the combined populations
+        combined_descriptors = np.empty(
+            shape=(self.pop_size * 2, descriptors.shape[1]), dtype=np.float32
+        )
+        combined_performances = np.empty(shape=(self.pop_size * 2,), dtype=np.float64)
+        combined_port_scores = np.empty(
+            shape=(
+                self.pop_size * 2,
+                portfolio_scores.shape[1],
+                portfolio_scores.shape[2],
+            ),
+            dtype=np.float64,
+        )
+        combined_perf_biases = np.empty(shape=(self.pop_size * 2,), dtype=np.float64)
+        combined_population = np.empty(
+            shape=(self.pop_size * 2, len(self.population[0]))
+        )
+        if features is not None:
+            combined_features = np.empty(
+                shape=(self.pop_size * 2, features.shape[1]), dtype=np.float32
             )
-            off_descriptors, off_features = self.__update_descriptors(
+        for pgen in range(self.generations):
+            offspring = self._generate_offspring(self.pop_size)
+            off_perf_biases, off_portfolio_scores = self._evaluate_population(offspring)
+            off_descriptors, off_features = self._update_descriptors(
                 offspring, portfolio_scores=off_portfolio_scores
             )
-            combined_descriptors = np.asarray([*descriptors, *off_descriptors])
-            combined_performances = np.asarray([*perf_biases, *off_perf_biases])
-            combined_port_scores = np.asarray([*portfolio_scores, *portfolio_scores])
-            combined_perf_biases = np.asarray([*perf_biases, *off_perf_biases])
-            combined_features = np.asarray([*features, off_features])
-            combined_population = np.asarray([*self.population, *offspring])
-            sorted_descriptors, sorted_performances, sorted_indexing = (
-                dominated_novelty_search(
-                    combined_descriptors, performances=combined_performances
-                )
+
+            combined_descriptors = np.vstack((descriptors, off_descriptors))
+            combined_performances = np.vstack((*perf_biases, *off_perf_biases))
+            combined_port_scores = np.vstack((portfolio_scores, portfolio_scores))
+            combined_population = np.vstack(
+                (np.asarray(self.population, copy=True), offspring)
+            )
+            if features is not None:
+                combined_features = np.vstack((features, off_features))
+
+            (
+                sorted_descriptors,
+                sorted_performances,
+                sorted_competition_fitness,
+                sorted_indexing,
+            ) = dominated_novelty_search(
+                combined_descriptors, performances=combined_performances
             )
 
-            fitness = sorted_performances[: self.pop_size]
+            # Keep the top N for the next generation
+            fitness = sorted_competition_fitness[: self.pop_size]
             descriptors = sorted_descriptors[: self.pop_size]
-            perf_biases = combined_perf_biases[sorted_indexing[: self.pop_size]]
+            perf_biases = sorted_performances[: self.pop_size]
+            # Track from the combined arrays based on the indexing
             portfolio_scores = combined_port_scores[sorted_indexing[: self.pop_size]]
-            features = combined_features[sorted_indexing[: self.pop_size]]
+            variables = combined_population[sorted_indexing[: self.pop_size]]
+            if features is not None:
+                features = combined_features[sorted_indexing[: self.pop_size]]
             # Both population and offspring are used in the replacement
             # Record the stats and update the performed gens
             self.population = [
                 Instance(
-                    variables=combined_population[i],
+                    variables=variables[i],
                     fitness=fitness[i],
                     descriptor=descriptors[i],
                     portfolio_scores=portfolio_scores[i],
                     p=perf_biases[i],
-                    features=features[i],
+                    features=features[i] if features is not None else (),
                 )
                 for i in range(self.pop_size)
             ]
+
             self._logbook.update(
                 generation=pgen, population=self.population, feedback=verbose
             )

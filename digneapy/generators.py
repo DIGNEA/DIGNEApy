@@ -606,6 +606,7 @@ class DEAGenerator(EAGenerator):
             selection=selection,
             performance_function=performance_function,
         )
+        self.k = k
         self.offspring_size = offspring_size
 
     def __str__(self):
@@ -631,23 +632,6 @@ class DEAGenerator(EAGenerator):
             self.population, portfolio_scores=portfolio_scores
         )
 
-        # Preallocate the combined populations
-        combined_descriptors = np.empty(
-            shape=(self.pop_size * 2, descriptors.shape[1]), dtype=np.float32
-        )
-        combined_performances = np.empty(shape=(self.pop_size * 2,), dtype=np.float64)
-        combined_port_scores = np.empty(
-            shape=(
-                self.pop_size * 2,
-                portfolio_scores.shape[1],
-                portfolio_scores.shape[2],
-            ),
-            dtype=np.float64,
-        )
-        combined_perf_biases = np.empty(shape=(self.pop_size * 2,), dtype=np.float64)
-        combined_population = np.empty(
-            shape=(self.pop_size * 2, len(self.population[0]))
-        )
         if features is not None:
             combined_features = np.empty(
                 shape=(self.pop_size * 2, features.shape[1]), dtype=np.float32
@@ -659,14 +643,20 @@ class DEAGenerator(EAGenerator):
                 offspring, portfolio_scores=off_portfolio_scores
             )
 
-            combined_descriptors = np.vstack((descriptors, off_descriptors))
-            combined_performances = np.vstack((*perf_biases, *off_perf_biases))
-            combined_port_scores = np.vstack((portfolio_scores, portfolio_scores))
-            combined_population = np.vstack(
-                (np.asarray(self.population, copy=True), offspring)
+            combined_descriptors = np.concatenate(
+                (descriptors, off_descriptors), axis=0
+            )
+            combined_performances = np.concatenate(
+                (perf_biases, off_perf_biases), axis=0
+            )
+            combined_port_scores = np.concatenate(
+                (portfolio_scores, portfolio_scores), axis=0
+            )
+            genotypes = np.concatenate(
+                (np.asarray(self.population, copy=True), offspring), axis=0
             )
             if features is not None:
-                combined_features = np.vstack((features, off_features))
+                combined_features = np.concatenate((features, off_features), axis=0)
 
             (
                 sorted_descriptors,
@@ -674,23 +664,27 @@ class DEAGenerator(EAGenerator):
                 sorted_competition_fitness,
                 sorted_indexing,
             ) = dominated_novelty_search(
-                combined_descriptors, performances=combined_performances
+                descriptors=combined_descriptors,
+                performances=combined_performances,
+                k=self.k,
+                force_feasible_only=True,
             )
 
             # Keep the top N for the next generation
+            sorted_indexing = sorted_indexing[: self.pop_size]
             fitness = sorted_competition_fitness[: self.pop_size]
             descriptors = sorted_descriptors[: self.pop_size]
             perf_biases = sorted_performances[: self.pop_size]
             # Track from the combined arrays based on the indexing
-            portfolio_scores = combined_port_scores[sorted_indexing[: self.pop_size]]
-            variables = combined_population[sorted_indexing[: self.pop_size]]
+            portfolio_scores = combined_port_scores[sorted_indexing]
+            genotypes = genotypes[sorted_indexing]
             if features is not None:
-                features = combined_features[sorted_indexing[: self.pop_size]]
+                features = combined_features[sorted_indexing]
             # Both population and offspring are used in the replacement
             # Record the stats and update the performed gens
             self.population = [
                 Instance(
-                    variables=variables[i],
+                    variables=genotypes[i],
                     fitness=fitness[i],
                     descriptor=descriptors[i],
                     portfolio_scores=portfolio_scores[i],

@@ -103,7 +103,10 @@ class NS:
 
 
 def dominated_novelty_search(
-    descriptors: np.ndarray, performances: np.ndarray, k: int = 15
+    descriptors: np.ndarray,
+    performances: np.ndarray,
+    k: int = 15,
+    force_feasible_only: bool = True,
 ) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
     """
     Dominated Novelty Search (DNS)
@@ -127,7 +130,8 @@ def dominated_novelty_search(
     Args:
         descriptors (np.ndarray): Numpy array with the descriptors of the instances
         performances (np.ndarray): Numpy array with the performance values of the instances
-
+        k (int): Number of nearest neighbours to calculate the competition fitness. Default to 15.
+        force_feasible_only (bool): Allow only instances with performance >= 0 to be considered. Default True.
     Raises:
         ValueError: If len(d) where d is the descriptor of each instance i differs from another
         ValueError: If k >= len(instances)
@@ -144,26 +148,32 @@ def dominated_novelty_search(
         raise ValueError(
             f"Array mismatch between peformances and descriptors. len(performance) = {len(performances)} != {len(descriptors)} len(descriptors)"
         )
-
-    mask = performances[:, None] < performances
-    dominated_indices = [np.nonzero(row) for row in mask]
-    competition_fitness = np.full(
-        shape=(num_instances,), fill_value=np.finfo(np.float32).max, dtype=np.float64
+    # Try to force only feasible performances to get proper biased instances
+    is_unfeasible = (
+        performances < 0.0 if force_feasible_only else (performances == -np.inf)
     )
-    for i in range(num_instances):
-        if dominated_indices[i][0].size > 0:
-            dist = np.linalg.norm(
-                descriptors[i] - descriptors[dominated_indices[i][0]], axis=1
-            )
-            if len(dist) > k:
-                competition_fitness[i] = np.mean(np.sort(dist)[:k])
-            else:
-                competition_fitness[i] = np.sum(dist) / k
-
-    indexing = np.argsort(-competition_fitness)
+    fitter = performances[:, None] <= performances[None, :]
+    fitter = np.where(is_unfeasible[None, :], False, fitter)
+    np.fill_diagonal(fitter, False)
+    distance = np.linalg.norm(
+        descriptors[:, None, :] - descriptors[None, :, :], axis=-1
+    )
+    distance = np.where(fitter, distance, np.inf)
+    neg_dist = -distance
+    indices = np.argpartition(neg_dist, -k, axis=-1)[..., -k:]
+    values = np.take_along_axis(neg_dist, indices, axis=-1)
+    indices = np.argsort(values, axis=-1)[..., ::-1]
+    values = np.take_along_axis(values, indices, axis=-1)
+    indices = np.take_along_axis(indices, indices, axis=-1)
+    distance = np.mean(
+        -values, where=np.take_along_axis(fitter, indices, axis=1), axis=-1
+    )
+    distance = np.where(np.isnan(distance), np.inf, distance)
+    distance = np.where(is_unfeasible, -np.inf, distance)
+    sorted_indices = np.argsort(-distance)
     return (
-        descriptors[indexing],
-        performances[indexing],
-        competition_fitness[indexing],
-        indexing,
+        descriptors[sorted_indices],
+        performances[sorted_indices],
+        distance[sorted_indices],
+        sorted_indices,
     )

@@ -13,7 +13,7 @@
 __all__ = ["BPP", "BPPDomain"]
 
 from collections.abc import Iterable, Sequence
-from typing import Dict, List, Self, Optional
+from typing import Dict, List, Optional
 
 import numpy as np
 from numpy import typing as npt
@@ -219,20 +219,26 @@ class BPPDomain(Domain):
         if not isinstance(instances, np.ndarray):
             instances = np.asarray(instances)
 
-        norm_variables = instances[:, 1:] / instances[:, 0]
+        norm_variables = np.asarray(instances, copy=True)
+        norm_variables[:, 1:] = norm_variables[:, 1:] / norm_variables[:, [0]]
+
         return np.column_stack(
             [
-                np.mean(norm_variables),
-                np.std(norm_variables),
-                np.median(norm_variables),
-                np.max(norm_variables),
-                np.min(norm_variables),
-                np.mean(norm_variables > 0.5),  # Huge
-                np.mean((0.5 >= norm_variables) & (norm_variables > 0.33333333333)),
-                np.mean((0.33333333333 >= norm_variables) & (norm_variables > 0.25)),
-                np.mean(0.25 >= norm_variables),  # Small
-                np.mean(0.1 >= norm_variables),  # Tiny
-            ]
+                np.mean(norm_variables, axis=1),
+                np.std(norm_variables, axis=1),
+                np.median(norm_variables, axis=1),
+                np.max(norm_variables, axis=1),
+                np.min(norm_variables, axis=1),
+                np.mean(norm_variables > 0.5, axis=1),  # Huge
+                np.mean(
+                    (0.5 >= norm_variables) & (norm_variables > 0.33333333333), axis=1
+                ),
+                np.mean(
+                    (0.33333333333 >= norm_variables) & (norm_variables > 0.25), axis=1
+                ),
+                np.mean(0.25 >= norm_variables, axis=1),  # Small
+                np.mean(0.1 >= norm_variables, axis=1),  # Tiny
+            ],
         ).astype(np.float32)
 
     def extract_features_as_dict(

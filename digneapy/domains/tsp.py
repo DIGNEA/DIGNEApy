@@ -340,7 +340,7 @@ class TSPDomain(Domain):
         if not isinstance(instances, np.ndarray):
             instances = np.asarray(instances)
 
-        dimension = instances.shape[1]
+        dimension = instances.shape[1] // 2
         return list(
             TSP(
                 nodes=dimension, coords=np.array([*zip(instance[0::2], instance[1::2])])

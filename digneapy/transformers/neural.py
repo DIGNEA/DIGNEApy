@@ -22,7 +22,7 @@ from typing import Callable, Optional
 import keras
 import numpy as np
 import numpy.typing as npt
-
+from sklearn.preprocessing import StandardScaler
 from ._base import Transformer
 
 
@@ -36,6 +36,7 @@ class NNEncoder(Transformer):
         evaluation_metric: Optional[Callable] = None,
         loss_fn: Optional[Callable] = None,
         optimizer: Optional[keras.Optimizer] = keras.optimizers.Nadam(),
+        scale: bool = True,
     ):
         """Neural Network used to transform a space into another. This class uses a Keras backend.
 
@@ -53,7 +54,7 @@ class NNEncoder(Transformer):
             name = name + ".keras"
 
         super().__init__(name)
-
+        self.scaler = StandardScaler()
         self.input_shape = input_shape
         self._shape = shape
         self._activations = activations
@@ -110,8 +111,8 @@ class NNEncoder(Transformer):
             x = np.vstack(x)
         elif x.ndim == 1:
             x.reshape(1, -1)
-
-        return self._model.predict(x, batch_size=batch_size, verbose=2)
+        x_scaled = self.scaler.fit_transform(x)
+        return self._model.predict(x_scaled, batch_size=batch_size, verbose=0)
 
     def __call__(self, x: npt.NDArray) -> np.ndarray:
         return self.predict(x)

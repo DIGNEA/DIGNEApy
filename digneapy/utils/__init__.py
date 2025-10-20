@@ -13,5 +13,12 @@
 from ._timers import clock, clock_to_file
 from .save_data import save_results_to_files
 from .serializer import to_json
+from .sorting import sort_knapsack_instances
 
-__all__ = ["clock", "clock_to_file", "save_results_to_files", "to_json"]
+__all__ = [
+    "clock",
+    "clock_to_file",
+    "save_results_to_files",
+    "to_json",
+    "sort_knapsack_instances",
+]

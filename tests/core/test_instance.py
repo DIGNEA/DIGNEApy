@@ -127,7 +127,7 @@ def test_boolean(initialised_instance, default_instance):
 
 def test_str():
     instance = Instance(fitness=100, p=10.0, s=3.0)
-    expected = "Instance(f=100.0,p=10.0,s=3.0,features=0,descriptor=array([], dtype=float64),performance=([], dtype=float64))"
+    expected = "Instance(f=100.0,p=10.0,s=3.0,features=0,descriptor=array([], dtype=float32),performance=([], dtype=float64))"
     assert str(instance) == expected
 
 
@@ -167,3 +167,15 @@ def test_instance_as_series(initialised_instance):
         assert f"portfolio_scores_{i}" in data
     for i in range(len(initialised_instance)):
         assert f"v{i}" in data
+
+
+def test_instance_can_be_cloned(initialised_instance):
+    other = initialised_instance.clone()
+    assert isinstance(other, Instance)
+    assert other == initialised_instance
+
+    variables = np.empty_like(other.variables)
+    variables = np.random.default_rng().integers(low=0, high=100, size=len(variables))
+    second_clone = initialised_instance.clone_with(variables=variables)
+    assert second_clone != initialised_instance
+    assert second_clone != other

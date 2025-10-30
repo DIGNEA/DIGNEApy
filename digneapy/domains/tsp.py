@@ -111,7 +111,7 @@ class TSP(Problem):
 
     def create_solution(self) -> Solution:
         items = [0] + list(range(1, self._nodes)) + [0]
-        return Solution(chromosome=items)
+        return Solution(variables=items)
 
     def to_file(self, filename: str = "instance.tsp"):
         with open(filename, "w") as file:
@@ -222,10 +222,10 @@ class TSPDomain(Domain):
             - Standard deviation of the distances
             - Centroid coordinates
             - Radius of the instance
-            - Fraction of distinct instances
+            - Fraction of distinct distances
             - Rectangular area
             - Variance of the normalised nearest neighbours distances
-            - Coefficient of variantion of the nearest neighbours distances
+            - Coefficient of variation of the nearest neighbours distances
             - Cluster ratio
             - Mean cluster radius
         Args:

@@ -67,7 +67,7 @@ def uniform_crossover(
         raise ValueError(msg)
 
     probs = np.random.default_rng().random(size=len(individual))
-    offspring = individual.clone()
-    chromosome = np.where(probs <= cxpb, individual, other)
-    offspring[:] = chromosome
-    return offspring
+    genotype = np.empty_like(individual)
+    genotype = np.where(probs <= cxpb, individual, other)
+
+    return individual.clone_with(variables=genotype)

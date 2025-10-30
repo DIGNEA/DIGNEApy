@@ -34,10 +34,10 @@ def binary_tournament_selection(population: Sequence[IndType]) -> IndType:
     Returns:
         Instance or Solution: New parent
     """
-    if population is None or len(population) == 0:
+    if not population:
         msg = "Trying to selection individuals in an empty population."
         raise ValueError(msg)
-    if len(population) == 1:
+    elif len(population) == 1:
         return population[0]
     else:
         idx1, idx2 = np.random.default_rng().integers(

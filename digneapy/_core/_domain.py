@@ -70,13 +70,15 @@ class Domain(ABC, RNG):
 
     @abstractmethod
     def generate_problems_from_instances(
-        self, instances: Sequence[Instance]
+        self, instances: Sequence[Instance] | np.ndarray
     ) -> List[Problem]:
         msg = "generate_problems_from_instances is not implemented in Domain class."
         raise NotImplementedError(msg)
 
     @abstractmethod
-    def extract_features(self, instances: Sequence[Instance]) -> np.ndarray:
+    def extract_features(
+        self, instances: Sequence[Instance] | np.ndarray
+    ) -> np.ndarray:
         """Extract the features of the instances based on the domain
 
         Args:
@@ -90,7 +92,7 @@ class Domain(ABC, RNG):
 
     @abstractmethod
     def extract_features_as_dict(
-        self, instances: Sequence[Instance]
+        self, instances: Sequence[Instance] | np.ndarray
     ) -> List[Dict[str, np.float32]]:
         """Creates a dictionary with the features of the instance.
         The key are the names of each feature and the values are
@@ -109,6 +111,7 @@ class Domain(ABC, RNG):
     def bounds(self):
         return self._bounds
 
+    
     def get_bounds_at(self, i: int) -> tuple:
         if i < 0 or i > len(self._bounds):
             raise ValueError(

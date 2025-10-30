@@ -85,7 +85,7 @@ class BPP(Problem):
 
     def create_solution(self) -> Solution:
         items = list(range(self._dimension))
-        return Solution(chromosome=items)
+        return Solution(variables=items)
 
     def to_file(self, filename: str = "instance.bpp"):
         with open(filename, "w") as file:

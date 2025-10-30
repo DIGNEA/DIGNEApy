@@ -11,7 +11,7 @@
 """
 
 from ._crossover import Crossover, one_point_crossover, uniform_crossover
-from ._mutation import Mutation, uniform_one_mutation
+from ._mutation import Mutation, uniform_one_mutation, batch_uniform_one_mutation
 from ._replacement import (
     Replacement,
     elitist_replacement,
@@ -28,6 +28,7 @@ __all__ = [
     "one_point_crossover",
     "uniform_crossover",
     "uniform_one_mutation",
+    "batch_uniform_one_mutation",
     "elitist_replacement",
     "first_improve_replacement",
     "generational_replacement",

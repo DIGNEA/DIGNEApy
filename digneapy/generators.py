@@ -17,7 +17,6 @@ from collections.abc import Iterable
 from dataclasses import dataclass
 from operator import attrgetter
 from typing import Optional, Protocol, Tuple, Sequence
-from functools import partial
 import numpy as np
 import pandas as pd
 
@@ -43,6 +42,7 @@ from .operators import (
     generational_replacement,
     uniform_crossover,
     uniform_one_mutation,
+    batch_uniform_one_mutation,
 )
 from .transformers import SupportsTransform
 
@@ -71,6 +71,12 @@ class Generator(Protocol):
     """Protocol to type check all generators of instances types in digneapy"""
 
     def __call__(self, *args, **kwargs) -> GenResult: ...
+
+    def _update_descriptors(
+        self,
+        population: np.ndarray,
+        portfolio_scores: Optional[np.ndarray] = None,
+    ) -> Tuple[np.ndarray, Optional[np.ndarray]]: ...
 
 
 class EAGenerator(Generator, RNG):
@@ -458,13 +464,27 @@ class MapElitesGenerator(Generator, RNG):
         domain_name = self._domain.name if self._domain is not None else "None"
         return f"MapElites<descriptor={self._descriptor},pop_size={self._init_pop_size},gen={self._generations},domain={domain_name},portfolio={port_names!r}>"
 
-    def _populate_archive(self):
-        instances = self._domain.generate_instances(n=self._init_pop_size)
-        perf_biases, portfolio_scores = self._evaluate_population(instances)
-        # Here we do not care for p >= 0. We are starting the archive
-        # Must be removed later on
-        self._archive.extend(instances)
-        return instances
+    def _update_descriptors(
+        self,
+        population: np.ndarray | Sequence[Instance],
+        portfolio_scores: Optional[np.ndarray] = None,
+    ) -> Tuple[np.ndarray, Optional[np.ndarray]]:
+        """Updates the descriptors of the population of instances
+
+        Args:
+            population (Sequence[Instance]): Population of instances to update the descriptors.
+        """
+        descriptors = np.empty(len(population))
+        features = None
+        if self._descriptor == "features":
+            descriptors = self._domain.extract_features(population)
+            features = descriptors.copy()
+        elif self._descriptor == "performance":
+            descriptors = np.mean(portfolio_scores, axis=2)
+        else:
+            descriptors = self._descriptor_strategy(population)
+
+        return (descriptors, features)
 
     def _evaluate_population(
         self, population: Sequence[Instance]
@@ -497,36 +517,43 @@ class MapElitesGenerator(Generator, RNG):
         return performance_biases, solvers_scores
 
     def __call__(self, verbose: bool = False) -> GenResult:
-        instances = self._populate_archive()
+        instances = self._domain.generate_instances(n=self._init_pop_size)
+        perf_biases, portfolio_scores = self._evaluate_population(instances)
+        descriptors, features = self._update_descriptors(instances, portfolio_scores)
+
+        # Here we do not care for p >= 0. We are starting the archive
+        # Must be removed later on
+        self._archive.extend(instances=instances, descriptors=descriptors)
         self._logbook.update(generation=0, population=instances, feedback=verbose)
+
         for generation in range(self._generations):
-            parents = [
-                p.clone()
-                for p in random.choices(self._archive.instances, k=self._init_pop_size)
-            ]
-            offspring = list(
-                map(
-                    lambda ind: self._mutation(ind, self._domain.bounds),
-                    parents,
-                )
+            indices = self._rng.choice(
+                list(self._archive.filled_cells), size=self._init_pop_size
+            )
+            parents = np.asarray(self._archive[indices], copy=True)
+            offspring = batch_uniform_one_mutation(
+                parents, self._domain._lbs, ub=self._domain._ubs
             )
             perf_biases, portfolio_scores = self._evaluate_population(offspring)
-            feasible_indices = np.where(perf_biases >= 0)[0]
-            feasible_offspring = [
+            # feasible_indices = np.where(perf_biases >= 0)[0]
+            descriptors, features = self._update_descriptors(
+                population=offspring, portfolio_scores=portfolio_scores
+            )
+
+            offspring_population = [
                 Instance(
                     variables=offspring[i],
                     fitness=perf_biases[i],
-                    descriptor=offspring[i],
+                    descriptor=descriptors[i],
                     portfolio_scores=portfolio_scores[i],
                     p=perf_biases[i],
+                    features=features[i] if features is not None else None,
                 )
-                for i in feasible_indices
+                for i in range(self._init_pop_size)
             ]
-            print(feasible_indices)
-            print(feasible_offspring)
-            # Only the feasible instances are considered to be included
-            # in the archive and the solution set.
-            self._archive.extend(feasible_offspring)
+            self._archive.extend(
+                instances=offspring_population, descriptors=descriptors
+            )
 
             # Record the stats and update the performed gens
             self._logbook.update(
@@ -538,8 +565,7 @@ class MapElitesGenerator(Generator, RNG):
             blank = " " * 80
             print(f"\r{blank}\r", end="")
 
-        unfeasible_instances = list(filter(lambda i: i.p < 0, self._archive))
-        self._archive.remove(unfeasible_instances)
+        self._archive.purge_unfeasible()
         return GenResult(
             target=self._portfolio[0].__name__,
             instances=self._archive,

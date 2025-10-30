@@ -14,16 +14,21 @@ import argparse
 import itertools
 from functools import partial
 from multiprocessing.pool import Pool
-
 from digneapy import NS, Archive
 from digneapy.domains import KnapsackDomain
 from digneapy.generators import EAGenerator
 from digneapy.operators import generational_replacement
-from digneapy.solvers import default_kp, map_kp, miw_kp, mpw_kp
-from digneapy.utils import save_results_to_files
+from digneapy.solvers import (
+    default_kp,
+    map_kp,
+    miw_kp,
+    mpw_kp,
+    shuffle_and_run_for_knapsack,
+)
+from digneapy.utils import save_results_to_files, sort_knapsack_instances
 
 
-def generate_instancess(
+def generate_instances(
     portfolio,
     dimension: int,
     pop_size: int,
@@ -127,44 +132,58 @@ if __name__ == "__main__":
     k = args.k
     rep = args.repetition
     verbose = args.verbose
-
     portfolios = [
         [default_kp, map_kp, miw_kp, mpw_kp],
         [map_kp, default_kp, miw_kp, mpw_kp],
         [miw_kp, default_kp, map_kp, mpw_kp],
         [mpw_kp, default_kp, map_kp, miw_kp],
     ]
-
-    with Pool(4) as pool:
-        results = pool.map(
-            partial(
-                generate_instancess,
-                dimension=dimension,
-                pop_size=population_size,
-                generations=generations,
-                archive_threshold=archive_threshold,
-                ss_threshold=solution_set_threshold,
-                k=k,
-                descriptor=descriptor,
-                verbose=verbose,
-            ),
-            portfolios,
+    results = []
+    for portfolio in portfolios:
+        result = generate_instances(
+            portfolio=portfolio,
+            dimension=dimension,
+            pop_size=population_size,
+            generations=generations,
+            archive_threshold=archive_threshold,
+            ss_threshold=solution_set_threshold,
+            k=k,
+            descriptor=descriptor,
+            verbose=verbose,
         )
 
-    pool.close()
-    pool.join()
+        results.append(result)
+    # with Pool(4) as pool:
+    #     results = pool.map(
+    #         partial(
+    #             generate_instancess,
+    #             dimension=dimension,
+    #             pop_size=population_size,
+    #             generations=generations,
+    #             archive_threshold=archive_threshold,
+    #             ss_threshold=solution_set_threshold,
+    #             k=k,
+    #             descriptor=descriptor,
+    #             verbose=verbose,
+    #         ),
+    #         portfolios,
+    #     )
+
+    # pool.close()
+    # pool.join()
     features_names = KnapsackDomain().feat_names if descriptor == "features" else None
-    vars_names = ["Q"] + list(
+    vars_names = ["capacity"] + list(
         itertools.chain.from_iterable([(f"w_{i}", f"p_{i}") for i in range(dimension)])
     )
-
     for i, result in enumerate(results):
         solvers_names = [p.__name__ for p in portfolios[i]]
-
+        if len(result.instances) > 0:
+            result.instances = sort_knapsack_instances(result.instances)
         save_results_to_files(
-            f"ns_{descriptor}_N_{dimension}_target_{result.target}_rep_{rep}",
+            f"sorted_ns_{descriptor}_N_{dimension}_target_{result.target}_rep_{rep}",
             result,
-            solvers_names,
-            features_names,
-            vars_names,
+            only_genotypes=True,
+            only_instances=True,
+            vars_names=vars_names,
+            files_format="csv",
         )

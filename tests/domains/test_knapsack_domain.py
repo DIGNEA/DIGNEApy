@@ -169,7 +169,7 @@ def test_knapsack_problems(default_kp):
     # Checks solution is in ranges
     assert all(0 <= i <= 1 for i in solution)
     fitness_s = default_kp(solution)
-    fitness_ch = default_kp(solution.chromosome)
+    fitness_ch = default_kp(solution.variables)
     assert fitness_s == fitness_ch
 
 

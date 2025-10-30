@@ -28,18 +28,20 @@ class Instance:
         "_desc",
         "_pscores",
         "_otype",
+        "_dtype",
     )
 
     def __init__(
         self,
         variables: Optional[npt.ArrayLike] = None,
-        fitness: float = 0.0,
-        p: float = 0.0,
-        s: float = 0.0,
-        features: Optional[tuple[float]] = None,
-        descriptor: Optional[tuple[float]] = None,
-        portfolio_scores: Optional[tuple[float]] = None,
+        fitness: np.float64 = np.float64(0.0),
+        p: np.float64 = np.float64(0.0),
+        s: np.float64 = np.float64(0.0),
+        features: Optional[tuple[np.float32]] = None,
+        descriptor: Optional[tuple[np.float32]] = None,
+        portfolio_scores: Optional[tuple[np.float64]] = None,
         otype=np.float64,
+        dtype=np.uint32,
     ):
         """Creates an instance of a Instance (unstructured) for QD algorithms
         This class is used to represent a solution in a QD algorithm. It contains the
@@ -62,6 +64,7 @@ class Instance:
             ValueError: If fitness, p or s are not convertible to float.
         """
         self._otype = otype
+        self._dtype = dtype
         try:
             fitness = self._otype(fitness)
             p = self._otype(p)
@@ -71,15 +74,38 @@ class Instance:
                 "The fitness, p and s parameters must be convertible to float"
             )
 
-        self._vars = np.array(variables) if variables is not None else np.empty(0)
+        self._vars = (
+            np.array(variables, dtype=self._dtype)
+            if variables is not None
+            else np.empty(0, dtype=self._dtype)
+        )
         self._fit = fitness
         self._p = p
         self._s = s
-        self._features = np.array(features) if features is not None else np.empty(0)
+        self._features = (
+            np.array(features, dtype=np.float32)
+            if features is not None
+            else np.empty(0, dtype=np.float32)
+        )
         self._pscores = (
-            np.array(portfolio_scores) if portfolio_scores is not None else np.empty(0)
-        ).astype(self._otype)
-        self._desc = np.array(descriptor) if descriptor is not None else np.empty(0)
+            np.array(portfolio_scores, dtype=self._otype)
+            if portfolio_scores is not None
+            else np.empty(0, dtype=self._otype)
+        )
+
+        self._desc = (
+            np.array(descriptor, dtype=np.float32)
+            if descriptor is not None
+            else np.empty(0, dtype=np.float32)
+        )
+
+    @property
+    def dtype(self):
+        return self._dtype
+
+    @property
+    def otype(self):
+        return self._otype
 
     def clone(self) -> Self:
         """Create a clone of the current instance. More efficient than using copy.deepcopy.
@@ -97,18 +123,39 @@ class Instance:
             descriptor=tuple(self._desc),
         )
 
+    def clone_with(self, **overrides):
+        """Clones an Instance with overriden attributes
+
+        Returns:
+            Instance
+        """
+        new_object = self.clone()
+        for key, value in overrides.items():
+            setattr(new_object, key, value)
+        return new_object
+
     @property
     def variables(self):
         return self._vars
 
+    @variables.setter
+    def variables(self, new_variables: npt.ArrayLike):
+        if len(new_variables) != len(self._vars):
+            raise ValueError(
+                "Updating the variables of an Instance object with a different number of values."
+                f"Instance have {len(self._vars)}"
+                f"variables and the new_variables sequence have {len(new_variables)}"
+            )
+        self._vars = np.asarray(new_variables)
+
     @property
-    def p(self) -> float:
+    def p(self) -> np.float64:
         return self._p
 
     @p.setter
-    def p(self, performance: float):
+    def p(self, performance: np.float64):
         try:
-            performance = float(performance)
+            performance = np.float64(performance)
         except ValueError:
             # if performance != 0.0 and not float(performance):
             msg = f"The performance value {performance} is not a float in 'p' setter of class {self.__class__.__name__}"
@@ -116,13 +163,13 @@ class Instance:
         self._p = performance
 
     @property
-    def s(self) -> float:
+    def s(self) -> np.float64:
         return self._s
 
     @s.setter
-    def s(self, novelty: float):
+    def s(self, novelty: np.float64):
         try:
-            novelty = float(novelty)
+            novelty = np.float64(novelty)
         except ValueError:
             # if novelty != 0.0 and not float(novelty):
             msg = f"The novelty value {novelty} is not a float in 's' setter of class {self.__class__.__name__}"
@@ -130,13 +177,13 @@ class Instance:
         self._s = novelty
 
     @property
-    def fitness(self) -> float:
+    def fitness(self) -> np.float64:
         return self._fit
 
     @fitness.setter
-    def fitness(self, f: float):
+    def fitness(self, f: np.float64):
         try:
-            f = float(f)
+            f = np.float64(f)
         except ValueError:
             # if f != 0.0 and not float(f):
             msg = f"The fitness value {f} is not a float in fitness setter of class {self.__class__.__name__}"
@@ -252,6 +299,7 @@ class Instance:
 
     def asdict(
         self,
+        only_genotype: bool = False,
         variables_names: Optional[Sequence[str]] = None,
         features_names: Optional[Sequence[str]] = None,
         score_names: Optional[Sequence[str]] = None,
@@ -260,6 +308,7 @@ class Instance:
         and the values are the values of the attributes.
 
         Args:
+            only_genotype (bool, Default True): Whether to return the Instance as a dictionary containing only the variables.
             variables_names (Optional[Sequence[str]], optional): Names of the variables in the dictionary, otherwise v_i. Defaults to None.
             features_names (Optional[Sequence[str]], optional): Name of the features in the dictionary, otherwise f_i. Defaults to None.
             score_names (Optional[Sequence[str]], optional): Name of the solvers, otherwise solver_i. Defaults to None.
@@ -267,32 +316,7 @@ class Instance:
         Returns:
             dict: Dictionary with the attributes of the instance as keys and the values of the attributes as values.
         """
-        sckeys = (
-            [f"solver_{i}" for i in range(len(self._pscores))]
-            if score_names is None
-            else score_names
-        )
-        _data = {
-            "fitness": self._fit,
-            "s": self._s,
-            "p": self._p,
-            "portfolio_scores": {sk: v for sk, v in zip(sckeys, self._pscores)},
-        }
-
-        if len(self._desc) not in (
-            len(self._vars),
-            len(self._features),
-            len(self._pscores),
-        ):  # Transformed descriptor
-            _data["descriptor"] = {f"d{i}": v for i, v in enumerate(self._desc)}
-        if len(self.features) != 0:
-            f_keys = (
-                [f"f{i}" for i in range(len(self._features))]
-                if features_names is None or len(features_names) == 0
-                else features_names
-            )
-            _data["features"] = {fk: v for fk, v in zip(f_keys, self._features)}
-
+        _data = {}
         if variables_names:
             if len(variables_names) != len(self._vars):
                 print(
@@ -306,6 +330,36 @@ class Instance:
 
         else:
             _data["variables"] = {f"v{i}": v for i, v in enumerate(self._vars)}
+        if only_genotype:
+            return _data
+
+        else:
+            sckeys = (
+                [f"solver_{i}" for i in range(len(self._pscores))]
+                if score_names is None
+                else score_names
+            )
+            _data = {
+                "fitness": self._fit,
+                "s": self._s,
+                "p": self._p,
+                "portfolio_scores": {sk: v for sk, v in zip(sckeys, self._pscores)},
+                **_data,
+            }
+
+            if len(self._desc) not in (
+                len(self._vars),
+                len(self._features),
+                len(self._pscores),
+            ):  # Transformed descriptor
+                _data["descriptor"] = {f"d{i}": v for i, v in enumerate(self._desc)}
+            if len(self.features) != 0:
+                f_keys = (
+                    [f"f{i}" for i in range(len(self._features))]
+                    if features_names is None or len(features_names) == 0
+                    else features_names
+                )
+                _data["features"] = {fk: v for fk, v in zip(f_keys, self._features)}
 
         return _data
 
@@ -322,6 +376,7 @@ class Instance:
 
     def to_series(
         self,
+        only_genotype: bool = False,
         variables_names: Optional[Sequence[str]] = None,
         features_names: Optional[Sequence[str]] = None,
         score_names: Optional[Sequence[str]] = None,
@@ -329,6 +384,7 @@ class Instance:
         """Creates a pandas Series from the instance.
 
         Args:
+            only_genotype (bool, Default True): Whether to return the Instance as a pd.Series containing only the variables.
             variables_names (Optional[Sequence[str]], optional): Names of the variables in the dictionary, otherwise v_i. Defaults to None.
             features_names (Optional[Sequence[str]], optional): Name of the features in the dictionary, otherwise f_i. Defaults to None.
             score_names (Optional[Sequence[str]], optional): Name of the solvers, otherwise solver_i. Defaults to None.
@@ -338,6 +394,7 @@ class Instance:
         """
         _flatten_data = {}
         for key, value in self.asdict(
+            only_genotype=only_genotype,
             variables_names=variables_names,
             features_names=features_names,
             score_names=score_names,

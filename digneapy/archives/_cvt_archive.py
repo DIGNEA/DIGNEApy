@@ -11,8 +11,8 @@
 """
 
 import json
-from collections.abc import Iterable, Sequence
-from typing import Dict, Optional, Tuple
+from collections.abc import Sequence
+from typing import Optional, Tuple
 
 import numpy as np
 import numpy.typing as npt
@@ -22,10 +22,10 @@ from sklearn.neighbors import KDTree
 from digneapy._core import Instance
 from digneapy._core.types import RNG
 
-from ._base_archive import Archive
+from ._grid_archive import GridArchive
 
 
-class CVTArchive(Archive, RNG):
+class CVTArchive(GridArchive, RNG):
     """An Archive that divides a high-dimensional measure space into k homogeneous geometric regions.
     Based on the paper from Vassiliades et al (2018) <https://ieeexplore.ieee.org/document/8000667>
     > The computational complexity of the method we provide for constructing the CVT (in Algorithm 1) is O(ndki),
@@ -67,7 +67,6 @@ class CVTArchive(Archive, RNG):
             ValueError: If the centroids file cannot be loaded.
             ValueError: If given a centroids np.ndarray the number of centroids in the file is different from the number of regions (k).
         """
-        Archive.__init__(self, threshold=np.finfo(np.float32).max, dtype=dtype)
         if k <= 0:
             raise ValueError(f"The number of regions (k = {k}) must be >= 1")
 
@@ -81,6 +80,10 @@ class CVTArchive(Archive, RNG):
                 f"The number of samples (n_samples = {n_samples}) must be >= 1 and >= regions (k = {k})"
             )
 
+        GridArchive.__init__(
+            self, dimensions=(1,) * len(ranges), ranges=ranges, dtype=dtype
+        )
+
         self._dimensions = len(ranges)
         ranges = list(zip(*ranges))
         self._lower_bounds = np.array(ranges[0], dtype=self._dtype)
@@ -93,8 +96,6 @@ class CVTArchive(Archive, RNG):
         self.initialize_rng(seed=seed)
         self._kmeans = KMeans(n_clusters=self._k, n_init=1, random_state=self._seed)
 
-        # Data Structure to store the instances in the CVT
-        self._grid: Dict[int, Instance] = {}
         # Loading samples if given
         if samples is not None:
             if isinstance(samples, str):
@@ -189,7 +190,7 @@ class CVTArchive(Archive, RNG):
 
     @property
     def instances(self) -> list[Instance]:
-        return list(self._grid.values())
+        return list(self._storage.values())
 
     def __str__(self):
         return f"CVArchive(dim={self._dimensions},regions={self._k},centroids={self._centroids})"
@@ -203,7 +204,7 @@ class CVTArchive(Archive, RNG):
         Returns:
             Iterator: Yields position in the hypercube and instance located in such position
         """
-        return iter(self._grid.values())
+        return iter(self._storage.values())
 
     def lower_i(self, i) -> np.float64:
         if i < 0 or i > len(self._lower_bounds):
@@ -216,58 +217,6 @@ class CVTArchive(Archive, RNG):
             msg = f"index {i} is out of bounds. Valid values are [0-{len(self._upper_bounds)}]"
             raise ValueError(msg)
         return self._upper_bounds[i]
-
-    def append(self, instance: Instance):
-        """Inserts an Instance into the Grid
-
-        Args:
-            instance (Instance): Instace to be inserted
-
-        Raises:
-            TypeError: ``instance`` is not a instance of the class Instance.
-        """
-        if isinstance(instance, Instance):
-            index = self.index_of(np.asarray(instance.descriptor).reshape(1, -1))[0]
-            if index not in self._grid or instance > self._grid[index]:
-                self._grid[index] = instance.clone()
-
-        else:
-            msg = "Only objects of type Instance can be inserted into a CVTArchive"
-            raise TypeError(msg)
-
-    def extend(self, iterable: Iterable[Instance]):
-        """Includes all the instances in iterable into the Grid
-
-        Args:
-            iterable (Iterable[Instance]): Iterable of instances
-        """
-        if not all(isinstance(i, Instance) for i in iterable):
-            msg = "Only objects of type Instance can be inserted into a CVTArchive"
-            raise TypeError(msg)
-
-        indeces = self.index_of([i.descriptor for i in iterable])
-        for idx, instance in zip(indeces, iterable, strict=True):
-            if idx not in self._grid or instance.fitness > self._grid[idx].fitness:
-                self._grid[idx] = instance.clone()
-
-    def remove(self, iterable: Iterable[Instance]):
-        """Removes all the instances in iterable from the grid"""
-        if not all(isinstance(i, Instance) for i in iterable):
-            msg = "Only objects of type Instance can be removed from a CVTArchive"
-            raise TypeError(msg)
-
-        indeces_to_remove = self.index_of([i.descriptor for i in iterable])
-        for index in indeces_to_remove:
-            if index in self._grid:
-                del self._grid[index]
-
-    def remove_unfeasible(self, attr: str = "p"):
-        """Removes all the unfeasible instances from the grid"""
-        keys_to_remove = [
-            i for i in self._grid.keys() if getattr(self._grid[i], attr) < 0
-        ]
-        for i in keys_to_remove:
-            del self._grid[i]
 
     def index_of(self, descriptors) -> np.ndarray:
         """Computes the indeces of a batch of descriptors.
@@ -285,7 +234,7 @@ class CVTArchive(Archive, RNG):
 
         if len(descriptors) == 0:
             return np.empty(0)
-        if (
+        elif (
             descriptors.ndim == 1
             and descriptors.shape[0] != self._dimensions
             or descriptors.ndim == 2
@@ -368,7 +317,8 @@ class CVTArchive(Archive, RNG):
             "centroids": self._centroids.tolist(),
             "samples": self._samples.tolist(),
             "instances": {
-                i: instance.asdict() for i, instance in enumerate(self._grid.values())
+                i: instance.asdict()
+                for i, instance in enumerate(self._storage.values())
             },
         }
 

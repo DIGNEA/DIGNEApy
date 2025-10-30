@@ -83,4 +83,4 @@ cpdef list two_opt(object problem):
                     tour[i:j] = tour[j - 1 : i - 1 : -1]
                     improve = True
     fitness = evaluate(tour, distances)
-    return [Solution(chromosome=tour, objectives=(fitness,), fitness=fitness)]
+    return [Solution(variables=tour, objectives=(fitness,), fitness=fitness)]

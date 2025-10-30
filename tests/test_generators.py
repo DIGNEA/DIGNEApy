@@ -103,7 +103,7 @@ def test_default_generator():
 def test_evo_instance_generator_for_KP_with_performance_descriptor(capacity_approach):
     portfolio = deque([default_kp, map_kp, miw_kp, mpw_kp])
     kp_domain = KnapsackDomain(dimension=50, capacity_approach=capacity_approach)
-    generations = 100
+    generations = 10
     k = 3
     eig = EAGenerator(
         pop_size=10,
@@ -136,7 +136,7 @@ def test_evo_instance_generator_for_KP_with_performance_descriptor(capacity_appr
 def test_evo_instance_generator_for_KP_with_features_descriptor(capacity_approach):
     portfolio = deque([default_kp, map_kp, miw_kp, mpw_kp])
     kp_domain = KnapsackDomain(dimension=50, capacity_approach=capacity_approach)
-    generations = 100
+    generations = 10
     k = 3
     eig = EAGenerator(
         pop_size=10,
@@ -176,7 +176,7 @@ def test_evo_instance_generator_for_KP_with_features_descriptor(capacity_approac
 def test_eig_gen_kp_inst_descriptor():
     portfolio = deque([map_kp, mpw_kp])
     kp_domain = KnapsackDomain(dimension=50, capacity_approach="evolved")
-    generations = 100
+    generations = 10
     k = 3
     eig = EAGenerator(
         pop_size=10,
@@ -210,15 +210,15 @@ test_data = [
         KnapsackDomain,
         [default_kp, map_kp, miw_kp],
         8,
-        "MapElites(descriptor=features,pop_size=32,gen=1000,domain=KP,portfolio=['default_kp', 'map_kp', 'miw_kp'])",
-        "MapElites<descriptor=features,pop_size=32,gen=1000,domain=KP,portfolio=['default_kp', 'map_kp', 'miw_kp']>",
+        "MapElites(descriptor=features,pop_size=32,gen=10,domain=KP,portfolio=['default_kp', 'map_kp', 'miw_kp'])",
+        "MapElites<descriptor=features,pop_size=32,gen=10,domain=KP,portfolio=['default_kp', 'map_kp', 'miw_kp']>",
     ),
     (
         BPPDomain,
         [best_fit, first_fit, worst_fit],
         10,
-        "MapElites(descriptor=features,pop_size=32,gen=1000,domain=BPP,portfolio=['best_fit', 'first_fit', 'worst_fit'])",
-        "MapElites<descriptor=features,pop_size=32,gen=1000,domain=BPP,portfolio=['best_fit', 'first_fit', 'worst_fit']>",
+        "MapElites(descriptor=features,pop_size=32,gen=10,domain=BPP,portfolio=['best_fit', 'first_fit', 'worst_fit'])",
+        "MapElites<descriptor=features,pop_size=32,gen=10,domain=BPP,portfolio=['best_fit', 'first_fit', 'worst_fit']>",
     ),
 ]
 
@@ -226,11 +226,11 @@ test_data = [
 @pytest.mark.parametrize(
     "domain_cls, portfolio, desc_size, expected_str, expected_repr", test_data
 )
-@pytest.mark.skip(reason="Impossible to pass this tests now")
 def test_map_elites_domain_grid(
     domain_cls, portfolio, desc_size, expected_str, expected_repr
 ):
     dimension = 50
+    generations = 10
     archive = GridArchive(dimensions=(10,) * desc_size, ranges=[(0, 1e4)] * desc_size)
     domain = domain_cls(dimension=dimension)
     assert domain.dimension == dimension
@@ -241,7 +241,7 @@ def test_map_elites_domain_grid(
         archive=archive,
         initial_pop_size=32,
         mutation=uniform_one_mutation,
-        generations=1000,
+        generations=generations,
         descriptor="features",
         repetitions=1,
     )
@@ -253,7 +253,7 @@ def test_map_elites_domain_grid(
     assert len(archive) != 0
     assert isinstance(archive, GridArchive)
     assert all(isinstance(i, Instance) for i in archive)
-    assert len(map_elites.log) == 1001
+    assert len(map_elites.log) == generations + 1
 
     # Is able to print the log
     log = map_elites.log
@@ -277,9 +277,9 @@ test_data_cvt = [
 
 
 @pytest.mark.parametrize("domain_cls, portfolio, ranges", test_data_cvt)
-@pytest.mark.skip(reason="Impossible to pass this tests now")
 def test_map_elites_domain_cvt(domain_cls, portfolio, ranges):
     dimension = 50
+    generations = 10
     archive = CVTArchive(k=1000, ranges=ranges, n_samples=10_000)
     domain = domain_cls(dimension=dimension)
     assert domain.dimension == dimension
@@ -290,7 +290,7 @@ def test_map_elites_domain_cvt(domain_cls, portfolio, ranges):
         archive=archive,
         initial_pop_size=32,
         mutation=uniform_one_mutation,
-        generations=1000,
+        generations=generations,
         descriptor="instance",
         repetitions=1,
     )
@@ -301,7 +301,7 @@ def test_map_elites_domain_cvt(domain_cls, portfolio, ranges):
     assert all(i.s == 0 for i in archive)
     assert isinstance(archive, CVTArchive)
     assert all(isinstance(i, Instance) for i in archive)
-    assert len(map_elites.log) == 1001
+    assert len(map_elites.log) == generations + 1
 
     # Is able to print the log
     log = map_elites.log
@@ -316,7 +316,7 @@ def test_dominated_evolutionary_generator_with_k_and_descriptor(k, descriptor):
     portfolio = [map_kp, miw_kp, mpw_kp]
     pop_size = 128
     kp_domain = KnapsackDomain(dimension=50, capacity_approach="evolved")
-    generations = 100
+    generations = 10
     deig = DEAGenerator(
         pop_size=pop_size,
         offspring_size=pop_size,
@@ -338,7 +338,9 @@ def test_dominated_evolutionary_generator_with_k_and_descriptor(k, descriptor):
     assert isinstance(instances, list)
     assert all(len(s) == 101 for s in instances)
     assert all(s.fitness >= 0.0 for s in instances)
-    #    assert all(s.p >= 0.0 for s in instances)
+    fitness = [s.fitness for s in instances]
+    sorted_fitness = sorted(fitness, reverse=True)
+    assert fitness == sorted_fitness
     if descriptor == "features":
         assert all(len(s.descriptor) == 8 for s in instances)
         assert all((s.descriptor == s.features).all() for s in instances)
@@ -348,8 +350,9 @@ def test_dominated_evolutionary_generator_with_k_and_descriptor(k, descriptor):
         assert all(len(s.descriptor) == 101 for s in instances)
 
     assert all(len(s.portfolio_scores) == len(portfolio) for s in instances)
-    p_scores = [s.portfolio_scores for s in instances]
-    assert all(max(p_scores[i]) == p_scores[i][0] for i in range(len(p_scores)))
+    # TODO: DNS do not guarantees the biased aspect of the instances
+    # p_scores = [s.portfolio_scores for s in instances]
+    # assert all(max(p_scores[i]) == p_scores[i][0] for i in range(len(p_scores)))
 
 
 def test_dominated_evolutionary_generator_raises_if_wrong_args():

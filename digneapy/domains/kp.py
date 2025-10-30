@@ -14,7 +14,7 @@ __all__ = ["Knapsack", "KnapsackDomain"]
 
 import itertools
 from collections.abc import Sequence
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Tuple
 
 import numpy as np
 from numpy import typing as npt
@@ -31,18 +31,32 @@ class Knapsack(Problem):
         *args,
         **kwargs,
     ):
-        assert len(profits) == len(weights)
-        assert capacity > 0
+        if len(profits) != len(weights):
+            raise ValueError(
+                f"The number of weights and profits is different in Knapsack. Got {len(weights)} weights and {len(profits)} profits"
+            )
+        if capacity <= 0:
+            raise ValueError(f"Capacity must be a positive integer. Got {capacity}")
 
-        bounds = list((0, 1) for _ in range(len(profits)))
-        super().__init__(dimension=len(profits), bounds=bounds, name="KP", seed=seed)
+        super().__init__(dimension=len(profits), bounds=[], name="KP", seed=seed)
 
         self.weights = weights
         self.profits = profits
         self.capacity = capacity
         self.penalty_factor = 100.0
 
-    def evaluate(self, individual: Sequence | Solution) -> tuple[float]:
+    def get_bounds_at(self, i: int) -> tuple:
+        if i < 0 or i > self._dimension:
+            raise ValueError(
+                f"Index {i} out-of-range. The bounds are 0-{self._dimension} "
+            )
+        return (0, 1)
+
+    @property
+    def bounds(self):
+        return list((0, 1) for _ in range(self._dimension))
+
+    def evaluate(self, individual: Sequence | Solution | np.ndarray) -> Tuple[float]:
         """Evaluates the candidate individual with the information of the Knapsack
 
         Args:
@@ -55,7 +69,7 @@ class Knapsack(Problem):
             Tuple[float]: Profit
         """
 
-        if len(individual) != len(self.profits):
+        if len(individual) != self._dimension:
             msg = f"Mismatch between individual variables and instance variables in {self.__class__.__name__}"
             raise ValueError(msg)
 
@@ -67,7 +81,7 @@ class Knapsack(Problem):
 
         return (profit,)
 
-    def __call__(self, individual: Sequence | Solution) -> tuple[float]:
+    def __call__(self, individual: Sequence | Solution | np.ndarray) -> Tuple[float]:
         return self.evaluate(individual)
 
     def __array__(self, dtype=np.int32, copy: Optional[bool] = None) -> npt.ArrayLike:
@@ -95,7 +109,7 @@ class Knapsack(Problem):
 
     def create_solution(self) -> Solution:
         chromosome = self._rng.integers(low=0, high=1, size=self._dimension)
-        return Solution(chromosome=chromosome)
+        return Solution(variables=chromosome)
 
     def to_file(self, filename: str = "instance.kp"):
         with open(filename, "w") as file:
@@ -214,7 +228,9 @@ class KnapsackDomain(Domain):
             Instance(i) for i in np.column_stack((capacities, weights_and_profits))
         )
 
-    def extract_features(self, instances: Sequence[Instance]) -> np.ndarray:
+    def extract_features(
+        self, instances: Sequence[Instance] | np.ndarray
+    ) -> np.ndarray:
         """Extract the features of the instance based on the domain
 
         Args:
@@ -242,7 +258,7 @@ class KnapsackDomain(Domain):
         return features
 
     def extract_features_as_dict(
-        self, instances: Sequence[Instance]
+        self, instances: Sequence[Instance] | np.ndarray
     ) -> List[Dict[str, np.float32]]:
         """Creates a dictionary with the features of the instance.
         The key are the names of each feature and the values are
@@ -261,7 +277,9 @@ class KnapsackDomain(Domain):
 
         return named_features
 
-    def generate_problems_from_instances(self, instances: Sequence[Instance]) -> List:
+    def generate_problems_from_instances(
+        self, instances: Sequence[Instance] | np.ndarray
+    ) -> List:
         """Generates a List of Knapsack objects from the instances
 
         Args:

@@ -44,8 +44,8 @@ def initialised_solutions():
     rng = np.random.default_rng(42)
     chr_1 = rng.integers(low=0, high=100, size=N)
     chr_2 = rng.integers(low=0, high=100, size=N)
-    solution_1 = Solution(chromosome=chr_1)
-    solution_2 = Solution(chromosome=chr_2)
+    solution_1 = Solution(variables=chr_1)
+    solution_2 = Solution(variables=chr_2)
     return (solution_1, solution_2)
 
 

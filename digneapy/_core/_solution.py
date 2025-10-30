@@ -20,34 +20,44 @@ import numpy as np
 class Solution:
     """
     Class representing a solution in a genetic algorithm.
-    It contains the chromosome, objectives, constraints, and fitness of the solution.
+    It contains the variables, objectives, constraints, and fitness of the solution.
     """
 
     def __init__(
         self,
-        chromosome: Optional[Iterable] = [],
+        variables: Optional[Iterable] = [],
         objectives: Optional[Iterable] = [],
         constraints: Optional[Iterable] = [],
-        fitness: float = 0.0,
+        fitness: np.float64 = np.float64(0.0),
+        dtype=np.uint32,
         otype=np.float64,
     ):
         """Creates a new solution object.
-        The chromosome is a numpy array of the solution's genes.
+        The variables is a numpy array of the solution's genes.
         The objectives and constraints are numpy arrays of the solution's objectives and constraints.
         The fitness is a float representing the solution's fitness value.
 
         Args:
-            chromosome (Optional[Iterable], optional): Tuple or any other iterable with the chromosome/variables. Defaults to None.
+            variables (Optional[Iterable], optional): Tuple or any other iterable with the variables/variables. Defaults to None.
             objectives (Optional[Iterable], optional): Tuple or any other iterable with the objectives values. Defaults to None.
             constraints (Optional[Iterable], optional): Tuple or any other iterable with the constraint values. Defaults to None.
             fitness (float, optional): Fitness of the solution. Defaults to 0.0.
         """
 
-        self.otype = otype
-        self.chromosome = np.asarray(chromosome)
+        self._otype = otype
+        self._dtype = dtype
+        self.variables = np.asarray(variables, dtype=self.dtype)
         self.objectives = np.array(objectives, dtype=self.otype)
         self.constraints = np.array(constraints, dtype=self.otype)
         self.fitness = otype(fitness)
+
+    @property
+    def dtype(self):
+        return self._dtype
+
+    @property
+    def otype(self):
+        return self._otype
 
     def clone(self) -> Self:
         """Returns a deep copy of the solution. It is more efficient than using the copy module.
@@ -56,24 +66,35 @@ class Solution:
             Self: Solution object
         """
         return Solution(
-            chromosome=list(self.chromosome),
+            variables=list(self.variables),
             objectives=list(self.objectives),
             constraints=list(self.constraints),
             fitness=self.fitness,
             otype=self.otype,
         )
 
+    def clone_with(self, **overrides):
+        """Clones an Instance with overriden attributes
+
+        Returns:
+            Instance
+        """
+        new_object = self.clone()
+        for key, value in overrides.items():
+            setattr(new_object, key, value)
+        return new_object
+
     def __str__(self) -> str:
-        return f"Solution(dim={len(self.chromosome)},f={self.fitness},objs={self.objectives},const={self.constraints})"
+        return f"Solution(dim={len(self.variables)},f={self.fitness},objs={self.objectives},const={self.constraints})"
 
     def __repr__(self) -> str:
-        return f"Solution<dim={len(self.chromosome)},f={self.fitness},objs={self.objectives},const={self.constraints}>"
+        return f"Solution<dim={len(self.variables)},f={self.fitness},objs={self.objectives},const={self.constraints}>"
 
     def __len__(self) -> int:
-        return len(self.chromosome)
+        return len(self.variables)
 
     def __iter__(self):
-        return iter(self.chromosome)
+        return iter(self.variables)
 
     def __bool__(self):
         return len(self) != 0
@@ -97,9 +118,9 @@ class Solution:
     def __getitem__(self, key):
         if isinstance(key, slice):
             cls = type(self)  # To facilitate subclassing
-            return cls(self.chromosome[key])
+            return cls(self.variables[key])
         index = operator.index(key)
-        return self.chromosome[index]
+        return self.variables[index]
 
     def __setitem__(self, key, value):
-        self.chromosome[key] = value
+        self.variables[key] = value

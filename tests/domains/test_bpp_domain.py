@@ -171,7 +171,7 @@ def test_bin_packing_problem_to_solve_instance(default_bpp):
     assert all(s_i == e_i for s_i, e_i in zip(solution, expected_vars))
 
     fitness_s = default_bpp(solution)
-    fitness_ch = default_bpp(solution.chromosome)
+    fitness_ch = default_bpp(solution.variables)
     assert fitness_s == fitness_ch
 
     assert isinstance(fitness_s, tuple)

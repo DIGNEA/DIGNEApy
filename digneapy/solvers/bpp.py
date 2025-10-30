@@ -46,7 +46,7 @@ def best_fit(problem: BPP, *args, **kwargs) -> list[Solution]:
             bin_capacities.append(item)
 
     _fitness = problem.evaluate(assignment)[0]
-    return [Solution(chromosome=assignment, objectives=(_fitness,), fitness=_fitness)]
+    return [Solution(variables=assignment, objectives=(_fitness,), fitness=_fitness)]
 
 
 def first_fit(problem: BPP, *args, **kwargs) -> list[Solution]:
@@ -70,7 +70,7 @@ def first_fit(problem: BPP, *args, **kwargs) -> list[Solution]:
             assignment[i] = len(open_bins) - 1
 
     _fitness = problem.evaluate(assignment)[0]
-    return [Solution(chromosome=assignment, objectives=(_fitness,), fitness=_fitness)]
+    return [Solution(variables=assignment, objectives=(_fitness,), fitness=_fitness)]
 
 
 def next_fit(problem: BPP, *args, **kwargs) -> list[Solution]:
@@ -91,7 +91,7 @@ def next_fit(problem: BPP, *args, **kwargs) -> list[Solution]:
         assignment[i] = bin_counter
 
     _fitness = problem.evaluate(assignment)[0]
-    return [Solution(chromosome=assignment, objectives=(_fitness,), fitness=_fitness)]
+    return [Solution(variables=assignment, objectives=(_fitness,), fitness=_fitness)]
 
 
 def worst_fit(problem: BPP, *args, **kwargs) -> list[Solution]:
@@ -122,4 +122,4 @@ def worst_fit(problem: BPP, *args, **kwargs) -> list[Solution]:
             bin_capacities.append(item)
 
     _fitness = problem.evaluate(assignment)[0]
-    return [Solution(chromosome=assignment, objectives=(_fitness,), fitness=_fitness)]
+    return [Solution(variables=assignment, objectives=(_fitness,), fitness=_fitness)]

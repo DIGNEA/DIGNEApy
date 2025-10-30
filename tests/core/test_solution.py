@@ -22,7 +22,7 @@ from digneapy import Solution
 def default_solution():
     rng = np.random.default_rng(42)
     return Solution(
-        chromosome=rng.integers(low=0, high=100, size=100),
+        variables=rng.integers(low=0, high=100, size=100),
         objectives=(
             rng.uniform(low=0, high=10),
             rng.uniform(low=0, high=10),
@@ -45,25 +45,25 @@ def test_default_solution_attrs(default_solution):
     cloned.fitness = 10000
     assert cloned > default_solution
     # ValueError
-    cloned.chromosome[0] = 100.0
+    cloned.variables[0] = 100.0
     assert cloned != default_solution
 
     chr_slice = default_solution[:15]
     assert len(chr_slice) == 15
     assert chr_slice == default_solution[:15]
     # Check access is correct
-    cloned.chromosome = list(range(100))
+    cloned.variables = list(range(100))
     for i in range(len(cloned)):
         assert cloned[i] == i
 
     other_solution = Solution(
-        chromosome=list(range(200)),
+        variables=list(range(200)),
         objectives=(1.0, 1.0),
         fitness=100.0,
         constraints=(0.0, 0.0),
     )
     assert len(other_solution) == 200
-    assert len(other_solution.chromosome) == 200
+    assert len(other_solution.variables) == 200
     # Str comparison
     assert (
         other_solution.__str__()
@@ -74,3 +74,15 @@ def test_default_solution_attrs(default_solution):
     assert default_solution.__gt__(list()) == NotImplemented
     empty_s = Solution()
     assert len(empty_s) == 0
+
+
+def test_solution_can_be_cloned(default_solution):
+    other = default_solution.clone()
+    assert isinstance(other, Solution)
+    assert other == default_solution
+
+    variables = np.empty_like(other.variables)
+    variables = np.random.default_rng().integers(low=0, high=100, size=len(variables))
+    second_clone = default_solution.clone_with(variables=variables)
+    assert second_clone != default_solution
+    assert second_clone != other

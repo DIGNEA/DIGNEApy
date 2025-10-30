@@ -33,7 +33,7 @@ cpdef list default_kp(problem: Knapsack):
         msg = "No problem found in args of default_kp heuristic"
         raise ValueError(msg)
     cdef li q, N, packed, profit, i
-    cdef li [:] p, w, chromosome 
+    cdef li [:] p, w, variables 
 
     q = problem.capacity
     N = len(problem)
@@ -41,14 +41,14 @@ cpdef list default_kp(problem: Knapsack):
     profit = 0
     p = problem.profits
     w = problem.weights
-    chromosome = np.zeros(N, dtype=int)
+    variables = np.zeros(N, dtype=int)
     
     for i in range(N):
         if packed + w[i] <= q:
             packed += w[i]
             profit += p[i]
-            chromosome[i] = 1
-    return [Solution(chromosome=chromosome, objectives=(profit,), fitness=profit)]
+            variables[i] = 1
+    return [Solution(variables=variables, objectives=(profit,), fitness=profit)]
 
 
 cpdef list map_kp(problem: Knapsack):
@@ -56,7 +56,7 @@ cpdef list map_kp(problem: Knapsack):
         msg = "No problem found in args of default_kp heuristic"
         raise ValueError(msg)    
     cdef li q, N, packed, profit, i
-    cdef li [:] p, w, chromosome, indices
+    cdef li [:] p, w, variables, indices
 
     q = problem.capacity
     N = len(problem)
@@ -64,18 +64,18 @@ cpdef list map_kp(problem: Knapsack):
     profit = 0
     p = problem.profits
     w = problem.weights
-    chromosome = np.zeros(N, dtype=int)
+    variables = np.zeros(N, dtype=int)
     indices = np.argsort(p)[::-1]
 
     for i in indices:
         if packed + w[i] <= q:
-            chromosome[i] = 1
+            variables[i] = 1
             packed += w[i]
             profit += p[i]
         if packed >= q:
             break
 
-    return [Solution(chromosome=chromosome, objectives=(profit,), fitness=profit)]
+    return [Solution(variables=variables, objectives=(profit,), fitness=profit)]
 
 @cython.boundscheck(False)  # Deactivate bounds checking
 @cython.wraparound(False)   # Deactivate negative indexing
@@ -86,12 +86,12 @@ cpdef list miw_kp(problem: Knapsack):
     cdef li profit, i
 
     indices = np.argsort(problem.weights)
-    chromosome = np.zeros(len(problem), dtype=int)
+    variables = np.zeros(len(problem), dtype=int)
     weights_cumsum = np.cumsum(problem.weights[indices])
     selected = indices[weights_cumsum <= problem.capacity]
-    chromosome[selected] = 1
+    variables[selected] = 1
     profit = np.sum(problem.profits[selected])
-    return [Solution(chromosome=chromosome, objectives=(profit,), fitness=profit)]
+    return [Solution(variables=variables, objectives=(profit,), fitness=profit)]
 
 
 cpdef list mpw_kp(problem: Knapsack):
@@ -99,20 +99,20 @@ cpdef list mpw_kp(problem: Knapsack):
         msg = "No problem found in args of default_kp heuristic"
         raise ValueError(msg)    
     cdef li q, N, packed, profit, i
-    cdef li [:] p, w, chromosome, indices
+    cdef li [:] p, w, variables, indices
     q = problem.capacity
     N = len(problem)
     packed = 0
     profit = 0
     p = problem.profits
     w = problem.weights
-    chromosome = np.zeros(N, dtype=int)
+    variables = np.zeros(N, dtype=int)
     indices = np.argsort([(p[i] / w[i]) for i in range(N)])[::-1]
 
     for idx in indices:
         if packed + w[idx] <= q:
             packed += w[idx]
             profit += p[idx]
-            chromosome[idx] = 1
+            variables[idx] = 1
 
-    return [Solution(chromosome=chromosome, objectives=(profit,), fitness=profit)]
+    return [Solution(variables=variables, objectives=(profit,), fitness=profit)]

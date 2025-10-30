@@ -31,7 +31,7 @@ def minknap(problem: Knapsack = None, only_time: bool = True) -> List[Solution]:
         len(problem), problem.profits, problem.weights, x, problem.capacity
     )
     f = time if only_time else best
-    return [Solution(chromosome=x, objectives=(f,), fitness=f)]
+    return [Solution(variables=x, objectives=(f,), fitness=f)]
 
 
 def expknap(problem: Knapsack = None, only_time: bool = True) -> List[Solution]:
@@ -44,7 +44,7 @@ def expknap(problem: Knapsack = None, only_time: bool = True) -> List[Solution]:
         len(problem), problem.profits, problem.weights, x, problem.capacity
     )
     f = time if only_time else best
-    return [Solution(chromosome=x, objectives=(f,), fitness=f)]
+    return [Solution(variables=x, objectives=(f,), fitness=f)]
 
 
 def combo(problem: Knapsack = None, only_time: bool = True) -> List[Solution]:
@@ -57,4 +57,4 @@ def combo(problem: Knapsack = None, only_time: bool = True) -> List[Solution]:
         len(problem), problem.profits, problem.weights, x, problem.capacity
     )
     f = time if only_time else best
-    return [Solution(chromosome=x, objectives=(f,), fitness=f)]
+    return [Solution(variables=x, objectives=(f,), fitness=f)]

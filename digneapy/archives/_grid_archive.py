@@ -10,7 +10,6 @@
 @Desc    :   None
 """
 
-import copy
 import json
 from collections.abc import Iterable, Sequence
 from typing import Dict, Optional, Tuple
@@ -79,7 +78,9 @@ class GridArchive(Archive):
         self._interval = self._upper_bounds - self._lower_bounds
         self._eps = eps
         self._cells = np.prod(self._dimensions, dtype=object)
-        self._grid: Dict[int, Instance] = {}
+
+        self._grid: Dict[int, np.ndarray] = {}
+        self._storage: Dict[int, Instance] = {}
 
         _bounds = []
         for dimension, l_b, u_b in zip(
@@ -136,8 +137,8 @@ class GridArchive(Archive):
         return self._grid.keys()
 
     @property
-    def instances(self):
-        return list(self._grid.values())
+    def instances(self) -> Sequence[Instance]:
+        return list(self._storage.values())
 
     def __str__(self):
         return f"GridArchive(dim={self._dimensions},cells={self._cells},bounds={self._boundaries})"
@@ -156,7 +157,7 @@ class GridArchive(Archive):
             key (array-like or descriptor): Descriptors of the instances that want to retrieve.
             Valid examples are:
             -   archive[[0,11], [0,5]] --> Get the instances with the descriptors (0,11) and (0, 5)
-            -   archive[0,11] --> Get the instance with the descriptor (0,11)
+            -   archive[0,11] --> Get the instances at indices 0 and 11
 
         Raises:
             TypeError: If the key is an slice. Not allowed.
@@ -167,28 +168,24 @@ class GridArchive(Archive):
         """
         if isinstance(key, slice):
             raise TypeError(
-                "Slicing is not available in GridArchive. Use 1D index or descriptor-type indeces"
+                "Slicing is not available in GridArchive. Use 1D index or descriptor-type indices"
             )
         descriptors = np.asarray(key)
-        if descriptors.ndim == 1 and descriptors.shape[0] != len(self._dimensions):
+        if descriptors.ndim == 1:
+            indices = descriptors
+        elif descriptors.ndim == 2 and descriptors.shape[1] == len(self._dimensions):
+            indices = self.index_of(descriptors).tolist()
+        else:
             raise ValueError(
                 f"Expected descriptors to be an array with shape "
-                f"(batch_size, 1) or (batch_size, dimensions) (i.e. shape "
+                f"(batch_size, dimensions) (i.e. shape "
                 f"(batch_size, {len(self._dimensions)})) but it had shape "
                 f"{descriptors.shape}"
             )
+        if isinstance(indices, int):
+            indices = [indices]
 
-        indeces = self.index_of(descriptors).tolist()
-        if isinstance(indeces, int):
-            indeces = [indeces]
-            descriptors = [descriptors]
-
-        instances = {}
-        for idx, desc in zip(indeces, descriptors):
-            if idx not in self._grid:
-                print(f"There is not any instance in the cell {desc}.")
-            else:
-                instances[tuple(desc)] = copy.copy(self._grid[idx])
+        instances = [self._storage[idx] for idx in indices]
         return instances
 
     def __iter__(self):
@@ -197,7 +194,7 @@ class GridArchive(Archive):
         Returns:
             Iterator: Yields position in the hypercube and instance located in such position
         """
-        return iter(self._grid.values())
+        return iter(self._storage.values())
 
     def lower_i(self, i):
         if i < 0 or i > len(self._lower_bounds):
@@ -211,7 +208,7 @@ class GridArchive(Archive):
             raise ValueError(msg)
         return self._upper_bounds[i]
 
-    def append(self, instance: Instance):
+    def append(self, instance: Instance, descriptor: Optional[np.ndarray] = None):
         """Inserts an Instance into the Grid
 
         Args:
@@ -220,43 +217,69 @@ class GridArchive(Archive):
         Raises:
             TypeError: ``instance`` is not a instance of the class Instance.
         """
-        if isinstance(instance, Instance):
-            index = self.index_of(np.asarray(instance.descriptor))
-            if index not in self._grid or instance > self._grid[index]:
-                self._grid[index] = instance.clone()
-
-        else:
+        if not isinstance(instance, Instance):
             msg = "Only objects of type Instance can be inserted into a GridArchive"
             raise TypeError(msg)
+        descriptor = (
+            np.asarray(instance.descriptor) if descriptor is None else descriptor
+        )
+        index = self.index_of([descriptor])[0]
+        if index not in self._grid or instance > self._grid[index]:
+            self._grid[index] = descriptor
+            self._storage[index] = instance.clone()
 
-    def extend(self, iterable: Iterable[Instance], *args, **kwargs):
+    def extend(
+        self,
+        instances: Sequence[Instance],
+        descriptors: Optional[np.ndarray] = None,
+        *args,
+        **kwargs,
+    ):
         """Includes all the instances in iterable into the Grid
 
         Args:
             iterable (Iterable[Instance]): Iterable of instances
         """
-        if not all(isinstance(i, Instance) for i in iterable):
+        if not all(isinstance(i, Instance) for i in instances):
             msg = "Only objects of type Instance can be inserted into a GridArchive"
             raise TypeError(msg)
+        if descriptors is None:
+            try:
+                descriptors = np.asarray([i.descriptor for i in instances])
+            except AttributeError as e:
+                print(
+                    "Instances do not have a descriptor yet and the value descriptor is None"
+                )
+                raise (e)
 
-        indeces = self.index_of([i.descriptor for i in iterable])
-        for idx, instance in zip(indeces, iterable, strict=True):
-            if idx not in self._grid or instance.fitness > self._grid[idx].fitness:
-                self._grid[idx] = instance.clone()
+        indices = self.index_of(descriptors)
+        for idx, instance, descriptor in zip(
+            indices, instances, descriptors, strict=True
+        ):
+            if idx not in self._grid or instance.fitness > self._storage[idx].fitness:
+                self._storage[idx] = instance.clone()
+                self._grid[idx] = descriptor
 
-    def remove(self, iterable: Iterable[Instance]):
-        """Removes all the instances in iterable from the grid"""
-        if not all(isinstance(i, Instance) for i in iterable):
-            msg = "Only objects of type Instance can be removed from a CVTArchive"
-            raise TypeError(msg)
+    def remove(self, descriptors: np.ndarray):
+        """Removes all the instances with the matching descriptors in iterable from the grid"""
 
-        indeces_to_remove = self.index_of([i.descriptor for i in iterable])
-        for index in indeces_to_remove:
+        indices_to_remove = self.index_of(descriptors)
+        for index in indices_to_remove:
             if index in self._grid:
                 del self._grid[index]
+                del self._storage[index]
+
+    def purge_unfeasible(self, attr: str = "p"):
+        """Removes all the unfeasible instances from the grid"""
+        keys_to_remove = [
+            i for i in self._storage.keys() if getattr(self._storage[i], attr) < 0
+        ]
+        for i in keys_to_remove:
+            del self._grid[i]
+            del self._storage[i]
 
     def index_of(self, descriptors):
-        """Computes the indeces of a batch of descriptors.
+        """Computes the indices of a batch of descriptors.
 
         Args:
             descriptors (array-like): (batch_size, dimensions) array of descriptors for each instance
@@ -269,7 +292,6 @@ class GridArchive(Archive):
         """
         if len(descriptors) == 0:
             return np.empty(0)
-
         descriptors = np.asarray(descriptors)
         if (
             descriptors.ndim == 1
@@ -299,12 +321,12 @@ class GridArchive(Archive):
             strides = np.cumprod((1,) + tuple(self._dimensions[::-1][:-1]))[::-1]
             # Reshape strides to (1, num_dimensions) to make it broadcastable with grid_indices
             strides = strides.reshape(1, -1)
-            flattened_indeces = np.sum(grid_indices * strides, axis=1, dtype=object)
+            flattened_indices = np.sum(grid_indices * strides, axis=1, dtype=object)
         else:
-            flattened_indeces = np.ravel_multi_index(
+            flattened_indices = np.ravel_multi_index(
                 grid_indices.T, self._dimensions
             ).astype(int)
-        return flattened_indeces
+        return flattened_indices
 
     def int_to_grid_index(self, int_indices) -> np.ndarray:
         int_indices = np.asarray(int_indices)
@@ -334,7 +356,8 @@ class GridArchive(Archive):
             "ubs": self._upper_bounds.tolist(),
             "n_cells": self._cells,
             "instances": {
-                i: instance.asdict() for i, instance in enumerate(self._grid.values())
+                i: instance.asdict()
+                for i, instance in enumerate(self._storage.values())
             },
         }
 

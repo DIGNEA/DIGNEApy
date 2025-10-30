@@ -153,7 +153,7 @@ class EA(Solver, SupportsSolve[P], RNG):
         # Convert to Solution class
         cast_pop = [
             Solution(
-                chromosome=i,
+                variables=i,
                 objectives=(i.fitness.values[0],),
                 fitness=i.fitness.values[0],
             )
@@ -161,7 +161,7 @@ class EA(Solver, SupportsSolve[P], RNG):
         ]
         self._population = cast_pop
         self._best_found = Solution(
-            chromosome=self._hof[0],
+            variables=self._hof[0],
             objectives=(self._hof[0].fitness.values[0],),
             fitness=self._hof[0].fitness.values[0],
         )

@@ -71,7 +71,7 @@ def test_three_opt_raises_sample():
         three_opt(None)
 
 
-@pytest.mark.skip(reason="To costly")
+@pytest.mark.skip(reason="It's too costly to test the 3-Opt heuristic")
 def test_three_opt_is_deterministic(default_tsp_instance):
     solutions = [three_opt(default_tsp_instance)[0].fitness for _ in range(2)]
     assert len(solutions) == 2

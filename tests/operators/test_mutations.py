@@ -16,7 +16,7 @@ import numpy as np
 import pytest
 
 from digneapy import Instance, Solution
-from digneapy.operators import uniform_one_mutation
+from digneapy.operators import uniform_one_mutation, batch_uniform_one_mutation
 
 
 @pytest.fixture
@@ -46,8 +46,8 @@ def initialised_solutions():
     rng = np.random.default_rng(42)
     chr_1 = rng.integers(low=0, high=100, size=N)
     chr_2 = rng.integers(low=0, high=100, size=N)
-    solution_1 = Solution(chromosome=chr_1)
-    solution_2 = Solution(chromosome=chr_2)
+    solution_1 = Solution(variables=chr_1)
+    solution_2 = Solution(variables=chr_2)
     return (solution_1, solution_2)
 
 
@@ -69,6 +69,29 @@ def test_uniform_one_mutation_solutions(initialised_solutions):
     new_solution = uniform_one_mutation(solution, bounds)
     assert new_solution != original
     assert sum(1 for i, j in zip(original, new_solution) if i != j) == 1
+
+
+@pytest.mark.parametrize("n_solutions", (10, 50, 100))
+@pytest.mark.parametrize("lb", (0,))
+@pytest.mark.parametrize("ub", (10, 50, 100))
+@pytest.mark.parametrize("dimension", (50, 100, 200))
+def test_batch_uniform_one_mutation_solutions(n_solutions, lb, ub, dimension):
+    rng = np.random.default_rng(7342389472389423)
+    solutions = np.asarray(
+        [
+            Solution(variables=rng.integers(low=lb, high=ub, size=dimension))
+            for _ in range(n_solutions)
+        ]
+    )
+    lbs = np.full(shape=dimension, fill_value=lb)
+    ubs = np.full(shape=dimension, fill_value=ub)
+    cloned = np.asarray(solutions, copy=True)
+    assert cloned is not solutions
+    cloned = batch_uniform_one_mutation(cloned, lbs, ubs)
+    assert cloned is not solutions
+    assert cloned.shape == solutions.shape
+    for original, clone in zip(solutions, cloned):
+        assert sum(1 for i, j in zip(original, clone) if i != j) <= 1
 
 
 def test_uniform_one_raises(initialised_solutions):

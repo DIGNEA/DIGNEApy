@@ -62,9 +62,7 @@ def greedy(problem: TSP, *args, **kwargs) -> list[Solution]:
     _fitness = 1.0 / length
 
     return [
-        Solution(
-            chromosome=list(range(N + 1)), objectives=(_fitness,), fitness=_fitness
-        )
+        Solution(variables=list(range(N + 1)), objectives=(_fitness,), fitness=_fitness)
     ]
 
 
@@ -106,7 +104,7 @@ def nneighbour(problem: TSP, *args, **kwargs) -> list[Solution]:
 
     length += distances[current_node][0]
     length = 1.0 / length
-    return [Solution(chromosome=tour, objectives=(length,), fitness=length)]
+    return [Solution(variables=tour, objectives=(length,), fitness=length)]
 
 
 def three_opt(problem: TSP, *args, **kwargs) -> list[Solution]:
@@ -152,4 +150,4 @@ def three_opt(problem: TSP, *args, **kwargs) -> list[Solution]:
                         improve = True
 
     fitness = problem.evaluate(tour)[0]
-    return [Solution(chromosome=tour, objectives=(fitness,), fitness=fitness)]
+    return [Solution(variables=tour, objectives=(fitness,), fitness=fitness)]

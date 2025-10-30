@@ -142,30 +142,29 @@ def test_grid_5d(grid_5d):
     assert isinstance(grid_5d.to_json(), str)
 
 
-def test_grid_5d_storage(grid_5d):
-    instances = []
+def test_grid_archive_5d_storage(grid_5d):
+    n_instances = 10
     rng = np.random.default_rng(seed=42)
+    domain = KnapsackDomain(dimension=100)
+    instances = domain.generate_instances(n=n_instances)
+    descriptors = rng.random(size=(n_instances, 5))
 
-    for _ in range(10):
-        inst = Instance([], fitness=0.0, p=rng.integers(0, 100), s=rng.random())
-        inst.features = tuple(rng.random(size=5))
-        inst.descriptor = inst.features
-        instances.append(inst)
+    for i in range(10):
+        instances[i].fitness = rng.random(size=1)
 
     assert len(grid_5d) == 0
-    grid_5d.extend(instances)
+    grid_5d.extend(instances, descriptors=descriptors)
     assert len(grid_5d) == len(instances)
 
     instance = Instance()
-    instance.features = tuple(rng.random(size=5))
-    instance.descriptor = instance.features
-    grid_5d.append(instance)
+    instance.descriptor = rng.random(size=5)
+    grid_5d.append(instance, descriptor=instance.descriptor)
     assert len(grid_5d) == len(instances) + 1
 
-    grid_5d.remove([instance])
+    grid_5d.remove([instance.descriptor])
     assert len(grid_5d) == len(instances)
 
-    with pytest.raises(TypeError):
+    with pytest.raises(ValueError):
         grid_5d.remove([None])
 
 
@@ -290,6 +289,32 @@ def test_grid_archive_with_KP_instances_and_features_descriptor():
     assert all(idx > 0 and idx < archive.n_cells for idx in archive.filled_cells)
 
 
+def test_grid_archive_with_KP_instances_separated_descriptors():
+    archive = GridArchive(
+        dimensions=(20, 20, 20, 20, 20, 20, 20, 20),
+        ranges=[
+            (700, 30000),
+            (890, 1000),
+            (860, 1000.0),
+            (1.0, 200),
+            (1.0, 230.0),
+            (0.10, 12.0),
+            (400, 610),
+            (240, 330),
+        ],
+    )
+    n_instances = 1_000
+    domain = KnapsackDomain(dimension=50)
+    instances = domain.generate_instances(n_instances)
+    features = domain.extract_features(instances)
+
+    assert len(archive) == 0
+    assert archive.n_cells == np.prod(np.array((20,) * 8))
+    archive.extend(instances, descriptors=features)
+    assert len(archive) > 0 and len(archive) <= 1000
+    assert all(idx > 0 and idx < archive.n_cells for idx in archive.filled_cells)
+
+
 def test_grid_archive_getitem():
     rng = np.random.default_rng(seed=42)
 
@@ -306,8 +331,13 @@ def test_grid_archive_getitem():
         instances=instances,
     )
     results = archive[[0, 11], [0, 5]]
-    assert isinstance(results, dict)
+    assert isinstance(results, list)
     assert len(results) == 2
     results = archive[[0, 5]]
-    assert isinstance(results, dict)
-    assert len(results) == 1
+    assert isinstance(results, list)
+    assert len(results) == 2
+
+    result_simple = archive[0, 5]
+    assert isinstance(result_simple, list)
+    assert len(result_simple) == 2
+    assert result_simple == results

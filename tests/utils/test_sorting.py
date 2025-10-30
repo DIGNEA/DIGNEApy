@@ -18,7 +18,7 @@ import numpy as np
 
 @pytest.mark.parametrize("n_instances", [10, 50, 100])
 @pytest.mark.parametrize("dimension", [50, 100, 1000])
-def test_sorting_knapsack_instances(n_instances, dimension):
+def test_sorting_knapsack_instances_as_nparray(n_instances, dimension):
     domain = KnapsackDomain(dimension=dimension)
     instances = domain.generate_instances(n=n_instances)
     assert len(instances) == n_instances
@@ -26,9 +26,28 @@ def test_sorting_knapsack_instances(n_instances, dimension):
     capacities = instances_array[:, 0]
     assert instances_array.shape == (n_instances, (dimension * 2) + 1)
     sorted_instances = sort_knapsack_instances(instances_array)
-    assert sorted_instances is instances_array
+    assert sorted_instances is not instances_array
     assert sorted_instances.shape == instances_array.shape
     np.testing.assert_equal(sorted_instances[:, 0], capacities)
+    for instance in sorted_instances:
+        for i_pair in range(1, dimension * 2, 4):
+            left = tuple(instance[i_pair : i_pair + 2])
+            right = tuple(instance[i_pair + 2 : i_pair + 4])
+            assert left <= right
+
+
+@pytest.mark.parametrize("n_instances", [10, 50, 100])
+@pytest.mark.parametrize("dimension", [50, 100, 1000])
+def test_sorting_knapsack_instances_as_objects(n_instances, dimension):
+    domain = KnapsackDomain(dimension=dimension)
+    instances = domain.generate_instances(n=n_instances)
+    assert len(instances) == n_instances
+    expected_capacities = [instance[0] for instance in instances]
+    sorted_instances = sort_knapsack_instances(instances)
+    assert sorted_instances is not instances
+    assert len(sorted_instances) == len(instances)
+    new_capacities = [instance[0] for instance in sorted_instances]
+    np.testing.assert_equal(new_capacities, expected_capacities)
     for instance in sorted_instances:
         for i_pair in range(1, dimension * 2, 4):
             left = tuple(instance[i_pair : i_pair + 2])

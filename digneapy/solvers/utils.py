@@ -21,13 +21,14 @@ __all__ = ["shuffle_and_run_for_knapsack"]
 def shuffle_and_run_for_knapsack(
     solver,
     n_repetitions: int = 10,
-    reduce_fn: Callable = np.mean,
+    reduce_fn: Callable = np.max,
     verbose: bool = False,
 ):
+    np.set_printoptions(legacy="1.21")
+
     def solve(problem: Knapsack):
-        results = np.zeros(n_repetitions, dtype=np.float64)
-        fitness = solver(problem)[0].fitness
-        results[0] = fitness
+        results = [None] * n_repetitions
+        results[0] = solver(problem)[0]
         variables = np.asarray(problem, copy=True, dtype=int)
         items = [(w, p) for w, p in zip(variables[1::2], variables[2::2])]
         for r in range(1, n_repetitions):
@@ -37,14 +38,15 @@ def shuffle_and_run_for_knapsack(
                 profits=shuffled_items[:, 1],
                 capacity=variables[0],
             )
-            results[r] = solver(shuffled_problem)[0].fitness
-        fitness = reduce_fn(results)
+            results[r] = solver(shuffled_problem)[0]
         if verbose:
+            fitnesses = [solution.fitness for solution in results]
+            final = reduce_fn(fitnesses)
             print(
-                f"Shuffle {n_repetitions} times and reduce with {reduce_fn.__name__}",
+                f"\rShuffled {n_repetitions} times and reduce with {reduce_fn.__name__} {fitnesses} --> final fitness: {final}\r",
                 end="",
             )
-            print(f", results: {results}, final fitness: {fitness}")
-        return fitness
+
+        return results
 
     return solve

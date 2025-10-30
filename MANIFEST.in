@@ -6,10 +6,9 @@ include README.md
 
 recursive-include digneapy *
 recursive-include tests *
-recursive-include data *
 recursive-include examples *
 
 recursive-exclude * __pycache__
 recursive-exclude * *.py[co]
 
-recursive-include docs Makefile make.bat requirements*.txt
+recursive-include docs requirements*.txt

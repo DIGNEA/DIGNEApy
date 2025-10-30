@@ -16,7 +16,7 @@ jobs:
   test:
     strategy:
             matrix:
-                python-version: ["3.12", "3.13", "3.14"]
+                python-version: ["3.12", "3.13"]
     runs-on: ubuntu-latest
     
     name: Test application with Python ${{ matrix.python-version }}

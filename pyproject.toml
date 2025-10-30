@@ -23,7 +23,7 @@ version = "0.2.5"
 description = "Python version of the DIGNEA code for instance generation"
 authors = [{ name = "Alejandro Marrero", email = "amarrerd@ull.edu.es" }]
 readme = "README.md"
-requires-python = ">=3.12"
+requires-python = ">=3.13"
 license = { file = "LICENSE" }
 keywords = [
     "dignea",
@@ -33,13 +33,13 @@ keywords = [
     "NS",
 ]
 classifiers = [
-    'Development Status :: 2 - Pre-Alpha',
+    'Development Status :: 5 - Production/Stable',
     "Intended Audience :: Science/Research",
     'Intended Audience :: Developers',
     "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
     "Natural Language :: English",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
     'Topic :: Scientific/Engineering',
     'Typing :: Typed',
     'Operating System :: Unix',
@@ -98,13 +98,13 @@ build = [
     "cp311-manylinux_x86_64",
     "cp312-manylinux_x86_64",
     "cp313-manylinux_x86_64",
-    "cp314-manylinux_x86_64",
+    #"cp314-manylinux_x86_64",
     
     "cp310-macosx_x86_64",
     "cp311-macosx_x86_64",
     "cp312-macosx_x86_64",
     "cp313-macosx_x86_64",
-    "cp314-macosx_x86_64",
+    #"cp314-macosx_x86_64",
 
 ]
 build-frontend = "build[uv]"

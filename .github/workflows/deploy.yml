@@ -8,35 +8,31 @@ on:
 jobs:
   build:
     name: Build distribution 📦
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-15-intel, macos-14]
     steps:
     - uses: actions/checkout@v5
+
     - name: Install uv
       uses: astral-sh/setup-uv@v5
       with:
-        # Install a specific version of uv.
-        version: "0.6.10" 
-
-    - name: Set up Python
-      uses: actions/setup-python@v5
-      with:
-        python-version-file: "pyproject.toml"  
-
-    - name: Install pypa/build
-      run: python3 -m pip install build --user
+        version: "0.8.5" 
+        python-version: "3.12"
 
     - name: Build the source distribution
-      run: python3 -m build --sdist
+      run: uv build
 
     - name: Build wheels
       uses: pypa/cibuildwheel@v3.2.1
       with:
         output-dir: ./dist/
-        config-file: "{package}/pyproject.toml"
+        #config-file: "{package}/pyproject.toml"
 
 
     - name: Store the distribution packages
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v5
       with:
         name: py-packages
         path: ./dist/

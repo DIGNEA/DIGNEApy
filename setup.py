@@ -102,7 +102,7 @@ setup(
     test_suite="tests",
     tests_require=test_requirements,
     url="https://github.com/DIGNEA/digneapy",
-    version="0.2.5",
+    version="0.3.0",
     ext_modules=cythonize(ext_modules),
     cmdclass={"build_ext": build_ext},
     zip_safe=False,

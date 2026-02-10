@@ -2,12 +2,7 @@
 
 """The setup script."""
 
-from glob import glob
-
-import numpy as np
-from Cython.Build import cythonize
 from setuptools import Extension, find_packages, setup
-from setuptools.command.build_ext import build_ext
 
 with open("README.md") as readme_file:
     readme = readme_file.read()
@@ -22,88 +17,49 @@ test_requirements = [
 ]
 
 
-class get_pybind_include(object):
-    """Helper class to determine the pybind11 include path
-    The purpose of this class is to postpone importing pybind11
-    until it is actually installed, so that the ``get_include()``
-    method can be invoked."""
-
-    def __init__(self, user=False):
-        self.user = user
+class get_numpy_include(object):
+    """Helper class to determine the numpy include path lazily."""
 
     def __str__(self):
-        import pybind11
+        import numpy
 
-        return pybind11.get_include(self.user)
+        return numpy.get_include()
 
 
 compile_args = ["-std=c++11"]
-ext_modules = [
-    Extension(
-        "pisinger_cpp",
-        sorted(glob("digneapy/solvers/_pisinger/src/*.cpp")),
-        include_dirs=[
-            # Path to pybind11 headers
-            get_pybind_include(),
-            get_pybind_include(user=True),
-        ],
-        extra_compile_args=compile_args,
-        language="c++",
-    ),
+
+cython_extensions = [
     Extension(
         "digneapy.solvers._kp",
         sources=["digneapy/solvers/_kp.pyx"],
         libraries=["m"],
-        compiler_directives={"language_level": "3"},
-        include_dirs=[np.get_include()],
+        include_dirs=[str(get_numpy_include())],
     ),
     Extension(
         "digneapy.solvers._tsp_opt",
         sources=["digneapy/solvers/_tsp_opt.pyx"],
         libraries=["m"],
-        compiler_directives={"language_level": "3"},
-        include_dirs=[np.get_include()],
+        include_dirs=[str(get_numpy_include())],
     ),
 ]
 
+
+def build_extensions():
+    from Cython.Build import cythonize
+
+    cythonized_exts = cythonize(
+        cython_extensions, compiler_directives={"language_level": "3"}, force=True
+    )
+
+    extensions = cythonized_exts
+    # SAFETY CHECK:
+    if not extensions:
+        raise RuntimeError("No extensions were collected! Build is aborting.")
+
+    return extensions
+
+
 setup(
-    author="Alejandro Marrero",
-    author_email="amarrerd@ull.edu.es",
-    python_requires=">=3.12",
-    classifiers=[
-        "Development Status :: 5 - Production/Stable",
-        "Intended Audience :: Science/Research",
-        "Intended Audience :: Developers",
-        "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
-        "Natural Language :: English",
-        "Programming Language :: Python :: 3",
-        "Programming Language :: Python :: 3.12",
-        "Programming Language :: Python :: 3.13",
-        "Topic :: Scientific/Engineering",
-        "Typing :: Typed",
-        "Operating System :: Unix",
-        "Operating System :: MacOS",
-    ],
-    description="Python version of the DIGNEA code for instance generation",
-    install_requires=requirements,
-    license="GNU General Public License v3",
-    long_description=readme + "\n\n" + history,
-    include_package_data=True,
-    keywords=[
-        "dignea",
-        "optimization",
-        "instance generation",
-        "quality-diversity",
-        "NS",
-    ],
-    name="digneapy",
     packages=find_packages(include=["digneapy", "digneapy.*"]),
-    platforms=["any"],
-    test_suite="tests",
-    tests_require=test_requirements,
-    url="https://github.com/DIGNEA/digneapy",
-    version="0.3.0",
-    ext_modules=cythonize(ext_modules),
-    cmdclass={"build_ext": build_ext},
-    zip_safe=False,
+    ext_modules=build_extensions(),
 )

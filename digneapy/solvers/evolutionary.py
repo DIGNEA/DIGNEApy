@@ -19,7 +19,6 @@ from deap import algorithms, base, creator, tools
 
 from digneapy import RNG
 from digneapy._core import Direction, P, Solution, Solver, SupportsSolve
-from digneapy.domains import Knapsack
 
 
 def _gen_dignea_ind(icls, rng, size: int, min_value, max_value):

@@ -13,10 +13,10 @@
 import numpy as np
 import pytest
 
-from digneapy._core import Solution
 from digneapy.domains import kp as knapsack
 from digneapy.solvers import default_kp, map_kp, miw_kp, mpw_kp
-from digneapy.solvers.pisinger import combo, expknap, minknap
+
+# from digneapy.solvers.pisinger import combo, expknap, minknap
 
 
 @pytest.fixture
@@ -99,54 +99,54 @@ def test_mpw_kp_heuristic(default_instance):
         mpw_kp(None)
 
 
-def test_combo(default_large_knap):
-    solutions = combo(default_large_knap)
-    assert solutions[0].fitness <= 1.0  # Here compares time
-    solutions = combo(default_large_knap, only_time=False)
-    assert len(solutions) == 1
-    assert all(isinstance(i, Solution) for i in solutions)
-    assert solutions[0].fitness >= 0.0
-    assert len(solutions[0]) == 1000
+# def test_combo(default_large_knap):
+#     solutions = combo(default_large_knap)
+#     assert solutions[0].fitness <= 1.0  # Here compares time
+#     solutions = combo(default_large_knap, only_time=False)
+#     assert len(solutions) == 1
+#     assert all(isinstance(i, Solution) for i in solutions)
+#     assert solutions[0].fitness >= 0.0
+#     assert len(solutions[0]) == 1000
 
 
-def test_minknap(default_large_knap):
-    solutions = minknap(default_large_knap)
-    assert solutions[0].fitness <= 1.0  # Here compares time
-    solutions = minknap(default_large_knap, only_time=False)
-    assert len(solutions) == 1
-    assert all(isinstance(i, Solution) for i in solutions)
-    assert solutions[0].fitness >= 0.0
-    assert len(solutions[0]) == 1000
+# def test_minknap(default_large_knap):
+#     solutions = minknap(default_large_knap)
+#     assert solutions[0].fitness <= 1.0  # Here compares time
+#     solutions = minknap(default_large_knap, only_time=False)
+#     assert len(solutions) == 1
+#     assert all(isinstance(i, Solution) for i in solutions)
+#     assert solutions[0].fitness >= 0.0
+#     assert len(solutions[0]) == 1000
 
 
-def test_expknap(default_large_knap):
-    solutions = expknap(default_large_knap)
-    assert solutions[0].fitness <= 16.0  # Here compares time (15.0s max time allowed)
-    solutions = expknap(default_large_knap, only_time=False)
-    assert len(solutions) == 1
-    assert all(isinstance(i, Solution) for i in solutions)
-    assert solutions[0].fitness >= 0.0
-    assert len(solutions[0]) == 1000
+# def test_expknap(default_large_knap):
+#     solutions = expknap(default_large_knap)
+#     assert solutions[0].fitness <= 16.0  # Here compares time (15.0s max time allowed)
+#     solutions = expknap(default_large_knap, only_time=False)
+#     assert len(solutions) == 1
+#     assert all(isinstance(i, Solution) for i in solutions)
+#     assert solutions[0].fitness >= 0.0
+#     assert len(solutions[0]) == 1000
 
 
-def test_pisinger_are_exact(default_large_knap):
-    r_exknap = expknap(default_large_knap, only_time=False)
-    r_combo = combo(default_large_knap, only_time=False)
-    r_minknap = minknap(default_large_knap, only_time=False)
-    all_solutions = [*r_exknap, *r_combo, *r_minknap]
-    expected = r_combo[0].fitness
-    assert len(all_solutions) == 3
-    assert all(isinstance(i, Solution) for i in all_solutions)
-    assert all(i.fitness == expected for i in all_solutions)
+# def test_pisinger_are_exact(default_large_knap):
+#     r_exknap = expknap(default_large_knap, only_time=False)
+#     r_combo = combo(default_large_knap, only_time=False)
+#     r_minknap = minknap(default_large_knap, only_time=False)
+#     all_solutions = [*r_exknap, *r_combo, *r_minknap]
+#     expected = r_combo[0].fitness
+#     assert len(all_solutions) == 3
+#     assert all(isinstance(i, Solution) for i in all_solutions)
+#     assert all(i.fitness == expected for i in all_solutions)
 
 
-def test_pisingers_raises():
-    """
-    Raises an exception because the the problem is None
-    """
-    with pytest.raises(ValueError):
-        expknap(None)
-    with pytest.raises(ValueError):
-        combo(None)
-    with pytest.raises(ValueError):
-        minknap(None)
+# def test_pisingers_raises():
+#     """
+#     Raises an exception because the the problem is None
+#     """
+#     with pytest.raises(ValueError):
+#         expknap(None)
+#     with pytest.raises(ValueError):
+#         combo(None)
+#     with pytest.raises(ValueError):
+#         minknap(None)

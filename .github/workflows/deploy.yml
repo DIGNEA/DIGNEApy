@@ -21,6 +21,7 @@ jobs:
         with:
           version: "0.8.5"
           python-version: "3.12"
+          enable-cache: false
 
       - name: Build wheels
         uses: pypa/cibuildwheel@v2.20.0

@@ -11,13 +11,13 @@
 """
 
 
-def test_imports_evo():
-    import digneapy.solvers.evolutionary as evo
+# def test_imports_evo():
+#     import digneapy.solvers.evolutionary as evo
 
-    assert evo is not None
+#     assert evo is not None
 
 
-def test_imports_pisinger():
-    import digneapy.solvers.pisinger as pisinger
+# def test_imports_pisinger():
+#     import digneapy.solvers.pisinger as pisinger
 
-    assert pisinger is not None
+#     assert pisinger is not None

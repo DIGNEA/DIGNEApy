@@ -12,6 +12,9 @@
 
 from typing import Optional
 
+import matplotlib
+
+matplotlib.use("Agg")  # Non-interactive backend
 import matplotlib.pyplot as plt
 import pandas as pd
 import seaborn as sns

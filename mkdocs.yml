@@ -21,7 +21,7 @@ plugins:
           options:
             docstring_style: google
             docstring_section_style: list
-            show_docstring: false  
+            show_docstring_warn: false
 
 nav:
   - Home: index.md
@@ -31,7 +31,7 @@ nav:
       - Run an experiment: tutorial/01_eig_example.md
       - Create a domain: tutorial/02_create_domain.md
       - Create an algorithm: tutorial/03_create_algorithm.md
-  
+
   - Contributing: CONTRIBUTING.md
   - Credits: authors.md
   - License: license.md

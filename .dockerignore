@@ -63,7 +63,7 @@ instance/
 .scrapy
 
 # Sphinx documentation
-docs/_build/
+docs/
 
 # PyBuilder
 target/
@@ -104,7 +104,12 @@ ENV/
 # IDE settings
 .vscode/
 .idea/
-gecco_env/
 scripts/
 site/
 data/
+.git/
+tests/
+.github/
+.ruff_cache/
+wheelhouse/
+

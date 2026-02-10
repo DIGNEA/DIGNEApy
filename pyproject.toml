@@ -95,27 +95,26 @@ dev = [
 ]
 
 [tool.cibuildwheel]
-environment = { UV_NO_CACHE = "1" }
 manylinux-x86_64-image = "manylinux_2_28"
 build = [
     "cp312-manylinux_x86_64",
     "cp313-manylinux_x86_64",
     "cp314-manylinux_x86_64",
 ]
-skip = ["*t-*"]
-build-frontend = "build[uv]"
-before-test = "uv sync --no-dev"
+
+test-skip = "*"
+before-test = "python -m pip install -r requirements.txt && python -m pip install -r requirements_dev.txt"
 test-requires = "pytest"
 test-command = "pytest --doctest-modules -W ignore::ImportWarning -W ignore::DeprecationWarning -W ignore::UserWarning {project}/tests"
 build-verbosity = 1
 
 [tool.cibuildwheel.linux]
 before-build = """
-rm -rf build/ \
+yum install -y gcc-c++ cmake python3-devel \
+&& rm -rf build/ \
 && find . -name "*.so" -delete \
 && rm -f digneapy/solvers/_kp.c \
 && rm -f digneapy/solvers/_tsp_opt.c \
-&& uv cache clean
 """
 repair-wheel-command = "auditwheel repair -w {dest_dir} {wheel}"
 

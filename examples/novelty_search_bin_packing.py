@@ -14,7 +14,7 @@ import argparse
 
 from digneapy import NS, Archive
 from digneapy.domains import BPPDomain
-from digneapy.generators import EAGenerator
+from digneapy.generators.generators import Evolutionary
 from digneapy.operators import generational_replacement
 from digneapy.solvers import best_fit, first_fit, next_fit, worst_fit
 from digneapy.utils import save_results_to_files
@@ -43,7 +43,7 @@ def generate_instances(
         capacity_approach="fixed",
     )
 
-    eig = EAGenerator(
+    eig = Evolutionary(
         pop_size=population_size,
         generations=generations,
         domain=domain,

@@ -113,7 +113,7 @@ class Instance:
         Returns:
             Self: Instance object
         """
-        return Instance(
+        return type(self)(
             variables=list(self._vars),
             fitness=self._fit,
             p=self._p,

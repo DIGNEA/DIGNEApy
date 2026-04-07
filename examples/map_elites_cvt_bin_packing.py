@@ -16,7 +16,7 @@ from multiprocessing.pool import Pool
 
 from digneapy import CVTArchive
 from digneapy.domains import BPPDomain
-from digneapy.generators import MapElitesGenerator
+from digneapy.generators.generators import MapElitesGenerator
 from digneapy.operators import uniform_one_mutation
 from digneapy.solvers import best_fit, first_fit, next_fit, worst_fit
 from digneapy.utils import save_results_to_files

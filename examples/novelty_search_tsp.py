@@ -17,7 +17,7 @@ from multiprocessing.pool import Pool
 
 from digneapy import NS, Archive
 from digneapy.domains import TSPDomain
-from digneapy.generators import EAGenerator
+from digneapy.generators.generators import Evolutionary
 from digneapy.operators import generational_replacement
 from digneapy.solvers import greedy, nneighbour, two_opt
 from digneapy.utils import save_results_to_files
@@ -35,7 +35,7 @@ def generate_instancess(
     verbose,
 ):
     domain = TSPDomain(dimension=50)
-    eig = EAGenerator(
+    eig = Evolutionary(
         pop_size=pop_size,
         generations=generations,
         domain=domain,

@@ -12,7 +12,7 @@
 
 from abc import ABC, abstractmethod
 from collections.abc import Sequence
-from typing import Dict, Optional, List
+from typing import Dict, List, Optional
 
 import numpy as np
 
@@ -111,7 +111,6 @@ class Domain(ABC, RNG):
     def bounds(self):
         return self._bounds
 
-    
     def get_bounds_at(self, i: int) -> tuple:
         if i < 0 or i > len(self._bounds):
             raise ValueError(

@@ -12,7 +12,7 @@
 
 from abc import ABC, abstractmethod
 from collections.abc import Sequence
-from typing import Tuple, TypeVar, Optional, Any
+from typing import Any, Optional, Tuple, TypeVar
 
 import numpy as np
 from numpy import typing as npt

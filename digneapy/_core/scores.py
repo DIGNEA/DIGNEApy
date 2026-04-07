@@ -13,6 +13,7 @@
 __all__ = ["PerformanceFn", "max_gap_target", "runtime_score"]
 
 from collections.abc import Callable
+
 import numpy as np
 
 """Performance Function type. From any sequence it calculates the performance score.

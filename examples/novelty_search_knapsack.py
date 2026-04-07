@@ -12,18 +12,16 @@
 
 import argparse
 import itertools
-from functools import partial
-from multiprocessing.pool import Pool
+
 from digneapy import NS, Archive
 from digneapy.domains import KnapsackDomain
-from digneapy.generators import EAGenerator
+from digneapy.generators.generators import Evolutionary
 from digneapy.operators import generational_replacement
 from digneapy.solvers import (
     default_kp,
     map_kp,
     miw_kp,
     mpw_kp,
-    shuffle_and_run_for_knapsack,
 )
 from digneapy.utils import save_results_to_files, sort_knapsack_instances
 
@@ -40,7 +38,7 @@ def generate_instances(
     verbose,
 ):
     domain = KnapsackDomain(dimension, capacity_approach="percentage")
-    eig = EAGenerator(
+    eig = Evolutionary(
         pop_size=pop_size,
         generations=generations,
         domain=domain,

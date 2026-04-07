@@ -8,7 +8,6 @@ __version__ = "0.2.5"
 from . import _core, archives, domains, operators
 from ._core import (
     NS,
-    dominated_novelty_search,
     RNG,
     Direction,
     Domain,
@@ -20,13 +19,14 @@ from ._core import (
     Solver,
     SupportsSolve,
     descriptors,
+    dominated_novelty_search,
     scores,
 )
 from ._core._metrics import Logbook, Statistics, qd_score, qd_score_auc
 from ._core.descriptors import DESCRIPTORS, DescStrategy, descriptor
 from ._core.scores import PerformanceFn, max_gap_target, runtime_score
 from .archives import Archive, CVTArchive, GridArchive
-from .generators import Generator, GenResult
+from .generators.generators import Generator, GenResult
 
 __dignea_submodules = {"utils", "generators", "solvers", "visualize"}
 

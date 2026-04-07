@@ -25,7 +25,11 @@ from digneapy import (
     max_gap_target,
 )
 from digneapy.domains import BPPDomain, KnapsackDomain
-from digneapy.generators import DEAGenerator, EAGenerator, MapElitesGenerator
+from digneapy.generators.generators import (
+    Dominated,
+    Evolutionary,
+    MapElitesGenerator,
+)
 from digneapy.operators import (
     binary_tournament_selection,
     generational_replacement,
@@ -45,7 +49,7 @@ from digneapy.visualize import ea_generator_evolution_plot, map_elites_evolution
 
 
 def test_default_generator():
-    eig = EAGenerator(domain=None, portfolio=[], novelty_approach=NS(k=15))
+    eig = Evolutionary(domain=None, portfolio=[], novelty_approach=NS(k=15))
     assert eig.pop_size == 100
     assert eig.generations == 1000
     assert eig._novelty_search.k == 15
@@ -87,13 +91,13 @@ def test_default_generator():
     )
 
     with pytest.raises(ValueError) as e:
-        _ = EAGenerator(domain=None, portfolio=[], novelty_approach=NS(k=15), phi=-1.0)
+        _ = Evolutionary(domain=None, portfolio=[], novelty_approach=NS(k=15), phi=-1.0)
     assert (
         e.value.args[0]
         == "Phi must be a float number in the range [0.0-1.0]. Got: -1.0."
     )
     with pytest.raises(ValueError) as e:
-        _ = EAGenerator(
+        _ = Evolutionary(
             domain=None, portfolio=[], novelty_approach=NS(k=15), phi="hello"
         )
     assert e.value.args[0] == "Phi must be a float number in the range [0.0-1.0]."
@@ -105,7 +109,7 @@ def test_evo_instance_generator_for_KP_with_performance_descriptor(capacity_appr
     kp_domain = KnapsackDomain(dimension=50, capacity_approach=capacity_approach)
     generations = 10
     k = 3
-    eig = EAGenerator(
+    eig = Evolutionary(
         pop_size=10,
         generations=generations,
         domain=kp_domain,
@@ -138,7 +142,7 @@ def test_evo_instance_generator_for_KP_with_features_descriptor(capacity_approac
     kp_domain = KnapsackDomain(dimension=50, capacity_approach=capacity_approach)
     generations = 10
     k = 3
-    eig = EAGenerator(
+    eig = Evolutionary(
         pop_size=10,
         generations=generations,
         domain=kp_domain,
@@ -178,7 +182,7 @@ def test_eig_gen_kp_inst_descriptor():
     kp_domain = KnapsackDomain(dimension=50, capacity_approach="evolved")
     generations = 10
     k = 3
-    eig = EAGenerator(
+    eig = Evolutionary(
         pop_size=10,
         generations=generations,
         domain=kp_domain,
@@ -317,7 +321,7 @@ def test_dominated_evolutionary_generator_with_k_and_descriptor(k, descriptor):
     pop_size = 128
     kp_domain = KnapsackDomain(dimension=50, capacity_approach="evolved")
     generations = 10
-    deig = DEAGenerator(
+    deig = Dominated(
         pop_size=pop_size,
         offspring_size=pop_size,
         generations=generations,
@@ -359,7 +363,7 @@ def test_dominated_evolutionary_generator_raises_if_wrong_args():
     portfolio = deque([default_kp, map_kp, miw_kp, mpw_kp])
     kp_domain = KnapsackDomain(dimension=50, capacity_approach="evolved")
     generations = 10
-    eig = DEAGenerator(
+    eig = Dominated(
         pop_size=10,
         offspring_size=10,
         generations=generations,
@@ -372,7 +376,7 @@ def test_dominated_evolutionary_generator_raises_if_wrong_args():
         _ = eig()
 
     with pytest.raises(ValueError):
-        eig = DEAGenerator(
+        eig = Dominated(
             pop_size=10,
             offspring_size=10,
             generations=generations,

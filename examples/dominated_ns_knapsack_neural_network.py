@@ -16,7 +16,7 @@ from functools import partial
 from multiprocessing.pool import Pool
 
 from digneapy.domains import KnapsackDomain
-from digneapy.generators import DEAGenerator
+from digneapy.generators.generators import Dominated
 from digneapy.solvers import default_kp, map_kp, miw_kp, mpw_kp
 from digneapy.transformers.neural import NNEncoder
 from digneapy.utils import save_results_to_files
@@ -88,7 +88,7 @@ def generate_instancess(
     nn.update_weights(best_weights)
 
     domain = KnapsackDomain(dimension=dimension, capacity_approach="percentage")
-    eig = DEAGenerator(
+    eig = Dominated(
         pop_size=pop_size,
         offspring_size=pop_size,
         generations=generations,

@@ -21,7 +21,7 @@ import numpy as np
 
 from digneapy import NS, Archive
 from digneapy.domains import TSPDomain
-from digneapy.generators import EAGenerator
+from digneapy.generators.generators import Evolutionary
 from digneapy.operators import generational_replacement
 from digneapy.solvers import greedy, nneighbour, two_opt
 from digneapy.transformers.neural import NNEncoder
@@ -48,7 +48,7 @@ def generate_instancess(
     best_weights = np.load(Path(__file__).with_name("tsp_NN_weights_N_50_2D_best.npy"))
     nn.update_weights(best_weights)
     domain = TSPDomain(dimension=dimension)
-    eig = EAGenerator(
+    eig = Evolutionary(
         pop_size=pop_size,
         generations=generations,
         domain=domain,

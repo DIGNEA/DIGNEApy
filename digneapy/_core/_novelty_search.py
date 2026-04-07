@@ -10,10 +10,11 @@
 @Desc    :   None
 """
 
-from typing import Tuple, Optional
+import sys
+from typing import Optional, Tuple
 
 import numpy as np
-import sys
+
 from digneapy.archives import Archive
 
 

@@ -11,6 +11,7 @@
 """
 
 from typing import Optional, Protocol
+
 import numpy as np
 from numpy.random import Generator
 

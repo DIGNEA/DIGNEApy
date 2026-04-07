@@ -20,7 +20,7 @@ from pathlib import Path
 import numpy as np
 
 from digneapy.domains import TSPDomain
-from digneapy.generators import DEAGenerator
+from digneapy.generators.generators import Dominated
 from digneapy.solvers import greedy, nneighbour, two_opt
 from digneapy.transformers.neural import NNEncoder
 from digneapy.utils import save_results_to_files
@@ -44,7 +44,7 @@ def generate_instancess(
     best_weights = np.load(Path(__file__).with_name("tsp_NN_weights_N_50_2D_best.npy"))
     nn.update_weights(best_weights)
     domain = TSPDomain(dimension=dimension)
-    eig = DEAGenerator(
+    eig = Dominated(
         pop_size=pop_size,
         offspring_size=pop_size,
         generations=generations,

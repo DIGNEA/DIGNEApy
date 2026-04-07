@@ -15,7 +15,7 @@ from functools import partial
 from multiprocessing.pool import Pool
 
 from digneapy.domains import BPPDomain
-from digneapy.generators import DEAGenerator
+from digneapy.generators.generators import Dominated
 from digneapy.solvers import best_fit, first_fit, next_fit, worst_fit
 from digneapy.utils import save_results_to_files
 
@@ -36,7 +36,7 @@ def generate_instancess(
         max_capacity=150,
         capacity_approach="fixed",
     )
-    deig = DEAGenerator(
+    deig = Dominated(
         pop_size=pop_size,
         offspring_size=pop_size,
         generations=generations,

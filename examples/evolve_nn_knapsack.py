@@ -18,7 +18,7 @@ import numpy as np
 from digneapy import NS, SupportsSolve
 from digneapy.archives import Archive
 from digneapy.domains import KnapsackDomain
-from digneapy.generators import EAGenerator
+from digneapy.generators.generators import Evolutionary
 from digneapy.operators import generational_replacement
 from digneapy.solvers import default_kp, map_kp, miw_kp, mpw_kp
 from digneapy.transformers.neural import NNEncoder
@@ -40,7 +40,7 @@ class Evaluation(object):
         self._transformer.update_weights(X)
         results = np.zeros(4)
         for i, portfolio in enumerate(self._portfolios):
-            eig = EAGenerator(
+            eig = Evolutionary(
                 pop_size=128,
                 generations=1000,
                 domain=self._domain,

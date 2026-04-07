@@ -23,7 +23,7 @@ from sklearn.pipeline import Pipeline
 
 from digneapy import NS, Archive
 from digneapy.domains import BPPDomain
-from digneapy.generators import EAGenerator
+from digneapy.generators.generators import Evolutionary
 from digneapy.operators import generational_replacement
 from digneapy.solvers import best_fit, first_fit, next_fit, worst_fit
 
@@ -79,7 +79,7 @@ def generate_instancess(
         max_capacity=150,
         capacity_approach="fixed",
     )
-    eig = EAGenerator(
+    eig = Evolutionary(
         pop_size=pop_size,
         generations=generations,
         domain=domain,

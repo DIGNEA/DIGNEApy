@@ -15,11 +15,12 @@ import itertools
 from functools import partial
 from multiprocessing.pool import Pool
 
+from digneapy.solvers.pisinger import combo, expknap, minknap
+
 from digneapy import NS, Archive, runtime_score
 from digneapy.domains import KnapsackDomain
-from digneapy.generators import EAGenerator
+from digneapy.generators.generators import Evolutionary
 from digneapy.operators import first_improve_replacement
-from digneapy.solvers.pisinger import combo, expknap, minknap
 from digneapy.utils import save_results_to_files
 
 
@@ -34,7 +35,7 @@ def generate_instancess(
     verbose,
 ):
     domain = KnapsackDomain(1000, capacity_approach="percentage")
-    eig = EAGenerator(
+    eig = Evolutionary(
         pop_size=pop_size,
         generations=generations,
         domain=domain,

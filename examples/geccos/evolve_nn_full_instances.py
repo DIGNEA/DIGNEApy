@@ -14,7 +14,7 @@ import pandas as pd
 
 from digneapy import NS, Archive, Direction, GridArchive
 from digneapy.domains import KnapsackDomain
-from digneapy.generators import EAGenerator
+from digneapy.generators.generators import Evolutionary
 from digneapy.operators import generational_replacement
 from digneapy.solvers import default_kp, map_kp, miw_kp
 from digneapy.transformers.neural import NNEncoder
@@ -64,7 +64,7 @@ class EvalNN:
             [miw_kp, default_kp, map_kp],
         ]
         for portfolio in portfolios:
-            eig = EAGenerator(
+            eig = Evolutionary(
                 pop_size=10,
                 generations=1000,
                 domain=self.kp_domain,

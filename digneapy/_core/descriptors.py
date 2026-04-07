@@ -1,113 +1,81 @@
 #!/usr/bin/env python
 # -*-coding:utf-8 -*-
 """
-@File    :   _descriptor_strategies.py
-@Time    :   2024/06/07 14:29:09
-@Author  :   Alejandro Marrero
+@File    :   descriptors.py
+@Time    :   2026/03/25 11:57:22
+@Author  :   Alejandro Marrero (amarrerd@ull.edu.es)
 @Version :   1.0
 @Contact :   amarrerd@ull.edu.es
-@License :   (C)Copyright 2024, Alejandro Marrero
-@Desc    :   Descriptors Strategies for Instance Generation
+@License :   (C)Copyright 2026, Alejandro Marrero
+@Desc    :   None
 """
 
-__all__ = [
-    "DescStrategy",
-    "descriptor",
-    "DESCRIPTORS",
-]
-
-from collections.abc import Callable, Iterable, MutableMapping
-from typing import Optional
+from typing import Literal, Optional, Protocol, Tuple
 
 import numpy as np
 
-from digneapy._core._instance import Instance
+from .._core import Domain
+from ..transformers import SupportsTransform
 
-""" DescStrategy defines the type for a Descriptor Strategy.
-    A descriptor strategy is any callable able to extract the
-    valuable information to describe each instance in a iterable.
-    Args:
-        iterable of objects of the Instance class
-    Returns:
-        np.ndarray: Array with the descriptors of each instance in the iterable
-"""
-DescStrategy = Callable[[Iterable[Instance]], np.ndarray]
+DESCRIPTORS = Literal["features", "performance", "instance"]
 
 
-def descriptor(key: str, verbose: bool = False):
-    """Decorator to create new descriptor strategies
+class Descriptable(Protocol):
+    """Defines the Protocol that all descriptable functions must follow"""
 
-    Args:
-        key (str): Key to refer the descriptor-function
-        verbose (bool, optional): Prints a message when the function is registered. Defaults to False.
-    """
-
-    def decorate(func: DescStrategy):
-        if verbose:
-            print(f"Registering descriptor function: {func.__name__} with key: {key}")
-        DESCRIPTORS[key] = func
-        return func
-
-    return decorate
+    def __call__(
+        self,
+        population: np.ndarray,
+        key: Literal["features", "performance", "instance"],
+        scores: Optional[np.ndarray] = None,
+        domain: Optional[Domain] = None,
+        transformer: Optional[SupportsTransform] = None,
+    ) -> Tuple[np.ndarray, Optional[np.ndarray]]: ...
 
 
-def __property_strategy(attr: str):
-    """Returns a np.ndarray with the information required of the instances
+def describe(
+    population: np.ndarray,
+    key: DESCRIPTORS,
+    scores: Optional[np.ndarray] = None,
+    domain: Optional[Domain] = None,
+    transformer: Optional[SupportsTransform] = None,
+) -> Tuple[np.ndarray, Optional[np.ndarray]]:
+    """Updates the descriptors of the population of instances
 
     Args:
-        iterable (Iterable[Instance]): Instances to describe
+        population (np.ndarray): Population of instances to describe
+        key (Literal[&quot;features&quot;, &quot;performance&quot;, &quot;instance&quot;]): Type of descriptor to extract
+        scores (Optional[np.ndarray], optional): Scores of the solvers. Defaults to None.
+        domain (Optional[Domain], optional): Domain to extract the features if needed. Defaults to None.
+        transformer (Optional[SupportsTransform], optional): Transformer to transform the descriptor after extracted. Defaults to None.
 
-    Returns:
-        np.ndarray: Array of the feature descriptors of each instance
-    """
-    try:
-        if attr not in ("features", "transformed"):
-            raise AttributeError()
-    except AttributeError:
-        raise ValueError(
-            f"Object of class Instance does not have a property named {attr}"
-        )
-
-    def strategy(iterable: Iterable[Instance]) -> np.ndarray:
-        return np.asarray([getattr(i, attr) for i in iterable])
-
-    return strategy
-
-
-def performance_strategy(performances: np.ndarray) -> np.ndarray:
-    """It generates the performance descriptor of an instance
-    based on the scores of the solvers in the portfolio over such instance
-
-    Args:
-        iterable (Iterable[Instance]): Instances to describe
+    Raises:
+        ValueError: If the key is not features, performance or instance
+        ValueError: If key is features and domain is None
+        ValueError: If key is performance and scores is None
 
     Returns:
-        np.ndarray: Array of performance descriptors of each instance
+        Tuple[np.ndarray, Optional[np.ndarray]]: Descriptors and features if necessary
     """
-    print(performances)
-    return np.mean(performances, axis=1)
+    if key not in ("features", "performance", "instance"):
+        raise ValueError("Expected key to be features, performance or instance")
 
+    descriptors = np.empty(len(population))
+    features = None
 
-def instance_strategy(iterable: Iterable[Instance]) -> np.ndarray:
-    """It returns the instance information as its descriptor
+    if key == "features":
+        if domain is None:
+            raise ValueError("Domain cannot be None when the key is features")
+        descriptors = domain.extract_features(population)
+        features = descriptors.copy()
+    elif key == "performance":
+        if scores is None:
+            raise ValueError("Scores cannot be None when the key is performance")
+        descriptors = np.mean(scores, axis=2)
+    elif key == "instance":
+        descriptors = np.asarray([*population])
 
-    Args:
-        iterable (Iterable[Instance]): Instances to describe
+    if transformer is not None:
+        descriptors = transformer(descriptors)
 
-    Returns:
-        np.ndarray: Array of descriptor instance (whole instace data)
-    """
-    return np.asarray([*iterable])
-
-
-""" Set of pre-defined descriptor strategies available in digneapy.
-    - features --> Creates a np.ndarray with all the features of the instances.
-    - performance --> Creates a np.ndarray with the mean performance score of each solver over the instances.
-    - instance --> Creates a np.ndarray with the whole instance as its self descriptor.
-    - transformed --> Creates a np.ndarray with all the transformed descriptors of the instances. Only when using a Transformer.
-"""
-DESCRIPTORS: MutableMapping[str, DescStrategy] = {
-    "features": __property_strategy(attr="features"),
-    "performance": performance_strategy,
-    "instance": instance_strategy,
-}
+    return (descriptors, features)

@@ -65,7 +65,7 @@ class Solution:
         Returns:
             Self: Solution object
         """
-        return Solution(
+        return type(self)(
             variables=list(self.variables),
             objectives=list(self.objectives),
             constraints=list(self.constraints),

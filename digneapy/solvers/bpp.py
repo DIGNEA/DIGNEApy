@@ -1,14 +1,14 @@
 #!/usr/bin/env python
 # -*-coding:utf-8 -*-
-"""
-@File    :   _bpp_heuristics.py
-@Time    :   2024/06/18 11:54:17
-@Author  :   Alejandro Marrero
-@Version :   1.0
-@Contact :   amarrerd@ull.edu.es
-@License :   (C)Copyright 2024, Alejandro Marrero
-@Desc    :   None
-"""
+# """
+# @File    :   _bpp_heuristics.py
+# @Time    :   2024/06/18 11:54:17
+# @Author  :   Alejandro Marrero
+# @Version :   1.0
+# @Contact :   amarrerd@ull.edu.es
+# @License :   (C)Copyright 2024, Alejandro Marrero
+# @Desc    :   None
+# """
 
 __all__ = ["best_fit", "next_fit", "worst_fit", "first_fit"]
 
@@ -24,24 +24,25 @@ def best_fit(problem: BPP, *args, **kwargs) -> list[Solution]:
     assignment = np.zeros(len(problem), dtype=int)
     bin_capacities: list[int] = []
     items = problem._items
+    max_capacity = problem._capacity
     # Starts the algorithm
     # It keeps a list of open bins, which is initially empty.
     for i, item in enumerate(items):
         bin = None
-        max_loaded_bin = np.iinfo(np.int64).min
+        max_load = np.iinfo(np.int32).min
         for j, b_c in enumerate(bin_capacities):
             # Checks that the item fits in the jth bin
             # and its the bin with maximum load
-            if item + b_c <= problem._capacity and b_c > max_loaded_bin:
-                max_loaded_bin = b_c
-                bin = j
+            if item + b_c <= max_capacity:
+                if b_c > max_load:
+                    max_load = b_c
+                    bin = j
         if bin is not None:
             assignment[i] = bin
             bin_capacities[bin] += item
         else:
             # If no such bin is found, open a new bin and put the item
             # into it
-
             assignment[i] = len(bin_capacities)
             bin_capacities.append(item)
 
@@ -54,12 +55,13 @@ def first_fit(problem: BPP, *args, **kwargs) -> list[Solution]:
         raise ValueError("No problem found in first_fit heuristic")
     assignment = np.zeros(len(problem), dtype=int)
     open_bins: list[int] = []
+    max_capacity = problem._capacity
     items = problem._items
 
     for i, item in enumerate(items):
         placed = False
         for j, o_b in enumerate(open_bins):
-            if o_b + item <= problem._capacity:
+            if o_b + item <= max_capacity:
                 open_bins[j] += item
                 assignment[i] = j
                 placed = True
@@ -86,7 +88,7 @@ def next_fit(problem: BPP, *args, **kwargs) -> list[Solution]:
             remaining_capacity -= item
         else:
             bin_counter += 1
-            remaining_capacity = problem._capacity
+            remaining_capacity = problem._capacity - item
 
         assignment[i] = bin_counter
 
@@ -100,14 +102,15 @@ def worst_fit(problem: BPP, *args, **kwargs) -> list[Solution]:
 
     assignment = np.zeros(len(problem), dtype=int)
     bin_capacities: list[int] = []
+    max_capacity = problem._capacity
     items = problem._items
     # Starts the algorithm
     # It keeps a list of open bins, which is initially empty.
     for i, item in enumerate(items):
         bin = None
-        min_load = np.iinfo(np.int64).max
+        min_load = np.iinfo(np.int32).max
         for j, b_c in enumerate(bin_capacities):
-            if item + b_c <= problem._capacity:
+            if item + b_c <= max_capacity:
                 if b_c < min_load:
                     min_load = b_c
                     bin = j

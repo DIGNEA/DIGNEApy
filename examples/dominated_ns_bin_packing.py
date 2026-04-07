@@ -43,10 +43,12 @@ def generate_instancess(
         domain=domain,
         portfolio=portfolio,
         k=k,
+        mutrate=(1 / dimension),
+        cxrate=0.8,
         repetitions=1,
         descriptor_strategy=descriptor,
     )
-    result = deig()
+    result = deig(verbose=verbose)
     if verbose:
         print(f"Target: {result.target} completed.")
     return result
@@ -133,7 +135,7 @@ if __name__ == "__main__":
     pool.close()
     pool.join()
     features_names = BPPDomain().feat_names if descriptor == "features" else None
-    vars_names = ["Q", *[f"w_{i}" for i in range(dimension)]]
+    vars_names = ["capacity", *[f"w_{i}" for i in range(dimension)]]
 
     for i, result in enumerate(results):
         solvers_names = [p.__name__ for p in portfolios[i]]
@@ -141,7 +143,9 @@ if __name__ == "__main__":
         save_results_to_files(
             f"dns_{descriptor}_N_{dimension}_target_{result.target}_rep_{rep}",
             result,
-            solvers_names,
-            features_names,
-            vars_names,
+            only_instances=True,
+            only_genotypes=False,
+            solvers_names=solvers_names,
+            features_names=features_names,
+            vars_names=vars_names,
         )

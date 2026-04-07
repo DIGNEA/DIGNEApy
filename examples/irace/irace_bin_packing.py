@@ -119,16 +119,16 @@ def target_runner(experiment: Experiment, scenario: Scenario) -> float:
     ]
 
     with Pool(4) as pool:
-        pipeline = joblib.load("pipeline_bpp_N_120.pkl")
+        pipeline = joblib.load("examples/irace/pipeline_bpp_N_120.pkl")
         results = pool.map(
             partial(
                 generate_instancess,
                 dimension=120,
-                pop_size=128,
-                generations=1000,
+                pop_size=10, #128
+                generations=100, #1000
                 archive_threshold=experiment.configuration["t_a"],
                 ss_threshold=experiment.configuration["t_ss"],
-                k=15,
+                k=3, #15
                 descriptor="features",
                 pipeline=pipeline,
                 verbose=False,
@@ -144,8 +144,8 @@ def target_runner(experiment: Experiment, scenario: Scenario) -> float:
 if __name__ == "__main__":
     parameter_space = ParameterSpace(
         [
-            Real("t_a", 0.0, 10.0),
-            Real("t_ss", 0.0, 10.0),
+            Real("t_a", 1e-8, 1),
+            Real("t_ss", 1e-8, 1),
         ]
     )
 

@@ -52,7 +52,7 @@ def generate_instances(
         replacement=generational_replacement,
     )
 
-    result = eig()
+    result = eig(verbose=verbose)
     if verbose:
         print(f"Target: {result.target} completed.")
     return result
@@ -133,44 +133,30 @@ if __name__ == "__main__":
     rep = args.repetition
     verbose = args.verbose
     portfolios = [
-        [default_kp, map_kp, miw_kp, mpw_kp],
+        #   [default_kp, map_kp, miw_kp, mpw_kp],
         [map_kp, default_kp, miw_kp, mpw_kp],
-        [miw_kp, default_kp, map_kp, mpw_kp],
-        [mpw_kp, default_kp, map_kp, miw_kp],
+        #   [miw_kp, default_kp, map_kp, mpw_kp],
+        #   [mpw_kp, default_kp, map_kp, miw_kp],
     ]
-    results = []
-    for portfolio in portfolios:
-        result = generate_instances(
-            portfolio=portfolio,
-            dimension=dimension,
-            pop_size=population_size,
-            generations=generations,
-            archive_threshold=archive_threshold,
-            ss_threshold=solution_set_threshold,
-            k=k,
-            descriptor=descriptor,
-            verbose=verbose,
+
+    with Pool(1) as pool:
+        results = pool.map(
+            partial(
+                generate_instances,
+                dimension=dimension,
+                pop_size=population_size,
+                generations=generations,
+                archive_threshold=archive_threshold,
+                ss_threshold=solution_set_threshold,
+                k=k,
+                descriptor=descriptor,
+                verbose=verbose,
+            ),
+            portfolios,
         )
 
-        results.append(result)
-    # with Pool(4) as pool:
-    #     results = pool.map(
-    #         partial(
-    #             generate_instancess,
-    #             dimension=dimension,
-    #             pop_size=population_size,
-    #             generations=generations,
-    #             archive_threshold=archive_threshold,
-    #             ss_threshold=solution_set_threshold,
-    #             k=k,
-    #             descriptor=descriptor,
-    #             verbose=verbose,
-    #         ),
-    #         portfolios,
-    #     )
-
-    # pool.close()
-    # pool.join()
+    pool.close()
+    pool.join()
     features_names = KnapsackDomain().feat_names if descriptor == "features" else None
     vars_names = ["capacity"] + list(
         itertools.chain.from_iterable([(f"w_{i}", f"p_{i}") for i in range(dimension)])

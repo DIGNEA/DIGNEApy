@@ -188,7 +188,6 @@ class Instance:
             # if f != 0.0 and not float(f):
             msg = f"The fitness value {f} is not a float in fitness setter of class {self.__class__.__name__}"
             raise ValueError(msg)
-
         self._fit = f
 
     @property

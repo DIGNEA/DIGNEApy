@@ -219,9 +219,9 @@ class BPPDomain(Domain):
         if not isinstance(instances, np.ndarray):
             instances = np.asarray(instances)
 
-        norm_variables = np.asarray(instances, copy=True)
-        norm_variables[:, 1:] = norm_variables[:, 1:] / norm_variables[:, [0]]
-
+        norm_variables = np.asarray(instances, copy=True, dtype=np.float32)
+        norm_variables[:, 1:] = norm_variables[:, 1:] / norm_variables[:, 0:1]
+        #print(norm_variables[:,1:])
         return np.column_stack(
             [
                 np.mean(norm_variables, axis=1),
@@ -273,8 +273,11 @@ class BPPDomain(Domain):
                 capacities[:] = (
                     np.sum(instances[:, 1:], axis=1) * self.capacity_ratio
                 ).astype(np.int32)
+                instances[:, 0] = capacities[:]
             case "fixed":
                 capacities[:] = self._max_capacity
+                instances[:, 0] = self._max_capacity
+
         return list(
             BPP(items=instances[i, 1:], capacity=capacities[i])
             for i in range(len(instances))

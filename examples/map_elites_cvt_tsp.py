@@ -1,12 +1,12 @@
 #!/usr/bin/env python
 # -*-coding:utf-8 -*-
 """
-@File    :   generate_instancess.py
-@Time    :   2024/09/30 09:19:06
-@Author  :   Alejandro Marrero
+@File    :   map_elites_cvt_tsp.py
+@Time    :   2026/04/07 10:04:25
+@Author  :   Alejandro Marrero (amarrerd@ull.edu.es)
 @Version :   1.0
 @Contact :   amarrerd@ull.edu.es
-@License :   (C)Copyright 2024, Alejandro Marrero
+@License :   (C)Copyright 2026, Alejandro Marrero
 @Desc    :   None
 """
 
@@ -15,11 +15,11 @@ import itertools
 from functools import partial
 from multiprocessing.pool import Pool
 
-from digneapy import CVTArchive
-from digneapy.domains import KnapsackDomain
+from digneapy.archives import CVTArchive
+from digneapy.domains import TSPDomain
 from digneapy.generators import MapElitesGenerator
 from digneapy.operators import uniform_one_mutation
-from digneapy.solvers import default_kp, map_kp, miw_kp, mpw_kp
+from digneapy.solvers import greedy, nneighbour, two_opt
 from digneapy.utils import save_results_to_files
 
 
@@ -31,15 +31,15 @@ def generate_instances(
     descriptor: str,
     verbose: bool,
 ):
-    domain = KnapsackDomain(dimension=dimension)
+    domain = TSPDomain(dimension=dimension)
     # Create an empty archive with the previous centroids and samples
     ranges = []
     if descriptor == "features":
-        ranges = [(1.0, 100_000), *[(1.0, 1_000) for _ in range(7)]]
+        ranges = [(dimension * 2, dimension * 2), *[(0.0, 1_000) for _ in range(10)]]
     elif descriptor == "performance":
-        ranges = [(1.0, 800_000) for _ in range(len(portfolio))]
+        ranges = [(0.0, 1.0) for _ in range(len(portfolio))]
     else:  # case instance
-        ranges = [(1.0, 100_000), *[(1.0, 1_000) for _ in range(dimension * 2)]]
+        ranges = [(0, 1_000) for _ in range(dimension)]
     cvt_archive = CVTArchive(
         k=1_000,
         ranges=ranges,
@@ -64,15 +64,18 @@ def generate_instances(
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
-        description="Generate instances for the knapsack problem with different solvers using CVT-MapElites."
+        description="Generate instances for the Travelling Salesman Problem with different solvers using CVT-MapElites."
     )
     parser.add_argument(
         "-n",
         "-number_of_items",
         type=int,
         required=True,
-        help="Size of the knapsack problem.",
+        help="number of nodes.",
         default=50,
+    )
+    parser.add_argument(
+        "-d", "--descriptor", type=str, required=True, help="Descriptor to use."
     )
 
     parser.add_argument(
@@ -82,13 +85,6 @@ if __name__ == "__main__":
         type=int,
         required=True,
         help="Number of instances to evolve.",
-    )
-    parser.add_argument(
-        "-d",
-        "--descriptor",
-        type=str,
-        required=True,
-        help="Descriptor to use",
     )
     parser.add_argument(
         "-g",
@@ -109,18 +105,16 @@ if __name__ == "__main__":
         help="Print the evolution logbook.",
     )
     args = parser.parse_args()
+    descriptor = args.descriptor
     generations = args.generations
     population_size = args.population_size
     dimension = args.n
-    descriptor = args.descriptor
     rep = args.repetition
     verbose = args.verbose
-
     portfolios = [
-        [default_kp, map_kp, miw_kp, mpw_kp],
-        [map_kp, default_kp, miw_kp, mpw_kp],
-        [miw_kp, default_kp, map_kp, mpw_kp],
-        [mpw_kp, default_kp, map_kp, miw_kp],
+        [greedy, nneighbour, two_opt],
+        [nneighbour, greedy, two_opt],
+        [two_opt, greedy, nneighbour],
     ]
 
     with Pool(4) as pool:
@@ -138,15 +132,15 @@ if __name__ == "__main__":
 
     pool.close()
     pool.join()
-    vars_names = ["capacity"] + list(
-        itertools.chain.from_iterable([(f"w_{i}", f"p_{i}") for i in range(dimension)])
+    vars_names = list(
+        itertools.chain.from_iterable([(f"x_{i}", f"y_{i}") for i in range(dimension)])
     )
 
     for i, result in enumerate(results):
         solvers_names = [p.__name__ for p in portfolios[i]]
 
         save_results_to_files(
-            f"map_elites_cvt_{descriptor}_knapsack_N_{dimension}_target_{result.target}_rep_{rep}",
+            f"map_elites_cvt_{descriptor}_tsp_N_{dimension}_target_{result.target}_rep_{rep}",
             result,
             only_genotypes=True,
             only_instances=True,

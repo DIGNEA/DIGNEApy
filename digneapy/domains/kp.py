@@ -299,8 +299,10 @@ class KnapsackDomain(Domain):
             capacities[:] = (np.sum(weights, axis=1) * self.capacity_ratio).astype(
                 np.int32
             )
+            instances[:, 0] = capacities[:]
         elif self.capacity_approach == "fixed":
             capacities[:] = self.max_capacity
+            instances[:, 0] = capacities[:]
         return list(
             Knapsack(profits=profits[i], weights=weights[i], capacity=capacities[i])
             for i in range(len(instances))

@@ -101,7 +101,7 @@ class EAGenerator(Generator, RNG):
         replacement: Replacement = generational_replacement,
         performance_function: PerformanceFn = max_gap_target,
         phi: float = 0.85,
-        seed: int = 42,
+        seed: int = None,
     ):
         """Creates a Evolutionary Instance Generator based on Novelty Search
         The generator uses a set of solvers to evaluate the instances and
@@ -209,10 +209,9 @@ class EAGenerator(Generator, RNG):
             descriptors, features = self._update_descriptors(
                 offspring, portfolio_scores=portfolio_scores
             )
-
             novelty_scores = self._novelty_search(instances_descriptors=descriptors)
-            offspring_fitness = self.__compute_fitness(perf_biases, novelty_scores)
 
+            offspring_fitness = self.__compute_fitness(perf_biases, novelty_scores)
             # Update to include this
             # 1. Novelty Scores --> novelty_scores
             # 2. Performance bias --> perf_biases
@@ -253,6 +252,7 @@ class EAGenerator(Generator, RNG):
 
             # However the whole offspring population is used in the replacement operator
             self.population = self.replacement(self.population, offspring)
+
             # Record the stats and update the performed gens
             self._logbook.update(
                 generation=pgen, population=self.population, feedback=verbose
@@ -330,6 +330,7 @@ class EAGenerator(Generator, RNG):
             shape=(len(population), len(self.portfolio), self.repetitions)
         )
         problems_to_solve = self.domain.generate_problems_from_instances(population)
+
         for j, problem in enumerate(problems_to_solve):
             for i, solver in enumerate(self.portfolio):
                 # There is no need to change anything in the evaluation code when using Pisinger solvers
@@ -341,7 +342,6 @@ class EAGenerator(Generator, RNG):
                     scores[rep] = max(
                         solver(problem), key=attrgetter("fitness")
                     ).fitness
-
                 solvers_scores[j, i, :] = scores
 
         mean_solvers_scores = np.mean(solvers_scores, axis=2)
@@ -362,7 +362,7 @@ class EAGenerator(Generator, RNG):
         """
         phi_r = 1.0 - self.phi
         fitness = np.zeros(len(performance_biases))
-        fitness = (fitness * self.phi) + (novelty_scores * phi_r)
+        fitness = (performance_biases * self.phi) + (novelty_scores * phi_r)
         return fitness
 
     def __reproduce(self, parent_1: Instance, parent_2: Instance) -> Instance:

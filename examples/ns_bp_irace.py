@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 # -*-coding:utf-8 -*-
 """
-@File    :   novelty_search_bin_packing_neural_network.py
-@Time    :   2025/04/29 14:53:01
+@File    :   bin_packing_novelty_search.py
+@Time    :   2025/04/02 15:40:48
 @Author  :   Alejandro Marrero
 @Version :   1.0
 @Contact :   amarrerd@ull.edu.es
@@ -11,44 +11,29 @@
 """
 
 import argparse
-import multiprocessing as mp
-from functools import partial
-from multiprocessing.pool import Pool
-from pathlib import Path
-
-import numpy as np
 
 from digneapy import NS, Archive
 from digneapy.domains import BPPDomain
 from digneapy.generators import EAGenerator
 from digneapy.operators import generational_replacement
 from digneapy.solvers import best_fit, first_fit, next_fit, worst_fit
-from digneapy.transformers.neural import NNEncoder
 from digneapy.utils import save_results_to_files
+from typing import List
+from functools import partial
+from multiprocessing.pool import Pool
 
 
-def generate_instancess(
-    portfolio,
+def generate_instances(
+    portfolio: List,
     dimension: int,
-    pop_size: int,
-    generations: int,
-    archive_threshold: float,
-    ss_threshold: float,
-    k: int,
-    verbose,
+    descriptor: str,
+    generations: int = 1000,
+    population_size: int = 128,
+    k: int = 15,
+    archive_threshold: float = 1e-7,
+    ss_threshold: float = 1e-7,
+    verbose: bool = False,
 ):
-    nn = NNEncoder(
-        name="NN_transformer_BPP.keras",
-        input_shape=[10],
-        shape=(5, 2),
-        activations=("relu", None),
-        scale=True,
-    )
-    best_weights = np.load(
-        Path(__file__).with_name("bin_packing_NN_weights_N_120_2D_best.npy")
-    )
-    nn.update_weights(best_weights)
-
     domain = BPPDomain(
         dimension=dimension,
         min_i=20,
@@ -56,28 +41,29 @@ def generate_instancess(
         max_capacity=150,
         capacity_approach="fixed",
     )
+
     eig = EAGenerator(
-        pop_size=pop_size,
+        pop_size=population_size,
         generations=generations,
         domain=domain,
         portfolio=portfolio,
         novelty_approach=NS(Archive(threshold=archive_threshold), k=k),
         solution_set=Archive(threshold=ss_threshold),
         repetitions=1,
-        descriptor_strategy="features",
-        transformer=nn,
+        descriptor_strategy=descriptor,
         replacement=generational_replacement,
     )
-
-    result = eig()
+    result = eig(verbose=verbose)
     if verbose:
         print(f"Target: {result.target} completed.")
     return result
 
 
 if __name__ == "__main__":
+    expected_dimensions = (120, 240, 560, 1080)
     parser = argparse.ArgumentParser(
-        description="Generate instances for the BP with different solvers using a Neural Network as Transformer."
+        prog="novelty_search_bin_packing",
+        description="Bin-Packing Problem instance generator using NS",
     )
     parser.add_argument(
         "-n",
@@ -86,27 +72,16 @@ if __name__ == "__main__":
         help="Size of the BP problem.",
         default=120,
     )
-
+    parser.add_argument(
+        "-d", "--descriptor", type=str, default="features", help="Descriptor to use."
+    )
     parser.add_argument(
         "-k",
         type=int,
         help="Number of neighbors to use for the NS.",
         default=15,
     )
-    parser.add_argument(
-        "-a",
-        "--archive_threshold",
-        default=1e-7,
-        type=float,
-        help="Threshold for the Archive.",
-    )
-    parser.add_argument(
-        "-s",
-        "--solution_set_threshold",
-        default=1e-10,
-        type=float,
-        help="Threshold for the Archive.",
-    )
+
     parser.add_argument(
         "-p",
         "--population_size",
@@ -122,6 +97,20 @@ if __name__ == "__main__":
         help="Number of generations to perform.",
     )
     parser.add_argument(
+        "-a",
+        "--archive_threshold",
+        default=1e-7,  # 0.489739445237057,
+        type=float,
+        help="Threshold for the Archive.",
+    )
+    parser.add_argument(
+        "-s",
+        "--solution_set_threshold",
+        default=1e-7,  # 0.040663809390192,
+        type=float,
+        help="Threshold for the Archive.",
+    )
+    parser.add_argument(
         "-r", "--repetition", type=int, required=True, help="Repetition index."
     )
     parser.add_argument(
@@ -131,47 +120,54 @@ if __name__ == "__main__":
         action="store_true",
         help="Print the evolution logbook.",
     )
-    args = parser.parse_args()
-    generations = args.generations
-    population_size = args.population_size
-    archive_threshold = args.archive_threshold
-    solution_set_threshold = args.solution_set_threshold
-    dimension = args.n
-    k = args.k
-    rep = args.repetition
-    verbose = args.verbose
+
     portfolios = [
         [best_fit, first_fit, next_fit, worst_fit],
         [first_fit, best_fit, next_fit, worst_fit],
         [next_fit, best_fit, first_fit, worst_fit],
         [worst_fit, best_fit, first_fit, next_fit],
     ]
-    mp.set_start_method("spawn", force=True)
+    args = parser.parse_args()
+    descriptor = args.descriptor
+    generations = args.generations
+    population_size = args.population_size
+    dimension = args.n
+    k = args.k
+    rep = args.repetition
+    verbose = args.verbose
+    archive_threshold = args.archive_threshold
+    solution_set_threshold = args.solution_set_threshold
+    print(
+        f"Running with {len(portfolios)} portfolios, rep {rep}, ta {archive_threshold} and tss {solution_set_threshold}."
+    )
 
-    with Pool(4) as pool:
+    with Pool(len(portfolios)) as pool:
         results = pool.map(
             partial(
-                generate_instancess,
+                generate_instances,
                 dimension=dimension,
-                pop_size=population_size,
+                descriptor=descriptor,
                 generations=generations,
+                population_size=population_size,
+                k=k,
                 archive_threshold=archive_threshold,
                 ss_threshold=solution_set_threshold,
-                k=k,
-                verbose=True,
+                verbose=verbose,
             ),
             portfolios,
         )
 
     pool.close()
     pool.join()
-    features_names = "mean,std,median,max,min,tiny,small,medium,large,huge".split(",")
+
+    features_names = BPPDomain().feat_names if descriptor == "features" else None
     vars_names = ["capacity", *[f"w_{i}" for i in range(dimension)]]
     for i, result in enumerate(results):
+        print(result)
         solvers_names = [p.__name__ for p in portfolios[i]]
 
         save_results_to_files(
-            f"BP_ns_NN_bin_packing_N_{dimension}_target_{result.target}_rep_{rep}",
+            f"ns_irace_bin_packing_N_{dimension}_target_{result.target}_rep_{rep}",
             result,
             only_instances=True,
             only_genotypes=False,

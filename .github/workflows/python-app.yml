@@ -4,21 +4,21 @@
 name: Build
 
 on:
-    push:
-        branches: "**" # push to any branch
-    pull_request:
-        branches: "**" # push to any branch
+  push:
+    branches: "**" # push to any branch
+  pull_request:
+    branches: "**" # push to any branch
 
 permissions:
-    contents: read
+  contents: read
 
 jobs:
   test:
     strategy:
-            matrix:
-                python-version: ["3.13"]
+      matrix:
+        python-version: [ "3.12", "3.13", "3.14" ]
     runs-on: ubuntu-latest
-    
+
     name: Test application with Python ${{ matrix.python-version }}
     steps:
       - uses: actions/checkout@v4
@@ -31,8 +31,8 @@ jobs:
 
       - name: Install dependencies
         run: |
-            uv add -r requirements.txt
-            uv add -r requirements_dev.txt
+          uv add -r requirements.txt
+          uv add -r requirements_dev.txt
 
       - name: Installing the project
         run: uv sync --all-extras --dev

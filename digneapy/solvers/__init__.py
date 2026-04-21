@@ -24,6 +24,5 @@ __all__ = list(
     | set(tsp.__all__)
     | set(evolutionary.__all__)
     | set(_tsp_opt.__all__)
-    | set(utils.__all__),
-    shuffle_and_run_for_knapsack,
+    | set(utils.__all__)
 )

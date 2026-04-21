@@ -13,10 +13,8 @@
 import numpy as np
 import pytest
 
-from digneapy._core import Solution
 from digneapy.domains import kp as knapsack
-from digneapy.solvers import default_kp, map_kp
-from digneapy.solvers import shuffle_and_run_for_knapsack
+from digneapy.solvers import default_kp, map_kp, shuffle_and_run_for_knapsack
 
 
 @pytest.fixture

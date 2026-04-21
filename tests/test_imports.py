@@ -18,7 +18,7 @@ def test_imports_utils():
 
 
 def test_import_generators():
-    import digneapy.generators.generators as generators
+    import digneapy.generators as generators
 
     assert generators is not None
 

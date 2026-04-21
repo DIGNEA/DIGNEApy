@@ -10,9 +10,11 @@
 @Desc    :   None
 """
 
-from typing import overload, Sequence, List
-from digneapy import Instance
+from typing import List, Sequence, overload
+
 import numpy as np
+
+from digneapy import Instance
 
 
 @overload

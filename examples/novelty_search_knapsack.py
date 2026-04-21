@@ -12,10 +12,12 @@
 
 import argparse
 import itertools
+from functools import partial
+from multiprocessing import Pool
 
-from digneapy import NS, Archive
+from digneapy import DESCRIPTORS, NS, Archive
 from digneapy.domains import KnapsackDomain
-from digneapy.generators.generators import Evolutionary
+from digneapy.generators import Evolutionary
 from digneapy.operators import generational_replacement
 from digneapy.solvers import (
     default_kp,
@@ -34,7 +36,7 @@ def generate_instances(
     archive_threshold: float,
     ss_threshold: float,
     k: int,
-    descriptor: str,
+    descriptor: DESCRIPTORS,
     verbose,
 ):
     domain = KnapsackDomain(dimension, capacity_approach="percentage")
@@ -46,7 +48,7 @@ def generate_instances(
         novelty_approach=NS(Archive(threshold=archive_threshold), k=k),
         solution_set=Archive(threshold=ss_threshold),
         repetitions=1,
-        descriptor_strategy=descriptor,
+        describe_by=descriptor,
         replacement=generational_replacement,
     )
 
@@ -131,10 +133,10 @@ if __name__ == "__main__":
     rep = args.repetition
     verbose = args.verbose
     portfolios = [
-        #   [default_kp, map_kp, miw_kp, mpw_kp],
+        [default_kp, map_kp, miw_kp, mpw_kp],
         [map_kp, default_kp, miw_kp, mpw_kp],
-        #   [miw_kp, default_kp, map_kp, mpw_kp],
-        #   [mpw_kp, default_kp, map_kp, miw_kp],
+        [miw_kp, default_kp, map_kp, mpw_kp],
+        [mpw_kp, default_kp, map_kp, miw_kp],
     ]
 
     with Pool(1) as pool:

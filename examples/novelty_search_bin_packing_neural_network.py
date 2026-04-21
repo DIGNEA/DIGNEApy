@@ -20,14 +20,14 @@ import numpy as np
 
 from digneapy import NS, Archive
 from digneapy.domains import BPPDomain
-from digneapy.generators.generators import Evolutionary
+from digneapy.generators import Evolutionary
 from digneapy.operators import generational_replacement
 from digneapy.solvers import best_fit, first_fit, next_fit, worst_fit
 from digneapy.transformers.neural import NNEncoder
 from digneapy.utils import save_results_to_files
 
 
-def generate_instancess(
+def generate_instances(
     portfolio,
     dimension: int,
     pop_size: int,
@@ -64,7 +64,7 @@ def generate_instancess(
         novelty_approach=NS(Archive(threshold=archive_threshold), k=k),
         solution_set=Archive(threshold=ss_threshold),
         repetitions=1,
-        descriptor_strategy="features",
+        describe_by="features",
         transformer=nn,
         replacement=generational_replacement,
     )
@@ -151,7 +151,7 @@ if __name__ == "__main__":
     with Pool(4) as pool:
         results = pool.map(
             partial(
-                generate_instancess,
+                generate_instances,
                 dimension=dimension,
                 pop_size=population_size,
                 generations=generations,

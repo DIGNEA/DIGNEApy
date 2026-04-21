@@ -38,11 +38,11 @@ class MapElites(BaseGenerator):
         self,
         domain: Domain,
         portfolio: Iterable[SupportsSolve[P]],
-        batch_size: int,
+        pop_size: int,
         archive: GridArchive | CVTArchive,
         mutation: Mutation,
         repetitions: int,
-        describe_by: DESCRIPTORS = "features",
+        describe_by: DESCRIPTORS = "instance",
         transformer: Optional[SupportsTransform] = None,
         performance_function: PerformanceFn = max_gap_target,
         generations: int = 1_000,
@@ -55,13 +55,14 @@ class MapElites(BaseGenerator):
         Args:
             domain (Domain): Domain for which the instances are generated for.
             portfolio (Iterable[SupportSolve]): Iterable item of callable objects that can evaluate a instance.
-            initial_pop_size (int): Number of instances in the population to evolve. Defaults to 100.
-            generations (int): Number of generations to perform. Defaults to 1000.
+            pop_size (int): Number of instances in the population to evolve. Defaults to 100.
             archive (GridArchive | CVTArchive): Archive to store the instances. It can be a GridArchive or a CVTArchive.
             mutation (Mutation): Mutation operator
             repetitions (int):  Number times a solver in the portfolio must be run over the same instance. Defaults to 1.
-            descriptor (str): Descriptor used to calculate the diversity. The options available are defined in the dictionary digneapy.qd.descriptor_strategies.
+            describe_by (str): Descriptor used to calculate the diversity. The options available are defined in the dictionary digneapy.qd.descriptor_strategies.
+            transformer (callable, optional): Define a strategy to transform the high-dimensional descriptors to low-dimensional.Defaults to None.
             performance_function (PerformanceFn, optional): Performance function to calculate the performance score. Defaults to max_gap_target.
+            generations (int): Number of generations to perform. Defaults to 1000.
             seed (int, optional): Seed for the RNG protocol. Defaults to 42.
 
         Raises:
@@ -70,8 +71,9 @@ class MapElites(BaseGenerator):
         super().__init__(
             domain,
             portfolio,
-            batch_size,
+            pop_size,
             performance_function,
+            describe_by,
             generations,
             repetitions,
             seed,
@@ -83,7 +85,6 @@ class MapElites(BaseGenerator):
 
         self._archive = archive
         self._mutation = mutation
-        self._describe_by = describe_by
         self._transformer = transformer
 
     @property
@@ -91,7 +92,7 @@ class MapElites(BaseGenerator):
         return self._archive
 
     def __call__(self, verbose: bool = False) -> GenResult:
-        instances = self._domain.generate_instances(n=self._batch_size)
+        instances = self._domain.generate_instances(n=self._pop_size)
         perf_biases, portfolio_scores = self._evaluate_population(instances)
         descriptors, features = describe(
             population=instances,
@@ -108,14 +109,13 @@ class MapElites(BaseGenerator):
 
         for generation in range(self._generations):
             indices = self._rng.choice(
-                list(self._archive.filled_cells), size=self._batch_size
+                list(self._archive.filled_cells), size=self._pop_size
             )
             parents = np.asarray(self._archive[indices], copy=True)
             offspring = batch_uniform_one_mutation(
                 parents, self._domain._lbs, ub=self._domain._ubs
             )
             perf_biases, portfolio_scores = self._evaluate_population(offspring)
-            # feasible_indices = np.where(perf_biases >= 0)[0]
             descriptors, features = describe(
                 population=offspring,
                 key=self._describe_by,
@@ -133,7 +133,7 @@ class MapElites(BaseGenerator):
                     p=perf_biases[i],
                     features=features[i] if features is not None else None,
                 )
-                for i in range(self._batch_size)
+                for i in range(self._pop_size)
             ]
             self._archive.extend(
                 instances=offspring_population, descriptors=descriptors

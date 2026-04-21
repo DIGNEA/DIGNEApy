@@ -46,7 +46,7 @@ class Evolutionary(BaseGenerator):
         self,
         domain: Domain,
         portfolio: Iterable[SupportsSolve[P]],
-        batch_size: int,
+        pop_size: int,
         novelty_approach: NS,
         performance_function: PerformanceFn = max_gap_target,
         generations: int = 1000,
@@ -67,16 +67,17 @@ class Evolutionary(BaseGenerator):
         The generator uses a set of solvers to evaluate the instances and
         a novelty search algorithm to guide the evolution of the instances.
 
-
         Args:
             domain (Domain): Domain for which the instances are generated for.
             portfolio (Iterable[SupportSolve]): Iterable item of callable objects that can evaluate a instance.
             pop_size (int, optional): Number of instances in the population to evolve. Defaults to 100.
+            novelty_approach (NS): Novelty Search strategy to produce diverse instances.
+            performance_function (PerformanceFn, optional): Performance function to calculate the performance score. Defaults to max_gap_target.
             generations (int, optional): Number of generations to perform. Defaults to 1000.
-            solution_set (Optional[Archive], optional): Solution set to store the instances. Defaults to None.
-            descriptor_strategy (str, optional): Descriptor used to calculate the diversity. The options available are defined in the dictionary digneapy.qd.descriptor_strategies. Defaults to "features".
-            transformer (callable, optional): Define a strategy to transform the high-dimensional descriptors to low-dimensional.Defaults to None.
             repetitions (int, optional): Number times a solver in the portfolio must be run over the same instance. Defaults to 1.
+            solution_set (Optional[Archive], optional): Solution set to store the instances. Defaults to None.
+            describe_by (DESCRIPTORS, optional): _Descriptor used to calculate the diversity. The options available are defined in the dictionary digneapy.DESCRIPTORS. Defaults to "features".
+            transformer (callable, optional): Define a strategy to transform the high-dimensional descriptors to low-dimensional.Defaults to None.
             cxrate (float, optional): Crossover rate. Defaults to 0.5.
             mutrate (float, optional): Mutation rate. Defaults to 0.8.
             crossover (Crossover, optional): Crossover operator. Defaults to uniform_crossover.
@@ -94,8 +95,9 @@ class Evolutionary(BaseGenerator):
         super().__init__(
             domain,
             portfolio,
-            batch_size,
+            pop_size,
             performance_function,
+            describe_by,
             generations,
             repetitions,
             seed,
@@ -111,17 +113,13 @@ class Evolutionary(BaseGenerator):
             raise ValueError(msg)
 
         self.phi = phi
-        if novelty_approach is None:
-            raise ValueError("Novelty Search cannot be None")
-
         self._novelty_search = novelty_approach
         self._solution_set = None  # By default there's not solution set
         if solution_set is not None:
             self._ns_solution_set = NS(archive=solution_set, k=1)
 
-        self._describe_by = describe_by
         self._transformer = transformer
-        self.offspring_size = self._batch_size
+        self.offspring_size = self._pop_size
         self.cxrate = cxrate
         self.mutrate = mutrate
         self.crossover = crossover
@@ -136,8 +134,11 @@ class Evolutionary(BaseGenerator):
             raise ValueError(
                 "The portfolio is empty. To run the generator you must provide a valid portfolio of solvers"
             )
-        self.population = self._domain.generate_instances(n=self._batch_size)
-        perf_biases, portfolio_scores = self._evaluate_population(self.population)
+        if self._novelty_search is None:
+            raise ValueError("Novelty Search cannot be None in Evolutionary Generator")
+
+        self._population = self._domain.generate_instances(n=self._pop_size)
+        perf_biases, portfolio_scores = self._evaluate_population(self._population)
         descriptors, features = describe(
             population=self._population,
             key=self._describe_by,
@@ -146,7 +147,7 @@ class Evolutionary(BaseGenerator):
             transformer=self._transformer,
         )
         for pgen in range(self._generations):
-            offspring = self.generate(self._batch_size)
+            offspring = self.generate(self._pop_size)
             perf_biases, portfolio_scores = self._evaluate_population(offspring)
             descriptors, features = describe(
                 population=offspring,
@@ -197,10 +198,10 @@ class Evolutionary(BaseGenerator):
                 )
 
             # However the whole offspring population is used in the replacement operator
-            self.population = self.replacement(self.population, offspring)
+            self._population = self.replacement(self._population, offspring)
             # Record the stats and update the performed gens
             self._logbook.update(
-                generation=pgen, population=self.population, feedback=verbose
+                generation=pgen, population=self._population, feedback=verbose
             )
 
         if verbose:
@@ -219,7 +220,7 @@ class Evolutionary(BaseGenerator):
             history=self._logbook,
         )
 
-    def generate(self, batch_size: int) -> np.ndarray:
+    def generate(self, pop_size: int) -> np.ndarray:
         """Generates a offspring population of size |offspring_size| from the current population
 
         Args:
@@ -228,10 +229,10 @@ class Evolutionary(BaseGenerator):
         Returns:
             Sequence[Instance]  Returns a sequence with the instances definitions, the offspring population.
         """
-        offspring = [None] * batch_size  # np.empty(offspring_size, dtype=Instance)
-        for i in range(batch_size):
-            p_1 = self.selection(self.population)
-            p_2 = self.selection(self.population)
+        offspring = [None] * pop_size  # np.empty(offspring_size, dtype=Instance)
+        for i in range(pop_size):
+            p_1 = self.selection(self._population)
+            p_2 = self.selection(self._population)
             child = self.__reproduce(p_1, p_2)
             offspring[i] = child
 
@@ -282,7 +283,7 @@ class Dominated(Evolutionary):
         self,
         domain: Domain,
         portfolio: Iterable[SupportsSolve[P]],
-        batch_size: int = 128,
+        pop_size: int = 128,
         performance_function: PerformanceFn = max_gap_target,
         generations: int = 1000,
         repetitions: int = 1,
@@ -317,7 +318,7 @@ class Dominated(Evolutionary):
         super().__init__(
             domain=domain,
             portfolio=portfolio,
-            batch_size=batch_size,
+            pop_size=pop_size,
             novelty_approach=None,
             performance_function=performance_function,
             generations=generations,
@@ -331,7 +332,7 @@ class Dominated(Evolutionary):
             describe_by=describe_by,
         )
         self.k = k
-        self.offspring_size = batch_size
+        self.offspring_size = pop_size
 
     def __call__(self, verbose: bool = False) -> GenResult:
         if self._domain is None:
@@ -340,7 +341,7 @@ class Dominated(Evolutionary):
             raise ValueError(
                 "The portfolio is empty. To run the generator you must provide a valid portfolio of solvers"
             )
-        self._population = self._domain.generate_instances(n=self._batch_size)
+        self._population = self._domain.generate_instances(n=self._pop_size)
         perf_biases, portfolio_scores = self._evaluate_population(self._population)
         descriptors, features = describe(
             population=self._population,
@@ -352,10 +353,10 @@ class Dominated(Evolutionary):
 
         if features is not None:
             combined_features = np.empty(
-                shape=(self._batch_size * 2, features.shape[1]), dtype=np.float32
+                shape=(self._pop_size * 2, features.shape[1]), dtype=np.float32
             )
         for pgen in range(self._generations):
-            offspring = self.generate(self._batch_size)
+            offspring = self.generate(self._pop_size)
             off_perf_biases, off_portfolio_scores = self._evaluate_population(offspring)
             off_descriptors, off_features = describe(
                 population=offspring,
@@ -374,7 +375,7 @@ class Dominated(Evolutionary):
                 (portfolio_scores, portfolio_scores), axis=0
             )
             genotypes = np.concatenate(
-                (np.asarray(self.population, copy=True), offspring), axis=0
+                (np.asarray(self._population, copy=True), offspring), axis=0
             )
             if features is not None:
                 combined_features = np.concatenate((features, off_features), axis=0)
@@ -392,10 +393,10 @@ class Dominated(Evolutionary):
             )
 
             # Keep the top N for the next generation
-            sorted_indexing = sorted_indexing[: self._batch_size]
-            fitness = sorted_competition_fitness[: self._batch_size]
-            descriptors = sorted_descriptors[: self._batch_size]
-            perf_biases = sorted_performances[: self._batch_size]
+            sorted_indexing = sorted_indexing[: self._pop_size]
+            fitness = sorted_competition_fitness[: self._pop_size]
+            descriptors = sorted_descriptors[: self._pop_size]
+            perf_biases = sorted_performances[: self._pop_size]
             # Track from the combined arrays based on the indexing
             portfolio_scores = combined_port_scores[sorted_indexing]
             genotypes = genotypes[sorted_indexing]
@@ -403,7 +404,7 @@ class Dominated(Evolutionary):
                 features = combined_features[sorted_indexing]
             # Both population and offspring are used in the replacement
             # Record the stats and update the performed gens
-            self.population = [
+            self._population = [
                 Instance(
                     variables=genotypes[i],
                     fitness=fitness[i],
@@ -412,11 +413,11 @@ class Dominated(Evolutionary):
                     p=perf_biases[i],
                     features=features[i] if features is not None else (),
                 )
-                for i in range(self._batch_size)
+                for i in range(self._pop_size)
             ]
 
             self._logbook.update(
-                generation=pgen, population=self.population, feedback=verbose
+                generation=pgen, population=self._population, feedback=verbose
             )
 
         if verbose:

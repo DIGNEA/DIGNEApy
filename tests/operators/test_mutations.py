@@ -16,7 +16,7 @@ import numpy as np
 import pytest
 
 from digneapy import Instance, Solution
-from digneapy.operators import uniform_one_mutation, batch_uniform_one_mutation
+from digneapy.operators import batch_uniform_one_mutation, uniform_one_mutation
 
 
 @pytest.fixture

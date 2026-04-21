@@ -11,16 +11,16 @@
 """
 
 import argparse
+from functools import partial
+from multiprocessing.pool import Pool
+from typing import List
 
 from digneapy import NS, Archive
 from digneapy.domains import BPPDomain
-from digneapy.generators import EAGenerator
+from digneapy.generators import Evolutionary
 from digneapy.operators import generational_replacement
 from digneapy.solvers import best_fit, first_fit, next_fit, worst_fit
 from digneapy.utils import save_results_to_files
-from typing import List
-from functools import partial
-from multiprocessing.pool import Pool
 
 
 def generate_instances(
@@ -42,7 +42,7 @@ def generate_instances(
         capacity_approach="fixed",
     )
 
-    eig = EAGenerator(
+    eig = Evolutionary(
         pop_size=population_size,
         generations=generations,
         domain=domain,
@@ -50,7 +50,7 @@ def generate_instances(
         novelty_approach=NS(Archive(threshold=archive_threshold), k=k),
         solution_set=Archive(threshold=ss_threshold),
         repetitions=1,
-        descriptor_strategy=descriptor,
+        describe_by=descriptor,
         replacement=generational_replacement,
     )
     result = eig(verbose=verbose)

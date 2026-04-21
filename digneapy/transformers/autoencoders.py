@@ -12,18 +12,19 @@
 
 __all__ = ["VAE", "KPEncoder", "KPDecoder"]
 
+from collections import namedtuple
 from pathlib import Path
+from typing import Any, Tuple
+
+import h5py
 import numpy as np
 import numpy.typing as npt
-from digneapy.transformers._base import Transformer
-from typing import Any, Tuple
-from scipy.stats import lognorm
-import h5py
 import torch
-from collections import namedtuple
 import torch.nn as nn
 import torch.nn.functional as F
+from scipy.stats import lognorm
 
+from digneapy.transformers._base import Transformer
 
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 MODELS_PATH = Path(__file__).parent / "models/"

@@ -16,6 +16,7 @@ from multiprocessing.pool import Pool
 import joblib
 import numpy as np
 import pandas as pd
+from digneapy.generators.generators import Evolutionary
 from irace import Experiment, ParameterSpace, Real, Scenario, irace
 from numpy import linalg as nplinalg
 from scipy import stats as spstat
@@ -23,7 +24,6 @@ from sklearn.pipeline import Pipeline
 
 from digneapy import NS, Archive
 from digneapy.domains import BPPDomain
-from digneapy.generators.generators import Evolutionary
 from digneapy.operators import generational_replacement
 from digneapy.solvers import best_fit, first_fit, next_fit, worst_fit
 
@@ -124,11 +124,11 @@ def target_runner(experiment: Experiment, scenario: Scenario) -> float:
             partial(
                 generate_instancess,
                 dimension=120,
-                pop_size=10, #128
-                generations=100, #1000
+                pop_size=10,  # 128
+                generations=100,  # 1000
                 archive_threshold=experiment.configuration["t_a"],
                 ss_threshold=experiment.configuration["t_ss"],
-                k=3, #15
+                k=3,  # 15
                 descriptor="features",
                 pipeline=pipeline,
                 verbose=False,

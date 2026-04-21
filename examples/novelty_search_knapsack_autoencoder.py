@@ -17,14 +17,14 @@ from multiprocessing.pool import Pool
 
 from digneapy import NS, Archive
 from digneapy.domains import KnapsackDomain
-from digneapy.generators.generators import Evolutionary
+from digneapy.generators import Evolutionary
 from digneapy.operators import generational_replacement
 from digneapy.solvers import default_kp, map_kp, miw_kp, mpw_kp
-from digneapy.transformers.autoencoders import KPAutoencoder
+from digneapy.transformers.autoencoders import KPEncoder
 from digneapy.utils import save_results_to_files
 
 
-def generate_instancess(
+def generate_instances(
     portfolio,
     dimension: int,
     pop_size: int,
@@ -35,7 +35,7 @@ def generate_instancess(
     verbose,
 ):
     domain = KnapsackDomain(dimension=dimension, capacity_approach="percentage")
-    autoencoder = KPAutoencoder()
+    autoencoder = KPEncoder()
 
     eig = Evolutionary(
         pop_size=pop_size,
@@ -45,7 +45,7 @@ def generate_instancess(
         novelty_approach=NS(Archive(threshold=archive_threshold), k=k),
         solution_set=Archive(threshold=ss_threshold),
         repetitions=1,
-        descriptor_strategy="instance",
+        describe_by="instance",
         replacement=generational_replacement,
         transformer=autoencoder,
     )
@@ -137,7 +137,7 @@ if __name__ == "__main__":
     with Pool(4) as pool:
         results = pool.map(
             partial(
-                generate_instancess,
+                generate_instances,
                 dimension=dimension,
                 pop_size=population_size,
                 generations=generations,

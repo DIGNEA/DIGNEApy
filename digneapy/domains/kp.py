@@ -18,6 +18,7 @@ from typing import Dict, List, Optional, Tuple
 
 import numpy as np
 from numpy import typing as npt
+
 from digneapy._core import Domain, Instance, Problem, Solution
 
 

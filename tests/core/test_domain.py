@@ -11,8 +11,8 @@
 """
 
 from typing import Dict, List
+
 import numpy as np
-import numpy.typing as npt
 import pytest
 
 from digneapy import Domain, Instance, Problem

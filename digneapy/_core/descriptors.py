@@ -10,11 +10,11 @@
 @Desc    :   None
 """
 
-from typing import Literal, Optional, Protocol, Tuple
+from typing import Literal, Optional, Protocol, Sequence, Tuple
 
 import numpy as np
 
-from .._core import Domain
+from .._core import Domain, Instance
 from ..transformers import SupportsTransform
 
 DESCRIPTORS = Literal["features", "performance", "instance"]
@@ -26,7 +26,7 @@ class Descriptable(Protocol):
     def __call__(
         self,
         population: np.ndarray,
-        key: Literal["features", "performance", "instance"],
+        key: DESCRIPTORS,
         scores: Optional[np.ndarray] = None,
         domain: Optional[Domain] = None,
         transformer: Optional[SupportsTransform] = None,
@@ -34,7 +34,7 @@ class Descriptable(Protocol):
 
 
 def describe(
-    population: np.ndarray,
+    population: np.ndarray | Sequence[Instance],
     key: DESCRIPTORS,
     scores: Optional[np.ndarray] = None,
     domain: Optional[Domain] = None,

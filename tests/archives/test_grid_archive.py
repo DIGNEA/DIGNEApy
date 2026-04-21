@@ -10,12 +10,11 @@
 @Desc    :   None
 """
 
+import numpy as np
 import pytest
-
 
 from digneapy import GridArchive, Instance
 from digneapy.domains.kp import KnapsackDomain
-import numpy as np
 
 
 @pytest.fixture

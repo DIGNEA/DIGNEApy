@@ -14,10 +14,10 @@ import copy
 from collections import deque
 
 import pandas as pd
+from digneapy.generators.generators import Evolutionary
 
 from digneapy import NS, Archive, Direction, GridArchive
 from digneapy.domains import KnapsackDomain
-from digneapy.generators.generators import Evolutionary
 from digneapy.operators import first_improve_replacement
 from digneapy.solvers import default_kp, map_kp, miw_kp, mpw_kp
 from digneapy.transformers.neural import TorchNN

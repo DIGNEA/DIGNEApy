@@ -20,13 +20,13 @@ from pathlib import Path
 import numpy as np
 
 from digneapy.domains import TSPDomain
-from digneapy.generators.generators import Dominated
+from digneapy.generators import Dominated
 from digneapy.solvers import greedy, nneighbour, two_opt
 from digneapy.transformers.neural import NNEncoder
 from digneapy.utils import save_results_to_files
 
 
-def generate_instancess(
+def generate_instances(
     portfolio,
     dimension: int,
     pop_size: int,
@@ -46,13 +46,12 @@ def generate_instancess(
     domain = TSPDomain(dimension=dimension)
     eig = Dominated(
         pop_size=pop_size,
-        offspring_size=pop_size,
         generations=generations,
         domain=domain,
         portfolio=portfolio,
         repetitions=1,
         k=k,
-        descriptor_strategy="features",
+        describe_by="features",
         transformer=nn,
     )
 
@@ -122,7 +121,7 @@ if __name__ == "__main__":
     with Pool(4) as pool:
         results = pool.map(
             partial(
-                generate_instancess,
+                generate_instances,
                 dimension=dimension,
                 pop_size=population_size,
                 generations=generations,

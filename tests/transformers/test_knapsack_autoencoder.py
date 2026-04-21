@@ -10,12 +10,11 @@
 @Desc    :   None
 """
 
+import numpy as np
 import pytest
 
-
-import numpy as np
 from digneapy.domains import KnapsackDomain
-from digneapy.transformers.autoencoders import KPEncoder, KPDecoder
+from digneapy.transformers.autoencoders import KPDecoder, KPEncoder
 
 scale_methods = ("learnt", "sample")
 

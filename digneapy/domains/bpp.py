@@ -17,6 +17,7 @@ from typing import Dict, List, Optional
 
 import numpy as np
 from numpy import typing as npt
+
 from digneapy._core import Domain, Instance, Problem, Solution
 
 
@@ -38,7 +39,7 @@ class BPP(Problem):
         bounds = list((0, dim - 1) for _ in range(dim))
         super().__init__(dimension=dim, bounds=bounds, name="BPP", seed=seed)
 
-    def evaluate(self, individual: Sequence | Solution) -> tuple[float]:
+    def evaluate(self, individual: Sequence | Solution | np.ndarray) -> tuple[float]:
         """Evaluates the candidate individual with the information of the Bin Packing.
         The fitness of the solution is the amount of unused space, as well as the
         number of bins for a specific solution. Falkenauer (1998) performance metric
@@ -71,7 +72,7 @@ class BPP(Problem):
 
         return (fitness,)
 
-    def __call__(self, individual: Sequence | Solution) -> tuple[float]:
+    def __call__(self, individual: Sequence | Solution | np.ndarray) -> tuple[float]:
         return self.evaluate(individual)
 
     def __repr__(self):
@@ -204,7 +205,9 @@ class BPPDomain(Domain):
                 instances[:, 0] = self._max_capacity
         return list(Instance(i) for i in instances)
 
-    def extract_features(self, instances: Sequence[Instance]) -> np.ndarray:
+    def extract_features(
+        self, instances: Sequence[Instance] | np.ndarray
+    ) -> np.ndarray:
         """Extract the features of the instance based on the BPP domain.
            For the BPP the features are:
            N, Capacity, MeanWeights, MedianWeights, VarianceWeights, MaxWeight,
@@ -221,7 +224,7 @@ class BPPDomain(Domain):
 
         norm_variables = np.asarray(instances, copy=True, dtype=np.float32)
         norm_variables[:, 1:] = norm_variables[:, 1:] / norm_variables[:, 0:1]
-        #print(norm_variables[:,1:])
+        # print(norm_variables[:,1:])
         return np.column_stack(
             [
                 np.mean(norm_variables, axis=1),
@@ -242,7 +245,7 @@ class BPPDomain(Domain):
         ).astype(np.float32)
 
     def extract_features_as_dict(
-        self, instances: Sequence[Instance]
+        self, instances: Sequence[Instance] | np.ndarray
     ) -> List[Dict[str, np.float32]]:
         """Creates a dictionary with the features of the instances.
         The key are the names of each feature and the values are
@@ -261,7 +264,7 @@ class BPPDomain(Domain):
         return named_features
 
     def generate_problems_from_instances(
-        self, instances: Sequence[Instance]
+        self, instances: Sequence[Instance] | np.ndarray
     ) -> List[Problem]:
         if not isinstance(instances, np.ndarray):
             instances = np.asarray(instances)

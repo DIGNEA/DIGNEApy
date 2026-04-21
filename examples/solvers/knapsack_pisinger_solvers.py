@@ -11,9 +11,9 @@
 """
 
 import numpy as np
+from digneapy.solvers.pisinger import combo, expknap, minknap
 
 from digneapy.domains import Knapsack
-from digneapy.solvers.pisinger import combo, expknap, minknap
 
 
 def main():

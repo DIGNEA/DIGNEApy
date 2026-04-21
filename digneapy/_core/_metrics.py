@@ -17,6 +17,7 @@ import numpy as np
 import pandas as pd
 from deap import tools
 
+from ..archives import CVTArchive, GridArchive
 from ._instance import Instance
 
 
@@ -120,7 +121,10 @@ class Logbook:
         return self._logbook
 
     def update(
-        self, generation: int, population: Sequence[Instance], feedback: bool = False
+        self,
+        generation: int,
+        population: Sequence[Instance] | CVTArchive | GridArchive,
+        feedback: bool = False,
     ):
         if generation < 0:
             raise ValueError(

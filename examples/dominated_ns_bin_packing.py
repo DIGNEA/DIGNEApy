@@ -15,12 +15,12 @@ from functools import partial
 from multiprocessing.pool import Pool
 
 from digneapy.domains import BPPDomain
-from digneapy.generators.generators import Dominated
+from digneapy.generators import Dominated
 from digneapy.solvers import best_fit, first_fit, next_fit, worst_fit
 from digneapy.utils import save_results_to_files
 
 
-def generate_instancess(
+def generate_instances(
     portfolio,
     dimension: int,
     pop_size: int,
@@ -38,7 +38,6 @@ def generate_instancess(
     )
     deig = Dominated(
         pop_size=pop_size,
-        offspring_size=pop_size,
         generations=generations,
         domain=domain,
         portfolio=portfolio,
@@ -46,7 +45,7 @@ def generate_instancess(
         mutrate=(1 / dimension),
         cxrate=0.8,
         repetitions=1,
-        descriptor_strategy=descriptor,
+        describe_by=descriptor,
     )
     result = deig(verbose=verbose)
     if verbose:
@@ -121,7 +120,7 @@ if __name__ == "__main__":
     with Pool(4) as pool:
         results = pool.map(
             partial(
-                generate_instancess,
+                generate_instances,
                 dimension=dimension,
                 pop_size=population_size,
                 generations=generations,

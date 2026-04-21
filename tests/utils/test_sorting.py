@@ -10,10 +10,11 @@
 @Desc    :   None
 """
 
+import numpy as np
 import pytest
+
 from digneapy.domains import KnapsackDomain
 from digneapy.utils import sort_knapsack_instances
-import numpy as np
 
 
 @pytest.mark.parametrize("n_instances", [10, 50, 100])

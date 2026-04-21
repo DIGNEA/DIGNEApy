@@ -16,7 +16,7 @@ from multiprocessing.pool import Pool
 
 from digneapy import CVTArchive
 from digneapy.domains import BPPDomain
-from digneapy.generators.generators import MapElitesGenerator
+from digneapy.generators import MapElites
 from digneapy.operators import uniform_one_mutation
 from digneapy.solvers import best_fit, first_fit, next_fit, worst_fit
 from digneapy.utils import save_results_to_files
@@ -59,14 +59,14 @@ def generate_instances(
         ranges=ranges,
         n_samples=100_000,
     )
-    map_elites = MapElitesGenerator(
+    map_elites = MapElites(
         domain,
         portfolio=portfolio,
         archive=cvt_archive,
-        initial_pop_size=pop_size,
+        pop_size=pop_size,
         mutation=uniform_one_mutation,
         generations=generations,
-        descriptor=descriptor,
+        describe_by=descriptor,
         repetitions=1,
     )
     result = map_elites(verbose=verbose)

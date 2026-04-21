@@ -13,7 +13,7 @@
 import json
 import operator
 from collections.abc import Sequence
-from typing import Optional, List, Self
+from typing import Optional, Self
 
 import numpy as np
 

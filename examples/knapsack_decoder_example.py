@@ -10,12 +10,12 @@
 @Desc    :   None
 """
 
-from digneapy.transformers.autoencoders import KPDecoder, KPEncoder
-from digneapy.domains import KnapsackDomain, Knapsack
-from typing import Iterable
-import numpy as np
 import time
-from tqdm import tqdm
+
+import numpy as np
+
+from digneapy.domains import KnapsackDomain
+from digneapy.transformers.autoencoders import KPDecoder, KPEncoder
 
 if __name__ == "__main__":
     N_INSTANCES = 1_000_000
@@ -39,7 +39,7 @@ if __name__ == "__main__":
     print(f"It took {elapsed} seconds to create 1M instances seq")
     print(instances)
     start = time.perf_counter()
-    instances = domain.generate_n_instances(N_INSTANCES)
+    instances = domain.generate_instances(N_INSTANCES)
     elapsed = time.perf_counter() - start
     print(f"It took {elapsed} to create 1M instance numpy")
     print(instances)

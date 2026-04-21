@@ -13,14 +13,23 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from operator import attrgetter
-from typing import Iterable, Optional, Sequence, Tuple
+from typing import Iterable, List, Optional, Tuple
 
 import numpy as np
 import pandas as pd
 
-from .._core import RNG, Domain, Instance, P, SupportsSolve
-from .._core._metrics import Logbook, Statistics
+from .._core import (
+    RNG,
+    Domain,
+    Instance,
+    Logbook,
+    P,
+    Statistics,
+    SupportsSolve,
+)
+from .._core.descriptors import DESCRIPTORS
 from .._core.scores import PerformanceFn, max_gap_target
+from ..archives import CVTArchive, GridArchive
 
 
 @dataclass
@@ -34,7 +43,7 @@ class GenResult:
     """
 
     target: str
-    instances: np.ndarray
+    instances: np.ndarray | CVTArchive | GridArchive
     history: Logbook
     metrics: Optional[pd.Series] = None
 
@@ -61,19 +70,32 @@ class BaseGenerator(ABC, RNG):
         self,
         domain: Domain,
         portfolio: Iterable[SupportsSolve[P]],
-        batch_size: int,
+        pop_size: int,
         performance_function: PerformanceFn = max_gap_target,
-        descriptor: str = "features",
+        describe_by: DESCRIPTORS = "features",
         generations: int = 1_000,
         repetitions: int = 1,
         seed: int = 42,
     ):
+        """Creates an instance of BaseGenerator with common attributes for generators
+
+        Args:
+            domain (Domain): Domain for which the instances are generated for.
+            portfolio (Iterable[SupportSolve]): Iterable item of callable objects that can evaluate a instance.
+            pop_size (int, optional): Number of instances in the population to evolve. Defaults to 100.
+            performance_function (PerformanceFn, optional): Performance function to calculate the performance score. Defaults to max_gap_target.
+            describe_by (DESCRIPTORS, optional): _Descriptor used to calculate the diversity. The options available are defined in the dictionary digneapy.DESCRIPTORS. Defaults to "features".
+            generations (int, optional): Number of generations to perform. Defaults to 1000.
+            repetitions (int, optional): Number times a solver in the portfolio must be run over the same instance. Defaults to 1.
+            seed (int, optional): Seed for the RNG protocol. Defaults to 42.
+
+        """
         self._domain = domain
         self._portfolio = tuple(portfolio)
-        self._batch_size = batch_size
+        self._pop_size = pop_size
         self._population = []
         self._performance_fn = performance_function
-        self._descriptor_key = descriptor
+        self._describe_by: DESCRIPTORS = describe_by
         self._generations = generations
         self._repetitions = repetitions
         self._rng = np.random.default_rng(seed)
@@ -87,11 +109,14 @@ class BaseGenerator(ABC, RNG):
     def __str__(self):
         port_names = [s.__name__ for s in self._portfolio]
         domain_name = self._domain.name if self._domain is not None else "None"
-        return f"Generator(pop_size={self._batch_size},gen={self._generations},domain={domain_name},portfolio={port_names!r})"
+        return f"{self.__class__.__name__}(pop_size={self._pop_size},gen={self._generations},domain={domain_name},portfolio={port_names!r})"
+
+    def __repr__(self) -> str:
+        return self.__str__().replace("(", "<").replace(")", ">")
 
     def _evaluate_population(
         self,
-        population: Sequence[Instance],
+        population: np.ndarray | List[Instance],
     ) -> Tuple[np.ndarray, np.ndarray]:
         """Evaluates the population of instances using the portfolio of solvers.
 

@@ -10,10 +10,12 @@
 @Desc    :   None
 """
 
-from typing import Callable
-from digneapy.domains import Knapsack
-import numpy as np
 import random
+from typing import Callable
+
+import numpy as np
+
+from digneapy.domains import Knapsack
 
 __all__ = ["shuffle_and_run_for_knapsack"]
 

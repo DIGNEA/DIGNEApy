@@ -12,6 +12,14 @@
 
 from ._base_generator import BaseGenerator, GenResult
 from .evolutionary import Dominated, Evolutionary
+from .llm import LLMEvolutionary
 from .map_elites import MapElites
 
-__all__ = ["Evolutionary", "Dominated", "MapElites", "BaseGenerator", "GenResult"]
+__all__ = [
+    "Evolutionary",
+    "Dominated",
+    "LLMEvolutionary",
+    "MapElites",
+    "BaseGenerator",
+    "GenResult",
+]

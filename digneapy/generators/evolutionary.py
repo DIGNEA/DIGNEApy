@@ -269,7 +269,7 @@ class Evolutionary(BaseGenerator):
         """
         phi_r = 1.0 - self.phi
         fitness = np.zeros(len(performance_biases))
-        fitness = (fitness * self.phi) + (novelty_scores * phi_r)
+        fitness = (performance_biases * self.phi) + (novelty_scores * phi_r)
         return fitness
 
 

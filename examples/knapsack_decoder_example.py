@@ -33,7 +33,7 @@ if __name__ == "__main__":
     domain = KnapsackDomain()
     start = time.perf_counter()
     instances = np.asarray(
-        [np.array(domain.generate_instances()) for _ in range(N_INSTANCES)]
+        [np.asarray(domain.generate_instances()) for _ in range(N_INSTANCES)]
     )
     elapsed = time.perf_counter() - start
     print(f"It took {elapsed} seconds to create 1M instances seq")

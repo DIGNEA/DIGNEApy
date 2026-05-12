@@ -51,8 +51,8 @@ class Domain(ABC, RNG):
 
         if len(self._bounds) != 0:
             ranges = list(zip(*bounds))
-            self._lbs = np.array(ranges[0], dtype=dtype)
-            self._ubs = np.array(ranges[1], dtype=dtype)
+            self._lbs = np.asarray(ranges[0], dtype=dtype)
+            self._ubs = np.asarray(ranges[1], dtype=dtype)
 
     @abstractmethod
     def generate_instances(self, n: int = 1) -> List[Instance]:

@@ -98,12 +98,14 @@ def test_properties(initialised_instance):
     assert initialised_instance.portfolio_scores.size == 0
     performances = tuple(range(4))
     initialised_instance.portfolio_scores = performances
-    assert np.array_equal(initialised_instance.portfolio_scores, np.array(performances))
+    assert np.array_equal(
+        initialised_instance.portfolio_scores, np.asarray(performances)
+    )
 
     assert initialised_instance.descriptor.size == 0
     f = list(range(10))
     initialised_instance.descriptor = f
-    assert np.array_equal(initialised_instance.descriptor, np.array(f))
+    assert np.array_equal(initialised_instance.descriptor, np.asarray(f))
 
 
 def test_equal_instances(initialised_instance, default_instance):

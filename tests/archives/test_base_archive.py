@@ -48,7 +48,7 @@ def test_empty_archive(empty_archive):
 
 
 def test_archive_to_array(default_archive):
-    np_archive = np.array(default_archive)
+    np_archive = np.asarray(default_archive)
     assert len(np_archive) == len(default_archive)
     assert isinstance(np_archive, np.ndarray)
     assert np.isclose(default_archive.threshold, 0.0)

@@ -149,7 +149,7 @@ def test_grid_archive_5d_storage(grid_5d):
     descriptors = rng.random(size=(n_instances, 5))
 
     for i in range(10):
-        instances[i].fitness = rng.random(size=1)
+        instances[i].fitness = rng.random(size=1)[0]
 
     assert len(grid_5d) == 0
     grid_5d.extend(instances, descriptors=descriptors)
@@ -282,7 +282,7 @@ def test_grid_archive_with_KP_instances_and_features_descriptor():
     ]
 
     assert len(archive) == 0
-    assert archive.n_cells == np.prod(np.array((20,) * 8))
+    assert archive.n_cells == np.prod(np.asarray((20,) * 8))
     archive.extend(instances)
     assert len(archive) > 0
     assert all(idx > 0 and idx < archive.n_cells for idx in archive.filled_cells)
@@ -308,7 +308,7 @@ def test_grid_archive_with_KP_instances_separated_descriptors():
     features = domain.extract_features(instances)
 
     assert len(archive) == 0
-    assert archive.n_cells == np.prod(np.array((20,) * 8))
+    assert archive.n_cells == np.prod(np.asarray((20,) * 8))
     archive.extend(instances, descriptors=features)
     assert len(archive) > 0 and len(archive) <= 1000
     assert all(idx > 0 and idx < archive.n_cells for idx in archive.filled_cells)

@@ -247,9 +247,10 @@ def test_dominated_evolutionary_generator_with_k_and_descriptor(k, descriptor):
         assert all(len(s.descriptor) == 101 for s in instances)
 
     assert all(len(s.portfolio_scores) == len(portfolio) for s in instances)
-    # TODO: DNS do not guarantees the biased aspect of the instances
-    # p_scores = [s.portfolio_scores for s in instances]
-    # assert all(max(p_scores[i]) == p_scores[i][0] for i in range(len(p_scores)))
+    # DNS do not guarantees the biased aspect of the instances
+    # but all scores must be positive --> Forces feasibility
+    p_scores = [s.portfolio_scores for s in instances]
+    assert all(p_scores[i][0] > 0.0 for i in range(len(p_scores)))
 
 
 def test_dominated_evolutionary_generator_raises_if_wrong_args():

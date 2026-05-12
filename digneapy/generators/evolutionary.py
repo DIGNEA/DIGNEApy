@@ -158,7 +158,7 @@ class Evolutionary(BaseGenerator):
             )
 
             novelty_scores = self._novelty_search(instances_descriptors=descriptors)
-            offspring_fitness = self.__compute_fitness(perf_biases, novelty_scores)
+            offspring_fitness = self._compute_fitness(perf_biases, novelty_scores)
 
             # Update to include this
             # 1. Novelty Scores --> novelty_scores
@@ -236,7 +236,7 @@ class Evolutionary(BaseGenerator):
             child = self.__reproduce(p_1, p_2)
             offspring[i] = child
 
-        return np.array(offspring)
+        return np.asarray(offspring, copy=True)
 
     def __reproduce(self, parent_1: Instance, parent_2: Instance) -> Instance:
         """Generates a new offspring instance from two parent instances
@@ -255,7 +255,7 @@ class Evolutionary(BaseGenerator):
         else:
             return self.mutation(offspring, self._domain.bounds)
 
-    def __compute_fitness(
+    def _compute_fitness(
         self, performance_biases: np.ndarray, novelty_scores: np.ndarray
     ) -> np.ndarray:
         """Calculates the fitness of each instance in the population

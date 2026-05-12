@@ -76,25 +76,28 @@ class Statistics:
         Returns:
             dict: Dictionary with the statistics of the population.
         """
+
         if len(population) == 0:
             raise ValueError(
                 "Error: Trying to calculate the metrics with an empty population"
             )
         if not all(isinstance(ind, Instance) for ind in population):
             raise TypeError("Error: Population must be a sequence of Instance objects")
-
-        record = self._stats.compile(population)
-        if as_series:
-            _flatten_record = {}
-            for key, value in record.items():
-                if isinstance(value, dict):  # Flatten nested dicts
-                    for sub_key, sub_value in value.items():
-                        _flatten_record[f"{key}_{sub_key}"] = sub_value
-                else:
-                    _flatten_record[key] = value
-            return pd.Series(_flatten_record)
-        else:
-            return record
+        with np.errstate(invalid="ignore"):
+            record = self._stats.compile(
+                population
+            )  # ignore np.inf values which can occur in early steps
+            if as_series:
+                _flatten_record = {}
+                for key, value in record.items():
+                    if isinstance(value, dict):  # Flatten nested dicts
+                        for sub_key, sub_value in value.items():
+                            _flatten_record[f"{key}_{sub_key}"] = sub_value
+                    else:
+                        _flatten_record[key] = value
+                return pd.Series(_flatten_record)
+            else:
+                return record
 
 
 class Logbook:

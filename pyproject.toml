@@ -146,11 +146,10 @@ yum install -y gcc-c++ cmake python3-devel \
 """
 repair-wheel-command = "auditwheel repair -w {dest_dir} {wheel}"
 
-[tool.pytest.init_options]
+[tool.pytest]
 filterwarnings = [
-    "ignore::DeprecationWarning",
-    "ignore::UserWarning",
-    "ignore::InconsistentVersionWarning",
+    'ignore:.*U.*mode is deprecated:DeprecationWarning',
+    'ignore:__array__ implementation doesn.*t accept a copy keyword:DeprecationWarning',
 ]
 
 [tool.ruff]

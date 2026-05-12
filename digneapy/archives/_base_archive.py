@@ -84,7 +84,7 @@ class Archive:
         >>> import numpy as np
         >>> descriptors = [list(range(d, d + 5)) for d in range(10)]
         >>> archive = Archive(descriptors)
-        >>> np_archive = np.array(archive)
+        >>> np_archive = np.asarray(archive)
         >>> assert len(np_archive) == len(archive)
         >>> assert type(np_archive) == type(np.zeros(1))
         """

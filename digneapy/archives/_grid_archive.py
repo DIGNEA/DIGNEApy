@@ -73,8 +73,8 @@ class GridArchive(Archive):
 
         self._dimensions = np.asarray(dimensions)
         ranges = list(zip(*ranges))
-        self._lower_bounds = np.array(ranges[0], dtype=dtype)
-        self._upper_bounds = np.array(ranges[1], dtype=dtype)
+        self._lower_bounds = np.asarray(ranges[0], dtype=dtype)
+        self._upper_bounds = np.asarray(ranges[1], dtype=dtype)
         self._interval = self._upper_bounds - self._lower_bounds
         self._eps = eps
         self._cells = np.prod(self._dimensions, dtype=object)
@@ -339,7 +339,7 @@ class GridArchive(Archive):
                 unravel_indices.append(remaining_indices % dim_size)
                 remaining_indices //= dim_size
 
-            unravel_indices = np.array(unravel_indices[::-1]).T
+            unravel_indices = np.asarray(unravel_indices[::-1]).T
         else:
             unravel_indices = np.asarray(
                 np.unravel_index(

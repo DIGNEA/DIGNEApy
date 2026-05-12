@@ -10,8 +10,6 @@
 @Desc    :   None
 """
 
-from __future__ import unicode_literals
-
 import os
 
 import numpy as np
@@ -126,7 +124,7 @@ def test_NNEncoder_works_for_BP_domain():
         weights = rng.random(size=1000)
         transformer.update_weights(weights)
 
-    x = np.array([rng.random(size=11) for _ in range(100)])
+    x = np.asarray([rng.random(size=11) for _ in range(100)])
     predicted = transformer.predict(x)
     assert len(predicted) == 100
     assert all(len(x_i) == 2 for x_i in predicted)
@@ -160,7 +158,7 @@ def test_NNEncoder_works_for_Knapsack_domain():
         weights = rng.random(size=1000)
         transformer.update_weights(weights)
 
-    x = np.array([np.random.sample(size=8) for _ in range(100)])
+    x = np.asarray([np.random.sample(size=8) for _ in range(100)])
     predicted = transformer.predict(x)
     assert len(predicted) == 100
     assert all(len(x_i) == 2 for x_i in predicted)
@@ -188,7 +186,7 @@ def test_NNEncoder_reduced_version_works_for_Knapsack_domain():
         weights = rng.random(size=1000)
         transformer.update_weights(weights)
 
-    x = np.array([rng.random(size=8) for _ in range(100)])
+    x = np.asarray([rng.random(size=8) for _ in range(100)])
     predicted = transformer.predict(x)
     assert len(predicted) == 100
     assert all(len(x_i) == 2 for x_i in predicted)

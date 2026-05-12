@@ -260,7 +260,7 @@ class TSPDomain(Domain):
         centroids_distances = np.linalg.norm(coords - expanded_centroids, axis=-1)
         radius = np.mean(centroids_distances, axis=1)
 
-        fractions = np.array(
+        fractions = np.asarray(
             [
                 np.unique(d[np.triu_indices_from(d, k=1)]).size
                 / (N_CITIES * (N_CITIES - 1) / 2)
@@ -333,7 +333,7 @@ class TSPDomain(Domain):
 
     def generate_problem_from_instance(self, instance: Instance) -> TSP:
         n_nodes = len(instance) // 2
-        coords = np.array([*zip(instance[::2], instance[1::2])])
+        coords = np.asarray([*zip(instance[::2], instance[1::2])])
         return TSP(nodes=n_nodes, coords=coords)
 
     def generate_problems_from_instances(
@@ -345,7 +345,8 @@ class TSPDomain(Domain):
         dimension = instances.shape[1] // 2
         return list(
             TSP(
-                nodes=dimension, coords=np.array([*zip(instance[0::2], instance[1::2])])
+                nodes=dimension,
+                coords=np.asarray([*zip(instance[0::2], instance[1::2])]),
             )
             for instance in instances
         )

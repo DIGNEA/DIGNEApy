@@ -86,8 +86,8 @@ class CVTArchive(GridArchive, RNG):
 
         self._dimensions = len(ranges)
         ranges = list(zip(*ranges))
-        self._lower_bounds = np.array(ranges[0], dtype=self._dtype)
-        self._upper_bounds = np.array(ranges[1], dtype=self._dtype)
+        self._lower_bounds = np.asarray(ranges[0], dtype=self._dtype)
+        self._upper_bounds = np.asarray(ranges[1], dtype=self._dtype)
         self._interval = self._upper_bounds - self._lower_bounds
         self._k = k
         self._n_samples = n_samples
@@ -230,7 +230,7 @@ class CVTArchive(GridArchive, RNG):
         Returns:
             np.ndarray:  (batch_size, ) array of integer indices representing the flattened grid coordinates.
         """
-        descriptors = np.array(descriptors)
+        descriptors = np.asarray(descriptors)
 
         if len(descriptors) == 0:
             return np.empty(0)

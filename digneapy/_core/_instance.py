@@ -75,7 +75,7 @@ class Instance:
             )
 
         self._vars = (
-            np.array(variables, dtype=self._dtype)
+            np.asarray(variables, dtype=self._dtype, copy=True)
             if variables is not None
             else np.empty(0, dtype=self._dtype)
         )
@@ -83,18 +83,18 @@ class Instance:
         self._p = p
         self._s = s
         self._features = (
-            np.array(features, dtype=np.float32)
+            np.asarray(features, dtype=np.float32)
             if features is not None
             else np.empty(0, dtype=np.float32)
         )
         self._pscores = (
-            np.array(portfolio_scores, dtype=self._otype)
+            np.asarray(portfolio_scores, dtype=self._otype)
             if portfolio_scores is not None
             else np.empty(0, dtype=self._otype)
         )
 
         self._desc = (
-            np.array(descriptor, dtype=np.float32)
+            np.asarray(descriptor, dtype=np.float32, copy=True)
             if descriptor is not None
             else np.empty(0, dtype=np.float32)
         )
@@ -204,7 +204,7 @@ class Instance:
 
     @descriptor.setter
     def descriptor(self, desc: npt.ArrayLike):
-        self._desc = np.array(desc)
+        self._desc = np.asarray(desc)
 
     @property
     def portfolio_scores(self):

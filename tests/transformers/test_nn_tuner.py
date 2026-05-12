@@ -10,15 +10,16 @@
 @Desc    :   None
 """
 
+import pytest
+
+torch = pytest.importorskip("torch", reason="PyTorch not available on this platform")
 import os
 
 import pandas as pd
-import pytest
 from sklearn.metrics import mean_squared_error
 
 from digneapy import Direction
 from digneapy.transformers.neural import NNEncoder
-from digneapy.transformers.tuner import DeapTuner
 
 dir, _ = os.path.split(__file__)
 

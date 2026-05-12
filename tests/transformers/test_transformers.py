@@ -10,11 +10,14 @@
 @Desc    :   None
 """
 
+import pytest
+
+torch = pytest.importorskip("torch", reason="PyTorch not available on this platform")
+
 import os
 
 import numpy as np
 import pandas as pd
-import pytest
 from sklearn.metrics import mean_squared_error
 
 from digneapy.transformers import Transformer

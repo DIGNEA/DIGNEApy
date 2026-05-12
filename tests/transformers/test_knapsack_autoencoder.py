@@ -10,8 +10,11 @@
 @Desc    :   None
 """
 
-import numpy as np
 import pytest
+
+torch = pytest.importorskip("torch", reason="PyTorch not available on this platform")
+pytest.skip(allow_module_level=True)  # TODO: Update to use Tuner instead of DEAPTuner
+import numpy as np
 
 from digneapy.domains import KnapsackDomain
 from digneapy.transformers.autoencoders import KPDecoder, KPEncoder

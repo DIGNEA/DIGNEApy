@@ -39,18 +39,3 @@ __all__ = list(
     | set(scores.__all__)
     | set(domains.__all__)
 )
-
-
-# Lazy import function
-def __getattr__(attr_name):
-    import importlib
-    import sys
-
-    if attr_name in __dignea_submodules:
-        full_name = f"digneapy.{attr_name}"
-        submodule = importlib.import_module(full_name)
-        sys.modules[full_name] = submodule
-        return submodule
-
-    else:
-        raise ImportError(f"module {__name__} has no attribute {attr_name}")

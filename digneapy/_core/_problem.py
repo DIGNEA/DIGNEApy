@@ -58,6 +58,9 @@ class Problem(ABC, RNG):
     def dimension(self):
         return self._dimension
 
+    def __len__(self):
+        return self._dimension
+
     @property
     def bounds(self):
         return self._bounds

@@ -99,3 +99,17 @@ def test_uniform_one_raises(initialised_solutions):
     solution, _ = initialised_solutions
     with pytest.raises(ValueError):
         _ = uniform_one_mutation(solution, bounds=bounds)
+
+
+def test_batch_uniform_one_raises(initialised_solutions):
+    with pytest.raises(ValueError):
+        # Raises because bounds shapes doesn't match
+        lb = np.zeros(100)
+        ub = np.ones(50)
+        _ = batch_uniform_one_mutation(initialised_solutions, lb=lb, ub=ub)
+
+    with pytest.raises(ValueError):
+        # Raises because bounds and dimension
+        lb = np.zeros(200)
+        ub = np.ones(200)
+        _ = batch_uniform_one_mutation(initialised_solutions, lb=lb, ub=ub)

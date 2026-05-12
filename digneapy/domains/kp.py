@@ -48,7 +48,7 @@ class Knapsack(Problem):
 
     def get_bounds_at(self, i: int) -> tuple:
         if i < 0 or i > self._dimension:
-            raise ValueError(
+            raise IndexError(
                 f"Index {i} out-of-range. The bounds are 0-{self._dimension} "
             )
         return (0, 1)

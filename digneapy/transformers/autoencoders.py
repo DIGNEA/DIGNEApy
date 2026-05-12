@@ -81,8 +81,10 @@ class KPEncoder(Transformer):
         super().__init__(name)
 
         self._expected_input_dim = 101
-        self._encoder = torch.jit.load(
-            MODELS_PATH / AUTOENCODER_NAME, map_location=torch.device(DEVICE)
+        self._encoder = torch.load(
+            MODELS_PATH / AUTOENCODER_NAME,
+            map_location=torch.device(DEVICE),
+            weights_only=False,
         )
 
     @property
@@ -129,8 +131,10 @@ class KPDecoder(Transformer):
         self._scale_method = scale_method
         self.__scales_fname = "scales_knapsack_N_50.h5"
         self._expected_latent_dim = 2
-        self._decoder = torch.jit.load(
-            MODELS_PATH / AUTOENCODER_NAME, map_location=torch.device(DEVICE)
+        self._decoder = torch.load(
+            MODELS_PATH / AUTOENCODER_NAME,
+            map_location=torch.device(DEVICE),
+            weights_only=False,
         )
         with h5py.File(MODELS_PATH / self.__scales_fname, "r") as file:
             self._max_weights = file["scales"]["max_weights"][:].astype(np.int32)

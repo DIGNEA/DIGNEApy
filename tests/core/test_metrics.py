@@ -12,8 +12,9 @@
 
 import numpy as np
 import pytest
+from deap import tools as deap_tools
 
-from digneapy import Statistics, qd_score, qd_score_auc
+from digneapy import Instance, Logbook, Statistics, qd_score, qd_score_auc
 
 
 def test_qd_score():
@@ -36,3 +37,31 @@ def test_statistics_raises():
     with pytest.raises(TypeError):
         population = np.zeros((10, 10))
         Statistics()(population=population)
+
+
+def test_logbook():
+    log = Logbook()
+    N_INSTANCES = 10
+    DIMENSION = 10
+    variables = np.random.default_rng().integers(
+        0, 1_000, size=(N_INSTANCES, DIMENSION)
+    )
+    fitness = np.random.default_rng().random(N_INSTANCES)
+    novelties = np.random.default_rng().random(N_INSTANCES)
+    performances = np.random.default_rng().random(N_INSTANCES)
+    instances = [
+        Instance(
+            variables=variables[i],
+            fitness=fitness[i],
+            p=performances[i],
+            s=novelties[i],
+        )
+        for i in range(N_INSTANCES)
+    ]
+    assert len(log) == 0
+    assert isinstance(log.logbook, deap_tools.Logbook)
+    log.update(generation=0, population=instances)
+    assert len(log) == 1
+    # Logbook doesn't accept negative generations
+    with pytest.raises(ValueError):
+        _ = log.update(-10, population=[])

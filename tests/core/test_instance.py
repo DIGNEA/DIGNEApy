@@ -30,6 +30,8 @@ def initialised_instance():
 
 
 def test_default_instance_attrs(default_instance):
+    assert default_instance.dtype == np.uint32
+    assert default_instance.otype == np.float64
     assert np.isclose(default_instance.p, 0.0)
     assert np.isclose(default_instance.s, 0.0)
     assert np.isclose(default_instance.fitness, 0.0)
@@ -56,7 +58,7 @@ def test_default_instance_attrs(default_instance):
     )
 
 
-def test_default_instance_raises(default_instance):
+def test_instance_raises(default_instance, initialised_instance):
     # Setters work when using proper data types
     default_instance.p = 100.0
     default_instance.s = 50.0
@@ -82,6 +84,8 @@ def test_default_instance_raises(default_instance):
 
     with pytest.raises(ValueError):
         _ = Instance(variables=list(range(100)), fitness=100.0, p=100.0, s="hello")
+    with pytest.raises(ValueError):
+        initialised_instance.variables = list(range(200))
 
 
 def test_init_instance(initialised_instance):
@@ -108,7 +112,7 @@ def test_properties(initialised_instance):
     assert np.array_equal(initialised_instance.descriptor, np.asarray(f))
 
 
-def test_equal_instances(initialised_instance, default_instance):
+def test_cmp_instances(initialised_instance, default_instance):
     assert initialised_instance != default_instance
     instance_2 = copy.copy(initialised_instance)
 
@@ -120,6 +124,7 @@ def test_equal_instances(initialised_instance, default_instance):
 
     instance_2.fitness = default_instance.fitness + 100.0
     assert instance_2 >= default_instance
+    assert instance_2 > default_instance
 
 
 def test_boolean(initialised_instance, default_instance):
@@ -181,3 +186,30 @@ def test_instance_can_be_cloned(initialised_instance):
     second_clone = initialised_instance.clone_with(variables=variables)
     assert second_clone != initialised_instance
     assert second_clone != other
+
+
+def test_instance_getter(initialised_instance):
+    assert initialised_instance[0] == 0
+    assert initialised_instance[-1] == 99
+    expected = Instance(list(range(1, 10)))
+    sub_instance = initialised_instance[1:10]
+    assert len(expected) == len(sub_instance)
+    assert expected == sub_instance
+
+    # If out of bounds it should raise:
+    with pytest.raises(IndexError):
+        _ = initialised_instance[104]
+
+
+def test_instance_setter(initialised_instance):
+    new_vars = list(range(100, 200))
+    subset = new_vars[10:50]
+    initialised_instance[0] = new_vars[0]
+    initialised_instance[-1] = new_vars[-1]
+    initialised_instance[10:50] = subset
+    assert initialised_instance[0] == 100
+    assert initialised_instance[-1] == 199
+    assert initialised_instance[10:50] == Instance(subset)
+    # If out of bounds it should raise:
+    with pytest.raises(IndexError):
+        initialised_instance[104] = 1000

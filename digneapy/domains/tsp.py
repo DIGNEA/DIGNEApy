@@ -39,12 +39,13 @@ class TSP(Problem):
             coords (np.ndarray(N, 2)): Coordinates of each node/city.
         """
         self._nodes = nodes
+        if not isinstance(coords, np.ndarray):
+            coords = np.asarray(coords)
+
         if coords.shape[1] != 2:
             raise ValueError(
                 f"Expected coordinates shape to be (N, 2). Instead coords has the following shape: {coords.shape}"
             )
-        if not isinstance(coords, np.ndarray):
-            coords = np.asarray(coords)
 
         self._coords = coords
         x_min, y_min = np.min(self._coords, axis=0)

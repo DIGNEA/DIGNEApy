@@ -25,9 +25,9 @@ from digneapy._core import Domain, Instance, Problem, Solution
 class Knapsack(Problem):
     def __init__(
         self,
-        profits: Sequence[int] | np.ndarray,
-        weights: Sequence[int] | np.ndarray,
-        capacity: int = 0,
+        profits: Sequence[np.uint32] | np.ndarray,
+        weights: Sequence[np.uint32] | np.ndarray,
+        capacity: np.uint64 = np.uint64(0),
         seed: int = 42,
         *args,
         **kwargs,
@@ -85,7 +85,7 @@ class Knapsack(Problem):
     def __call__(self, individual: Sequence | Solution | np.ndarray) -> Tuple[float]:
         return self.evaluate(individual)
 
-    def __array__(self, dtype=np.int32, copy: Optional[bool] = None) -> npt.ArrayLike:
+    def __array__(self, dtype=np.uint32, copy: Optional[bool] = None) -> npt.ArrayLike:
         """Creates a numpy array from the Knapsack instance description.
 
         Returns:
@@ -122,7 +122,7 @@ class Knapsack(Problem):
 
     @classmethod
     def from_file(cls, filename: str):
-        content = np.loadtxt(filename, dtype=int)
+        content = np.loadtxt(filename, dtype=np.uint32)
         capacity = content[0][1]
         weights, profits = content[1:, 0], content[1:, 1]
         return cls(profits=profits, weights=weights, capacity=capacity)
@@ -140,12 +140,12 @@ class KnapsackDomain(Domain):
     def __init__(
         self,
         dimension: int = 50,
-        min_p: int = 1,
-        min_w: int = 1,
-        max_p: int = 1_000,
-        max_w: int = 1_000,
+        min_p: np.uint32 = np.uint32(1),
+        min_w: np.uint32 = np.uint32(1),
+        max_p: np.uint32 = np.uint32(1_000),
+        max_w: np.uint32 = np.uint32(1_000),
         capacity_approach: str = "evolved",
-        max_capacity: int = int(1e5),
+        max_capacity: np.uint = np.uint(1e5),
         capacity_ratio: float = 0.8,
         seed: Optional[int] = None,
     ):
@@ -209,7 +209,7 @@ class KnapsackDomain(Domain):
         Returns:
             List[Instance]: A list of Instance objects created from the raw numpy generation
         """
-        weights_and_profits = np.empty(shape=(n, self.dimension * 2), dtype=np.int32)
+        weights_and_profits = np.empty(shape=(n, self.dimension * 2), dtype=np.uint32)
         weights_and_profits[:, 0::2] = self._rng.integers(
             low=self.min_w, high=self.max_w, size=(n, self.dimension)
         )
@@ -292,9 +292,9 @@ class KnapsackDomain(Domain):
         if not isinstance(instances, np.ndarray):
             instances = np.asarray(instances)
 
-        capacities = instances[:, 0].astype(int)
-        weights = instances[:, 1::2].astype(int)
-        profits = instances[:, 2::2].astype(int)
+        capacities = instances[:, 0].astype(np.int32)
+        weights = instances[:, 1::2].astype(np.uint32)
+        profits = instances[:, 2::2].astype(np.uint32)
         # Sets the capacity according to the method
         if self.capacity_approach == "percentage":
             capacities[:] = (np.sum(weights, axis=1) * self.capacity_ratio).astype(

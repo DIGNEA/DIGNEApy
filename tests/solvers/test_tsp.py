@@ -13,6 +13,7 @@
 import numpy as np
 import pytest
 
+from digneapy._core import Solution
 from digneapy.domains.tsp import TSP
 from digneapy.solvers import greedy, nneighbour, three_opt, two_opt
 
@@ -51,31 +52,26 @@ def test_two_opt_is_deterministic(default_tsp_instance):
 
 def test_three_opt_solves_sample():
     rng = np.random.default_rng(seed=42)
+    N = 5
     tsp = TSP(
-        nodes=5,
+        nodes=N,
         coords=rng.integers(
             low=(0),
             high=(1000),
-            size=(5, 2),
+            size=(N, 2),
             dtype=int,
         ),
     )
     solutions = three_opt(tsp)
     assert len(solutions) == 1
     assert len(solutions[0]) == len(tsp) + 1
+    assert isinstance(solutions[0], Solution)
     assert not np.isclose(solutions[0].fitness, 0.0)
 
 
 def test_three_opt_raises_sample():
     with pytest.raises(ValueError):
         three_opt(None)
-
-
-@pytest.mark.skip(reason="It's too costly to test the 3-Opt heuristic")
-def test_three_opt_is_deterministic(default_tsp_instance):
-    solutions = [three_opt(default_tsp_instance)[0].fitness for _ in range(2)]
-    assert len(solutions) == 2
-    assert all(x == solutions[0] for x in solutions)
 
 
 def test_nneighbour_solves_sample(default_tsp_instance):

@@ -151,7 +151,7 @@ class CVTArchive(GridArchive, RandGen):
         return self._dimensions
 
     @property
-    def samples(self) -> np.ndarray:
+    def samples(self) -> Optional[np.ndarray]:
         """Returns the samples used to generate the centroids
 
         Returns:
@@ -160,7 +160,7 @@ class CVTArchive(GridArchive, RandGen):
         return self._samples
 
     @property
-    def centroids(self) -> np.ndarray:
+    def centroids(self) -> Optional[np.ndarray]:
         """Returns k centroids calculated from the samples
 
         Returns:
@@ -257,8 +257,14 @@ class CVTArchive(GridArchive, RandGen):
         Args:
             file_pattern (str, optional): Pattern of the expected filenames. Defaults to "CVTArchive".
         """
-        np.save(f"{file_pattern}_centroids.npy", self._centroids)
-        np.save(f"{file_pattern}_samples.npy", self._samples)
+        if self._centroids is None:
+            raise RuntimeWarning("Skipping centroids since they're uninitialised.")
+        else:
+            np.save(f"{file_pattern}_centroids.npy", self._centroids)
+        if self._samples is None:
+            raise RuntimeWarning("Skipping samples since they're uninitialised.")
+        else:
+            np.save(f"{file_pattern}_samples.npy", self._samples)
 
     @classmethod
     def load_from_json(cls, filename: str):
@@ -312,8 +318,10 @@ class CVTArchive(GridArchive, RandGen):
             "regions": self._k,
             "lbs": self._lower_bounds.tolist(),
             "ubs": self._upper_bounds.tolist(),
-            "centroids": self._centroids.tolist(),
-            "samples": self._samples.tolist(),
+            "centroids": self._centroids.tolist()
+            if self._centroids is not None
+            else [],
+            "samples": self._samples.tolist() if self._samples is not None else [],
             "instances": {
                 i: instance.asdict()
                 for i, instance in enumerate(self._storage.values())

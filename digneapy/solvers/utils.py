@@ -31,10 +31,12 @@ def shuffle_and_run_for_knapsack(
     def solve(problem: Knapsack):
         results = [None] * n_repetitions
         results[0] = solver(problem)[0]
-        variables = np.asarray(problem, copy=True, dtype=int)
+        variables = np.asarray(problem, copy=True, dtype=np.uint32)
         items = [(w, p) for w, p in zip(variables[1::2], variables[2::2])]
         for r in range(1, n_repetitions):
-            shuffled_items = np.asarray(random.sample(items, k=len(items)), dtype=int)
+            shuffled_items = np.asarray(
+                random.sample(items, k=len(items)), dtype=np.uint32
+            )
             shuffled_problem = Knapsack(
                 weights=shuffled_items[:, 0],
                 profits=shuffled_items[:, 1],

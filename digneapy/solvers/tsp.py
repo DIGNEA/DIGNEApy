@@ -10,7 +10,7 @@
 @Desc    :   None
 """
 
-__all__ = ["nneighbour", "greedy", "three_opt"]
+__all__ = ["nneighbour", "greedy"]
 
 from collections import Counter
 
@@ -42,9 +42,9 @@ def greedy(problem: TSP, *args, **kwargs) -> list[Solution]:
     counter = Counter()
     selected: set[tuple[int, int]] = set()
 
-    ordered_edges = sorted(
-        [(distances[i][j], i, j) for i in range(N) for j in range(i + 1, N)]
-    )
+    ordered_edges = sorted([
+        (distances[i][j], i, j) for i in range(N) for j in range(i + 1, N)
+    ])
 
     length = 0.0
     for dist, i, j in ordered_edges:
@@ -105,49 +105,3 @@ def nneighbour(problem: TSP, *args, **kwargs) -> list[Solution]:
     length += distances[current_node][0]
     length = 1.0 / length
     return [Solution(variables=tour, objectives=(length,), fitness=length)]
-
-
-def three_opt(problem: TSP, *args, **kwargs) -> list[Solution]:
-    """3-Opt Heuristic for the Travelling Salesman Problem
-
-    Args:
-        problem (TSP): Problem to solve
-
-    Raises:
-        ValueError: If problem is None
-
-    Returns:
-        list[Solution]: Collection of solutions to the problem
-    """
-    if problem is None:
-        raise ValueError("No problem found in three_opt heuristic")
-    distances = problem._distances
-    N = problem.dimension
-    tour = np.arange(start=0, stop=N + 1, step=1, dtype=int)
-    tour[-1] = 0
-    improve = True
-    while improve:
-        improve = False
-        for i in range(1, N - 2):
-            for j in range(i + 2, N - 1):
-                for k in range(j + 2, N):
-                    new_tour = np.concatenate(
-                        (tour[:i], tour[j:k][::-1], tour[i:j], tour[k:])
-                    )
-
-                    current = (
-                        distances[tour[i - 1]][tour[i]]
-                        + distances[tour[j - 1]][tour[j]]
-                        + distances[tour[k - 1]][tour[k]]
-                    )
-                    newer = (
-                        distances[new_tour[-2]][new_tour[-1]]
-                        + distances[new_tour[0]][new_tour[1]]
-                    )
-
-                    if newer < current:
-                        tour = new_tour
-                        improve = True
-
-    fitness = problem.evaluate(tour)[0]
-    return [Solution(variables=tour, objectives=(fitness,), fitness=fitness)]

@@ -16,7 +16,7 @@ Repository containing the Python version of DIGNEA, a Diverse Instance Generator
   
 Installation:
 ```python
-    python3 -m pip install digneapy
+    uv pip install digneapy
 ```
 
 ## Publications

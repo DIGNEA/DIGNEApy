@@ -19,13 +19,12 @@ import numpy.typing as npt
 from sklearn.cluster import KMeans
 from sklearn.neighbors import KDTree
 
-from digneapy._core import Instance
-from digneapy._core.types import RNG
-
+from .._core import Instance
+from .._core._protocols import RandGen
 from ._grid_archive import GridArchive
 
 
-class CVTArchive(GridArchive, RNG):
+class CVTArchive(GridArchive, RandGen):
     """An Archive that divides a high-dimensional measure space into k homogeneous geometric regions.
     Based on the paper from Vassiliades et al (2018) <https://ieeexplore.ieee.org/document/8000667>
     > The computational complexity of the method we provide for constructing the CVT (in Algorithm 1) is O(ndki),
@@ -83,7 +82,7 @@ class CVTArchive(GridArchive, RNG):
         GridArchive.__init__(
             self, dimensions=(1,) * len(ranges), ranges=ranges, dtype=dtype
         )
-
+        self.initialize_rng(seed=seed)
         self._dimensions = len(ranges)
         ranges = list(zip(*ranges))
         self._lower_bounds = np.asarray(ranges[0], dtype=self._dtype)
@@ -93,7 +92,6 @@ class CVTArchive(GridArchive, RNG):
         self._n_samples = n_samples
         self._samples = None
         self._centroids = None
-        self.initialize_rng(seed=seed)
         self._kmeans = KMeans(n_clusters=self._k, n_init=1, random_state=self._seed)
 
         # Loading samples if given

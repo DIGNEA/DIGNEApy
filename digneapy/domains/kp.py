@@ -25,8 +25,8 @@ from digneapy._core import Domain, Instance, Problem, Solution
 class Knapsack(Problem):
     def __init__(
         self,
-        profits: Sequence[int],
-        weights: Sequence[int],
+        profits: Sequence[int] | np.ndarray,
+        weights: Sequence[int] | np.ndarray,
         capacity: int = 0,
         seed: int = 42,
         *args,

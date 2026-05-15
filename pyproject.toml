@@ -222,4 +222,7 @@ docstring-code-format = false
 docstring-code-line-length = "dynamic"
 
 [tool.pyrefly]
-project-includes = ["**/*.py*", "**/*.ipynb"]
+project-includes = [
+    "**/*.py*",
+    "**/*.ipynb",
+]

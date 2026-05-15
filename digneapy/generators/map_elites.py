@@ -17,8 +17,8 @@ import numpy as np
 from .._core import (
     Domain,
     Instance,
-    P,
-    SupportsSolve,
+    Solver,
+    Transformer,
 )
 from .._core.descriptors import DESCRIPTORS, describe
 from .._core.scores import PerformanceFn, max_gap_target
@@ -27,7 +27,6 @@ from ..operators import (
     Mutation,
     batch_uniform_one_mutation,
 )
-from ..transformers import SupportsTransform
 from ._base_generator import BaseGenerator, GenResult
 
 
@@ -37,13 +36,13 @@ class MapElites(BaseGenerator):
     def __init__(
         self,
         domain: Domain,
-        portfolio: Iterable[SupportsSolve[P]],
+        portfolio: Iterable[Solver],
         pop_size: int,
         archive: GridArchive | CVTArchive,
         mutation: Mutation,
         repetitions: int,
         describe_by: DESCRIPTORS = "instance",
-        transformer: Optional[SupportsTransform] = None,
+        transformer: Optional[Transformer] = None,
         performance_function: PerformanceFn = max_gap_target,
         generations: int = 1_000,
         seed: int = 42,

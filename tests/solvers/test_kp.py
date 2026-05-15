@@ -16,8 +16,6 @@ import pytest
 from digneapy.domains import kp as knapsack
 from digneapy.solvers import default_kp, map_kp, miw_kp, mpw_kp
 
-# from digneapy.solvers.pisinger import combo, expknap, minknap
-
 
 @pytest.fixture
 def default_instance():

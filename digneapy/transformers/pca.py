@@ -17,7 +17,7 @@ from pathlib import Path
 import numpy as np
 import numpy.typing as npt
 
-from digneapy.transformers._base import Transformer
+from .._core._protocols import Transformer
 
 warnings.filterwarnings("ignore")
 

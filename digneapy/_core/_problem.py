@@ -10,19 +10,19 @@
 @Desc    :   None
 """
 
-from abc import ABC, abstractmethod
+from abc import abstractmethod
 from collections.abc import Sequence
-from typing import Any, Optional, Tuple, TypeVar
+from typing import Any, Optional, Protocol, Tuple
 
 import numpy as np
 from numpy import typing as npt
 
 from ._instance import Instance
+from ._protocols import RandGen
 from ._solution import Solution
-from .types import RNG
 
 
-class Problem(ABC, RNG):
+class Problem(RandGen, Protocol):
     def __init__(
         self,
         dimension: int,
@@ -41,7 +41,7 @@ class Problem(ABC, RNG):
             bounds (Sequence[tuple]): Bounds of each variable in the problem
             name (str, optional): Name of the problem for printing and logging purposes. Defaults to "DefaultProblem".
             dtype (_type_, optional): Type of the variables. Defaults to np.float64.
-            seed (int, optional): Seed for the RNG. Defaults to 42.
+            seed (int, optional): Seed for the RandGen. Defaults to 42.
         """
         self._name = name
         self.__name__ = name
@@ -126,6 +126,3 @@ class Problem(ABC, RNG):
     def from_file(cls, filename: str):
         msg = "from_file method not implemented in Problem"
         raise NotImplementedError(msg)
-
-
-P = TypeVar("P", bound=Problem, contravariant=True)

@@ -81,8 +81,10 @@ class Statistics:
             raise ValueError(
                 "Error: Trying to calculate the metrics with an empty population"
             )
-        if not all(isinstance(ind, Instance) for ind in population):
-            raise TypeError("Error: Population must be a sequence of Instance objects")
+        if any(not isinstance(ind, Instance) for ind in population):
+            raise TypeError(
+                f"Error: Population must be a sequence of Instance objects got: {population}\n{type(population[0])}"
+            )
         with np.errstate(invalid="ignore"):
             record = self._stats.compile(
                 population

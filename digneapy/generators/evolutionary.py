@@ -18,8 +18,8 @@ from .._core import (
     NS,
     Domain,
     Instance,
-    P,
-    SupportsSolve,
+    Solver,
+    Transformer,
     dominated_novelty_search,
 )
 from .._core.descriptors import DESCRIPTORS, describe
@@ -35,7 +35,6 @@ from ..operators import (
     uniform_crossover,
     uniform_one_mutation,
 )
-from ..transformers import SupportsTransform
 from ._base_generator import BaseGenerator, GenResult
 
 
@@ -45,7 +44,7 @@ class Evolutionary(BaseGenerator):
     def __init__(
         self,
         domain: Domain,
-        portfolio: Iterable[SupportsSolve[P]],
+        portfolio: Iterable[Solver],
         pop_size: int,
         novelty_approach: NS,
         performance_function: PerformanceFn = max_gap_target,
@@ -53,7 +52,7 @@ class Evolutionary(BaseGenerator):
         repetitions: int = 1,
         solution_set: Optional[Archive] = None,
         describe_by: DESCRIPTORS = "features",
-        transformer: Optional[SupportsTransform] = None,
+        transformer: Optional[Transformer] = None,
         cxrate: float = 0.5,
         mutrate: float = 0.8,
         crossover: Crossover = uniform_crossover,
@@ -166,7 +165,7 @@ class Evolutionary(BaseGenerator):
             # 3. Fitness --> oiffspring_fitness
             # 4. Descriptor --> descriptors
 
-            offspring = np.asarray([
+            offspring = [
                 Instance(
                     variables=offspring[i],
                     fitness=offspring_fitness[i],
@@ -177,7 +176,7 @@ class Evolutionary(BaseGenerator):
                     features=features[i] if features is not None else None,
                 )
                 for i in range(len(offspring))
-            ])
+            ]
             # Only the feasible instances are considered to be included
             # in the archive and the solution set.
             feasible_indeces = np.where(perf_biases > 0)[0]
@@ -282,14 +281,14 @@ class Dominated(Evolutionary):
     def __init__(
         self,
         domain: Domain,
-        portfolio: Iterable[SupportsSolve[P]],
+        portfolio: Iterable[Solver],
         pop_size: int = 128,
         performance_function: PerformanceFn = max_gap_target,
         generations: int = 1000,
         repetitions: int = 1,
         k: int = 15,
         describe_by: DESCRIPTORS = "features",
-        transformer: Optional[SupportsTransform] = None,
+        transformer: Optional[Transformer] = None,
         cxrate: float = 0.5,
         mutrate: float = 0.8,
         crossover: Crossover = uniform_crossover,

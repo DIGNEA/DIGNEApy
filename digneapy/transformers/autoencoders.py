@@ -24,7 +24,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 from scipy.stats import lognorm
 
-from digneapy.transformers._base import Transformer
+from .._core._protocols import Transformer
 
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 MODELS_PATH = Path(__file__).parent / "models/"

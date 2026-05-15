@@ -19,13 +19,12 @@ import numpy as np
 import pandas as pd
 
 from .._core import (
-    RNG,
     Domain,
     Instance,
     Logbook,
-    P,
+    RandGen,
+    Solver,
     Statistics,
-    SupportsSolve,
 )
 from .._core.descriptors import DESCRIPTORS
 from .._core.scores import PerformanceFn, max_gap_target
@@ -52,7 +51,7 @@ class GenResult:
             self.metrics = Statistics()(self.instances, as_series=True)
 
 
-class BaseGenerator(ABC, RNG):
+class BaseGenerator(ABC, RandGen):
     """Abstract base class for all Quality-Diversity generators.
 
     Handles:
@@ -69,7 +68,7 @@ class BaseGenerator(ABC, RNG):
     def __init__(
         self,
         domain: Domain,
-        portfolio: Iterable[SupportsSolve[P]],
+        portfolio: Iterable[Solver],
         pop_size: int,
         performance_function: PerformanceFn = max_gap_target,
         describe_by: DESCRIPTORS = "features",

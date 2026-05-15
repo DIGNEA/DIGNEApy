@@ -20,7 +20,7 @@ import numpy as np
 import pandas as pd
 from sklearn.metrics import mean_squared_error
 
-from digneapy.transformers import Transformer
+from digneapy import Transformer
 from digneapy.transformers.neural import NNEncoder
 
 dir, _ = os.path.split(__file__)
@@ -47,13 +47,10 @@ rng = np.random.default_rng(seed=42)
 @pytest.fixture
 def default_transformer():
     class DTrans(Transformer):
-        def __init__(self):
-            super().__init__(name="Default")
-
-        def __call__(self, X) -> np.ndarray:
+        def __call__(self, x) -> np.ndarray:
             return np.zeros(0)
 
-    return DTrans()
+    return DTrans(name="Default")
 
 
 def test_default_transformer_construction(default_transformer):
@@ -63,12 +60,10 @@ def test_default_transformer_construction(default_transformer):
         default_transformer.train(list())
 
     with pytest.raises(Exception):
-        default_transformer.predict(list())
-
-    with pytest.raises(Exception):
         default_transformer.save()
 
     np.testing.assert_array_equal(np.zeros(0), default_transformer(list()))
+    np.testing.assert_array_equal(np.zeros(0), default_transformer.predict(list()))
 
 
 def test_NNEncoder_raises_if_incorrect_values():

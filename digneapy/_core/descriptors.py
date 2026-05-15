@@ -14,8 +14,9 @@ from typing import Literal, Optional, Protocol, Sequence, Tuple
 
 import numpy as np
 
-from .._core import Domain, Instance
-from ..transformers import SupportsTransform
+from ._domain import Domain
+from ._instance import Instance
+from ._protocols import Transformer
 
 DESCRIPTORS = Literal["features", "performance", "instance"]
 
@@ -29,7 +30,7 @@ class Descriptable(Protocol):
         key: DESCRIPTORS,
         scores: Optional[np.ndarray] = None,
         domain: Optional[Domain] = None,
-        transformer: Optional[SupportsTransform] = None,
+        transformer: Optional[Transformer] = None,
     ) -> Tuple[np.ndarray, Optional[np.ndarray]]: ...
 
 
@@ -38,7 +39,7 @@ def describe(
     key: DESCRIPTORS,
     scores: Optional[np.ndarray] = None,
     domain: Optional[Domain] = None,
-    transformer: Optional[SupportsTransform] = None,
+    transformer: Optional[Transformer] = None,
 ) -> Tuple[np.ndarray, Optional[np.ndarray]]:
     """Updates the descriptors of the population of instances
 
@@ -47,7 +48,7 @@ def describe(
         key (Literal[&quot;features&quot;, &quot;performance&quot;, &quot;instance&quot;]): Type of descriptor to extract
         scores (Optional[np.ndarray], optional): Scores of the solvers. Defaults to None.
         domain (Optional[Domain], optional): Domain to extract the features if needed. Defaults to None.
-        transformer (Optional[SupportsTransform], optional): Transformer to transform the descriptor after extracted. Defaults to None.
+        transformer (Optional[Transformer], optional): Transformer to transform the descriptor after extracted. Defaults to None.
 
     Raises:
         ValueError: If the key is not features, performance or instance

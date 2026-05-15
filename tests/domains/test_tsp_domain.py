@@ -68,7 +68,9 @@ def test_tsp_problem_raises_if_invalid_coords():
 
 def test_tsp_can_be_created_with_list():
     N = 100
-    __coords = [[random.randint(0, 1_000), random.randint(0, 1_000)] for _ in range(N)]
+    __coords = np.asarray(
+        [[random.randint(0, 1_000), random.randint(0, 1_000)] for _ in range(N)]
+    )
     problem = TSP(nodes=N, coords=__coords)
     assert isinstance(problem, TSP)
     assert len(problem) == N

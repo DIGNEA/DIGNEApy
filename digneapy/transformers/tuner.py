@@ -20,15 +20,13 @@ import numpy as np
 from deap import algorithms, base, cma, creator, tools
 from scipy.optimize import Bounds
 
-from digneapy import RNG
-
-from .._core._constants import Direction
+from digneapy import Direction, RandGen
 
 try:
     from fcmaes import crfmnes
     from fcmaes.optimizer import wrapper
 
-    class Tuner(RNG):
+    class Tuner(RandGen):
         def __init__(
             self,
             dimension: int,
@@ -71,7 +69,7 @@ try:
 
 except Exception:
 
-    class Tuner(RNG):
+    class Tuner(RandGen):
         """Neural Network Evolutionary Algorithm Tuner
         This class implements a CMA-ES based tuner for neural networks.
         It allows to optimize the weights of a neural network to generate

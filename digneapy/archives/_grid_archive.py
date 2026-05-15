@@ -11,13 +11,12 @@
 """
 
 import json
-from collections.abc import Iterable, Sequence
+from collections.abc import Sequence
 from typing import Dict, Optional, Tuple
 
 import numpy as np
 
-from digneapy._core import Instance
-
+from .._core import Instance
 from ._base_archive import Archive
 
 
@@ -36,7 +35,7 @@ class GridArchive(Archive):
         self,
         dimensions: Sequence[int],
         ranges: Sequence[Tuple[float, float]],
-        instances: Optional[Iterable[Instance]] = None,
+        instances: Optional[Sequence[Instance]] = None,
         eps: float = 1e-6,
         dtype=np.float64,
     ):
@@ -53,7 +52,7 @@ class GridArchive(Archive):
             (inclusive), and the second dimension should have bounds
             :math:`[-2,2]` (inclusive). ``ranges`` should be the same length as
             ``dims``.
-            instances (Optional[Iterable[Instance]], optional): Instances to pre-initialise the archive. Defaults to None.
+            instances (Optional[Sequence[Instance]], optional): Instances to pre-initialise the archive. Defaults to None.
             eps (float, optional): Due to floating point precision errors, we add a small
             epsilon when computing the archive indices in the :meth:`index_of`
             method -- refer to the implementation `here. Defaults to 1e-6.
@@ -63,7 +62,7 @@ class GridArchive(Archive):
         Raises:
             ValueError: ``dimensions`` and ``ranges`` are not the same length
         """
-        Archive.__init__(self, threshold=np.finfo(np.float32).max, dtype=dtype)
+        Archive.__init__(self, threshold=0.0, dtype=dtype)
         if len(ranges) == 0 or len(dimensions) == 0:
             raise ValueError("dimensions and ranges must have length >= 1")
         if len(ranges) != len(dimensions):
@@ -94,11 +93,11 @@ class GridArchive(Archive):
             self.extend(instances)
 
     @property
-    def dimensions(self):
+    def dimensions(self) -> np.ndarray:
         return self._dimensions
 
     @property
-    def bounds(self):
+    def bounds(self) -> np.ndarray:
         """list of numpy.ndarray: The boundaries of the cells in each dimension.
 
         Entry ``i`` in this list is an array that contains the boundaries of the
@@ -120,7 +119,7 @@ class GridArchive(Archive):
         return self._cells
 
     @property
-    def coverage(self):
+    def coverage(self) -> np.float64:
         """Get the coverage of the hypercube space.
         The coverage is calculated has the number of cells filled over the total space available.
 
@@ -128,9 +127,9 @@ class GridArchive(Archive):
             float: Filled cells over the total available.
         """
         if len(self._grid) == 0:
-            return 0.0
+            return np.float64(0)
 
-        return len(self._grid) / self._cells
+        return np.float64(len(self._grid) / self._cells)
 
     @property
     def filled_cells(self):
@@ -140,13 +139,13 @@ class GridArchive(Archive):
     def instances(self) -> Sequence[Instance]:
         return list(self._storage.values())
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f"GridArchive(dim={self._dimensions},cells={self._cells},bounds={self._boundaries})"
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"GridArchive(dim={self._dimensions},cells={self._cells},bounds={self._boundaries})"
 
-    def __len__(self):
+    def __len__(self) -> int:
         return len(self._grid)
 
     def __getitem__(self, key):
@@ -208,7 +207,9 @@ class GridArchive(Archive):
             raise ValueError(msg)
         return self._upper_bounds[i]
 
-    def append(self, instance: Instance, descriptor: Optional[np.ndarray] = None):
+    def append(
+        self, instance: Instance, descriptor: Optional[np.ndarray] = None
+    ) -> None:
         """Inserts an Instance into the Grid
 
         Args:
@@ -234,7 +235,7 @@ class GridArchive(Archive):
         descriptors: Optional[np.ndarray] = None,
         *args,
         **kwargs,
-    ):
+    ) -> None:
         """Includes all the instances in iterable into the Grid
 
         Args:
@@ -260,7 +261,7 @@ class GridArchive(Archive):
                 self._storage[idx] = instance.clone()
                 self._grid[idx] = descriptor
 
-    def remove(self, descriptors: np.ndarray):
+    def remove(self, descriptors: np.ndarray) -> None:
         """Removes all the instances with the matching descriptors in iterable from the grid"""
 
         indices_to_remove = self.index_of(descriptors)
@@ -269,7 +270,7 @@ class GridArchive(Archive):
                 del self._grid[index]
                 del self._storage[index]
 
-    def purge_unfeasible(self, attr: str = "p"):
+    def purge_unfeasible(self, attr: str = "p") -> None:
         """Removes all the unfeasible instances from the grid"""
         keys_to_remove = [
             i for i in self._storage.keys() if getattr(self._storage[i], attr) < 0
@@ -278,7 +279,7 @@ class GridArchive(Archive):
             del self._grid[i]
             del self._storage[i]
 
-    def index_of(self, descriptors):
+    def index_of(self, descriptors) -> np.ndarray:
         """Computes the indices of a batch of descriptors.
 
         Args:

@@ -8,16 +8,15 @@ __version__ = "0.2.5"
 from . import _core, archives, domains, operators
 from ._core import (
     NS,
-    RNG,
     Direction,
     Domain,
     IndType,
     Instance,
-    P,
     Problem,
+    RandGen,
     Solution,
     Solver,
-    SupportsSolve,
+    Transformer,
     descriptors,
     dominated_novelty_search,
     scores,

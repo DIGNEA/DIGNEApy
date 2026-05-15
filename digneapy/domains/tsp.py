@@ -12,7 +12,7 @@
 
 from collections import Counter
 from collections.abc import Sequence
-from typing import Dict, Self, Tuple, List, Optional
+from typing import Dict, List, Optional, Self, Tuple
 
 import numpy as np
 import numpy.typing as npt
@@ -39,12 +39,13 @@ class TSP(Problem):
             coords (np.ndarray(N, 2)): Coordinates of each node/city.
         """
         self._nodes = nodes
+        if not isinstance(coords, np.ndarray):
+            coords = np.asarray(coords)
+
         if coords.shape[1] != 2:
             raise ValueError(
                 f"Expected coordinates shape to be (N, 2). Instead coords has the following shape: {coords.shape}"
             )
-        if not isinstance(coords, np.ndarray):
-            coords = np.asarray(coords)
 
         self._coords = coords
         x_min, y_min = np.min(self._coords, axis=0)
@@ -64,7 +65,7 @@ class TSP(Problem):
             return False
         return True
 
-    def evaluate(self, individual: Sequence | Solution) -> tuple[float]:
+    def evaluate(self, individual: Sequence | Solution | np.ndarray) -> tuple[float]:
         """Evaluates the candidate individual with the information of the Travelling Salesmas Problem.
 
         The fitness of the solution is the fraction of the sum of the distances of the tour
@@ -97,7 +98,7 @@ class TSP(Problem):
 
         return (fitness,)
 
-    def __call__(self, individual: Sequence | Solution) -> tuple[float]:
+    def __call__(self, individual: Sequence | Solution | np.ndarray) -> tuple[float]:
         return self.evaluate(individual)
 
     def __repr__(self):
@@ -215,7 +216,9 @@ class TSPDomain(Domain):
         )
         return list(Instance(coords) for coords in instances)
 
-    def extract_features(self, instances: Sequence[Instance]) -> np.ndarray:
+    def extract_features(
+        self, instances: Sequence[Instance] | np.ndarray
+    ) -> np.ndarray:
         """Extract the features of the instance based on the TSP domain.
            For the TSP the features are:
             - Size
@@ -258,7 +261,7 @@ class TSPDomain(Domain):
         centroids_distances = np.linalg.norm(coords - expanded_centroids, axis=-1)
         radius = np.mean(centroids_distances, axis=1)
 
-        fractions = np.array(
+        fractions = np.asarray(
             [
                 np.unique(d[np.triu_indices_from(d, k=1)]).size
                 / (N_CITIES * (N_CITIES - 1) / 2)
@@ -311,7 +314,7 @@ class TSPDomain(Domain):
         ).astype(np.float64)
 
     def extract_features_as_dict(
-        self, instances: Sequence[Instance]
+        self, instances: Sequence[Instance] | np.ndarray
     ) -> List[Dict[str, np.float32]]:
         """Creates a dictionary with the features of the instance.
         The key are the names of each feature and the values are
@@ -331,11 +334,11 @@ class TSPDomain(Domain):
 
     def generate_problem_from_instance(self, instance: Instance) -> TSP:
         n_nodes = len(instance) // 2
-        coords = np.array([*zip(instance[::2], instance[1::2])])
+        coords = np.asarray([*zip(instance[::2], instance[1::2])])
         return TSP(nodes=n_nodes, coords=coords)
 
     def generate_problems_from_instances(
-        self, instances: Sequence[Instance]
+        self, instances: Sequence[Instance] | np.ndarray
     ) -> List[Problem]:
         if not isinstance(instances, np.ndarray):
             instances = np.asarray(instances)
@@ -343,7 +346,8 @@ class TSPDomain(Domain):
         dimension = instances.shape[1] // 2
         return list(
             TSP(
-                nodes=dimension, coords=np.array([*zip(instance[0::2], instance[1::2])])
+                nodes=dimension,
+                coords=np.asarray([*zip(instance[0::2], instance[1::2])]),
             )
             for instance in instances
         )

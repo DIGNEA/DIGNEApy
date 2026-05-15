@@ -16,12 +16,12 @@ from functools import partial
 from multiprocessing.pool import Pool
 
 from digneapy.domains import KnapsackDomain
-from digneapy.generators import DEAGenerator
+from digneapy.generators import Dominated
 from digneapy.solvers import default_kp, map_kp, miw_kp, mpw_kp
 from digneapy.utils import save_results_to_files
 
 
-def generate_instancess(
+def generate_instances(
     portfolio,
     dimension: int,
     pop_size: int,
@@ -31,15 +31,14 @@ def generate_instancess(
     verbose,
 ):
     domain = KnapsackDomain(dimension, capacity_approach="percentage")
-    deig = DEAGenerator(
+    deig = Dominated(
         pop_size=pop_size,
-        offspring_size=pop_size,
         generations=generations,
         domain=domain,
         portfolio=portfolio,
         k=k,
         repetitions=1,
-        descriptor_strategy=descriptor,
+        describe_by=descriptor,
     )
     result = deig()
     if verbose:
@@ -114,7 +113,7 @@ if __name__ == "__main__":
     with Pool(4) as pool:
         results = pool.map(
             partial(
-                generate_instancess,
+                generate_instances,
                 dimension=dimension,
                 pop_size=population_size,
                 generations=generations,

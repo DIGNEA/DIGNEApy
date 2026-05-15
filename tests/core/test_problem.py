@@ -10,7 +10,7 @@
 @Desc    :   None
 """
 
-from typing import Sequence, Tuple, Optional
+from typing import Optional, Sequence, Tuple
 
 import numpy as np
 import pytest

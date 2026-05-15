@@ -10,7 +10,7 @@
 @Desc    :   None
 """
 
-__all__ = ["two_opt"]
+__all__ = ["two_opt", "three_opt"]
 
 
 cimport cython
@@ -23,13 +23,14 @@ from collections import Counter
 from digneapy._core import Solution
 
 ctypedef long int li
+ctypedef unsigned short ushort
 
 @cython.boundscheck(False)  # Deactivate bounds checking
 cdef float evaluate(cnp.ndarray individual, cnp.ndarray distances):
     cdef float distance = 0.0
     cdef float fitness = 0.0
-    cdef li i
-    cdef li N = len(individual)
+    cdef ushort i
+    cdef ushort N = len(individual)
     counter = Counter(individual)
 
     if any(counter[c] != 1 for c in counter if c != 0) or (individual[0] != 0 or individual[-1] != 0):
@@ -57,13 +58,13 @@ cpdef list two_opt(object problem):
     if problem is None:
         raise ValueError("No problem found in two_opt heuristic")
 
-    cdef li N = problem.dimension
-    cdef cnp.ndarray[li] tour = np.arange(start=0, stop=N+1, step=1)
+    cdef ushort N = problem.dimension
+    cdef cnp.ndarray[ushort] tour = np.arange(start=0, stop=N+1, step=1, dtype=np.uint16)
     tour[N] = 0
-    cdef li tour_length = len(tour)
+    cdef ushort tour_length = len(tour)
     cdef cnp.ndarray distances = problem._distances
     cdef bint improve = True
-    cdef li i, j
+    cdef ushort i, j
     cdef double current, newer
     cdef float fitness
     while improve:
@@ -84,3 +85,56 @@ cpdef list two_opt(object problem):
                     improve = True
     fitness = evaluate(tour, distances)
     return [Solution(variables=tour, objectives=(fitness,), fitness=fitness)]
+
+
+@cython.boundscheck(False)
+cpdef list three_opt(object problem):
+    """3-Opt Heuristic for the Travelling Salesman Problem
+
+    Args:
+        problem (TSP): Problem to solve
+
+    Raises:
+        ValueError: If problem is None
+
+    Returns:
+        list[Solution]: Collection of solutions to the problem
+    """
+    if problem is None:
+        raise ValueError("No problem found in three_opt heuristic")
+    cdef ushort N = problem.dimension 
+    cdef cnp.ndarray[ushort] tour = np.arange(start=0, stop=N+1, step=1, dtype=np.uint16)
+    cdef cnp.ndarray distances = problem._distances
+    cdef ushort i, j
+    cdef bint improve = True
+    tour[-1] = 0
+    while improve:
+        improve = False
+        for i in range(1, N - 2):
+            for j in range(i + 2, N - 1):
+                for k in range(j + 2, N):
+                    new_tour = np.concatenate((
+                        tour[:i],
+                        tour[j:k][::-1],
+                        tour[i:j],
+                        tour[k:],
+                    ))
+
+                    current = (
+                        distances[tour[i - 1]][tour[i]]
+                        + distances[tour[j - 1]][tour[j]]
+                        + distances[tour[k - 1]][tour[k]]
+                    )
+                    newer = (
+                        distances[new_tour[-2]][new_tour[-1]]
+                        + distances[new_tour[0]][new_tour[1]]
+                    )
+
+                    if newer < current:
+                        tour = new_tour
+                        improve = True
+
+    fitness = problem.evaluate(tour)[0]
+    return [
+        Solution(variables=tour, objectives=(fitness,), fitness=np.float64(fitness))
+    ]

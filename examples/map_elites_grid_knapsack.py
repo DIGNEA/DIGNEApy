@@ -17,7 +17,7 @@ from multiprocessing.pool import Pool
 
 from digneapy import GridArchive
 from digneapy.domains import KnapsackDomain
-from digneapy.generators import MapElitesGenerator
+from digneapy.generators import MapElites
 from digneapy.operators import uniform_one_mutation
 from digneapy.solvers import default_kp, map_kp, miw_kp, mpw_kp
 from digneapy.utils import save_results_to_files
@@ -36,14 +36,14 @@ def generate_instancess(
     )
 
     domain = KnapsackDomain(dimension=dimension, capacity_approach="evolved")
-    map_elites = MapElitesGenerator(
+    map_elites = MapElites(
         domain,
         portfolio=portfolio,
         archive=archive,
-        initial_pop_size=pop_size,
+        pop_size=pop_size,
         mutation=uniform_one_mutation,
         generations=generations,
-        descriptor="instance",
+        describe_by="instance",
         repetitions=1,
     )
 

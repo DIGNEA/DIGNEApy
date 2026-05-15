@@ -12,10 +12,10 @@
 
 from . import _kp, _tsp_opt, bpp, evolutionary, tsp, utils
 from ._kp import default_kp, map_kp, miw_kp, mpw_kp
-from ._tsp_opt import two_opt
+from ._tsp_opt import three_opt, two_opt
 from .bpp import best_fit, first_fit, next_fit, worst_fit
 from .evolutionary import EA
-from .tsp import greedy, nneighbour, three_opt
+from .tsp import greedy, nneighbour
 from .utils import shuffle_and_run_for_knapsack
 
 __all__ = list(

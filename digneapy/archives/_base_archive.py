@@ -13,11 +13,11 @@
 import json
 import operator
 from collections.abc import Sequence
-from typing import Optional, List, Self
+from typing import Optional
 
 import numpy as np
 
-from digneapy._core import Instance
+from .._core import Instance
 
 
 class Archive:
@@ -84,13 +84,13 @@ class Archive:
         >>> import numpy as np
         >>> descriptors = [list(range(d, d + 5)) for d in range(10)]
         >>> archive = Archive(descriptors)
-        >>> np_archive = np.array(archive)
+        >>> np_archive = np.asarray(archive)
         >>> assert len(np_archive) == len(archive)
         >>> assert type(np_archive) == type(np.zeros(1))
         """
         return np.asarray(self._storage["instances"], dtype=dtype, copy=copy)
 
-    def __eq__(self, other: Self):
+    def __eq__(self, other):
         """Compares whether to Archives are equal
 
         >>> import copy

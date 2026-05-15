@@ -23,7 +23,8 @@ import keras
 import numpy as np
 import numpy.typing as npt
 from sklearn.preprocessing import StandardScaler
-from ._base import Transformer
+
+from .._core._protocols import Transformer
 
 
 class NNEncoder(Transformer):

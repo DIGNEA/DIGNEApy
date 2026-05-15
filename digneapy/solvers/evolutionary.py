@@ -17,8 +17,7 @@ from concurrent.futures import ThreadPoolExecutor
 import numpy as np
 from deap import algorithms, base, creator, tools
 
-from digneapy import RNG
-from digneapy._core import Direction, P, Solution, Solver, SupportsSolve
+from digneapy._core import Direction, Problem, Solution, Solver
 
 
 def _gen_dignea_ind(icls, rng, size: int, min_value, max_value):
@@ -30,7 +29,7 @@ def _gen_dignea_ind(icls, rng, size: int, min_value, max_value):
     return chromosome
 
 
-class EA(Solver, SupportsSolve[P], RNG):
+class EA(Solver):
     """Evolutionary Algorithm from DEAP for digneapy"""
 
     def __init__(
@@ -112,7 +111,7 @@ class EA(Solver, SupportsSolve[P], RNG):
         self._stats.register("min", np.min)
         self._stats.register("max", np.max)
 
-        self._logbook = None
+        self._logbook = tools.Logbook()
         self._best_found = Solution()
 
         self._name = f"EA_PS_{self._pop_size}_CXPB_{self._cxpb}_MUTPB_{self._mutpb}"
@@ -122,7 +121,7 @@ class EA(Solver, SupportsSolve[P], RNG):
             self._pool = ThreadPoolExecutor(max_workers=self._n_cores)
             self._toolbox.register("map", self._pool.map)
 
-    def __call__(self, problem: P, *args, **kwargs) -> list[Solution]:
+    def __call__(self, problem: Problem, *args, **kwargs) -> list[Solution]:
         """Call method of the EA solver. It runs the EA to solve the OptProblem given.
 
         Returns:
@@ -136,7 +135,7 @@ class EA(Solver, SupportsSolve[P], RNG):
         # Reset the algorithm
         self._population = self._toolbox.population(n=self._pop_size)
         self._hof = tools.HallOfFame(1)
-        self._logbook = None
+        self._logbook = tools.Logbook()
 
         self._population, self._logbook = algorithms.eaSimple(
             self._population,

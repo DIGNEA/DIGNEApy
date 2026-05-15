@@ -10,10 +10,12 @@
 @Desc    :   None
 """
 
-from typing import Tuple, Optional
+import sys
+import warnings
+from typing import Optional, Tuple
 
 import numpy as np
-import sys
+
 from digneapy.archives import Archive
 
 
@@ -139,6 +141,9 @@ def dominated_novelty_search(
     Returns:
         Tuple[np.ndarray]: Tuple with the descriptors, performances and competition fitness values sorted, plus the sorted indexing (descending order).
     """
+    warnings.filterwarnings(
+        "ignore", message="Mean of empty slice", category=RuntimeWarning
+    )
     num_instances = len(descriptors)
     if num_instances <= k:
         msg = f"Trying to calculate the dominated novelty search with k({k}) > len(instances) = {num_instances}"
@@ -165,10 +170,13 @@ def dominated_novelty_search(
     indices = np.argsort(values, axis=-1)[..., ::-1]
     values = np.take_along_axis(values, indices, axis=-1)
     indices = np.take_along_axis(indices, indices, axis=-1)
-    distance = np.mean(
-        -values, where=np.take_along_axis(fitter, indices, axis=1), axis=-1
-    )
-    distance = np.where(np.isnan(distance), np.inf, distance)
+    with np.errstate(invalid="ignore"):
+        distance = np.mean(
+            -values,
+            where=np.take_along_axis(fitter, indices, axis=1),
+            axis=-1,
+        )
+        distance = np.where(np.isnan(distance), np.inf, distance)
     distance = np.where(is_unfeasible, -np.inf, distance)
     sorted_indices = np.argsort(-distance)
     return (

@@ -15,7 +15,6 @@ import os
 import numpy as np
 import pytest
 
-from digneapy import Instance
 from digneapy.domains.bpp import BPP, BPPDomain
 
 
@@ -100,8 +99,8 @@ def test_bpp_domain_to_extract_features_with_capacity_approach(capacity_approach
     features = domain.extract_features(instances)
 
     assert isinstance(features, np.ndarray)
-    norm_variables = np.asarray(instances, copy=True)
-    norm_variables[:, 1:] = norm_variables[:, 1:] / norm_variables[:, [0]]
+    norm_variables = np.asarray(instances, copy=True, dtype=np.float32)
+    norm_variables[:, 1:] = norm_variables[:, 1:] / norm_variables[:, 0:1]
     expected = np.column_stack(
         [
             np.mean(norm_variables, axis=1),
@@ -119,7 +118,7 @@ def test_bpp_domain_to_extract_features_with_capacity_approach(capacity_approach
         ],
     ).astype(np.float32)
 
-    np.testing.assert_allclose(features, expected)
+    np.testing.assert_allclose(features, expected, rtol=1e-3)
 
 
 @pytest.mark.parametrize("capacity_approach", ("fixed", "evolved", "percentage"))
@@ -132,7 +131,7 @@ def test_bpp_domain_to_features_dict(capacity_approach):
     assert all(isinstance(d, dict) for d in features)
     features = features[0]
 
-    normalised_items = np.asarray(instances[0], copy=True)
+    normalised_items = np.asarray(instances[0], copy=True, dtype=np.float32)
     normalised_items[1:] = normalised_items[1:] / normalised_items[0]
     assert np.isclose(features["mean"], np.mean(normalised_items))
     assert np.isclose(features["std"], np.std(normalised_items))

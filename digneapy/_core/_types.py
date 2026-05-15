@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*-coding:utf-8 -*-
 """
-@File    :   _constants.py
+@File    :   _types.py
 @Time    :   2024/06/07 11:20:47
 @Author  :   Alejandro Marrero
 @Version :   1.0
@@ -18,8 +18,10 @@ from typing import TypeVar
 from digneapy._core._instance import Instance
 from digneapy._core._solution import Solution
 
+IndType = TypeVar("IndType", Instance, Solution)
 
-def create_individual(direction):
+
+def _create_individual(direction):
     from deap import base, creator
 
     match direction:
@@ -37,12 +39,9 @@ class Direction(IntEnum):
     MAXIMISE = 1
 
     def __new__(cls, value):
-        create_individual(value)
+        _create_individual(value)
         return int.__new__(cls, value)
 
     @classmethod
     def values(cls):
         return list(map(lambda c: c.value, cls))
-
-
-IndType = TypeVar("IndType", Instance, Solution)

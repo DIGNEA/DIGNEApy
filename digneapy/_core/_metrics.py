@@ -17,6 +17,7 @@ import numpy as np
 import pandas as pd
 from deap import tools
 
+from ..archives import CVTArchive, GridArchive
 from ._instance import Instance
 
 
@@ -75,25 +76,30 @@ class Statistics:
         Returns:
             dict: Dictionary with the statistics of the population.
         """
+
         if len(population) == 0:
             raise ValueError(
                 "Error: Trying to calculate the metrics with an empty population"
             )
-        if not all(isinstance(ind, Instance) for ind in population):
-            raise TypeError("Error: Population must be a sequence of Instance objects")
-
-        record = self._stats.compile(population)
-        if as_series:
-            _flatten_record = {}
-            for key, value in record.items():
-                if isinstance(value, dict):  # Flatten nested dicts
-                    for sub_key, sub_value in value.items():
-                        _flatten_record[f"{key}_{sub_key}"] = sub_value
-                else:
-                    _flatten_record[key] = value
-            return pd.Series(_flatten_record)
-        else:
-            return record
+        if any(not isinstance(ind, Instance) for ind in population):
+            raise TypeError(
+                f"Error: Population must be a sequence of Instance objects got: {population}\n{type(population[0])}"
+            )
+        with np.errstate(invalid="ignore"):
+            record = self._stats.compile(
+                population
+            )  # ignore np.inf values which can occur in early steps
+            if as_series:
+                _flatten_record = {}
+                for key, value in record.items():
+                    if isinstance(value, dict):  # Flatten nested dicts
+                        for sub_key, sub_value in value.items():
+                            _flatten_record[f"{key}_{sub_key}"] = sub_value
+                    else:
+                        _flatten_record[key] = value
+                return pd.Series(_flatten_record)
+            else:
+                return record
 
 
 class Logbook:
@@ -120,7 +126,10 @@ class Logbook:
         return self._logbook
 
     def update(
-        self, generation: int, population: Sequence[Instance], feedback: bool = False
+        self,
+        generation: int,
+        population: Sequence[Instance] | CVTArchive | GridArchive,
+        feedback: bool = False,
     ):
         if generation < 0:
             raise ValueError(

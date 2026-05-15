@@ -15,6 +15,7 @@ __all__ = ["one_point_crossover", "uniform_crossover", "Crossover"]
 from collections.abc import Callable
 
 import numpy as np
+
 from .._core import IndType
 
 Crossover = Callable[

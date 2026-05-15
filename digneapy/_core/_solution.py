@@ -47,8 +47,8 @@ class Solution:
         self._otype = otype
         self._dtype = dtype
         self.variables = np.asarray(variables, dtype=self.dtype)
-        self.objectives = np.array(objectives, dtype=self.otype)
-        self.constraints = np.array(constraints, dtype=self.otype)
+        self.objectives = np.asarray(objectives, dtype=self.otype)
+        self.constraints = np.asarray(constraints, dtype=self.otype)
         self.fitness = otype(fitness)
 
     @property
@@ -65,7 +65,7 @@ class Solution:
         Returns:
             Self: Solution object
         """
-        return Solution(
+        return type(self)(
             variables=list(self.variables),
             objectives=list(self.objectives),
             constraints=list(self.constraints),

@@ -18,7 +18,7 @@ import numpy as np
 from digneapy import NS, SupportsSolve
 from digneapy.archives import Archive
 from digneapy.domains import TSPDomain
-from digneapy.generators import EAGenerator
+from digneapy.generators import Evolutionary
 from digneapy.operators import generational_replacement
 from digneapy.solvers import greedy, nneighbour, two_opt
 from digneapy.transformers.neural import NNEncoder
@@ -41,7 +41,7 @@ class Evaluation(object):
         results = np.zeros(4)
 
         for i, portfolio in enumerate(self._portfolios):
-            eig = EAGenerator(
+            eig = Evolutionary(
                 pop_size=10,
                 generations=100,
                 domain=self._domain,
@@ -49,7 +49,7 @@ class Evaluation(object):
                 novelty_approach=NS(Archive(threshold=1e-7), k=3),
                 solution_set=Archive(threshold=1e-7),
                 repetitions=1,
-                descriptor_strategy="features",
+                describe_by="features",
                 replacement=generational_replacement,
                 transformer=self._transformer,
             )
@@ -96,7 +96,7 @@ def main():
         ],
     )
     cma_es = Tuner(
-        dimension=dimension, ranges=(-1.0, 1.0), generations=250, lambda_=64, seed=seed
+        dimension=dimension, ranges=(-1.0, 1.0), evaluations=250, lambda_=64, seed=seed
     )
     solution = cma_es(eval_fn=fitness)
     with open(f"tsp_NN_weights_N_50_2D_{repetition}.npy", "wb") as f:

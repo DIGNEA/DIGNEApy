@@ -13,17 +13,17 @@
 import argparse
 import itertools
 from functools import partial
-from multiprocessing.pool import Pool
-from digneapy import NS, Archive
+from multiprocessing import Pool
+
+from digneapy import DESCRIPTORS, NS, Archive
 from digneapy.domains import KnapsackDomain
-from digneapy.generators import EAGenerator
+from digneapy.generators import Evolutionary
 from digneapy.operators import generational_replacement
 from digneapy.solvers import (
     default_kp,
     map_kp,
     miw_kp,
     mpw_kp,
-    shuffle_and_run_for_knapsack,
 )
 from digneapy.utils import save_results_to_files, sort_knapsack_instances
 
@@ -36,11 +36,11 @@ def generate_instances(
     archive_threshold: float,
     ss_threshold: float,
     k: int,
-    descriptor: str,
+    descriptor: DESCRIPTORS,
     verbose,
 ):
     domain = KnapsackDomain(dimension, capacity_approach="percentage")
-    eig = EAGenerator(
+    eig = Evolutionary(
         pop_size=pop_size,
         generations=generations,
         domain=domain,
@@ -48,11 +48,11 @@ def generate_instances(
         novelty_approach=NS(Archive(threshold=archive_threshold), k=k),
         solution_set=Archive(threshold=ss_threshold),
         repetitions=1,
-        descriptor_strategy=descriptor,
+        describe_by=descriptor,
         replacement=generational_replacement,
     )
 
-    result = eig()
+    result = eig(verbose=verbose)
     if verbose:
         print(f"Target: {result.target} completed.")
     return result
@@ -138,39 +138,25 @@ if __name__ == "__main__":
         [miw_kp, default_kp, map_kp, mpw_kp],
         [mpw_kp, default_kp, map_kp, miw_kp],
     ]
-    results = []
-    for portfolio in portfolios:
-        result = generate_instances(
-            portfolio=portfolio,
-            dimension=dimension,
-            pop_size=population_size,
-            generations=generations,
-            archive_threshold=archive_threshold,
-            ss_threshold=solution_set_threshold,
-            k=k,
-            descriptor=descriptor,
-            verbose=verbose,
+
+    with Pool(1) as pool:
+        results = pool.map(
+            partial(
+                generate_instances,
+                dimension=dimension,
+                pop_size=population_size,
+                generations=generations,
+                archive_threshold=archive_threshold,
+                ss_threshold=solution_set_threshold,
+                k=k,
+                descriptor=descriptor,
+                verbose=verbose,
+            ),
+            portfolios,
         )
 
-        results.append(result)
-    # with Pool(4) as pool:
-    #     results = pool.map(
-    #         partial(
-    #             generate_instancess,
-    #             dimension=dimension,
-    #             pop_size=population_size,
-    #             generations=generations,
-    #             archive_threshold=archive_threshold,
-    #             ss_threshold=solution_set_threshold,
-    #             k=k,
-    #             descriptor=descriptor,
-    #             verbose=verbose,
-    #         ),
-    #         portfolios,
-    #     )
-
-    # pool.close()
-    # pool.join()
+    pool.close()
+    pool.join()
     features_names = KnapsackDomain().feat_names if descriptor == "features" else None
     vars_names = ["capacity"] + list(
         itertools.chain.from_iterable([(f"w_{i}", f"p_{i}") for i in range(dimension)])

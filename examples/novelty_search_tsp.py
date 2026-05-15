@@ -15,15 +15,15 @@ import itertools
 from functools import partial
 from multiprocessing.pool import Pool
 
-from digneapy import NS, Archive
+from digneapy import DESCRIPTORS, NS, Archive
 from digneapy.domains import TSPDomain
-from digneapy.generators import EAGenerator
+from digneapy.generators import Evolutionary
 from digneapy.operators import generational_replacement
 from digneapy.solvers import greedy, nneighbour, two_opt
 from digneapy.utils import save_results_to_files
 
 
-def generate_instancess(
+def generate_instances(
     portfolio,
     dimension: int,
     pop_size: int,
@@ -31,11 +31,11 @@ def generate_instancess(
     archive_threshold: float,
     ss_threshold: float,
     k: int,
-    descriptor: str,
+    descriptor: DESCRIPTORS,
     verbose,
 ):
-    domain = TSPDomain(dimension=50)
-    eig = EAGenerator(
+    domain = TSPDomain(dimension=dimension)
+    eig = Evolutionary(
         pop_size=pop_size,
         generations=generations,
         domain=domain,
@@ -43,7 +43,7 @@ def generate_instancess(
         novelty_approach=NS(Archive(threshold=archive_threshold), k=k),
         solution_set=Archive(threshold=ss_threshold),
         repetitions=1,
-        descriptor_strategy=descriptor,
+        describe_by=descriptor,
         replacement=generational_replacement,
     )
 
@@ -136,7 +136,7 @@ if __name__ == "__main__":
     with Pool(4) as pool:
         results = pool.map(
             partial(
-                generate_instancess,
+                generate_instances,
                 dimension=dimension,
                 pop_size=population_size,
                 generations=generations,

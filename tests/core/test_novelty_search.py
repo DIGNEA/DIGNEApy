@@ -5,12 +5,11 @@
 import numpy as np
 import pytest
 
-
 from digneapy import (
     NS,
     Archive,
-    dominated_novelty_search,
     Instance,
+    dominated_novelty_search,
 )
 
 N_INSTANCES = 100

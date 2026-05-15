@@ -16,17 +16,18 @@ from multiprocessing.pool import Pool
 
 from digneapy import CVTArchive
 from digneapy.domains import BPPDomain
-from digneapy.generators import MapElitesGenerator
+from digneapy.generators import MapElites
 from digneapy.operators import uniform_one_mutation
 from digneapy.solvers import best_fit, first_fit, next_fit, worst_fit
 from digneapy.utils import save_results_to_files
 
 
-def generate_instancess(
+def generate_instances(
     portfolio,
     dimension: int,
     pop_size: int,
     generations: int,
+    descriptor: str,
     verbose: bool,
 ):
     domain = BPPDomain(
@@ -36,26 +37,39 @@ def generate_instancess(
         max_capacity=150,
         capacity_approach="fixed",
     )
-
+    ranges = []
+    if descriptor == "features":
+        ranges = [
+            (20, 100),
+            (0, 100.0),
+            (20, 100),
+            (20, 100),
+            (20, 100),
+            *[(0.0, 1.0) for _ in range(5)],
+        ]
+    elif descriptor == "performance":
+        ranges = [(0.0, 1.0) for _ in range(len(portfolio))]
+    else:  # case instance
+        ranges = [(150, 150), *[(20, 100) for _ in range(dimension)]]
     # Create an empty archive with the previous centroids and samples
     # The genotype of the BPP is [capacity, w_i x N]
     # The ranges must be [150, (20, 100)]
     cvt_archive = CVTArchive(
         k=1_000,
-        ranges=[(150, 150), *[(20, 100) for _ in range(dimension)]],
-        n_samples=100000,
+        ranges=ranges,
+        n_samples=100_000,
     )
-    map_elites = MapElitesGenerator(
+    map_elites = MapElites(
         domain,
         portfolio=portfolio,
         archive=cvt_archive,
-        initial_pop_size=pop_size,
+        pop_size=pop_size,
         mutation=uniform_one_mutation,
         generations=generations,
-        descriptor="instance",
+        describe_by=descriptor,
         repetitions=1,
     )
-    result = map_elites()
+    result = map_elites(verbose=verbose)
     if verbose:
         print(f"Target: {result.target} completed.")
     return result
@@ -84,6 +98,13 @@ if __name__ == "__main__":
         help="Number of instances to evolve.",
     )
     parser.add_argument(
+        "-d",
+        "--descriptor",
+        type=str,
+        required=True,
+        help="Descriptor to use",
+    )
+    parser.add_argument(
         "-g",
         "--generations",
         default=1000,
@@ -106,6 +127,7 @@ if __name__ == "__main__":
     population_size = args.population_size
     dimension = args.n
     rep = args.repetition
+    descriptor = args.descriptor
     verbose = args.verbose
 
     portfolios = [
@@ -118,10 +140,11 @@ if __name__ == "__main__":
     with Pool(4) as pool:
         results = pool.map(
             partial(
-                generate_instancess,
+                generate_instances,
                 dimension=dimension,
                 pop_size=population_size,
                 generations=generations,
+                descriptor=descriptor,
                 verbose=verbose,
             ),
             portfolios,
@@ -133,9 +156,11 @@ if __name__ == "__main__":
         solvers_names = [p.__name__ for p in portfolios[i]]
 
         save_results_to_files(
-            f"map_elites_cvt_bin_packing_N_{dimension}_target_{result.target}_rep_{rep}",
-            result=result,
+            f"map_elites_cvt_{descriptor}_bin_packing_N_{dimension}_target_{result.target}_rep_{rep}",
+            result,
+            only_genotypes=True,
+            only_instances=True,
             solvers_names=solvers_names,
+            files_format="parquet",
             vars_names=["capacity", *[f"w_{i}" for i in range(dimension)]],
-            features_names=None,
         )

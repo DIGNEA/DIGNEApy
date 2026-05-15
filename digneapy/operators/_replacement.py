@@ -20,7 +20,7 @@ __all__ = [
 import itertools
 from collections.abc import Callable, Sequence
 from operator import attrgetter
-import numpy as np
+
 from .._core import IndType
 
 Replacement = Callable[

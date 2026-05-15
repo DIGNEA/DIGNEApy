@@ -10,12 +10,11 @@
 @Desc    :   None
 """
 
-import pytest
-
-
 import os
+import random
 
 import numpy as np
+import pytest
 
 from digneapy import Instance
 from digneapy.domains.tsp import TSP, TSPDomain
@@ -54,6 +53,37 @@ def test_default_tsp_attrs(default_tsp):
     with pytest.raises(Exception):
         # Raises attribute error when passing a len(list) != len(kp)
         default_tsp.evaluate(list(range(1)))
+
+
+def test_tsp_problem_raises_if_invalid_coords():
+    _coords = np.random.default_rng(seed=42).integers(
+        low=(0),
+        high=(1000),
+        size=(100, 4),
+        dtype=int,
+    )
+    with pytest.raises(ValueError):
+        _ = TSP(nodes=100, coords=_coords)
+
+
+def test_tsp_can_be_created_with_list():
+    N = 100
+    __coords = np.asarray(
+        [[random.randint(0, 1_000), random.randint(0, 1_000)] for _ in range(N)]
+    )
+    problem = TSP(nodes=N, coords=__coords)
+    assert isinstance(problem, TSP)
+    assert len(problem) == N
+    assert isinstance(problem._coords, np.ndarray)
+    np.testing.assert_array_equal(problem._coords, np.asarray(__coords))
+    np.testing.assert_array_equal(np.asarray(problem), np.asarray(__coords))
+
+
+def test_tsp_solutions_is_cyclic(default_tsp):
+    solution = default_tsp.create_solution()
+    assert solution[0] == solution[-1]
+    assert solution[0] == 0
+    assert len(solution) == len(default_tsp) + 1
 
 
 def test_default_tsp_can_be_saved_to_disk(default_tsp):
@@ -162,8 +192,19 @@ def test_tsp_domain_to_instance():
     assert len(instance) == dimension * 2  # Flattened (x, y) coords
 
 
-def test_tsp_problem(default_tsp):
-    solution = default_tsp.create_solution()
-    assert solution[0] == solution[-1]
-    assert solution[0] == 0
-    assert len(solution) == len(default_tsp) + 1
+def test_tsp_domain_creates_problems():
+    N = 100
+    DIMENSION = 100
+    instances = [
+        Instance(
+            np.random.default_rng(seed=42).integers(
+                low=1, high=1_000, size=(DIMENSION, 2)
+            )
+        )
+        for _ in range(N)
+    ]
+
+    domain = TSPDomain(DIMENSION)
+    tsp_problems = domain.generate_problems_from_instances(instances)
+    assert len(tsp_problems) == N
+    assert all(len(p) == DIMENSION // 2 for p in tsp_problems)

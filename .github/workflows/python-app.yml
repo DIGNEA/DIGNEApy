@@ -4,21 +4,21 @@
 name: Build
 
 on:
-    push:
-        branches: "**" # push to any branch
-    pull_request:
-        branches: "**" # push to any branch
+  push:
+    branches: "**" # push to any branch
+  pull_request:
+    branches: "**" # push to any branch
 
 permissions:
-    contents: read
+  contents: read
 
 jobs:
   test:
     strategy:
-            matrix:
-                python-version: ["3.13"]
+      matrix:
+        python-version: ["3.12", "3.13"]
     runs-on: ubuntu-latest
-    
+
     name: Test application with Python ${{ matrix.python-version }}
     steps:
       - uses: actions/checkout@v4
@@ -26,13 +26,8 @@ jobs:
         uses: astral-sh/setup-uv@v5
         with:
           # Install a specific version of uv.
-          version: "0.6.10"
+          version: "0.11.14"
           python-version: ${{ matrix.python-version }}
-
-      - name: Install dependencies
-        run: |
-            uv add -r requirements.txt
-            uv add -r requirements_dev.txt
 
       - name: Installing the project
         run: uv sync --all-extras --dev

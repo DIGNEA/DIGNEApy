@@ -10,12 +10,19 @@
 @Desc    :   None
 """
 
-from ._base import SupportsTransform, Transformer
 from .pca import PCAEncoder
 
-__transformer_submodules = {"neural", "autoencoders", "tuner", "pca"}
+__transformer_submodules = {"neural", "autoencoders", "tuner"}
 
-__all__ = ["Transformer", "SupportsTransform", "PCAEncoder"]
+__all__ = ["PCAEncoder"]
+
+_TORCH_AVAILABLE = False
+try:
+    import torch
+
+    _TORCH_AVAILABLE = True
+except ImportError:
+    _TORCH_AVAILABLE = False
 
 
 # Lazy import function
@@ -23,11 +30,18 @@ def __getattr__(attr_name):
     import importlib
     import sys
 
-    if attr_name in __transformer_submodules:
-        full_name = f"digneapy.transformers.{attr_name}"
-        submodule = importlib.import_module(full_name)
-        sys.modules[full_name] = submodule
-        return submodule
+    if _TORCH_AVAILABLE:
+        if attr_name in __transformer_submodules:
+            full_name = f"digneapy.transformers.{attr_name}"
+            submodule = importlib.import_module(full_name)
+            sys.modules[full_name] = submodule
+            return submodule
 
+        else:
+            raise ImportError(
+                f"module digneapy.transformers has no attribute {attr_name}"
+            )
     else:
-        raise ImportError(f"module digneapy.transformers has no attribute {attr_name}")
+        raise NotImplementedError(
+            "This module is not available without a correct PyTorch installation"
+        )

@@ -13,17 +13,18 @@
 import argparse
 from functools import partial
 from multiprocessing.pool import Pool
+from typing import List
 
 from digneapy import NS, Archive
 from digneapy.domains import BPPDomain
-from digneapy.generators import EAGenerator
+from digneapy.generators import Evolutionary
 from digneapy.operators import generational_replacement
 from digneapy.solvers import best_fit, first_fit, next_fit, worst_fit
 from digneapy.utils import save_results_to_files
 
 
-def generate_instancess(
-    portfolio,
+def generate_instances(
+    portfolio: List,
     dimension: int,
     descriptor: str,
     generations: int = 1000,
@@ -41,7 +42,7 @@ def generate_instancess(
         capacity_approach="fixed",
     )
 
-    eig = EAGenerator(
+    eig = Evolutionary(
         pop_size=population_size,
         generations=generations,
         domain=domain,
@@ -49,10 +50,10 @@ def generate_instancess(
         novelty_approach=NS(Archive(threshold=archive_threshold), k=k),
         solution_set=Archive(threshold=ss_threshold),
         repetitions=1,
-        descriptor_strategy=descriptor,
+        describe_by=descriptor,
         replacement=generational_replacement,
     )
-    result = eig()
+    result = eig(verbose=verbose)
     if verbose:
         print(f"Target: {result.target} completed.")
     return result
@@ -98,14 +99,14 @@ if __name__ == "__main__":
     parser.add_argument(
         "-a",
         "--archive_threshold",
-        default=0.489739445237057,
+        default=1e-7,  # 0.489739445237057,
         type=float,
         help="Threshold for the Archive.",
     )
     parser.add_argument(
         "-s",
         "--solution_set_threshold",
-        default=0.040663809390192,
+        default=1e-7,  # 0.040663809390192,
         type=float,
         help="Threshold for the Archive.",
     )
@@ -136,34 +137,41 @@ if __name__ == "__main__":
     verbose = args.verbose
     archive_threshold = args.archive_threshold
     solution_set_threshold = args.solution_set_threshold
-    pool = Pool(4)
-    print(f"Running with {len(portfolios)} portfolios and rep {rep}.")
-
-    results = pool.map(
-        partial(
-            generate_instancess,
-            dimension=dimension,
-            descriptor=descriptor,
-            generations=generations,
-            population_size=population_size,
-            k=k,
-            archive_threshold=archive_threshold,
-            ss_threshold=solution_set_threshold,
-            verbose=verbose,
-        ),
-        portfolios,
+    print(
+        f"Running with {len(portfolios)} portfolios, rep {rep}, ta {archive_threshold} and tss {solution_set_threshold}."
     )
+
+    with Pool(len(portfolios)) as pool:
+        results = pool.map(
+            partial(
+                generate_instances,
+                dimension=dimension,
+                descriptor=descriptor,
+                generations=generations,
+                population_size=population_size,
+                k=k,
+                archive_threshold=archive_threshold,
+                ss_threshold=solution_set_threshold,
+                verbose=verbose,
+            ),
+            portfolios,
+        )
+
     pool.close()
     pool.join()
+
     features_names = BPPDomain().feat_names if descriptor == "features" else None
-    vars_names = ["Q", *[f"w_{i}" for i in range(dimension)]]
+    vars_names = ["capacity", *[f"w_{i}" for i in range(dimension)]]
     for i, result in enumerate(results):
+        print(result)
         solvers_names = [p.__name__ for p in portfolios[i]]
 
         save_results_to_files(
-            f"best_irace_ns_{descriptor}_bin_packing_N_{dimension}_target_{result.target}_rep_{rep}",
+            f"ns_{descriptor}_bin_packing_N_{dimension}_target_{result.target}_rep_{rep}",
             result,
-            solvers_names,
-            features_names,
-            vars_names,
+            only_instances=True,
+            only_genotypes=False,
+            solvers_names=solvers_names,
+            features_names=features_names,
+            vars_names=vars_names,
         )

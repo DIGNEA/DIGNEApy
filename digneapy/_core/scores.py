@@ -13,6 +13,7 @@
 __all__ = ["PerformanceFn", "max_gap_target", "runtime_score"]
 
 from collections.abc import Callable
+
 import numpy as np
 
 """Performance Function type. From any sequence it calculates the performance score.
@@ -55,4 +56,8 @@ def runtime_score(scores: np.ndarray) -> np.ndarray:
         Returns:
             np.ndarray: Performance biases for every instance. Instance.p attribute.
     """
+    if scores.ndim != 2:
+        raise ValueError(
+            f"Expected a 2d numpy array (i, s). Where `i` is the number of instances, `s` the number of solvers in the portfolio. Instead, scores have shape: {scores.shape}"
+        )
     return np.min(scores[:, 1:], axis=1) - scores[:, 0]

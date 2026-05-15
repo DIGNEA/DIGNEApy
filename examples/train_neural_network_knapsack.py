@@ -13,10 +13,11 @@
 import argparse
 import multiprocessing as mp
 
-import numpy as np
 import joblib
+import numpy as np
 import numpy.linalg as nplinalg
 import scipy.stats as spstat
+
 from digneapy.transformers.neural import NNEncoder
 from digneapy.transformers.tuner import Tuner
 
@@ -84,7 +85,7 @@ def main():
     cma_es = Tuner(
         dimension=dimension,
         ranges=(-1.0, 1.0),
-        generations=100,
+        evaluations=100,
         lambda_=32,
         seed=seed,
         workers=4,

@@ -10,19 +10,19 @@
 @Desc    :   None
 """
 
-from abc import ABC, abstractmethod
+from abc import abstractmethod
 from collections.abc import Sequence
-from typing import Tuple, TypeVar, Optional, Any
+from typing import Any, Optional, Protocol, Tuple
 
 import numpy as np
 from numpy import typing as npt
 
 from ._instance import Instance
+from ._protocols import RandGen
 from ._solution import Solution
-from .types import RNG
 
 
-class Problem(ABC, RNG):
+class Problem(RandGen, Protocol):
     def __init__(
         self,
         dimension: int,
@@ -41,7 +41,7 @@ class Problem(ABC, RNG):
             bounds (Sequence[tuple]): Bounds of each variable in the problem
             name (str, optional): Name of the problem for printing and logging purposes. Defaults to "DefaultProblem".
             dtype (_type_, optional): Type of the variables. Defaults to np.float64.
-            seed (int, optional): Seed for the RNG. Defaults to 42.
+            seed (int, optional): Seed for the RandGen. Defaults to 42.
         """
         self._name = name
         self.__name__ = name
@@ -51,11 +51,14 @@ class Problem(ABC, RNG):
         self.initialize_rng(seed=seed)
         if len(self._bounds) != 0:
             ranges = list(zip(*bounds))
-            self._lbs = np.array(ranges[0], dtype=dtype)
-            self._ubs = np.array(ranges[1], dtype=dtype)
+            self._lbs = np.asarray(ranges[0], dtype=dtype)
+            self._ubs = np.asarray(ranges[1], dtype=dtype)
 
     @property
     def dimension(self):
+        return self._dimension
+
+    def __len__(self):
         return self._dimension
 
     @property
@@ -123,6 +126,3 @@ class Problem(ABC, RNG):
     def from_file(cls, filename: str):
         msg = "from_file method not implemented in Problem"
         raise NotImplementedError(msg)
-
-
-P = TypeVar("P", bound=Problem, contravariant=True)

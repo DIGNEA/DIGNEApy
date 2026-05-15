@@ -16,6 +16,7 @@ from multiprocessing.pool import Pool
 import joblib
 import numpy as np
 import pandas as pd
+from digneapy.generators.generators import Evolutionary
 from irace import Experiment, ParameterSpace, Real, Scenario, irace
 from numpy import linalg as nplinalg
 from scipy import stats as spstat
@@ -23,7 +24,6 @@ from sklearn.pipeline import Pipeline
 
 from digneapy import NS, Archive
 from digneapy.domains import TSPDomain
-from digneapy.generators import EAGenerator
 from digneapy.operators import generational_replacement
 from digneapy.solvers import greedy, nneighbour, two_opt
 
@@ -73,7 +73,7 @@ def generate_instancess(
     verbose,
 ):
     domain = TSPDomain(dimension=dimension)
-    eig = EAGenerator(
+    eig = Evolutionary(
         pop_size=pop_size,
         generations=generations,
         domain=domain,

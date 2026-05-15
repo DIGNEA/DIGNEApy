@@ -19,13 +19,12 @@ import numpy.typing as npt
 from sklearn.cluster import KMeans
 from sklearn.neighbors import KDTree
 
-from digneapy._core import Instance
-from digneapy._core.types import RNG
-
+from .._core import Instance
+from .._core._protocols import RandGen
 from ._grid_archive import GridArchive
 
 
-class CVTArchive(GridArchive, RNG):
+class CVTArchive(GridArchive, RandGen):
     """An Archive that divides a high-dimensional measure space into k homogeneous geometric regions.
     Based on the paper from Vassiliades et al (2018) <https://ieeexplore.ieee.org/document/8000667>
     > The computational complexity of the method we provide for constructing the CVT (in Algorithm 1) is O(ndki),
@@ -83,17 +82,16 @@ class CVTArchive(GridArchive, RNG):
         GridArchive.__init__(
             self, dimensions=(1,) * len(ranges), ranges=ranges, dtype=dtype
         )
-
+        self.initialize_rng(seed=seed)
         self._dimensions = len(ranges)
         ranges = list(zip(*ranges))
-        self._lower_bounds = np.array(ranges[0], dtype=self._dtype)
-        self._upper_bounds = np.array(ranges[1], dtype=self._dtype)
+        self._lower_bounds = np.asarray(ranges[0], dtype=self._dtype)
+        self._upper_bounds = np.asarray(ranges[1], dtype=self._dtype)
         self._interval = self._upper_bounds - self._lower_bounds
         self._k = k
         self._n_samples = n_samples
         self._samples = None
         self._centroids = None
-        self.initialize_rng(seed=seed)
         self._kmeans = KMeans(n_clusters=self._k, n_init=1, random_state=self._seed)
 
         # Loading samples if given
@@ -153,7 +151,7 @@ class CVTArchive(GridArchive, RNG):
         return self._dimensions
 
     @property
-    def samples(self) -> np.ndarray:
+    def samples(self) -> Optional[np.ndarray]:
         """Returns the samples used to generate the centroids
 
         Returns:
@@ -162,7 +160,7 @@ class CVTArchive(GridArchive, RNG):
         return self._samples
 
     @property
-    def centroids(self) -> np.ndarray:
+    def centroids(self) -> Optional[np.ndarray]:
         """Returns k centroids calculated from the samples
 
         Returns:
@@ -230,7 +228,7 @@ class CVTArchive(GridArchive, RNG):
         Returns:
             np.ndarray:  (batch_size, ) array of integer indices representing the flattened grid coordinates.
         """
-        descriptors = np.array(descriptors)
+        descriptors = np.asarray(descriptors)
 
         if len(descriptors) == 0:
             return np.empty(0)
@@ -259,8 +257,14 @@ class CVTArchive(GridArchive, RNG):
         Args:
             file_pattern (str, optional): Pattern of the expected filenames. Defaults to "CVTArchive".
         """
-        np.save(f"{file_pattern}_centroids.npy", self._centroids)
-        np.save(f"{file_pattern}_samples.npy", self._samples)
+        if self._centroids is None:
+            raise RuntimeWarning("Skipping centroids since they're uninitialised.")
+        else:
+            np.save(f"{file_pattern}_centroids.npy", self._centroids)
+        if self._samples is None:
+            raise RuntimeWarning("Skipping samples since they're uninitialised.")
+        else:
+            np.save(f"{file_pattern}_samples.npy", self._samples)
 
     @classmethod
     def load_from_json(cls, filename: str):
@@ -314,8 +318,10 @@ class CVTArchive(GridArchive, RNG):
             "regions": self._k,
             "lbs": self._lower_bounds.tolist(),
             "ubs": self._upper_bounds.tolist(),
-            "centroids": self._centroids.tolist(),
-            "samples": self._samples.tolist(),
+            "centroids": self._centroids.tolist()
+            if self._centroids is not None
+            else [],
+            "samples": self._samples.tolist() if self._samples is not None else [],
             "instances": {
                 i: instance.asdict()
                 for i, instance in enumerate(self._storage.values())

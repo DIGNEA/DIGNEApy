@@ -12,18 +12,19 @@
 
 __all__ = ["VAE", "KPEncoder", "KPDecoder"]
 
+from collections import namedtuple
 from pathlib import Path
+from typing import Any, Tuple
+
+import h5py
 import numpy as np
 import numpy.typing as npt
-from digneapy.transformers._base import Transformer
-from typing import Any, Tuple
-from scipy.stats import lognorm
-import h5py
 import torch
-from collections import namedtuple
 import torch.nn as nn
 import torch.nn.functional as F
+from scipy.stats import lognorm
 
+from .._core._protocols import Transformer
 
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 MODELS_PATH = Path(__file__).parent / "models/"
@@ -80,8 +81,10 @@ class KPEncoder(Transformer):
         super().__init__(name)
 
         self._expected_input_dim = 101
-        self._encoder = torch.jit.load(
-            MODELS_PATH / AUTOENCODER_NAME, map_location=torch.device(DEVICE)
+        self._encoder = torch.load(
+            MODELS_PATH / AUTOENCODER_NAME,
+            map_location=torch.device(DEVICE),
+            weights_only=False,
         )
 
     @property
@@ -128,8 +131,10 @@ class KPDecoder(Transformer):
         self._scale_method = scale_method
         self.__scales_fname = "scales_knapsack_N_50.h5"
         self._expected_latent_dim = 2
-        self._decoder = torch.jit.load(
-            MODELS_PATH / AUTOENCODER_NAME, map_location=torch.device(DEVICE)
+        self._decoder = torch.load(
+            MODELS_PATH / AUTOENCODER_NAME,
+            map_location=torch.device(DEVICE),
+            weights_only=False,
         )
         with h5py.File(MODELS_PATH / self.__scales_fname, "r") as file:
             self._max_weights = file["scales"]["max_weights"][:].astype(np.int32)

@@ -13,18 +13,18 @@
 import numpy as np
 import pytest
 
-from digneapy._core import Solution
 from digneapy.domains import kp as knapsack
-from digneapy.solvers import default_kp, map_kp
-from digneapy.solvers import shuffle_and_run_for_knapsack
+from digneapy.solvers import default_kp, map_kp, shuffle_and_run_for_knapsack
 
 
 @pytest.fixture
 def knapsack_instance():
     N = 100
-    p = np.arange(N)
-    w = np.arange(N)
-    Q = np.random.default_rng().integers(low=10_000, high=100_000, size=1)[0]
+    p = np.arange(N, dtype=np.uint32)
+    w = np.arange(N, dtype=np.uint32)
+    Q = np.random.default_rng().integers(
+        low=10_000, high=100_000, size=1, dtype=np.uint32
+    )[0]
     return knapsack.Knapsack(p, w, Q)
 
 

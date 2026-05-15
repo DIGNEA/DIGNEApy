@@ -10,24 +10,23 @@
 @Desc    :   None
 """
 
-from abc import ABC, abstractmethod
+from abc import abstractmethod
 from collections.abc import Sequence
-from typing import Dict, Optional, List
+from typing import Dict, List, Optional, Protocol
 
 import numpy as np
 
-from digneapy._core._instance import Instance
-from digneapy._core._problem import Problem
+from ._instance import Instance
+from ._problem import Problem
+from ._protocols import RandGen
 
-from .types import RNG
 
-
-class Domain(ABC, RNG):
+class Domain(RandGen, Protocol):
     """Domain is a class that defines the domain of the problem.
     The domain is defined by its dimension and the bounds of each variable.
 
     Args:
-        RNG: Subclass that implements the RNG protocol
+        RandGen: Subclass that implements the RandGen protocol
     """
 
     def __init__(
@@ -51,8 +50,8 @@ class Domain(ABC, RNG):
 
         if len(self._bounds) != 0:
             ranges = list(zip(*bounds))
-            self._lbs = np.array(ranges[0], dtype=dtype)
-            self._ubs = np.array(ranges[1], dtype=dtype)
+            self._lbs = np.asarray(ranges[0], dtype=dtype)
+            self._ubs = np.asarray(ranges[1], dtype=dtype)
 
     @abstractmethod
     def generate_instances(self, n: int = 1) -> List[Instance]:
@@ -111,7 +110,6 @@ class Domain(ABC, RNG):
     def bounds(self):
         return self._bounds
 
-    
     def get_bounds_at(self, i: int) -> tuple:
         if i < 0 or i > len(self._bounds):
             raise ValueError(

@@ -17,37 +17,46 @@ from multiprocessing.pool import Pool
 
 from digneapy import CVTArchive
 from digneapy.domains import KnapsackDomain
-from digneapy.generators import MapElitesGenerator
+from digneapy.generators import MapElites
 from digneapy.operators import uniform_one_mutation
 from digneapy.solvers import default_kp, map_kp, miw_kp, mpw_kp
 from digneapy.utils import save_results_to_files
 
 
-def generate_instancess(
+def generate_instances(
     portfolio,
     dimension: int,
     pop_size: int,
     generations: int,
+    descriptor: str,
     verbose: bool,
 ):
     domain = KnapsackDomain(dimension=dimension)
     # Create an empty archive with the previous centroids and samples
+    ranges = []
+    if descriptor == "features":
+        ranges = [(1.0, 100_000), *[(1.0, 1_000) for _ in range(7)]]
+    elif descriptor == "performance":
+        ranges = [(1.0, 800_000) for _ in range(len(portfolio))]
+    else:  # case instance
+        ranges = [(1.0, 100_000), *[(1.0, 1_000) for _ in range(dimension * 2)]]
     cvt_archive = CVTArchive(
         k=1_000,
-        ranges=[(1.0, 10_000), *[(1.0, 1_000) for _ in range(dimension * 2)]],
-        n_samples=100000,
+        ranges=ranges,
+        n_samples=100_000,
     )
-    map_elites = MapElitesGenerator(
+    map_elites = MapElites(
         domain=domain,
         portfolio=portfolio,
         archive=cvt_archive,
-        initial_pop_size=pop_size,
+        pop_size=pop_size,
         mutation=uniform_one_mutation,
         generations=generations,
-        descriptor="instance",
+        describe_by=descriptor,
         repetitions=1,
     )
-    result = map_elites()
+
+    result = map_elites(verbose=verbose)
     if verbose:
         print(f"Target: {result.target} completed.")
     return result
@@ -75,6 +84,13 @@ if __name__ == "__main__":
         help="Number of instances to evolve.",
     )
     parser.add_argument(
+        "-d",
+        "--descriptor",
+        type=str,
+        required=True,
+        help="Descriptor to use",
+    )
+    parser.add_argument(
         "-g",
         "--generations",
         default=1000,
@@ -96,6 +112,7 @@ if __name__ == "__main__":
     generations = args.generations
     population_size = args.population_size
     dimension = args.n
+    descriptor = args.descriptor
     rep = args.repetition
     verbose = args.verbose
 
@@ -109,10 +126,11 @@ if __name__ == "__main__":
     with Pool(4) as pool:
         results = pool.map(
             partial(
-                generate_instancess,
+                generate_instances,
                 dimension=dimension,
                 pop_size=population_size,
                 generations=generations,
+                descriptor=descriptor,
                 verbose=verbose,
             ),
             portfolios,
@@ -120,7 +138,7 @@ if __name__ == "__main__":
 
     pool.close()
     pool.join()
-    vars_names = ["Q"] + list(
+    vars_names = ["capacity"] + list(
         itertools.chain.from_iterable([(f"w_{i}", f"p_{i}") for i in range(dimension)])
     )
 
@@ -128,9 +146,11 @@ if __name__ == "__main__":
         solvers_names = [p.__name__ for p in portfolios[i]]
 
         save_results_to_files(
-            f"map_elites_cvt_N_{dimension}_target_{result.target}_rep_{rep}",
-            result=result,
+            f"map_elites_cvt_{descriptor}_knapsack_N_{dimension}_target_{result.target}_rep_{rep}",
+            result,
+            only_genotypes=True,
+            only_instances=True,
             solvers_names=solvers_names,
             vars_names=vars_names,
-            features_names=None,
+            files_format="parquet",
         )

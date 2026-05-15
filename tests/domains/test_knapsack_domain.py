@@ -37,6 +37,26 @@ def test_default_kp_instance_can_attrs_can_be_modified(default_kp):
     assert default_kp.__repr__() == expected_repr
 
 
+def test_KP_init_raises_with_wrong_args():
+    with pytest.raises(ValueError):
+        _ = kp.Knapsack(profits=list(range(100)), weights=list(range(10)))
+
+    with pytest.raises(ValueError):
+        _ = kp.Knapsack(profits=list(range(10)), weights=list(range(10)), capacity=-100)
+
+
+def test_KP_bounds(default_kp):
+    assert all(default_kp.get_bounds_at(i) == (0, 1) for i in range(len(default_kp)))
+    bounds = default_kp.bounds
+    assert len(bounds) == len(default_kp)
+    assert all(b == (0, 1) for b in bounds)
+    with pytest.raises(IndexError):
+        _ = default_kp.get_bounds_at(-1)
+
+    with pytest.raises(IndexError):
+        _ = default_kp.get_bounds_at(len(default_kp) + 1)
+
+
 def test_default_kp_instance_can_be_saved_to_file(default_kp):
     # Check is able to create a file
     default_kp.to_file()

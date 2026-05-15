@@ -10,10 +10,12 @@
 @Desc    :   None
 """
 
-from typing import Callable
-from digneapy.domains import Knapsack
-import numpy as np
 import random
+from typing import Callable
+
+import numpy as np
+
+from digneapy.domains import Knapsack
 
 __all__ = ["shuffle_and_run_for_knapsack"]
 
@@ -29,17 +31,19 @@ def shuffle_and_run_for_knapsack(
     def solve(problem: Knapsack):
         results = [None] * n_repetitions
         results[0] = solver(problem)[0]
-        variables = np.asarray(problem, copy=True, dtype=int)
+        variables = np.asarray(problem, copy=True, dtype=np.uint32)
         items = [(w, p) for w, p in zip(variables[1::2], variables[2::2])]
         for r in range(1, n_repetitions):
-            shuffled_items = np.asarray(random.sample(items, k=len(items)), dtype=int)
+            shuffled_items = np.asarray(
+                random.sample(items, k=len(items)), dtype=np.uint32
+            )
             shuffled_problem = Knapsack(
                 weights=shuffled_items[:, 0],
                 profits=shuffled_items[:, 1],
                 capacity=variables[0],
             )
             results[r] = solver(shuffled_problem)[0]
-        if verbose:
+        if verbose:  # pragma: no cover
             fitnesses = [solution.fitness for solution in results]
             final = reduce_fn(fitnesses)
             print(

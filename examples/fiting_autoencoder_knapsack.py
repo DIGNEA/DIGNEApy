@@ -10,14 +10,15 @@
 @Desc    :   None
 """
 
-import torch
+import joblib
 import numpy as np
 import numpy.linalg as nplinalg
 import scipy.stats as spstat
-from digneapy.transformers.neural import NNEncoder
+import torch
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
-import joblib
+
+from digneapy.transformers.neural import NNEncoder
 
 BINS = 20
 LIMITS = (-10_000, 10_000)

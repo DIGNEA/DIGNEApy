@@ -14,11 +14,11 @@ import copy
 from collections import deque
 
 import pandas as pd
+from digneapy.generators.generators import Evolutionary
 
 from digneapy import Direction
 from digneapy.archives import NS, Archive, GridArchive
 from digneapy.domains import KnapsackDomain
-from digneapy.generators import EAGenerator
 from digneapy.operators import generational_replacement
 from digneapy.solvers import default_kp, map_kp, miw_kp
 from digneapy.transformers.neural import NNEncoder
@@ -72,7 +72,7 @@ class NSEval:
 
         for i in range(len(self.portfolio)):
             self.portfolio.rotate(i)  # This allow us to change the target on the fly
-            eig = EAGenerator(
+            eig = Evolutionary(
                 pop_size=10,
                 generations=1000,
                 domain=self.kp_domain,

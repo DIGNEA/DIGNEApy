@@ -20,14 +20,14 @@ import numpy as np
 
 from digneapy import NS, Archive
 from digneapy.domains import BPPDomain
-from digneapy.generators import EAGenerator
+from digneapy.generators import Evolutionary
 from digneapy.operators import generational_replacement
 from digneapy.solvers import best_fit, first_fit, next_fit, worst_fit
 from digneapy.transformers.neural import NNEncoder
 from digneapy.utils import save_results_to_files
 
 
-def generate_instancess(
+def generate_instances(
     portfolio,
     dimension: int,
     pop_size: int,
@@ -56,7 +56,7 @@ def generate_instancess(
         max_capacity=150,
         capacity_approach="fixed",
     )
-    eig = EAGenerator(
+    eig = Evolutionary(
         pop_size=pop_size,
         generations=generations,
         domain=domain,
@@ -64,7 +64,7 @@ def generate_instancess(
         novelty_approach=NS(Archive(threshold=archive_threshold), k=k),
         solution_set=Archive(threshold=ss_threshold),
         repetitions=1,
-        descriptor_strategy="features",
+        describe_by="features",
         transformer=nn,
         replacement=generational_replacement,
     )
@@ -151,7 +151,7 @@ if __name__ == "__main__":
     with Pool(4) as pool:
         results = pool.map(
             partial(
-                generate_instancess,
+                generate_instances,
                 dimension=dimension,
                 pop_size=population_size,
                 generations=generations,
@@ -166,14 +166,16 @@ if __name__ == "__main__":
     pool.close()
     pool.join()
     features_names = "mean,std,median,max,min,tiny,small,medium,large,huge".split(",")
-    vars_names = ["Q", *[f"w_{i}" for i in range(dimension)]]
+    vars_names = ["capacity", *[f"w_{i}" for i in range(dimension)]]
     for i, result in enumerate(results):
         solvers_names = [p.__name__ for p in portfolios[i]]
 
         save_results_to_files(
             f"BP_ns_NN_bin_packing_N_{dimension}_target_{result.target}_rep_{rep}",
             result,
-            solvers_names,
-            features_names,
-            vars_names,
+            only_instances=True,
+            only_genotypes=False,
+            solvers_names=solvers_names,
+            features_names=features_names,
+            vars_names=vars_names,
         )

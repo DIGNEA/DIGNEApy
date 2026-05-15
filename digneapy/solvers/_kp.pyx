@@ -23,8 +23,9 @@ from digneapy._core import Solution
 from digneapy.domains.kp import Knapsack
 
 
-ctypedef long int li
-ctypedef long long int lli
+ctypedef unsigned short ushort
+ctypedef unsigned int uint # 16b [0, 65,535]
+ctypedef unsigned int uli # 32b [0, 4,294,967,295]
 
 @cython.boundscheck(False)  # Deactivate bounds checking
 @cython.wraparound(False)   # Deactivate negative indexing
@@ -32,8 +33,12 @@ cpdef list default_kp(problem: Knapsack):
     if problem is None:
         msg = "No problem found in args of default_kp heuristic"
         raise ValueError(msg)
-    cdef li q, N, packed, profit, i
-    cdef li [:] p, w, variables 
+
+    cdef uli q, packed, profit
+    cdef uli [:] p, w
+    cdef uint N, i
+    cdef unsigned short [:] variables
+    
 
     q = problem.capacity
     N = len(problem)
@@ -41,22 +46,26 @@ cpdef list default_kp(problem: Knapsack):
     profit = 0
     p = problem.profits
     w = problem.weights
-    variables = np.zeros(N, dtype=int)
+    variables = np.zeros(N, dtype=np.uint16)
     
     for i in range(N):
         if packed + w[i] <= q:
             packed += w[i]
             profit += p[i]
             variables[i] = 1
-    return [Solution(variables=variables, objectives=(profit,), fitness=profit)]
+    return [Solution(variables=variables, objectives=(profit,), fitness=np.float64(profit))]
 
 
 cpdef list map_kp(problem: Knapsack):
     if problem is None:
         msg = "No problem found in args of default_kp heuristic"
         raise ValueError(msg)    
-    cdef li q, N, packed, profit, i
-    cdef li [:] p, w, variables, indices
+    cdef uint q, packed
+    cdef uint N, i
+    cdef uli profit
+    cdef uint [:] p, w
+    cdef unsigned short [:] variables
+    cdef long [:] indices
 
     q = problem.capacity
     N = len(problem)
@@ -64,7 +73,7 @@ cpdef list map_kp(problem: Knapsack):
     profit = 0
     p = problem.profits
     w = problem.weights
-    variables = np.zeros(N, dtype=int)
+    variables = np.zeros(N, dtype=np.uint16)
     indices = np.argsort(p)[::-1]
 
     for i in indices:
@@ -75,7 +84,7 @@ cpdef list map_kp(problem: Knapsack):
         if packed >= q:
             break
 
-    return [Solution(variables=variables, objectives=(profit,), fitness=profit)]
+    return [Solution(variables=variables, objectives=(profit,), fitness=np.float64(profit))]
 
 @cython.boundscheck(False)  # Deactivate bounds checking
 @cython.wraparound(False)   # Deactivate negative indexing
@@ -83,36 +92,51 @@ cpdef list miw_kp(problem: Knapsack):
     if problem is None:
         msg = "No problem found in args of default_kp heuristic"
         raise ValueError(msg)    
-    cdef li profit, i
 
-    indices = np.argsort(problem.weights)
-    variables = np.zeros(len(problem), dtype=int)
-    weights_cumsum = np.cumsum(problem.weights[indices])
-    selected = indices[weights_cumsum <= problem.capacity]
+    cdef uli profit
+    cdef uint N, q
+    cdef cnp.ndarray[uint, ndim=1] variables
+    cdef cnp.ndarray[long, ndim=1] indices  
+    cdef cnp.ndarray[uint, ndim=1] np_w = np.asarray(problem.weights)
+    cdef cnp.ndarray[uint, ndim=1] np_p = np.asarray(problem.profits)
+
+    q = problem.capacity
+    N = len(problem)
+
+    indices = np.argsort(np_w)
+    variables = np.zeros(N, dtype=np.uint32)
+    weights_cumsum = np.cumsum(np_w[indices])
+    selected = indices[weights_cumsum <= q]
     variables[selected] = 1
-    profit = np.sum(problem.profits[selected])
-    return [Solution(variables=variables, objectives=(profit,), fitness=profit)]
+    profit = np.sum(np_p[selected])
+    return [Solution(variables=variables, objectives=(profit,), fitness=np.float64(profit))]
 
 
 cpdef list mpw_kp(problem: Knapsack):
     if problem is None:
         msg = "No problem found in args of default_kp heuristic"
         raise ValueError(msg)    
-    cdef li q, N, packed, profit, i
-    cdef li [:] p, w, variables, indices
+ 
+    cdef uint q, packed
+    cdef uint N, i
+    cdef uli profit
+    cdef uint [:] p, w
+    cdef unsigned short [:] variables
+    cdef long [:] indices
+
     q = problem.capacity
     N = len(problem)
     packed = 0
     profit = 0
     p = problem.profits
     w = problem.weights
-    variables = np.zeros(N, dtype=int)
+    variables = np.zeros(N, dtype=np.uint16)
     indices = np.argsort([(p[i] / w[i]) for i in range(N)])[::-1]
 
-    for idx in indices:
-        if packed + w[idx] <= q:
-            packed += w[idx]
-            profit += p[idx]
-            variables[idx] = 1
+    for i in indices:
+        if packed + w[i] <= q:
+            packed += w[i]
+            profit += p[i]
+            variables[i] = 1
 
     return [Solution(variables=variables, objectives=(profit,), fitness=profit)]

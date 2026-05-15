@@ -40,11 +40,11 @@ class EA(Solver):
         max_g: int | float,
         cx=tools.cxUniform,
         mut=tools.mutUniformInt,
-        pop_size: int = 10,
-        cxpb: float = 0.6,
-        mutpb: float = 0.3,
-        generations: int = 500,
-        n_cores: int = 1,
+        pop_size: np.uint32 = np.uint32(10),
+        cxpb: np.float32 = np.float32(0.6),
+        mutpb: np.float32 = np.float32(0.3),
+        generations: np.uint32 = np.uint32(500),
+        n_cores: np.uint8 = np.uint8(1),
         seed: int = 42,
     ):
         """Creates a new EA instance with the given parameters.

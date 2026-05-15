@@ -25,9 +25,9 @@ def clocked_solving(solver, kp):
 
 def main():
     N = 100
-    p = list(np.random.randint(1, 100 + 1, size=N))
-    w = list(np.random.randint(1, 100 + 1, size=N))
-    q = np.random.randint(0, high=250)
+    p = list(np.random.randint(1, 100 + 1, size=N, dtype=np.uint32))
+    w = list(np.random.randint(1, 100 + 1, size=N, dtype=np.uint32))
+    q = np.random.default_rng().integers(0, high=1_000, size=1, dtype=np.uint64)[0]
     kp = Knapsack(profits=p, weights=w, capacity=q)
     solver = EA(
         direction=Direction.MAXIMISE,

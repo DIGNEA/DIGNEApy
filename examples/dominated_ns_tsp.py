@@ -1,12 +1,12 @@
 #!/usr/bin/env python
 # -*-coding:utf-8 -*-
 """
-@File    :   nn_transformer_gecco_23.py
-@Time    :   2023/11/10 14:09:41
-@Author  :   Alejandro Marrero
+@File    :   dominated_ns_tsp.py
+@Time    :   2026/05/15 14:45:24
+@Author  :   Alejandro Marrero (amarrerd@ull.edu.es)
 @Version :   1.0
 @Contact :   amarrerd@ull.edu.es
-@License :   (C)Copyright 2023, Alejandro Marrero
+@License :   (C)Copyright 2026, Alejandro Marrero
 @Desc    :   None
 """
 
@@ -16,9 +16,9 @@ from functools import partial
 from multiprocessing.pool import Pool
 
 from digneapy import DESCRIPTORS
-from digneapy.domains import KnapsackDomain
+from digneapy.domains import TSPDomain
 from digneapy.generators import Dominated
-from digneapy.solvers import default_kp, map_kp, miw_kp, mpw_kp
+from digneapy.solvers import greedy, nneighbour, two_opt
 from digneapy.utils import save_results_to_files
 
 
@@ -31,7 +31,7 @@ def generate_instances(
     descriptor: DESCRIPTORS,
     verbose,
 ):
-    domain = KnapsackDomain(dimension, capacity_approach="percentage")
+    domain = TSPDomain(dimension=dimension)
     deig = Dominated(
         pop_size=pop_size,
         generations=generations,
@@ -49,14 +49,14 @@ def generate_instances(
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
-        description="Generate instances for the knapsack problem with different solvers using Dominated Novelty Search."
+        description="Generate instances for the Travelling Salesman Problem with different solvers."
     )
     parser.add_argument(
         "-n",
         "-number_of_items",
         type=int,
         required=True,
-        help="Size of the knapsack problem.",
+        help="number of nodes.",
         default=50,
     )
     parser.add_argument(
@@ -105,12 +105,13 @@ if __name__ == "__main__":
     rep = args.repetition
     verbose = args.verbose
     portfolios = [
-        [default_kp, map_kp, miw_kp, mpw_kp],
-        [map_kp, default_kp, miw_kp, mpw_kp],
-        [miw_kp, default_kp, map_kp, mpw_kp],
-        [mpw_kp, default_kp, map_kp, miw_kp],
+        [greedy, nneighbour, two_opt],
+        [nneighbour, greedy, two_opt],
+        [two_opt, greedy, nneighbour],
     ]
-
+    print(
+        f"Running with parameters:\ndimension={dimension}, k={k}, population_size={population_size}, generations={generations}, descriptor={descriptor}, verbose={verbose}"
+    )
     with Pool(4) as pool:
         results = pool.map(
             partial(
@@ -127,9 +128,9 @@ if __name__ == "__main__":
 
     pool.close()
     pool.join()
-    features_names = KnapsackDomain().feat_names if descriptor == "features" else None
-    vars_names = ["Q"] + list(
-        itertools.chain.from_iterable([(f"w_{i}", f"p_{i}") for i in range(dimension)])
+    features_names = TSPDomain().feat_names if descriptor == "features" else None
+    vars_names = list(
+        itertools.chain.from_iterable([(f"x_{i}", f"y_{i}") for i in range(dimension)])
     )
 
     for i, result in enumerate(results):

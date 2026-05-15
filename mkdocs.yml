@@ -21,7 +21,7 @@ plugins:
           options:
             docstring_style: google
             docstring_section_style: list
-            show_docstring_warn: false
+            show_docstring_warns: false
 
 nav:
   - Home: index.md

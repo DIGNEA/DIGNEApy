@@ -15,7 +15,7 @@ from functools import partial
 from multiprocessing.pool import Pool
 from typing import List
 
-from digneapy import NS, Archive
+from digneapy import DESCRIPTORS, NS, Archive
 from digneapy.domains import BPPDomain
 from digneapy.generators import Evolutionary
 from digneapy.operators import generational_replacement
@@ -26,7 +26,7 @@ from digneapy.utils import save_results_to_files
 def generate_instances(
     portfolio: List,
     dimension: int,
-    descriptor: str,
+    descriptor: DESCRIPTORS,
     generations: int = 1000,
     population_size: int = 128,
     k: int = 15,

@@ -3,7 +3,7 @@ name: Deploy MkDocs to GitHub Pages
 on:
   push:
     branches:
-      - main  # or main if you are using the main branch
+      - main
 
 jobs:
   deploy:
@@ -15,13 +15,12 @@ jobs:
         uses: astral-sh/setup-uv@v5
         with:
           # Install a specific version of uv.
-          version: "0.6.10"
+          version: "0.11.14"
           python-version: "3.13"
-      
-      - name: Install dependencies
-        run: |
-              uv add -r requirements_dev.txt
-      
+
+      - name: Installing the project
+        run: uv sync --all-extras --dev
+
       - name: Build the site
         run: mkdocs build
 

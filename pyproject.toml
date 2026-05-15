@@ -222,7 +222,14 @@ docstring-code-format = false
 docstring-code-line-length = "dynamic"
 
 [tool.pyrefly]
-project-includes = [
-    "**/*.py*",
-    "**/*.ipynb",
+project-includes = ["**/*.py*", "**/*.ipynb"]
+
+[tool.coverage.run]
+omit = ["digneapy/transformers/*"]
+
+[tool.coverage.report]
+exclude_also = [
+    "def __repr__",
+    'raise NotImplementedError',
+    '@(abc\.)?abstractmethod',
 ]

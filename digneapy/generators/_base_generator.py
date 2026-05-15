@@ -145,6 +145,4 @@ class BaseGenerator(ABC, RandGen):
         return performance_biases, solvers_scores
 
     @abstractmethod
-    def __call__(self, verbose: bool = False) -> GenResult:
-        """Execute the algorithm. Override in subclasses."""
-        pass
+    def __call__(self, verbose: bool = False) -> GenResult: ...

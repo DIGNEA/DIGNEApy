@@ -143,7 +143,7 @@ class MapElites(BaseGenerator):
                 generation=generation + 1, population=self._archive, feedback=verbose
             )
 
-        if verbose:
+        if verbose:  # pragme: no cover
             # Clear the terminal
             blank = " " * 80
             print(f"\r{blank}\r", end="")

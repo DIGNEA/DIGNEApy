@@ -43,7 +43,7 @@ def shuffle_and_run_for_knapsack(
                 capacity=variables[0],
             )
             results[r] = solver(shuffled_problem)[0]
-        if verbose:
+        if verbose:  # pragma: no cover
             fitnesses = [solution.fitness for solution in results]
             final = reduce_fn(fitnesses)
             print(

@@ -203,7 +203,7 @@ class Evolutionary(BaseGenerator):
                 generation=pgen, population=self._population, feedback=verbose
             )
 
-        if verbose:
+        if verbose:  # pragma: no cover
             # Clear the terminal
             blank = " " * 80
             print(f"\r{blank}\r", end="")
@@ -419,7 +419,7 @@ class Dominated(Evolutionary):
                 generation=pgen, population=self._population, feedback=verbose
             )
 
-        if verbose:
+        if verbose:  # pragma: no cover
             # Clear the terminal
             blank = " " * 80
             print(f"\r{blank}\r", end="")

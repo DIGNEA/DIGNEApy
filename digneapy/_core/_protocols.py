@@ -40,8 +40,7 @@ class Transformer(Protocol):
         self._name = name
 
     @abstractmethod
-    def __call__(self, x: np.ndarray | list[IndType]) -> np.ndarray:
-        raise NotImplementedError("__call__ method not implemented in Transformer")
+    def __call__(self, x: np.ndarray | list[IndType]) -> np.ndarray: ...
 
     def train(self, x: np.ndarray | list[IndType]):
         raise NotImplementedError("train method not implemented in Transformer")

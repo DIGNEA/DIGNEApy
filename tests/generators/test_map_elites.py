@@ -80,7 +80,7 @@ def test_map_elites_domain_grid(
     archive = result.instances
     assert map_elites.__str__() == expected_str
     assert map_elites.__repr__() == expected_repr
-
+    assert len(map_elites.archive) == len(archive)
     assert len(archive) != 0
     assert isinstance(archive, GridArchive)
     assert all(isinstance(i, Instance) for i in archive)
@@ -127,6 +127,7 @@ def test_map_elites_domain_cvt(domain_cls, portfolio, ranges):
     )
     result = map_elites()
     archive = result.instances
+    assert len(map_elites.archive) == len(archive)
     assert len(archive) != 0
     assert all(i.p >= 0 for i in archive)
     assert all(i.s == 0 for i in archive)

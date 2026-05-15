@@ -14,6 +14,7 @@ import argparse
 from functools import partial
 from multiprocessing.pool import Pool
 
+from digneapy import DESCRIPTORS
 from digneapy.domains import BPPDomain
 from digneapy.generators import Dominated
 from digneapy.solvers import best_fit, first_fit, next_fit, worst_fit
@@ -26,8 +27,8 @@ def generate_instances(
     pop_size: int,
     generations: int,
     k: int,
-    descriptor: str,
-    verbose,
+    descriptor: DESCRIPTORS,
+    verbose: bool,
 ):
     domain = BPPDomain(
         dimension=dimension,

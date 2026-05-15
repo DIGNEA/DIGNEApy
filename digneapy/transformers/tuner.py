@@ -68,6 +68,7 @@ try:
             )
 
             return solutions
+
 except Exception:
 
     class Tuner(RNG):

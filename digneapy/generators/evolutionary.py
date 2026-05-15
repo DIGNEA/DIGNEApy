@@ -166,7 +166,7 @@ class Evolutionary(BaseGenerator):
             # 3. Fitness --> oiffspring_fitness
             # 4. Descriptor --> descriptors
 
-            offspring = [
+            offspring = np.asarray([
                 Instance(
                     variables=offspring[i],
                     fitness=offspring_fitness[i],
@@ -177,7 +177,7 @@ class Evolutionary(BaseGenerator):
                     features=features[i] if features is not None else None,
                 )
                 for i in range(len(offspring))
-            ]
+            ])
             # Only the feasible instances are considered to be included
             # in the archive and the solution set.
             feasible_indeces = np.where(perf_biases > 0)[0]

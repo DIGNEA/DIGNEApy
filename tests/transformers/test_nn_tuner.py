@@ -11,6 +11,7 @@
 """
 
 import pytest
+
 pytest.skip(allow_module_level=True)
 
 torch = pytest.importorskip("torch", reason="PyTorch not available on this platform")
@@ -138,4 +139,3 @@ def test_hyper_cmaes_raises():
             workers=-1,
             ranges=(0.0, 0.0),
         )
-

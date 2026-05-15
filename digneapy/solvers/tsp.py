@@ -42,9 +42,9 @@ def greedy(problem: TSP, *args, **kwargs) -> list[Solution]:
     counter = Counter()
     selected: set[tuple[int, int]] = set()
 
-    ordered_edges = sorted([
-        (distances[i][j], i, j) for i in range(N) for j in range(i + 1, N)
-    ])
+    ordered_edges = sorted(
+        [(distances[i][j], i, j) for i in range(N) for j in range(i + 1, N)]
+    )
 
     length = 0.0
     for dist, i, j in ordered_edges:

@@ -43,7 +43,6 @@ class Problem(RandGen, Protocol):
             dtype (_type_, optional): Type of the variables. Defaults to np.float64.
             seed (int, optional): Seed for the RandGen. Defaults to 42.
         """
-        self._name = name
         self.__name__ = name
         self._dimension = dimension
         self._bounds = bounds

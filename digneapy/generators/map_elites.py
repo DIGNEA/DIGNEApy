@@ -10,7 +10,7 @@
 @Desc    :   None
 """
 
-from typing import Iterable, Optional
+from typing import Optional, Sequence
 
 import numpy as np
 
@@ -36,7 +36,7 @@ class MapElites(BaseGenerator):
     def __init__(
         self,
         domain: Domain,
-        portfolio: Iterable[Solver],
+        portfolio: Sequence[Solver],
         pop_size: int,
         archive: GridArchive | CVTArchive,
         mutation: Mutation,
@@ -53,7 +53,7 @@ class MapElites(BaseGenerator):
 
         Args:
             domain (Domain): Domain for which the instances are generated for.
-            portfolio (Iterable[SupportSolve]): Iterable item of callable objects that can evaluate a instance.
+            portfolio (Sequence[Solver]): Sequence item of callable objects that can evaluate a instance.
             pop_size (int): Number of instances in the population to evolve. Defaults to 100.
             archive (GridArchive | CVTArchive): Archive to store the instances. It can be a GridArchive or a CVTArchive.
             mutation (Mutation): Mutation operator

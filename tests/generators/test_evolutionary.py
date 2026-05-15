@@ -225,7 +225,7 @@ def test_dominated_evolutionary_generator_with_k_and_descriptor(k, descriptor):
         describe_by=descriptor,
     )
     portfolio_names = [s.__name__ for s in portfolio]
-    expected_str = f"pop_size={pop_size},gen={generations},domain={kp_domain.name},portfolio={portfolio_names}"
+    expected_str = f"pop_size={pop_size},gen={generations},domain={kp_domain.__name__},portfolio={portfolio_names}"
     assert deig.__str__() == f"Dominated({expected_str})"
     assert deig.__repr__() == f"Dominated<{expected_str}>"
     result = deig()

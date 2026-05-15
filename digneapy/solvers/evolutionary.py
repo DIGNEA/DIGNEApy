@@ -17,7 +17,7 @@ from concurrent.futures import ThreadPoolExecutor
 import numpy as np
 from deap import algorithms, base, creator, tools
 
-from digneapy._core import Direction, Problem, Solution, Solver
+from digneapy._core import Direction, Problem, RandGen, Solution, Solver
 
 
 def _gen_dignea_ind(icls, rng, size: int, min_value, max_value):
@@ -29,7 +29,7 @@ def _gen_dignea_ind(icls, rng, size: int, min_value, max_value):
     return chromosome
 
 
-class EA(Solver):
+class EA(RandGen, Solver):
     """Evolutionary Algorithm from DEAP for digneapy"""
 
     def __init__(
@@ -65,7 +65,7 @@ class EA(Solver):
             raise TypeError(
                 f"Direction not allowed. Please use a value of the class Direction({Direction.values()})"
             )
-
+        self.initialize_rng(seed=seed)
         self.direction = direction
         self._cx = cx
         self._mut = mut
@@ -75,7 +75,6 @@ class EA(Solver):
         self._generations = generations
         self._n_cores = n_cores if n_cores > 1 else 1
         self._toolbox = base.Toolbox()
-        self.initialize_rng(seed=seed)
         if direction == Direction.MINIMISE:
             self._toolbox.register(
                 "individual",

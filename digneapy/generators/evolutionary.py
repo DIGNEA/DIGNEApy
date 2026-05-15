@@ -10,7 +10,7 @@
 @Desc    :   None
 """
 
-from typing import Iterable, Optional
+from typing import Optional, Sequence
 
 import numpy as np
 
@@ -44,7 +44,7 @@ class Evolutionary(BaseGenerator):
     def __init__(
         self,
         domain: Domain,
-        portfolio: Iterable[Solver],
+        portfolio: Sequence[Solver],
         pop_size: int,
         novelty_approach: NS,
         performance_function: PerformanceFn = max_gap_target,
@@ -68,7 +68,7 @@ class Evolutionary(BaseGenerator):
 
         Args:
             domain (Domain): Domain for which the instances are generated for.
-            portfolio (Iterable[SupportSolve]): Iterable item of callable objects that can evaluate a instance.
+            portfolio (Sequence[Solver]): Sequence item of callable objects that can evaluate a instance.
             pop_size (int, optional): Number of instances in the population to evolve. Defaults to 100.
             novelty_approach (NS): Novelty Search strategy to produce diverse instances.
             performance_function (PerformanceFn, optional): Performance function to calculate the performance score. Defaults to max_gap_target.
@@ -281,7 +281,7 @@ class Dominated(Evolutionary):
     def __init__(
         self,
         domain: Domain,
-        portfolio: Iterable[Solver],
+        portfolio: Sequence[Solver],
         pop_size: int = 128,
         performance_function: PerformanceFn = max_gap_target,
         generations: int = 1000,
@@ -299,7 +299,7 @@ class Dominated(Evolutionary):
 
         Args:
             domain (Domain): Domain for which the instances are generated for.
-            portfolio (Iterable[SupportSolve]): Iterable item of callable objects that can evaluate a instance.
+            portfolio (Sequence[Solver]): Sequence item of callable objects that can evaluate a instance.
             pop_size (int, optional): Number of instances in the population to evolve. Defaults to 128.
             offspring_size (int, optional): Number of instances in the offspring population. Defaults to 128.
             generations (int, optional): Number of total generations to perform. Defaults to 1000.

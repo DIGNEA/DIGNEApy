@@ -14,11 +14,10 @@ from abc import abstractmethod
 from typing import Protocol
 
 from ._problem import Problem
-from ._protocols import RandGen
 from ._solution import Solution
 
 
-class Solver(RandGen, Protocol):
+class Solver(Protocol):
     """Solver is any callable type that receives a Problem (P)
     as argument and returns a list of Solution objects
     """

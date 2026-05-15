@@ -24,7 +24,7 @@ from .._core._protocols import RandGen
 from ._grid_archive import GridArchive
 
 
-class CVTArchive(GridArchive, RandGen):
+class CVTArchive(RandGen, GridArchive):
     """An Archive that divides a high-dimensional measure space into k homogeneous geometric regions.
     Based on the paper from Vassiliades et al (2018) <https://ieeexplore.ieee.org/document/8000667>
     > The computational complexity of the method we provide for constructing the CVT (in Algorithm 1) is O(ndki),
@@ -78,10 +78,14 @@ class CVTArchive(GridArchive, RandGen):
             raise ValueError(
                 f"The number of samples (n_samples = {n_samples}) must be >= 1 and >= regions (k = {k})"
             )
-
         GridArchive.__init__(
-            self, dimensions=(1,) * len(ranges), ranges=ranges, dtype=dtype
+            self,
+            dimensions=(1,) * len(ranges),
+            ranges=ranges,
+            dtype=dtype,
         )
+        # Force initialize_rng to use the generator in the __init__
+        # Other classes uses the hook
         self.initialize_rng(seed=seed)
         self._dimensions = len(ranges)
         ranges = list(zip(*ranges))
@@ -130,8 +134,8 @@ class CVTArchive(GridArchive, RandGen):
             # Generate centroids
             if self._samples is None:
                 # Generate uniform samples if not given
-                rng = np.random.default_rng(seed=self._seed)
-                self._samples = rng.uniform(
+
+                self._samples = self._rng.uniform(
                     low=self._lower_bounds,
                     high=self._upper_bounds,
                     size=(self._n_samples, self._dimensions),

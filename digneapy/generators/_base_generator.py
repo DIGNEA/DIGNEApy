@@ -10,10 +10,10 @@
 @Desc    :   None
 """
 
-from abc import ABC, abstractmethod
+from abc import abstractmethod
 from dataclasses import dataclass
 from operator import attrgetter
-from typing import Iterable, List, Optional, Tuple
+from typing import List, Optional, Protocol, Sequence, Tuple
 
 import numpy as np
 import pandas as pd
@@ -51,7 +51,7 @@ class GenResult:
             self.metrics = Statistics()(self.instances, as_series=True)
 
 
-class BaseGenerator(ABC, RandGen):
+class BaseGenerator(RandGen, Protocol):
     """Abstract base class for all Quality-Diversity generators.
 
     Handles:
@@ -59,28 +59,35 @@ class BaseGenerator(ABC, RandGen):
     - Descriptor computation
     - Result formatting
     - Statistics tracking
-
-    Subclasses implement:
-    - generate_population()
-    - _generate_offspring()
     """
+
+    _domain: Domain
+    _portfolio: Sequence[Solver]
+    _pop_size: np.uint32
+    _population: List
+    _performance_fn: PerformanceFn
+    _describe_by: DESCRIPTORS
+    _generations: np.uint32
+    _repetitions: np.uint16
+    _rng: np.random.Generator
+    _logbook: Logbook
 
     def __init__(
         self,
         domain: Domain,
-        portfolio: Iterable[Solver],
-        pop_size: int,
+        portfolio: Sequence[Solver],
+        pop_size: np.uint32,
         performance_function: PerformanceFn = max_gap_target,
         describe_by: DESCRIPTORS = "features",
-        generations: int = 1_000,
-        repetitions: int = 1,
+        generations: np.uint32 = np.uint32(1_000),
+        repetitions: np.uint16 = np.uint16(1),
         seed: int = 42,
     ):
         """Creates an instance of BaseGenerator with common attributes for generators
 
         Args:
             domain (Domain): Domain for which the instances are generated for.
-            portfolio (Iterable[SupportSolve]): Iterable item of callable objects that can evaluate a instance.
+            portfolio (Sequence[SupportSolve]): Sequence item of callable objects that can evaluate a instance.
             pop_size (int, optional): Number of instances in the population to evolve. Defaults to 100.
             performance_function (PerformanceFn, optional): Performance function to calculate the performance score. Defaults to max_gap_target.
             describe_by (DESCRIPTORS, optional): _Descriptor used to calculate the diversity. The options available are defined in the dictionary digneapy.DESCRIPTORS. Defaults to "features".
@@ -89,6 +96,7 @@ class BaseGenerator(ABC, RandGen):
             seed (int, optional): Seed for the RNG protocol. Defaults to 42.
 
         """
+        self.initialize_rng(seed)
         self._domain = domain
         self._portfolio = tuple(portfolio)
         self._pop_size = pop_size
@@ -97,9 +105,7 @@ class BaseGenerator(ABC, RandGen):
         self._describe_by: DESCRIPTORS = describe_by
         self._generations = generations
         self._repetitions = repetitions
-        self._rng = np.random.default_rng(seed)
         self._logbook = Logbook()
-        self.initialize_rng(seed=seed)
 
     @property
     def log(self) -> Logbook:
@@ -107,7 +113,7 @@ class BaseGenerator(ABC, RandGen):
 
     def __str__(self):
         port_names = [s.__name__ for s in self._portfolio]
-        domain_name = self._domain.name if self._domain is not None else "None"
+        domain_name = self._domain.__name__ if self._domain is not None else "None"
         return f"{self.__class__.__name__}(pop_size={self._pop_size},gen={self._generations},domain={domain_name},portfolio={port_names!r})"
 
     def __repr__(self) -> str:

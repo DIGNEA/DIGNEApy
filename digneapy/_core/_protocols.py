@@ -14,7 +14,7 @@ from abc import abstractmethod
 from typing import Optional, Protocol
 
 import numpy as np
-from numpy.random import Generator
+from numpy.random import Generator, SeedSequence
 
 from ._types import IndType
 
@@ -24,10 +24,12 @@ class RandGen(Protocol):
 
     _rng: Generator
     _seed: int | None
+    _seed_sequence: SeedSequence
 
     def initialize_rng(self, seed: Optional[int] = None):
         self._seed = seed
-        self._rng = np.random.default_rng()
+        self._seed_sequence = np.random.SeedSequence(self._seed)
+        self._rng = np.random.default_rng(self._seed_sequence)
 
 
 class Transformer(Protocol):
@@ -35,6 +37,8 @@ class Transformer(Protocol):
     A Transformer is any callable type that receives a sequence and transforms it
     to other sequence.
     """
+
+    _name: str
 
     def __init__(self, name: str):
         self._name = name

@@ -137,7 +137,6 @@ class BPPDomain(Domain):
                 f"Expected min_i to be less than max_i got ({min_i}, {max_i})"
             )
 
-        self._dimension = dimension
         self._min_i = min_i
         self._max_i = max_i
         self._max_capacity = max_capacity
@@ -155,9 +154,8 @@ class BPPDomain(Domain):
             self._capacity_approach = "fixed"
         else:
             self._capacity_approach = capacity_approach
-
         bounds = [(1.0, self._max_capacity)] + [
-            (self._min_i, self._max_i) for _ in range(self._dimension)
+            (self._min_i, self._max_i) for _ in range(dimension)
         ]
         super().__init__(dimension=dimension, bounds=bounds, name="BPP", seed=seed)
 

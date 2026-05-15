@@ -45,7 +45,7 @@ def initialised_domain():
 
 
 def test_fixtured_domain_attrs(initialised_domain):
-    assert initialised_domain.name == "Domain"
+    assert initialised_domain.__name__ == "Domain"
     assert initialised_domain.dimension == 100
     assert initialised_domain.bounds == [(0.0, 1000.0) for _ in range(100)]
     assert len(initialised_domain) == initialised_domain.dimension

@@ -40,14 +40,12 @@ class Domain(RandGen, Protocol):
         *args,
         **kwargs,
     ):
-        self.name = name
+        self.initialize_rng(seed=seed)
         self.__name__ = name
         self._dimension = dimension
         self._bounds = bounds
         self._dtype = dtype
         self.feat_names = feat_names if feat_names else list()
-        self.initialize_rng(seed=seed)
-
         if len(self._bounds) != 0:
             ranges = list(zip(*bounds))
             self._lbs = np.asarray(ranges[0], dtype=dtype)

@@ -36,15 +36,14 @@ try:
             seed: int = 42,
             workers: int = 1,
         ):
+            self.initialize_rng(seed)
             self._dimension = dimension
             self._bounds = Bounds(
                 [ranges[0]] * self._dimension, [ranges[1]] * self._dimension
             )
             self._pop_size = lambda_
             self._max_evals = evaluations
-            self._seed = seed
             self.workers = workers
-            self.initialize_rng(seed=seed)
 
         def __call__(self, eval_fn: Callable):
             print(
@@ -112,13 +111,12 @@ except Exception:
             Raises:
                 ValueError: If eval_fn is None or if direction is not a valid Direction.
             """
+            self.initialize_rng(seed)
             self._dimension = dimension
 
             self._pop_size = lambda_
             self._max_evals = evaluations
-            self._seed = seed
             self.workers = workers
-            self.initialize_rng(seed=seed)
 
             self._centroid = [0.0] * self._dimension
             self._sigma = 1.0

@@ -168,7 +168,6 @@ class KnapsackDomain(Domain):
             self._capacity_approach = "evolved"
         else:
             self._capacity_approach = capacity_approach
-
         bounds = [(1.0, self.max_capacity)] + [
             (min_w, max_w) if i % 2 == 0 else (min_p, max_p)
             for i in range(2 * dimension)

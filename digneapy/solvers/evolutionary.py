@@ -114,8 +114,9 @@ class EA(Solver):
         self._logbook = tools.Logbook()
         self._best_found = Solution()
 
-        self._name = f"EA_PS_{self._pop_size}_CXPB_{self._cxpb}_MUTPB_{self._mutpb}"
-        self.__name__ = self._name
+        self.__name__ = (
+            f"EA_PS_{self._pop_size}_CXPB_{self._cxpb:.1f}_MUTPB_{self._mutpb:.1f}"
+        )
 
         if self._n_cores > 1:
             self._pool = ThreadPoolExecutor(max_workers=self._n_cores)

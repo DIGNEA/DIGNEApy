@@ -39,9 +39,8 @@ def default_large_knap():
 
 
 def test_ea_with_def_kp(default_instance):
-    generations = 100
-    pop_size = 10
-
+    generations = np.uint32(100)
+    pop_size = np.uint32(10)
     ea = EA(
         direction=Direction.MAXIMISE,
         dim=len(default_instance),
@@ -60,14 +59,13 @@ def test_ea_with_def_kp(default_instance):
     assert isinstance(ea._best_found, Solution)
     assert ea._best_found.fitness <= 50  # 50 Is the optimal
     assert ea.__name__ == "EA_PS_10_CXPB_0.6_MUTPB_0.3"
-    assert ea._name == "EA_PS_10_CXPB_0.6_MUTPB_0.3"
     # There are multiple options to reach the maximum fitness
     # So we dont compare the chromosomes
 
 
 def test_ea_solves_sphere():
-    generations = 100
-    pop_size = 10
+    generations = np.uint32(100)
+    pop_size = np.uint32(10)
 
     ea = EA(
         direction=Direction.MINIMISE,
@@ -87,8 +85,8 @@ def test_ea_solves_sphere():
 
 
 def test_ea_supports_multiprocess():
-    generations = 100
-    pop_size = 10
+    generations = np.uint32(100)
+    pop_size = np.uint32(10)
 
     ea = EA(
         direction=Direction.MINIMISE,
@@ -97,7 +95,7 @@ def test_ea_supports_multiprocess():
         max_g=1,
         generations=generations,
         pop_size=pop_size,
-        n_cores=4,
+        n_cores=np.uint8(4),
     )
     population = ea(benchmarks.sphere)
     assert len(population) == pop_size + 1
@@ -115,8 +113,8 @@ def test_ea_raises_problem():
     set any problem to evaluate
     """
     with pytest.raises(Exception):
-        generations = 100
-        pop_size = 10
+        generations = np.uint32(100)
+        pop_size = np.uint32(10)
         ea = EA(
             direction=Direction.MAXIMISE,
             dim=100,
@@ -133,8 +131,8 @@ def test_ea_raises_direction(default_instance):
     Raises an exception because the direction is not allowed
     """
     with pytest.raises(Exception):
-        generations = 100
-        pop_size = 10
+        generations = np.uint32(100)
+        pop_size = np.uint32(10)
         _ = EA(
             direction="ANY",
             dim=len(default_instance),

@@ -15,7 +15,7 @@ import itertools
 from functools import partial
 from multiprocessing import Pool
 
-from digneapy import DESCRIPTORS, NS, Archive
+from digneapy import NS, Archive, DescriptorKey, DescriptorPipeline
 from digneapy.domains import KnapsackDomain
 from digneapy.generators import Evolutionary
 from digneapy.operators import generational_replacement
@@ -36,10 +36,10 @@ def generate_instances(
     archive_threshold: float,
     ss_threshold: float,
     k: int,
-    descriptor: DESCRIPTORS,
-    verbose,
+    descriptor: DescriptorKey,
+    verbose: bool,
 ):
-    domain = KnapsackDomain(dimension, capacity_approach="percentage")
+    domain = KnapsackDomain(dimension)
     eig = Evolutionary(
         pop_size=pop_size,
         generations=generations,
@@ -48,8 +48,9 @@ def generate_instances(
         novelty_approach=NS(Archive(threshold=archive_threshold), k=k),
         solution_set=Archive(threshold=ss_threshold),
         repetitions=1,
-        describe_by=descriptor,
+        descriptor_pipe=DescriptorPipeline(descriptor),
         replacement=generational_replacement,
+        seed=0xFDE23DD,
     )
 
     result = eig(verbose=verbose)
@@ -71,7 +72,11 @@ if __name__ == "__main__":
         default=50,
     )
     parser.add_argument(
-        "-d", "--descriptor", type=str, required=True, help="Descriptor to use."
+        "-d",
+        "--descriptor",
+        type=str,
+        required=True,
+        help="Descriptor to use.",
     )
     parser.add_argument(
         "-k",
@@ -134,9 +139,9 @@ if __name__ == "__main__":
     verbose = args.verbose
     portfolios = [
         [default_kp, map_kp, miw_kp, mpw_kp],
-        [map_kp, default_kp, miw_kp, mpw_kp],
-        [miw_kp, default_kp, map_kp, mpw_kp],
-        [mpw_kp, default_kp, map_kp, miw_kp],
+        # [map_kp, default_kp, miw_kp, mpw_kp],
+        # [miw_kp, default_kp, map_kp, mpw_kp],
+        # [mpw_kp, default_kp, map_kp, miw_kp],
     ]
 
     with Pool(1) as pool:

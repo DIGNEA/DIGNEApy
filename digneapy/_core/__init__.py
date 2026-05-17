@@ -19,6 +19,12 @@ from ._protocols import RandGen, Transformer
 from ._solution import Solution
 from ._solver import Solver
 from ._types import Direction, IndType
+from .descriptors import (
+    DescriptorFn,
+    DescriptorKey,
+    DescriptorPipeline,
+    descriptors_registry,
+)
 
 __all__ = [
     "Domain",
@@ -36,4 +42,8 @@ __all__ = [
     "Logbook",
     "RandGen",
     "Transformer",
+    "DescriptorKey",
+    "DescriptorFn",
+    "DescriptorPipeline",
+    "descriptors_registry",
 ]

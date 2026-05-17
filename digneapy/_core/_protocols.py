@@ -11,7 +11,7 @@
 """
 
 from abc import abstractmethod
-from typing import Optional, Protocol
+from typing import Optional, Protocol, runtime_checkable
 
 import numpy as np
 from numpy.random import Generator, SeedSequence
@@ -32,6 +32,7 @@ class RandGen(Protocol):
         self._rng = np.random.default_rng(self._seed_sequence)
 
 
+@runtime_checkable
 class Transformer(Protocol):
     """Protocol to type check all the transformer types in digneapy.
     A Transformer is any callable type that receives a sequence and transforms it

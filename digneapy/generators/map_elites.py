@@ -10,7 +10,7 @@
 @Desc    :   None
 """
 
-from typing import Optional, Sequence
+from typing import Sequence
 
 import numpy as np
 
@@ -18,9 +18,8 @@ from .._core import (
     Domain,
     Instance,
     Solver,
-    Transformer,
 )
-from .._core.descriptors import DESCRIPTORS, describe
+from .._core.descriptors import DescriptorPipeline
 from .._core.scores import PerformanceFn, max_gap_target
 from ..archives import CVTArchive, GridArchive
 from ..operators import (
@@ -41,8 +40,7 @@ class MapElites(BaseGenerator):
         archive: GridArchive | CVTArchive,
         mutation: Mutation,
         repetitions: int,
-        describe_by: DESCRIPTORS = "instance",
-        transformer: Optional[Transformer] = None,
+        describe_pipe: DescriptorPipeline = DescriptorPipeline("features"),
         performance_function: PerformanceFn = max_gap_target,
         generations: int = 1_000,
         seed: int = 42,
@@ -58,8 +56,7 @@ class MapElites(BaseGenerator):
             archive (GridArchive | CVTArchive): Archive to store the instances. It can be a GridArchive or a CVTArchive.
             mutation (Mutation): Mutation operator
             repetitions (int):  Number times a solver in the portfolio must be run over the same instance. Defaults to 1.
-            describe_by (str): Descriptor used to calculate the diversity. The options available are defined in the dictionary digneapy.qd.descriptor_strategies.
-            transformer (callable, optional): Define a strategy to transform the high-dimensional descriptors to low-dimensional.Defaults to None.
+            describe_pipe (str): Descriptor used to calculate the diversity. The options available are defined in the dictionary digneapy.qd.descriptor_strategies.
             performance_function (PerformanceFn, optional): Performance function to calculate the performance score. Defaults to max_gap_target.
             generations (int): Number of generations to perform. Defaults to 1000.
             seed (int, optional): Seed for the RNG protocol. Defaults to 42.
@@ -72,7 +69,7 @@ class MapElites(BaseGenerator):
             portfolio,
             pop_size,
             performance_function,
-            describe_by,
+            describe_pipe,
             generations,
             repetitions,
             seed,
@@ -84,7 +81,6 @@ class MapElites(BaseGenerator):
 
         self._archive = archive
         self._mutation = mutation
-        self._transformer = transformer
 
     @property
     def archive(self):
@@ -93,13 +89,7 @@ class MapElites(BaseGenerator):
     def __call__(self, verbose: bool = False) -> GenResult:
         instances = self._domain.generate_instances(n=self._pop_size)
         perf_biases, portfolio_scores = self._evaluate_population(instances)
-        descriptors, features = describe(
-            population=instances,
-            key=self._describe_by,
-            scores=portfolio_scores,
-            domain=self._domain,
-            transformer=self._transformer,
-        )
+        descriptors = self._descriptor_pipe(instances, portfolio_scores, self._domain)
 
         # Here we do not care for p >= 0. We are starting the archive
         # Must be removed later on
@@ -115,12 +105,8 @@ class MapElites(BaseGenerator):
                 parents, self._domain._lbs, ub=self._domain._ubs
             )
             perf_biases, portfolio_scores = self._evaluate_population(offspring)
-            descriptors, features = describe(
-                population=offspring,
-                key=self._describe_by,
-                scores=portfolio_scores,
-                domain=self._domain,
-                transformer=self._transformer,
+            descriptors = self._descriptor_pipe(
+                offspring, portfolio_scores, self._domain
             )
 
             offspring_population = [
@@ -130,7 +116,7 @@ class MapElites(BaseGenerator):
                     descriptor=descriptors[i],
                     portfolio_scores=portfolio_scores[i],
                     p=perf_biases[i],
-                    features=features[i] if features is not None else None,
+                    # Todo: Consider remove features attr features=features[i] if features is not None else None,
                 )
                 for i in range(self._pop_size)
             ]

@@ -18,6 +18,8 @@ from typing import List, Optional, Protocol, Sequence, Tuple
 import numpy as np
 import pandas as pd
 
+from digneapy._core.descriptors import DescriptorPipeline
+
 from .._core import (
     Domain,
     Instance,
@@ -26,7 +28,6 @@ from .._core import (
     Solver,
     Statistics,
 )
-from .._core.descriptors import DESCRIPTORS
 from .._core.scores import PerformanceFn, max_gap_target
 from ..archives import CVTArchive, GridArchive
 
@@ -66,7 +67,7 @@ class BaseGenerator(RandGen, Protocol):
     _pop_size: np.uint32
     _population: List
     _performance_fn: PerformanceFn
-    _describe_by: DESCRIPTORS
+    _descriptor_pipe: DescriptorPipeline
     _generations: np.uint32
     _repetitions: np.uint16
     _rng: np.random.Generator
@@ -78,7 +79,7 @@ class BaseGenerator(RandGen, Protocol):
         portfolio: Sequence[Solver],
         pop_size: np.uint32,
         performance_function: PerformanceFn = max_gap_target,
-        describe_by: DESCRIPTORS = "features",
+        descriptor_pipe: DescriptorPipeline = DescriptorPipeline("features"),
         generations: np.uint32 = np.uint32(1_000),
         repetitions: np.uint16 = np.uint16(1),
         seed: int = 42,
@@ -102,7 +103,7 @@ class BaseGenerator(RandGen, Protocol):
         self._pop_size = pop_size
         self._population = []
         self._performance_fn = performance_function
-        self._describe_by: DESCRIPTORS = describe_by
+        self._descriptor_pipe = descriptor_pipe
         self._generations = generations
         self._repetitions = repetitions
         self._logbook = Logbook()

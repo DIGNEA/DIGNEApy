@@ -14,15 +14,15 @@ from typing import Optional, Sequence
 
 import numpy as np
 
+from digneapy._core.descriptors import DescriptorPipeline
+
 from .._core import (
     NS,
     Domain,
     Instance,
     Solver,
-    Transformer,
     dominated_novelty_search,
 )
-from .._core.descriptors import DESCRIPTORS, describe
 from .._core.scores import PerformanceFn, max_gap_target
 from ..archives import Archive
 from ..operators import (
@@ -51,8 +51,7 @@ class Evolutionary(BaseGenerator):
         generations: int = 1000,
         repetitions: int = 1,
         solution_set: Optional[Archive] = None,
-        describe_by: DESCRIPTORS = "features",
-        transformer: Optional[Transformer] = None,
+        descriptor_pipe: DescriptorPipeline = DescriptorPipeline("features"),
         cxrate: float = 0.5,
         mutrate: float = 0.8,
         crossover: Crossover = uniform_crossover,
@@ -76,7 +75,6 @@ class Evolutionary(BaseGenerator):
             repetitions (int, optional): Number times a solver in the portfolio must be run over the same instance. Defaults to 1.
             solution_set (Optional[Archive], optional): Solution set to store the instances. Defaults to None.
             describe_by (DESCRIPTORS, optional): _Descriptor used to calculate the diversity. The options available are defined in the dictionary digneapy.DESCRIPTORS. Defaults to "features".
-            transformer (callable, optional): Define a strategy to transform the high-dimensional descriptors to low-dimensional.Defaults to None.
             cxrate (float, optional): Crossover rate. Defaults to 0.5.
             mutrate (float, optional): Mutation rate. Defaults to 0.8.
             crossover (Crossover, optional): Crossover operator. Defaults to uniform_crossover.
@@ -96,7 +94,7 @@ class Evolutionary(BaseGenerator):
             portfolio,
             pop_size,
             performance_function,
-            describe_by,
+            descriptor_pipe,
             generations,
             repetitions,
             seed,
@@ -117,7 +115,6 @@ class Evolutionary(BaseGenerator):
         if solution_set is not None:
             self._ns_solution_set = NS(archive=solution_set, k=1)
 
-        self._transformer = transformer
         self.offspring_size = self._pop_size
         self.cxrate = cxrate
         self.mutrate = mutrate
@@ -138,24 +135,17 @@ class Evolutionary(BaseGenerator):
 
         self._population = self._domain.generate_instances(n=self._pop_size)
         perf_biases, portfolio_scores = self._evaluate_population(self._population)
-        descriptors, features = describe(
-            population=self._population,
-            key=self._describe_by,
-            scores=portfolio_scores,
-            domain=self._domain,
-            transformer=self._transformer,
+        descriptors = self._descriptor_pipe(
+            population=self._population, scores=portfolio_scores, domain=self._domain
         )
         for pgen in range(self._generations):
             offspring = self.generate(self._pop_size)
             perf_biases, portfolio_scores = self._evaluate_population(offspring)
-            descriptors, features = describe(
+            descriptors = self._descriptor_pipe(
                 population=offspring,
-                key=self._describe_by,
                 scores=portfolio_scores,
                 domain=self._domain,
-                transformer=self._transformer,
             )
-
             novelty_scores = self._novelty_search(instances_descriptors=descriptors)
             offspring_fitness = self._compute_fitness(perf_biases, novelty_scores)
 
@@ -173,7 +163,7 @@ class Evolutionary(BaseGenerator):
                     portfolio_scores=portfolio_scores[i],
                     p=perf_biases[i],
                     s=novelty_scores[i],
-                    features=features[i] if features is not None else None,
+                    # Todo: Consider remove features as explicit attribute features=features[i] if features is not None else None,
                 )
                 for i in range(len(offspring))
             ]
@@ -287,8 +277,7 @@ class Dominated(Evolutionary):
         generations: int = 1000,
         repetitions: int = 1,
         k: int = 15,
-        describe_by: DESCRIPTORS = "features",
-        transformer: Optional[Transformer] = None,
+        descriptor_pipe: DescriptorPipeline = DescriptorPipeline("features"),
         cxrate: float = 0.5,
         mutrate: float = 0.8,
         crossover: Crossover = uniform_crossover,
@@ -305,7 +294,6 @@ class Dominated(Evolutionary):
             generations (int, optional): Number of total generations to perform. Defaults to 1000.
             k (int, optional): Number of neighbours to calculate the sparseness. Defaults to 15.
             descriptor_strategy (str, optional): Descriptor used to calculate the diversity. The options available are defined in the dictionary digneapy.qd.descriptor_strategies. Defaults to "features".
-            transformer (callable, optional): Define a strategy to transform the high-dimensional descriptors to low-dimensional.Defaults to None.
             repetitions (int, optional): Number times a solver in the portfolio must be run over the same instance. Defaults to 1.
             cxrate (float, optional): Crossover rate. Defaults to 0.5.
             mutrate (float, optional): Mutation rate. Defaults to 0.8.
@@ -322,13 +310,12 @@ class Dominated(Evolutionary):
             performance_function=performance_function,
             generations=generations,
             repetitions=repetitions,
-            transformer=transformer,
             cxrate=cxrate,
             mutrate=mutrate,
             crossover=crossover,
             mutation=mutation,
             selection=selection,
-            describe_by=describe_by,
+            descriptor_pipe=descriptor_pipe,
         )
         self.k = k
         self.offspring_size = pop_size
@@ -342,27 +329,24 @@ class Dominated(Evolutionary):
             )
         self._population = self._domain.generate_instances(n=self._pop_size)
         perf_biases, portfolio_scores = self._evaluate_population(self._population)
-        descriptors, features = describe(
+        descriptors = self._descriptor_pipe(
             population=self._population,
-            key=self._describe_by,
             scores=portfolio_scores,
             domain=self._domain,
-            transformer=self._transformer,
         )
 
-        if features is not None:
-            combined_features = np.empty(
-                shape=(self._pop_size * 2, features.shape[1]), dtype=np.float32
-            )
+        # if features is not None:
+        #     combined_features = np.empty(
+        #         shape=(self._pop_size * 2, features.shape[1]), dtype=np.float32
+        #     )
         for pgen in range(self._generations):
             offspring = self.generate(self._pop_size)
             off_perf_biases, off_portfolio_scores = self._evaluate_population(offspring)
-            off_descriptors, off_features = describe(
+
+            off_descriptors = self._descriptor_pipe(
                 population=offspring,
-                key=self._describe_by,
                 scores=off_portfolio_scores,
                 domain=self._domain,
-                transformer=self._transformer,
             )
             combined_descriptors = np.concatenate(
                 (descriptors, off_descriptors), axis=0
@@ -376,8 +360,8 @@ class Dominated(Evolutionary):
             genotypes = np.concatenate(
                 (np.asarray(self._population, copy=True), offspring), axis=0
             )
-            if features is not None:
-                combined_features = np.concatenate((features, off_features), axis=0)
+            # if features is not None:
+            #     combined_features = np.concatenate((features, off_features), axis=0)
 
             (
                 sorted_descriptors,
@@ -399,8 +383,8 @@ class Dominated(Evolutionary):
             # Track from the combined arrays based on the indexing
             portfolio_scores = combined_port_scores[sorted_indexing]
             genotypes = genotypes[sorted_indexing]
-            if features is not None:
-                features = combined_features[sorted_indexing]
+            # if features is not None:
+            #     features = combined_features[sorted_indexing]
             # Both population and offspring are used in the replacement
             # Record the stats and update the performed gens
             self._population = [
@@ -410,7 +394,7 @@ class Dominated(Evolutionary):
                     descriptor=descriptors[i],
                     portfolio_scores=portfolio_scores[i],
                     p=perf_biases[i],
-                    features=features[i] if features is not None else (),
+                    # Todo: Consider remove explicit features attr features=features[i] if features is not None else (),
                 )
                 for i in range(self._pop_size)
             ]

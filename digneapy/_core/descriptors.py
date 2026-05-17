@@ -10,7 +10,8 @@
 @Desc    :   None
 """
 
-from typing import Literal, Optional, Protocol, Sequence, Tuple
+from functools import wraps
+from typing import Callable, Optional, Protocol, Sequence
 
 import numpy as np
 
@@ -18,65 +19,120 @@ from ._domain import Domain
 from ._instance import Instance
 from ._protocols import Transformer
 
-DESCRIPTORS = Literal["features", "performance", "instance"]
+type DescriptorKey = str
+
+descriptors_registry: dict[DescriptorKey, DescriptorFn] = {}
 
 
-class Descriptable(Protocol):
+class DescriptorFn(Protocol):
     """Defines the Protocol that all descriptable functions must follow"""
 
     def __call__(
         self,
-        population: np.ndarray,
-        key: DESCRIPTORS,
-        scores: Optional[np.ndarray] = None,
-        domain: Optional[Domain] = None,
-        transformer: Optional[Transformer] = None,
-    ) -> Tuple[np.ndarray, Optional[np.ndarray]]: ...
+        population: np.ndarray | Sequence[Instance],
+        scores: Optional[np.ndarray],
+        domain: Optional[Domain],
+        *args,
+        **kwargs,
+    ) -> np.ndarray: ...
 
 
-def describe(
-    population: np.ndarray | Sequence[Instance],
-    key: DESCRIPTORS,
-    scores: Optional[np.ndarray] = None,
-    domain: Optional[Domain] = None,
-    transformer: Optional[Transformer] = None,
-) -> Tuple[np.ndarray, Optional[np.ndarray]]:
-    """Updates the descriptors of the population of instances
+def register_descriptor(key: str) -> Callable[[DescriptorFn], DescriptorFn]:
+    """Registers a new descriptor strategy
 
     Args:
-        population (np.ndarray): Population of instances to describe
-        key (Literal[&quot;features&quot;, &quot;performance&quot;, &quot;instance&quot;]): Type of descriptor to extract
-        scores (Optional[np.ndarray], optional): Scores of the solvers. Defaults to None.
-        domain (Optional[Domain], optional): Domain to extract the features if needed. Defaults to None.
-        transformer (Optional[Transformer], optional): Transformer to transform the descriptor after extracted. Defaults to None.
-
-    Raises:
-        ValueError: If the key is not features, performance or instance
-        ValueError: If key is features and domain is None
-        ValueError: If key is performance and scores is None
+        key (str): Key to store the strategy
 
     Returns:
-        Tuple[np.ndarray, Optional[np.ndarray]]: Descriptors and features if necessary
+        Callable[[DescriptorFn], DescriptorFn]: Newly registered strategy
     """
-    if key not in ("features", "performance", "instance"):
-        raise ValueError("Expected key to be features, performance or instance")
 
+    def decorator(fn: DescriptorFn) -> DescriptorFn:
+        @wraps(fn)
+        def wrapper(
+            population: np.ndarray | Sequence[Instance],
+            scores: Optional[np.ndarray],
+            domain: Optional[Domain],
+            *args,
+            **kwargs,
+        ) -> np.ndarray:
+            return fn(population, scores, domain, *args, **kwargs)
+
+        descriptors_registry[key] = wrapper
+        return wrapper
+
+    return decorator
+
+
+class DescriptorPipeline:
+    """Pipeline to transform descriptors with several models"""
+
+    def __init__(self, key: DescriptorKey, *transformers: Transformer):
+        if key not in descriptors_registry:
+            raise KeyError(
+                f"Unknown descriptor key {key}. Registered keys are: {descriptors_registry.keys()}"
+            )
+        if any(isinstance(t, Transformer) for t in transformers):
+            raise TypeError("All transformers must implement the Transformer Protocol.")
+        self._key = key
+        self._transformers = transformers
+
+    def __call__(
+        self,
+        population: np.ndarray | Sequence[Instance],
+        scores: Optional[np.ndarray],
+        domain: Optional[Domain],
+        *args,
+        **kwargs,
+    ) -> np.ndarray:
+        descriptors = descriptors_registry[self._key](
+            population, scores, domain, *args, **kwargs
+        )
+        for transfomer in self._transformers:
+            descriptors = transfomer(descriptors)
+        return descriptors
+
+    def __repr__(self) -> str:
+        steps = [self._key] + [
+            getattr(t, "__name__", repr(t)) for t in self._transformers
+        ]
+        return f"DescriptorPipeline({' -> '.join(steps)})"
+
+
+@register_descriptor(key="features")
+def describe_features(
+    population: np.ndarray | Sequence[Instance],
+    scores: Optional[np.ndarray],
+    domain: Optional[Domain],
+    *args,
+    **kwargs,
+) -> np.ndarray:
+    if domain is None:
+        raise ValueError("Domain cannot be None when the key is features")
     descriptors = np.empty(len(population))
-    features = None
+    descriptors = domain.extract_features(population)
+    return descriptors
 
-    if key == "features":
-        if domain is None:
-            raise ValueError("Domain cannot be None when the key is features")
-        descriptors = domain.extract_features(population)
-        features = descriptors.copy()
-    elif key == "performance":
-        if scores is None:
-            raise ValueError("Scores cannot be None when the key is performance")
-        descriptors = np.mean(scores, axis=2)
-    elif key == "instance":
-        descriptors = np.asarray([*population])
 
-    if transformer is not None:
-        descriptors = transformer(descriptors)
+@register_descriptor(key="performance")
+def describe_performance(
+    population: np.ndarray | Sequence[Instance],
+    scores: Optional[np.ndarray],
+    domain: Optional[Domain],
+    *args,
+    **kwargs,
+) -> np.ndarray:
+    if scores is None:
+        raise ValueError("Scores cannot be None when the key is performance")
+    return np.mean(scores, axis=2)
 
-    return (descriptors, features)
+
+@register_descriptor(key="instance")
+def describe_instance(
+    population: np.ndarray | Sequence[Instance],
+    scores: Optional[np.ndarray],
+    domain: Optional[Domain],
+    *args,
+    **kwargs,
+) -> np.ndarray:
+    return np.asarray([*population])

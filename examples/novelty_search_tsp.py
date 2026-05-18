@@ -13,9 +13,11 @@
 import argparse
 import itertools
 from functools import partial
-from multiprocessing.pool import Pool
+from multiprocessing import Pool, current_process
 
-from digneapy import DESCRIPTORS, NS, Archive
+import numpy as np
+
+from digneapy import NS, Archive, DescriptorKey, DescriptorPipeline
 from digneapy.domains import TSPDomain
 from digneapy.generators import Evolutionary
 from digneapy.operators import generational_replacement
@@ -31,7 +33,8 @@ def generate_instances(
     archive_threshold: float,
     ss_threshold: float,
     k: int,
-    descriptor: DESCRIPTORS,
+    descriptor: DescriptorKey,
+    seed: int | np.random.SeedSequence,
     verbose,
 ):
     domain = TSPDomain(dimension=dimension)
@@ -43,7 +46,8 @@ def generate_instances(
         novelty_approach=NS(Archive(threshold=archive_threshold), k=k),
         solution_set=Archive(threshold=ss_threshold),
         repetitions=1,
-        describe_by=descriptor,
+        descriptor_pipe=DescriptorPipeline(descriptor),
+        seed=seed,
         replacement=generational_replacement,
     )
 
@@ -133,7 +137,11 @@ if __name__ == "__main__":
     print(
         f"Running with parameters:\ndimension={dimension}, k={k}, archive_threshold={archive_threshold}, solution_set_threshold={solution_set_threshold}, population_size={population_size}, generations={generations}, descriptor={descriptor}, verbose={verbose}"
     )
-    with Pool(4) as pool:
+    root_sequence = np.random.SeedSequence(1342)
+    N_WORKERS = len(portfolios)
+    workers_seed = root_sequence.spawn(N_WORKERS)
+    with Pool(N_WORKERS) as pool:
+        index = current_process()._identity[0]
         results = pool.map(
             partial(
                 generate_instances,
@@ -144,6 +152,7 @@ if __name__ == "__main__":
                 ss_threshold=solution_set_threshold,
                 k=k,
                 descriptor=descriptor,
+                seed=workers_seed[index],
                 verbose=verbose,
             ),
             portfolios,

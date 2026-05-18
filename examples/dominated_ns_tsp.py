@@ -13,9 +13,11 @@
 import argparse
 import itertools
 from functools import partial
-from multiprocessing.pool import Pool
+from multiprocessing import Pool, current_process
 
-from digneapy import DESCRIPTORS
+import numpy as np
+
+from digneapy import DescriptorKey, DescriptorPipeline
 from digneapy.domains import TSPDomain
 from digneapy.generators import Dominated
 from digneapy.solvers import greedy, nneighbour, two_opt
@@ -28,7 +30,8 @@ def generate_instances(
     pop_size: int,
     generations: int,
     k: int,
-    descriptor: DESCRIPTORS,
+    descriptor: DescriptorKey,
+    seed: int | np.random.SeedSequence,
     verbose,
 ):
     domain = TSPDomain(dimension=dimension)
@@ -39,7 +42,7 @@ def generate_instances(
         portfolio=portfolio,
         k=k,
         repetitions=1,
-        describe_by=descriptor,
+        descriptor_pipe=DescriptorPipeline(descriptor),
     )
     result = deig()
     if verbose:
@@ -112,7 +115,10 @@ if __name__ == "__main__":
     print(
         f"Running with parameters:\ndimension={dimension}, k={k}, population_size={population_size}, generations={generations}, descriptor={descriptor}, verbose={verbose}"
     )
+    root_sequence = np.random.SeedSequence(4123)
+    workers_seed = root_sequence.spawn(4)
     with Pool(4) as pool:
+        index = current_process()._identity[0]
         results = pool.map(
             partial(
                 generate_instances,
@@ -121,6 +127,7 @@ if __name__ == "__main__":
                 generations=generations,
                 k=k,
                 descriptor=descriptor,
+                seed=workers_seed[index],
                 verbose=verbose,
             ),
             portfolios,

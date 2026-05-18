@@ -14,7 +14,6 @@ import warnings
 from collections import deque
 from pathlib import Path
 
-import matplotlib.pyplot as plt
 import numpy as np
 import pytest
 
@@ -184,7 +183,6 @@ def test_evolutionary_generator(
     ea_generator_evolution_plot(log.logbook, filename=filename)
     assert filename.exists()
     filename.unlink()
-    plt.close()
 
 
 @pytest.mark.parametrize("domain_cls, portfolio, feat_desc_n", DOMAIN_CONTEXT)

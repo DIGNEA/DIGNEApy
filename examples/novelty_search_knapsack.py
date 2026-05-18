@@ -13,7 +13,9 @@
 import argparse
 import itertools
 from functools import partial
-from multiprocessing import Pool
+from multiprocessing import Pool, current_process
+
+import numpy as np
 
 from digneapy import NS, Archive, DescriptorKey, DescriptorPipeline
 from digneapy.domains import KnapsackDomain
@@ -37,6 +39,7 @@ def generate_instances(
     ss_threshold: float,
     k: int,
     descriptor: DescriptorKey,
+    seed: int | np.random.SeedSequence,
     verbose: bool,
 ):
     domain = KnapsackDomain(dimension)
@@ -50,7 +53,7 @@ def generate_instances(
         repetitions=1,
         descriptor_pipe=DescriptorPipeline(descriptor),
         replacement=generational_replacement,
-        seed=0xFDE23DD,
+        seed=seed,
     )
 
     result = eig(verbose=verbose)
@@ -139,12 +142,14 @@ if __name__ == "__main__":
     verbose = args.verbose
     portfolios = [
         [default_kp, map_kp, miw_kp, mpw_kp],
-        # [map_kp, default_kp, miw_kp, mpw_kp],
-        # [miw_kp, default_kp, map_kp, mpw_kp],
-        # [mpw_kp, default_kp, map_kp, miw_kp],
+        [map_kp, default_kp, miw_kp, mpw_kp],
+        [miw_kp, default_kp, map_kp, mpw_kp],
+        [mpw_kp, default_kp, map_kp, miw_kp],
     ]
-
-    with Pool(1) as pool:
+    root_sequence = np.random.SeedSequence(0xFDE23DD)
+    workers_seed = root_sequence.spawn(4)
+    with Pool(4) as pool:
+        index = current_process()._identity[0]
         results = pool.map(
             partial(
                 generate_instances,
@@ -155,6 +160,7 @@ if __name__ == "__main__":
                 ss_threshold=solution_set_threshold,
                 k=k,
                 descriptor=descriptor,
+                seed=workers_seed[index],
                 verbose=verbose,
             ),
             portfolios,

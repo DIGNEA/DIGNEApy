@@ -13,7 +13,6 @@
 import os
 from pathlib import Path
 
-import matplotlib.pyplot as plt
 import pytest
 
 from digneapy import CVTArchive, DescriptorPipeline, GridArchive, Instance
@@ -189,4 +188,3 @@ def test_map_elites_domain_cvt(domain_cls, portfolio, dimension, descriptor, ps)
     map_elites_evolution_plot(log.logbook, filename=filename)
     assert filename.exists()
     filename.unlink()
-    plt.close()

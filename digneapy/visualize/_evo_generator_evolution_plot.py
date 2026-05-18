@@ -72,3 +72,4 @@ def ea_generator_evolution_plot(logbook=None, filename: Optional[str | Path] = "
         plt.savefig(filename)
     else:
         plt.show()
+    plt.close()

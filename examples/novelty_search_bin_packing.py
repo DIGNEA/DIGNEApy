@@ -12,10 +12,12 @@
 
 import argparse
 from functools import partial
-from multiprocessing.pool import Pool
+from multiprocessing import Pool, current_process
 from typing import List
 
-from digneapy import DESCRIPTORS, NS, Archive
+import numpy as np
+
+from digneapy import NS, Archive, DescriptorKey, DescriptorPipeline
 from digneapy.domains import BPPDomain
 from digneapy.generators import Evolutionary
 from digneapy.operators import generational_replacement
@@ -26,12 +28,13 @@ from digneapy.utils import save_results_to_files
 def generate_instances(
     portfolio: List,
     dimension: int,
-    descriptor: DESCRIPTORS,
+    descriptor: DescriptorKey,
     generations: int = 1000,
     population_size: int = 128,
     k: int = 15,
     archive_threshold: float = 1e-7,
     ss_threshold: float = 1e-7,
+    seed: int | np.random.SeedSequence = 42,
     verbose: bool = False,
 ):
     domain = BPPDomain(
@@ -50,7 +53,8 @@ def generate_instances(
         novelty_approach=NS(Archive(threshold=archive_threshold), k=k),
         solution_set=Archive(threshold=ss_threshold),
         repetitions=1,
-        describe_by=descriptor,
+        descriptor_pipe=DescriptorPipeline(descriptor),
+        seed=seed,
         replacement=generational_replacement,
     )
     result = eig(verbose=verbose)
@@ -140,8 +144,10 @@ if __name__ == "__main__":
     print(
         f"Running with {len(portfolios)} portfolios, rep {rep}, ta {archive_threshold} and tss {solution_set_threshold}."
     )
-
+    root_sequence = np.random.SeedSequence(4213)
+    workers_seeds = root_sequence.spawn(4)
     with Pool(len(portfolios)) as pool:
+        index = current_process()._identity[0]
         results = pool.map(
             partial(
                 generate_instances,
@@ -152,6 +158,7 @@ if __name__ == "__main__":
                 k=k,
                 archive_threshold=archive_threshold,
                 ss_threshold=solution_set_threshold,
+                seed=workers_seeds[index],
                 verbose=verbose,
             ),
             portfolios,

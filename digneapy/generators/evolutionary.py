@@ -59,7 +59,7 @@ class Evolutionary(BaseGenerator):
         selection: Selection = binary_tournament_selection,
         replacement: Replacement = generational_replacement,
         phi: float = 0.85,
-        seed: int = 42,
+        seed: Optional[int | np.random.SeedSequence] = None,
     ):
         """Creates a Evolutionary Instance Generator based on Novelty Search
         The generator uses a set of solvers to evaluate the instances and
@@ -283,6 +283,7 @@ class Dominated(Evolutionary):
         crossover: Crossover = uniform_crossover,
         mutation: Mutation = uniform_one_mutation,
         selection: Selection = binary_tournament_selection,
+        seed: Optional[int | np.random.SeedSequence] = None,
     ):
         """Creates a Evolutionary Instance Generator based on Novelty Search
 
@@ -316,6 +317,7 @@ class Dominated(Evolutionary):
             mutation=mutation,
             selection=selection,
             descriptor_pipe=descriptor_pipe,
+            seed=seed,
         )
         self.k = k
         self.offspring_size = pop_size

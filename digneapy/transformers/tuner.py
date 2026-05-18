@@ -15,9 +15,9 @@ __all__ = ["Tuner", "TunerFn"]
 from collections.abc import Callable
 from typing import Optional, Tuple
 
+import cma
 import numpy as np
-from fcmaes import crfmnes
-from fcmaes.optimizer import wrapper
+from cma.evolution_strategy import CMAEvolutionStrategyResult2
 from scipy.optimize import Bounds
 
 type TunerFn = Callable[[np.ndarray], np.float64]
@@ -29,9 +29,10 @@ class Tuner:
         dimension: int,
         ranges: Tuple[float, float],
         lambda_: int = 100,
+        sigma: float = 0.5,
         evaluations: int = 10,
-        seed: Optional[int | np.random.SeedSequence] = None,
         workers: int = 1,
+        seed: Optional[int | np.random.SeedSequence] = None,
     ):
         if any(param < 0 for param in (dimension, lambda_, evaluations, workers)):
             raise ValueError(
@@ -50,8 +51,13 @@ class Tuner:
         self._pop_size = lambda_
         self._max_evals = evaluations
         self.workers = workers
+        self._x0 = self._rng.uniform(
+            self._bounds.lb, self._bounds.ub, size=self._dimension
+        )
+        self._sigma = sigma
+        self._strategy = None
 
-    def __call__(self, eval_fn: TunerFn):
+    def __call__(self, eval_fn: TunerFn) -> CMAEvolutionStrategyResult2:
         if eval_fn is None:
             raise ValueError("eval_fn cannot be None in Tuner.__call__")
         print(
@@ -60,16 +66,13 @@ class Tuner:
                     - Evaluations: {self._max_evals}
                     - Workers: {self.workers}\n"""
         )
-        solutions = crfmnes.minimize(
-            wrapper(eval_fn),
-            x0=self._rng.uniform(
-                self._bounds.lb, self._bounds.ub, size=self._dimension
-            ),
-            max_evaluations=self._max_evals,
-            popsize=self._pop_size,
-            bounds=self._bounds,
-            rg=self._rng,
-            workers=self.workers,
+        self._strategy = cma.CMAEvolutionStrategy(
+            self._x0,
+            self._sigma,
+            inopts={"popsize": self._pop_size, "maxfevals": self._max_evals},
         )
-
-        return solutions
+        self._strategy = self._strategy.optimize(
+            eval_fn, self._max_evals, n_jobs=self.workers
+        )
+        solution = self._strategy.result
+        return solution

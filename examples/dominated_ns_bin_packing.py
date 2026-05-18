@@ -12,9 +12,12 @@
 
 import argparse
 from functools import partial
-from multiprocessing.pool import Pool
+from multiprocessing import Pool, current_process
 
-from digneapy import DESCRIPTORS
+import numpy as np
+
+from digneapy import DescriptorPipeline
+from digneapy._core import DescriptorKey
 from digneapy.domains import BPPDomain
 from digneapy.generators import Dominated
 from digneapy.solvers import best_fit, first_fit, next_fit, worst_fit
@@ -27,7 +30,8 @@ def generate_instances(
     pop_size: int,
     generations: int,
     k: int,
-    descriptor: DESCRIPTORS,
+    descriptor: DescriptorKey,
+    seed: int | np.random.SeedSequence,
     verbose: bool,
 ):
     domain = BPPDomain(
@@ -46,7 +50,8 @@ def generate_instances(
         mutrate=(1 / dimension),
         cxrate=0.8,
         repetitions=1,
-        describe_by=descriptor,
+        descriptor_pipe=DescriptorPipeline(descriptor),
+        seed=seed,
     )
     result = deig(verbose=verbose)
     if verbose:
@@ -117,8 +122,10 @@ if __name__ == "__main__":
         [next_fit, best_fit, first_fit, worst_fit],
         [worst_fit, best_fit, first_fit, next_fit],
     ]
-
+    root_sequence = np.random.SeedSequence(4213)
+    workers_sequences = root_sequence.spawn(4)
     with Pool(4) as pool:
+        index = current_process()._identity[0]
         results = pool.map(
             partial(
                 generate_instances,
@@ -127,6 +134,7 @@ if __name__ == "__main__":
                 generations=generations,
                 k=k,
                 descriptor=descriptor,
+                seed=workers_sequences[index],
                 verbose=verbose,
             ),
             portfolios,

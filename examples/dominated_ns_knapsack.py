@@ -13,9 +13,11 @@
 import argparse
 import itertools
 from functools import partial
-from multiprocessing.pool import Pool
+from multiprocessing import Pool, current_process
 
-from digneapy import DESCRIPTORS
+import numpy as np
+
+from digneapy import DescriptorKey, DescriptorPipeline
 from digneapy.domains import KnapsackDomain
 from digneapy.generators import Dominated
 from digneapy.solvers import default_kp, map_kp, miw_kp, mpw_kp
@@ -28,7 +30,8 @@ def generate_instances(
     pop_size: int,
     generations: int,
     k: int,
-    descriptor: DESCRIPTORS,
+    descriptor: DescriptorKey,
+    seed: int | np.random.SeedSequence,
     verbose,
 ):
     domain = KnapsackDomain(dimension, capacity_approach="percentage")
@@ -39,7 +42,8 @@ def generate_instances(
         portfolio=portfolio,
         k=k,
         repetitions=1,
-        describe_by=descriptor,
+        descriptor_pipe=DescriptorPipeline(descriptor),
+        seed=seed,
     )
     result = deig()
     if verbose:
@@ -110,8 +114,10 @@ if __name__ == "__main__":
         [miw_kp, default_kp, map_kp, mpw_kp],
         [mpw_kp, default_kp, map_kp, miw_kp],
     ]
-
+    root_sequence = np.random.SeedSequence(4213)
+    workers_seeds = root_sequence.spawn(4)
     with Pool(4) as pool:
+        index = current_process()._identity[0]
         results = pool.map(
             partial(
                 generate_instances,
@@ -120,6 +126,7 @@ if __name__ == "__main__":
                 generations=generations,
                 k=k,
                 descriptor=descriptor,
+                seed=workers_seeds[index],
                 verbose=verbose,
             ),
             portfolios,

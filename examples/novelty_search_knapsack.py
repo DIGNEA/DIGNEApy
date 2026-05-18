@@ -39,9 +39,11 @@ def generate_instances(
     ss_threshold: float,
     k: int,
     descriptor: DescriptorKey,
-    seed: int | np.random.SeedSequence,
+    seeds: list[np.random.SeedSequence],
     verbose: bool,
 ):
+    seed = seeds[current_process()._identity[0]]
+
     domain = KnapsackDomain(dimension)
     eig = Evolutionary(
         pop_size=pop_size,
@@ -146,10 +148,9 @@ if __name__ == "__main__":
         [miw_kp, default_kp, map_kp, mpw_kp],
         [mpw_kp, default_kp, map_kp, miw_kp],
     ]
-    root_sequence = np.random.SeedSequence(0xFDE23DD)
-    workers_seed = root_sequence.spawn(4)
+    root_sequence = np.random.SeedSequence(4213)
+    workers_seeds = root_sequence.spawn(len(portfolios) + 1)
     with Pool(4) as pool:
-        index = current_process()._identity[0]
         results = pool.map(
             partial(
                 generate_instances,
@@ -160,7 +161,7 @@ if __name__ == "__main__":
                 ss_threshold=solution_set_threshold,
                 k=k,
                 descriptor=descriptor,
-                seed=workers_seed[index],
+                seeds=workers_seeds,
                 verbose=verbose,
             ),
             portfolios,

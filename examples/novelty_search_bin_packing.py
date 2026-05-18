@@ -34,9 +34,11 @@ def generate_instances(
     k: int = 15,
     archive_threshold: float = 1e-7,
     ss_threshold: float = 1e-7,
-    seed: int | np.random.SeedSequence = 42,
+    seeds: list[np.random.SeedSequence] = [],
     verbose: bool = False,
 ):
+    seed = seeds[current_process()._identity[0]]
+
     domain = BPPDomain(
         dimension=dimension,
         min_i=20,
@@ -145,9 +147,8 @@ if __name__ == "__main__":
         f"Running with {len(portfolios)} portfolios, rep {rep}, ta {archive_threshold} and tss {solution_set_threshold}."
     )
     root_sequence = np.random.SeedSequence(4213)
-    workers_seeds = root_sequence.spawn(4)
+    workers_seeds = root_sequence.spawn(len(portfolios) + 1)
     with Pool(len(portfolios)) as pool:
-        index = current_process()._identity[0]
         results = pool.map(
             partial(
                 generate_instances,
@@ -158,7 +159,7 @@ if __name__ == "__main__":
                 k=k,
                 archive_threshold=archive_threshold,
                 ss_threshold=solution_set_threshold,
-                seed=workers_seeds[index],
+                seeds=workers_seeds,
                 verbose=verbose,
             ),
             portfolios,

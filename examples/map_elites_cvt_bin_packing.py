@@ -12,9 +12,11 @@
 
 import argparse
 from functools import partial
-from multiprocessing.pool import Pool
+from multiprocessing import Pool, current_process
 
-from digneapy import CVTArchive
+import numpy as np
+
+from digneapy import CVTArchive, DescriptorKey, DescriptorPipeline
 from digneapy.domains import BPPDomain
 from digneapy.generators import MapElites
 from digneapy.operators import uniform_one_mutation
@@ -27,15 +29,18 @@ def generate_instances(
     dimension: int,
     pop_size: int,
     generations: int,
-    descriptor: str,
+    descriptor: DescriptorKey,
+    seeds: list[np.random.SeedSequence],
     verbose: bool,
 ):
+    seed = seeds[current_process()._identity[0]]
     domain = BPPDomain(
         dimension=dimension,
         min_i=20,
         max_i=100,
         max_capacity=150,
         capacity_approach="fixed",
+        seed=seed,
     )
     ranges = []
     if descriptor == "features":
@@ -66,8 +71,9 @@ def generate_instances(
         pop_size=pop_size,
         mutation=uniform_one_mutation,
         generations=generations,
-        describe_by=descriptor,
+        describe_pipe=DescriptorPipeline(descriptor),
         repetitions=1,
+        seed=seed,
     )
     result = map_elites(verbose=verbose)
     if verbose:
@@ -136,6 +142,9 @@ if __name__ == "__main__":
         [next_fit, best_fit, first_fit, worst_fit],
         [worst_fit, best_fit, first_fit, next_fit],
     ]
+    root_sequence = np.random.SeedSequence(1342)
+    N_WORKERS = len(portfolios)
+    workers_seeds = root_sequence.spawn(N_WORKERS + 1)
 
     with Pool(4) as pool:
         results = pool.map(
@@ -145,6 +154,7 @@ if __name__ == "__main__":
                 pop_size=population_size,
                 generations=generations,
                 descriptor=descriptor,
+                seeds=workers_seeds,
                 verbose=verbose,
             ),
             portfolios,

@@ -31,10 +31,11 @@ def generate_instances(
     generations: int,
     k: int,
     descriptor: DescriptorKey,
-    seed: int | np.random.SeedSequence,
+    seeds: list[np.random.SeedSequence],
     verbose,
 ):
     domain = KnapsackDomain(dimension, capacity_approach="percentage")
+    seed = seeds[current_process()._identity[0]]
     deig = Dominated(
         pop_size=pop_size,
         generations=generations,
@@ -115,9 +116,9 @@ if __name__ == "__main__":
         [mpw_kp, default_kp, map_kp, miw_kp],
     ]
     root_sequence = np.random.SeedSequence(4213)
-    workers_seeds = root_sequence.spawn(4)
+    workers_seeds = root_sequence.spawn(len(portfolios) + 1)
+
     with Pool(4) as pool:
-        index = current_process()._identity[0]
         results = pool.map(
             partial(
                 generate_instances,
@@ -126,7 +127,7 @@ if __name__ == "__main__":
                 generations=generations,
                 k=k,
                 descriptor=descriptor,
-                seed=workers_seeds[index],
+                seeds=workers_seeds,
                 verbose=verbose,
             ),
             portfolios,

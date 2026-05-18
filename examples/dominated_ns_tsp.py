@@ -31,9 +31,10 @@ def generate_instances(
     generations: int,
     k: int,
     descriptor: DescriptorKey,
-    seed: int | np.random.SeedSequence,
+    seeds: list[np.random.SeedSequence],
     verbose,
 ):
+    seed = seeds[current_process()._identity[0]]
     domain = TSPDomain(dimension=dimension)
     deig = Dominated(
         pop_size=pop_size,
@@ -43,6 +44,7 @@ def generate_instances(
         k=k,
         repetitions=1,
         descriptor_pipe=DescriptorPipeline(descriptor),
+        seed=seed,
     )
     result = deig()
     if verbose:
@@ -115,10 +117,9 @@ if __name__ == "__main__":
     print(
         f"Running with parameters:\ndimension={dimension}, k={k}, population_size={population_size}, generations={generations}, descriptor={descriptor}, verbose={verbose}"
     )
-    root_sequence = np.random.SeedSequence(4123)
-    workers_seed = root_sequence.spawn(4)
+    root_sequence = np.random.SeedSequence(4213)
+    workers_seeds = root_sequence.spawn(len(portfolios) + 1)
     with Pool(4) as pool:
-        index = current_process()._identity[0]
         results = pool.map(
             partial(
                 generate_instances,
@@ -127,7 +128,7 @@ if __name__ == "__main__":
                 generations=generations,
                 k=k,
                 descriptor=descriptor,
-                seed=workers_seed[index],
+                seeds=workers_seeds,
                 verbose=verbose,
             ),
             portfolios,

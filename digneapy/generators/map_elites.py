@@ -10,7 +10,7 @@
 @Desc    :   None
 """
 
-from typing import Sequence
+from typing import Optional, Sequence
 
 import numpy as np
 
@@ -43,7 +43,7 @@ class MapElites(BaseGenerator):
         describe_pipe: DescriptorPipeline = DescriptorPipeline("features"),
         performance_function: PerformanceFn = max_gap_target,
         generations: int = 1_000,
-        seed: int = 42,
+        seed: Optional[int | np.random.SeedSequence] = None,
     ):
         """Creates a MAP-Elites instance generator.
         The generator uses a set of solvers to evaluate the instances and MAP-Elites
@@ -72,7 +72,7 @@ class MapElites(BaseGenerator):
             describe_pipe,
             generations,
             repetitions,
-            seed,
+            seed=seed,
         )
         if not isinstance(archive, (GridArchive, CVTArchive)):
             raise ValueError(

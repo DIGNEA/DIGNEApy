@@ -13,8 +13,11 @@
 import argparse
 import itertools
 from functools import partial
-from multiprocessing.pool import Pool
+from multiprocessing import Pool, current_process
 
+import numpy as np
+
+from digneapy import DescriptorKey, DescriptorPipeline
 from digneapy.archives import CVTArchive
 from digneapy.domains import TSPDomain
 from digneapy.generators import MapElites
@@ -28,10 +31,12 @@ def generate_instances(
     dimension: int,
     pop_size: int,
     generations: int,
-    descriptor: str,
+    descriptor: DescriptorKey,
+    seeds: list[np.random.SeedSequence],
     verbose: bool,
 ):
     domain = TSPDomain(dimension=dimension)
+    seed = seeds[current_process()._identity[0]]
     # Create an empty archive with the previous centroids and samples
     ranges = []
     if descriptor == "features":
@@ -44,6 +49,7 @@ def generate_instances(
         k=1_000,
         ranges=ranges,
         n_samples=100_000,
+        seed=seed,
     )
     map_elites = MapElites(
         domain=domain,
@@ -52,8 +58,9 @@ def generate_instances(
         pop_size=pop_size,
         mutation=uniform_one_mutation,
         generations=generations,
-        describe_by=descriptor,
+        describe_pipe=DescriptorPipeline(descriptor),
         repetitions=1,
+        seed=seed,
     )
 
     result = map_elites(verbose=verbose)
@@ -116,7 +123,9 @@ if __name__ == "__main__":
         [nneighbour, greedy, two_opt],
         [two_opt, greedy, nneighbour],
     ]
-
+    root_sequence = np.random.SeedSequence(1342)
+    N_WORKERS = len(portfolios)
+    workers_seeds = root_sequence.spawn(N_WORKERS + 1)
     with Pool(4) as pool:
         results = pool.map(
             partial(
@@ -125,6 +134,7 @@ if __name__ == "__main__":
                 pop_size=population_size,
                 generations=generations,
                 descriptor=descriptor,
+                seeds=workers_seeds,
                 verbose=verbose,
             ),
             portfolios,

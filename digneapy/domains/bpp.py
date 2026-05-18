@@ -26,7 +26,7 @@ class BPP(Problem):
         self,
         items: Iterable[int],
         capacity: int,
-        seed: int = 42,
+        seed: Optional[int | np.random.SeedSequence] = None,
         *args,
         **kwargs,
     ):
@@ -124,7 +124,7 @@ class BPPDomain(Domain):
         capacity_approach: str = "fixed",
         max_capacity: int = 100,
         capacity_ratio: float = 0.8,
-        seed: int = 42,
+        seed: Optional[int | np.random.SeedSequence] = None,
     ):
         if dimension < 0:
             raise ValueError(f"Expected dimension > 0 got {dimension}")

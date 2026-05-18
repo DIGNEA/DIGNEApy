@@ -28,7 +28,7 @@ class Knapsack(Problem):
         profits: Sequence[np.uint32] | np.ndarray,
         weights: Sequence[np.uint32] | np.ndarray,
         capacity: np.uint64 = np.uint64(0),
-        seed: int = 42,
+        seed: Optional[int | np.random.SeedSequence] = None,
         *args,
         **kwargs,
     ):
@@ -147,7 +147,7 @@ class KnapsackDomain(Domain):
         capacity_approach: str = "evolved",
         max_capacity: np.uint = np.uint(1e5),
         capacity_ratio: float = 0.8,
-        seed: Optional[int] = None,
+        seed: Optional[int | np.random.SeedSequence] = None,
     ):
         self.min_p = min_p
         self.min_w = min_w

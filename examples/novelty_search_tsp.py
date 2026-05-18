@@ -34,9 +34,10 @@ def generate_instances(
     ss_threshold: float,
     k: int,
     descriptor: DescriptorKey,
-    seed: int | np.random.SeedSequence,
+    seeds: list[np.random.SeedSequence],
     verbose,
 ):
+    seed = seeds[current_process()._identity[0]]
     domain = TSPDomain(dimension=dimension)
     eig = Evolutionary(
         pop_size=pop_size,
@@ -139,9 +140,8 @@ if __name__ == "__main__":
     )
     root_sequence = np.random.SeedSequence(1342)
     N_WORKERS = len(portfolios)
-    workers_seed = root_sequence.spawn(N_WORKERS)
+    workers_seeds = root_sequence.spawn(N_WORKERS + 1)
     with Pool(N_WORKERS) as pool:
-        index = current_process()._identity[0]
         results = pool.map(
             partial(
                 generate_instances,
@@ -152,7 +152,7 @@ if __name__ == "__main__":
                 ss_threshold=solution_set_threshold,
                 k=k,
                 descriptor=descriptor,
-                seed=workers_seed[index],
+                seeds=workers_seeds,
                 verbose=verbose,
             ),
             portfolios,

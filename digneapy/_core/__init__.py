@@ -15,7 +15,6 @@ from ._instance import Instance
 from ._metrics import Logbook, Statistics, qd_score, qd_score_auc
 from ._novelty_search import NS, dominated_novelty_search
 from ._problem import Problem
-from ._protocols import RandGen, Transformer
 from ._solution import Solution
 from ._solver import Solver
 from ._types import Direction, IndType
@@ -40,8 +39,6 @@ __all__ = [
     "qd_score_auc",
     "Statistics",
     "Logbook",
-    "RandGen",
-    "Transformer",
     "DescriptorKey",
     "DescriptorFn",
     "DescriptorPipeline",

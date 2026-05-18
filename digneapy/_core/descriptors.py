@@ -15,13 +15,11 @@ from typing import Callable, Optional, Protocol, Sequence
 
 import numpy as np
 
+from ..transformers import Transformer
 from ._domain import Domain
 from ._instance import Instance
-from ._protocols import Transformer
 
 type DescriptorKey = str
-
-descriptors_registry: dict[DescriptorKey, DescriptorFn] = {}
 
 
 class DescriptorFn(Protocol):
@@ -35,6 +33,9 @@ class DescriptorFn(Protocol):
         *args,
         **kwargs,
     ) -> np.ndarray: ...
+
+
+descriptors_registry: dict[DescriptorKey, DescriptorFn] = {}
 
 
 def register_descriptor(key: str) -> Callable[[DescriptorFn], DescriptorFn]:
@@ -75,7 +76,7 @@ class DescriptorPipeline:
         if any(isinstance(t, Transformer) for t in transformers):
             raise TypeError("All transformers must implement the Transformer Protocol.")
         self._key = key
-        self._transformers = transformers
+        self._transformers = tuple(transformers)
 
     def __call__(
         self,

@@ -15,12 +15,14 @@ from typing import Optional
 import matplotlib
 
 matplotlib.use("Agg")  # Non-interactive backend
+from pathlib import Path
+
 import matplotlib.pyplot as plt
 import pandas as pd
 import seaborn as sns
 
 
-def map_elites_evolution_plot(logbook=None, filename: Optional[str] = ""):
+def map_elites_evolution_plot(logbook=None, filename: Optional[str | Path] = ""):
     df = pd.DataFrame(logbook.select("avg"), columns=["avg"])
     df["min"] = logbook.select("min")
     df["max"] = logbook.select("max")

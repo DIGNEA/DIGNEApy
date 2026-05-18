@@ -15,13 +15,15 @@ from typing import Optional
 import matplotlib
 
 matplotlib.use("Agg")  # Non-interactive backend
+from pathlib import Path
+
 import matplotlib.pyplot as plt
 import pandas as pd
 import seaborn as sns
 from matplotlib.lines import Line2D
 
 
-def ea_generator_evolution_plot(logbook=None, filename: Optional[str] = ""):
+def ea_generator_evolution_plot(logbook=None, filename: Optional[str | Path] = ""):
     df = pd.DataFrame(logbook.chapters["s"].select("avg"), columns=[r"$s$"])
     df[r"$p$"] = logbook.chapters["p"].select("avg")
     df["Generations"] = logbook.select("gen")

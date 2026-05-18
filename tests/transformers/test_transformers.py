@@ -14,16 +14,16 @@ import pytest
 
 torch = pytest.importorskip("torch", reason="PyTorch not available on this platform")
 
-import os
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
 from sklearn.metrics import mean_squared_error
 
-from digneapy import Transformer
+from digneapy.transformers import Transformer
 from digneapy.transformers.neural import NNEncoder
 
-dir, _ = os.path.split(__file__)
+DIR = Path(__file__).parent
 
 filename = "eig_bpp_instances_only_features.csv"
 features = [
@@ -39,7 +39,7 @@ features = [
     "std",
     "tiny",
 ]
-X = pd.read_csv(os.path.join(dir, "data/eig_bpp_instances_only_features.csv"))
+X = pd.read_csv(DIR / "data/eig_bpp_instances_only_features.csv")
 X = X[features]
 rng = np.random.default_rng(seed=42)
 
@@ -128,14 +128,15 @@ def test_NNEncoder_works_for_BP_domain():
     assert all(len(x_i) == 2 for x_i in predicted)
 
     transformer.save()
-    assert os.path.exists(expected_filename)
-    os.remove(expected_filename)
+    expected_file = Path(expected_filename)
+    assert expected_file.exists()
+    expected_file.unlink()
 
     # Now saving using a different filename
-    new_filename = "random_transformer.keras"
+    new_filename = Path("random_transformer.keras")
     transformer.save(filename=new_filename)
-    assert os.path.exists(new_filename)
-    os.remove(new_filename)
+    assert new_filename.exists()
+    new_filename.unlink()
 
 
 def test_NNEncoder_works_for_Knapsack_domain():
@@ -162,8 +163,9 @@ def test_NNEncoder_works_for_Knapsack_domain():
     assert all(len(x_i) == 2 for x_i in predicted)
 
     transformer.save()
-    assert os.path.exists(os.path.join(os.path.curdir, expected_filename))
-    os.remove(os.path.join(os.path.curdir, expected_filename))
+    expected_file = Path(expected_filename)
+    assert expected_file.exists()
+    expected_file.unlink()
 
 
 def test_NNEncoder_reduced_version_works_for_Knapsack_domain():
@@ -190,8 +192,9 @@ def test_NNEncoder_reduced_version_works_for_Knapsack_domain():
     assert all(len(x_i) == 2 for x_i in predicted)
 
     transformer.save()
-    assert os.path.exists(os.path.join(os.path.curdir, expected_filename))
-    os.remove(os.path.join(os.path.curdir, expected_filename))
+    expected_file = Path(expected_filename)
+    assert expected_file.exists()
+    expected_file.unlink()
 
 
 def test_NNEncoder_as_Autoencoder_works_for_BP_domain():

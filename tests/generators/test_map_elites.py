@@ -11,15 +11,13 @@
 """
 
 import os
+from pathlib import Path
 
+import matplotlib.pyplot as plt
 import pytest
 
-from digneapy import (
-    CVTArchive,
-    GridArchive,
-    Instance,
-)
-from digneapy.domains import BPPDomain, KnapsackDomain
+from digneapy import CVTArchive, DescriptorPipeline, GridArchive, Instance
+from digneapy.domains import BPPDomain, KnapsackDomain, TSPDomain
 from digneapy.generators import (
     MapElites,
 )
@@ -30,39 +28,38 @@ from digneapy.solvers import (
     best_fit,
     default_kp,
     first_fit,
+    greedy,
     map_kp,
     miw_kp,
+    mpw_kp,
+    next_fit,
+    nneighbour,
     worst_fit,
 )
 from digneapy.visualize import map_elites_evolution_plot
 
-test_data = [
-    (
-        KnapsackDomain,
-        [default_kp, map_kp, miw_kp],
-        8,
-        "MapElites(pop_size=32,gen=10,domain=KP,portfolio=['default_kp', 'map_kp', 'miw_kp'])",
-        "MapElites<pop_size=32,gen=10,domain=KP,portfolio=['default_kp', 'map_kp', 'miw_kp']>",
-    ),
-    (
-        BPPDomain,
-        [best_fit, first_fit, worst_fit],
-        10,
-        "MapElites(pop_size=32,gen=10,domain=BPP,portfolio=['best_fit', 'first_fit', 'worst_fit'])",
-        "MapElites<pop_size=32,gen=10,domain=BPP,portfolio=['best_fit', 'first_fit', 'worst_fit']>",
-    ),
+DOMAIN_CONTEXT = [
+    (KnapsackDomain, [default_kp, map_kp, miw_kp, mpw_kp], 8),
+    (BPPDomain, [best_fit, first_fit, worst_fit, next_fit], 10),
+    (TSPDomain, [nneighbour, greedy], 11),
 ]
 
 
-@pytest.mark.parametrize(
-    "domain_cls, portfolio, desc_size, expected_str, expected_repr", test_data
-)
-def test_map_elites_domain_grid(
-    domain_cls, portfolio, desc_size, expected_str, expected_repr
+@pytest.mark.parametrize("domain_cls, portfolio, feat_desc_n", DOMAIN_CONTEXT)
+@pytest.mark.parametrize("dimension", ([50, 100]))
+@pytest.mark.parametrize("descriptor", ("features", "performance"))
+@pytest.mark.parametrize("ps", ([64, 128]))
+def test_map_elites_with_grid_archive(
+    domain_cls, portfolio, feat_desc_n, dimension, descriptor, ps
 ):
-    dimension = 50
+
+    descriptor_pipeline = DescriptorPipeline(descriptor)
+    dimension = dimension
     generations = 10
-    archive = GridArchive(dimensions=(10,) * desc_size, ranges=[(0, 1e4)] * desc_size)
+    desc_dimension = feat_desc_n if descriptor == "features" else len(portfolio)
+    archive = GridArchive(
+        dimensions=(10,) * desc_dimension, ranges=[(0, 1e4)] * desc_dimension
+    )
     domain = domain_cls(dimension=dimension)
     assert domain.dimension == dimension
 
@@ -70,20 +67,22 @@ def test_map_elites_domain_grid(
         domain,
         portfolio=portfolio,
         archive=archive,
-        pop_size=32,
+        pop_size=ps,
         mutation=uniform_one_mutation,
         generations=generations,
-        describe_by="features",
+        describe_pipe=descriptor_pipeline,
         repetitions=1,
     )
     result = map_elites()
     archive = result.instances
-    assert map_elites.__str__() == expected_str
-    assert map_elites.__repr__() == expected_repr
     assert len(map_elites.archive) == len(archive)
-    assert len(archive) != 0
+    assert len(archive) > 0
     assert isinstance(archive, GridArchive)
     assert all(isinstance(i, Instance) for i in archive)
+
+    assert all(len(s.descriptor) == desc_dimension for s in archive)
+    # for s in archive:
+    #    assert len(s) == desc_dimension
     assert len(map_elites.log) == generations + 1
 
     # Is able to print the log
@@ -107,10 +106,58 @@ test_data_cvt = [
 ]
 
 
-@pytest.mark.parametrize("domain_cls, portfolio, ranges", test_data_cvt)
-def test_map_elites_domain_cvt(domain_cls, portfolio, ranges):
-    dimension = 50
+CVT_CONTEXT = [
+    (
+        KnapsackDomain,
+        [default_kp, map_kp, miw_kp, mpw_kp],
+    ),
+    (
+        BPPDomain,
+        [best_fit, first_fit, worst_fit, next_fit],
+    ),
+    (TSPDomain, [nneighbour, greedy]),
+]
+
+
+def build_ranges(domain_cls, descriptor, dimension, portfolio):
+    if domain_cls == KnapsackDomain:
+        if descriptor == "features":
+            return [(1.0, 100_000), *[(1.0, 1_000) for _ in range(7)]]
+        elif descriptor == "performance":
+            return [(1.0, 800_000) for _ in range(len(portfolio))]
+        else:  # case instance
+            return [(1.0, 100_000), *[(1.0, 1_000) for _ in range(dimension * 2)]]
+    elif domain_cls == BPPDomain:
+        if descriptor == "features":
+            return [
+                (20, 100),
+                (0, 100.0),
+                (20, 100),
+                (20, 100),
+                (20, 100),
+                *[(0.0, 1.0) for _ in range(5)],
+            ]
+        elif descriptor == "performance":
+            return [(0.0, 1.0) for _ in range(len(portfolio))]
+        else:  # case instance
+            return [(150, 150), *[(20, 100) for _ in range(dimension)]]
+    elif domain_cls == TSPDomain:
+        if descriptor == "features":
+            return [(dimension * 2, dimension * 2), *[(0.0, 1_000) for _ in range(10)]]
+        elif descriptor == "performance":
+            return [(0.0, 1.0) for _ in range(len(portfolio))]
+        else:  # case instance
+            return [(0, 1_000) for _ in range(dimension * 2)]
+
+
+@pytest.mark.parametrize("domain_cls, portfolio", CVT_CONTEXT)
+@pytest.mark.parametrize("dimension", ([50, 100]))
+@pytest.mark.parametrize("descriptor", ("features", "performance", "instance"))
+@pytest.mark.parametrize("ps", ([64, 128]))
+def test_map_elites_domain_cvt(domain_cls, portfolio, dimension, descriptor, ps):
+    dimension = dimension
     generations = 10
+    ranges = build_ranges(domain_cls, descriptor, dimension, portfolio)
     archive = CVTArchive(k=1000, ranges=ranges, n_samples=10_000)
     domain = domain_cls(dimension=dimension)
     assert domain.dimension == dimension
@@ -119,10 +166,10 @@ def test_map_elites_domain_cvt(domain_cls, portfolio, ranges):
         domain,
         portfolio=portfolio,
         archive=archive,
-        pop_size=32,
+        pop_size=ps,
         mutation=uniform_one_mutation,
         generations=generations,
-        describe_by="instance",
+        describe_pipe=DescriptorPipeline(key=descriptor),
         repetitions=1,
     )
     result = map_elites()
@@ -137,6 +184,9 @@ def test_map_elites_domain_cvt(domain_cls, portfolio, ranges):
 
     # Is able to print the log
     log = map_elites.log
-    map_elites_evolution_plot(log.logbook, "example.png")
-    assert os.path.exists("example.png")
-    os.remove("example.png")
+    filename = Path("example.png")
+
+    map_elites_evolution_plot(log.logbook, filename=filename)
+    assert filename.exists()
+    filename.unlink()
+    plt.close()

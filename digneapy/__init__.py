@@ -16,10 +16,8 @@ from ._core import (
     IndType,
     Instance,
     Problem,
-    RandGen,
     Solution,
     Solver,
-    Transformer,
     descriptors,
     descriptors_registry,
     dominated_novelty_search,
@@ -29,6 +27,7 @@ from ._core._metrics import Logbook, Statistics, qd_score, qd_score_auc
 from ._core.scores import PerformanceFn, max_gap_target, runtime_score
 from .archives import Archive, CVTArchive, GridArchive
 from .generators import BaseGenerator, Dominated, Evolutionary, GenResult, MapElites
+from .transformers import Transformer
 
 __dignea_submodules = {"utils", "generators", "solvers", "visualize"}
 

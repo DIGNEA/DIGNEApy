@@ -24,7 +24,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 from scipy.stats import lognorm
 
-from .._core._protocols import Transformer
+from .protocol import Transformer
 
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 MODELS_PATH = Path(__file__).parent / "models/"
@@ -215,7 +215,8 @@ class KPDecoder(Transformer):
                 f"Expected a np.ndarray with shape (M, {self._expected_latent_dim}). Instead got: {X.shape}"
             )
         y = (
-            self._decoder.decode(torch.tensor(X, device=DEVICE, dtype=torch.float32))
+            self._decoder
+            .decode(torch.tensor(X, device=DEVICE, dtype=torch.float32))
             .cpu()
             .detach()
             .numpy()

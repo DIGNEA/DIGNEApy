@@ -18,15 +18,12 @@ import numpy as np
 
 from ._instance import Instance
 from ._problem import Problem
-from ._protocols import RandGen
 
 
-class Domain(RandGen, Protocol):
+class Domain(Protocol):
     """Domain is a class that defines the domain of the problem.
     The domain is defined by its dimension and the bounds of each variable.
 
-    Args:
-        RandGen: Subclass that implements the RandGen protocol
     """
 
     def __init__(
@@ -36,11 +33,11 @@ class Domain(RandGen, Protocol):
         dtype=np.float64,
         name: str = "Domain",
         feat_names: Optional[Sequence[str]] = None,
-        seed: Optional[int] = None,
+        seed: Optional[int | np.random.SeedSequence] = None,
         *args,
         **kwargs,
     ):
-        self.initialize_rng(seed=seed)
+
         self.__name__ = name
         self._dimension = dimension
         self._bounds = bounds
@@ -50,6 +47,9 @@ class Domain(RandGen, Protocol):
             ranges = list(zip(*bounds))
             self._lbs = np.asarray(ranges[0], dtype=dtype)
             self._ubs = np.asarray(ranges[1], dtype=dtype)
+
+        self._seed = seed
+        self._rng = np.random.default_rng(seed)
 
     @abstractmethod
     def generate_instances(self, n: int = 1) -> List[Instance]:

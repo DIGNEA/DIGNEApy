@@ -24,7 +24,6 @@ from .._core import (
     Domain,
     Instance,
     Logbook,
-    RandGen,
     Solver,
     Statistics,
 )
@@ -52,7 +51,7 @@ class GenResult:
             self.metrics = Statistics()(self.instances, as_series=True)
 
 
-class BaseGenerator(RandGen, Protocol):
+class BaseGenerator(Protocol):
     """Abstract base class for all Quality-Diversity generators.
 
     Handles:
@@ -70,8 +69,9 @@ class BaseGenerator(RandGen, Protocol):
     _descriptor_pipe: DescriptorPipeline
     _generations: np.uint32
     _repetitions: np.uint16
-    _rng: np.random.Generator
     _logbook: Logbook
+    _rng: np.random.Generator
+    _seed: Optional[int | np.random.SeedSequence]
 
     def __init__(
         self,
@@ -82,7 +82,7 @@ class BaseGenerator(RandGen, Protocol):
         descriptor_pipe: DescriptorPipeline = DescriptorPipeline("features"),
         generations: np.uint32 = np.uint32(1_000),
         repetitions: np.uint16 = np.uint16(1),
-        seed: int = 42,
+        seed: Optional[int | np.random.SeedSequence] = None,
     ):
         """Creates an instance of BaseGenerator with common attributes for generators
 
@@ -97,7 +97,6 @@ class BaseGenerator(RandGen, Protocol):
             seed (int, optional): Seed for the RNG protocol. Defaults to 42.
 
         """
-        self.initialize_rng(seed)
         self._domain = domain
         self._portfolio = tuple(portfolio)
         self._pop_size = pop_size
@@ -107,10 +106,16 @@ class BaseGenerator(RandGen, Protocol):
         self._generations = generations
         self._repetitions = repetitions
         self._logbook = Logbook()
+        self._seed = seed
+        self._rng = np.random.default_rng(seed)
 
     @property
     def log(self) -> Logbook:
         return self._logbook
+
+    @property
+    def descriptor_pipeline(self):
+        return self._descriptor_pipe
 
     def __str__(self):
         port_names = [s.__name__ for s in self._portfolio]

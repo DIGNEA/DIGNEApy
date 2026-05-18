@@ -18,18 +18,17 @@ import numpy as np
 from numpy import typing as npt
 
 from ._instance import Instance
-from ._protocols import RandGen
 from ._solution import Solution
 
 
-class Problem(RandGen, Protocol):
+class Problem(Protocol):
     def __init__(
         self,
         dimension: int,
         bounds: Sequence[tuple],
         name: str = "DefaultProblem",
         dtype=np.float64,
-        seed: int = 42,
+        seed: Optional[int | np.random.SeedSequence] = None,
         *args,
         **kwargs,
     ):
@@ -41,17 +40,18 @@ class Problem(RandGen, Protocol):
             bounds (Sequence[tuple]): Bounds of each variable in the problem
             name (str, optional): Name of the problem for printing and logging purposes. Defaults to "DefaultProblem".
             dtype (_type_, optional): Type of the variables. Defaults to np.float64.
-            seed (int, optional): Seed for the RandGen. Defaults to 42.
+            seed (int, optional): Seed for the random number generation (_rng). Defaults to None.
         """
         self.__name__ = name
         self._dimension = dimension
         self._bounds = bounds
         self._dtype = dtype
-        self.initialize_rng(seed=seed)
         if len(self._bounds) != 0:
             ranges = list(zip(*bounds))
             self._lbs = np.asarray(ranges[0], dtype=dtype)
             self._ubs = np.asarray(ranges[1], dtype=dtype)
+        self._seed = seed
+        self._rng = np.random.default_rng(seed)
 
     @property
     def dimension(self):

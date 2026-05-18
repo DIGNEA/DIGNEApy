@@ -20,11 +20,10 @@ from sklearn.cluster import KMeans
 from sklearn.neighbors import KDTree
 
 from .._core import Instance
-from .._core._protocols import RandGen
 from ._grid_archive import GridArchive
 
 
-class CVTArchive(RandGen, GridArchive):
+class CVTArchive(GridArchive):
     """An Archive that divides a high-dimensional measure space into k homogeneous geometric regions.
     Based on the paper from Vassiliades et al (2018) <https://ieeexplore.ieee.org/document/8000667>
     > The computational complexity of the method we provide for constructing the CVT (in Algorithm 1) is O(ndki),
@@ -40,7 +39,7 @@ class CVTArchive(RandGen, GridArchive):
         centroids: Optional[npt.NDArray | str] = None,
         samples: Optional[npt.NDArray | str] = None,
         dtype=np.float64,
-        seed: int = 42,
+        seed: Optional[int | np.random.SeedSequence] = None,
     ):
         """Creates a CVTArchive object
 
@@ -84,9 +83,7 @@ class CVTArchive(RandGen, GridArchive):
             ranges=ranges,
             dtype=dtype,
         )
-        # Force initialize_rng to use the generator in the __init__
-        # Other classes uses the hook
-        self.initialize_rng(seed=seed)
+
         self._dimensions = len(ranges)
         ranges = list(zip(*ranges))
         self._lower_bounds = np.asarray(ranges[0], dtype=self._dtype)
@@ -96,6 +93,8 @@ class CVTArchive(RandGen, GridArchive):
         self._n_samples = n_samples
         self._samples = None
         self._centroids = None
+        self._seed = seed
+        self._rng = np.random.default_rng(seed)
         self._kmeans = KMeans(n_clusters=self._k, n_init=1, random_state=self._seed)
 
         # Loading samples if given

@@ -1,35 +1,21 @@
 #!/usr/bin/env python
 # -*-coding:utf-8 -*-
 """
-@File    :   _protocols.py
-@Time    :   2025/04/03 12:05:50
-@Author  :   Alejandro Marrero
+@File    :   protocol.py
+@Time    :   2026/05/18 10:57:45
+@Author  :   Alejandro Marrero (amarrerd@ull.edu.es)
 @Version :   1.0
 @Contact :   amarrerd@ull.edu.es
-@License :   (C)Copyright 2025, Alejandro Marrero
+@License :   (C)Copyright 2026, Alejandro Marrero
 @Desc    :   None
 """
 
 from abc import abstractmethod
-from typing import Optional, Protocol, runtime_checkable
+from typing import Protocol, runtime_checkable
 
 import numpy as np
-from numpy.random import Generator, SeedSequence
 
-from ._types import IndType
-
-
-class RandGen(Protocol):
-    """Protocol to type check all operators have Random Generator attribute (_rng)"""
-
-    _rng: Generator
-    _seed: int | None
-    _seed_sequence: SeedSequence
-
-    def initialize_rng(self, seed: Optional[int] = None):
-        self._seed = seed
-        self._seed_sequence = np.random.SeedSequence(self._seed)
-        self._rng = np.random.default_rng(self._seed_sequence)
+from .._core._types import IndType
 
 
 @runtime_checkable

@@ -24,7 +24,7 @@ import numpy as np
 import numpy.typing as npt
 from sklearn.preprocessing import StandardScaler
 
-from .._core._protocols import Transformer
+from .protocol import Transformer
 
 
 class NNEncoder(Transformer):

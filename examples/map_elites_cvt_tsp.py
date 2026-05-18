@@ -39,7 +39,7 @@ def generate_instances(
     elif descriptor == "performance":
         ranges = [(0.0, 1.0) for _ in range(len(portfolio))]
     else:  # case instance
-        ranges = [(0, 1_000) for _ in range(dimension)]
+        ranges = [(0, 1_000) for _ in range(dimension * 2)]
     cvt_archive = CVTArchive(
         k=1_000,
         ranges=ranges,

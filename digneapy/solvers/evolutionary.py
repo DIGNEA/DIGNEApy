@@ -13,11 +13,12 @@
 __all__ = ["EA"]
 
 from concurrent.futures import ThreadPoolExecutor
+from typing import Optional
 
 import numpy as np
 from deap import algorithms, base, creator, tools
 
-from digneapy._core import Direction, Problem, RandGen, Solution, Solver
+from digneapy._core import Direction, Problem, Solution, Solver
 
 
 def _gen_dignea_ind(icls, rng, size: int, min_value, max_value):
@@ -29,7 +30,7 @@ def _gen_dignea_ind(icls, rng, size: int, min_value, max_value):
     return chromosome
 
 
-class EA(RandGen, Solver):
+class EA(Solver):
     """Evolutionary Algorithm from DEAP for digneapy"""
 
     def __init__(
@@ -45,7 +46,7 @@ class EA(RandGen, Solver):
         mutpb: np.float32 = np.float32(0.3),
         generations: np.uint32 = np.uint32(500),
         n_cores: np.uint8 = np.uint8(1),
-        seed: int = 42,
+        seed: Optional[int | np.random.SeedSequence] = None,
     ):
         """Creates a new EA instance with the given parameters.
         Args:
@@ -65,7 +66,6 @@ class EA(RandGen, Solver):
             raise TypeError(
                 f"Direction not allowed. Please use a value of the class Direction({Direction.values()})"
             )
-        self.initialize_rng(seed=seed)
         self.direction = direction
         self._cx = cx
         self._mut = mut
@@ -75,6 +75,8 @@ class EA(RandGen, Solver):
         self._generations = generations
         self._n_cores = n_cores if n_cores > 1 else 1
         self._toolbox = base.Toolbox()
+        self._seed = seed
+        self._rng = np.random.default_rng(seed)
         if direction == Direction.MINIMISE:
             self._toolbox.register(
                 "individual",

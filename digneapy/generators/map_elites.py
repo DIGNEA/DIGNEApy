@@ -90,10 +90,19 @@ class MapElites(BaseGenerator):
         instances = self._domain.generate_instances(n=self._pop_size)
         perf_biases, portfolio_scores = self._evaluate_population(instances)
         descriptors = self._descriptor_pipe(instances, portfolio_scores, self._domain)
-
+        initial_instances = [
+            Instance(
+                variables=instances[i].variables,
+                fitness=perf_biases[i],
+                descriptor=descriptors[i],
+                portfolio_scores=portfolio_scores[i],
+                p=perf_biases[i],
+            )
+            for i in range(len(instances))
+        ]
         # Here we do not care for p >= 0. We are starting the archive
         # Must be removed later on
-        self._archive.extend(instances=instances, descriptors=descriptors)
+        self._archive.extend(instances=initial_instances, descriptors=descriptors)
         self._logbook.update(generation=0, population=instances, feedback=verbose)
 
         for generation in range(self._generations):
@@ -118,12 +127,11 @@ class MapElites(BaseGenerator):
                     p=perf_biases[i],
                     # Todo: Consider remove features attr features=features[i] if features is not None else None,
                 )
-                for i in range(self._pop_size)
+                for i in range(len(offspring))
             ]
             self._archive.extend(
                 instances=offspring_population, descriptors=descriptors
             )
-
             # Record the stats and update the performed gens
             self._logbook.update(
                 generation=generation + 1, population=self._archive, feedback=verbose

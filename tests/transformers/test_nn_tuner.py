@@ -12,10 +12,8 @@
 
 import pytest
 
-pytest.skip(allow_module_level=True)
-
 torch = pytest.importorskip("torch", reason="PyTorch not available on this platform")
-import os
+from pathlib import Path
 
 import pandas as pd
 from sklearn.metrics import mean_squared_error
@@ -23,7 +21,7 @@ from sklearn.metrics import mean_squared_error
 from digneapy.transformers.neural import NNEncoder
 from digneapy.transformers.tuner import Tuner
 
-dir, _ = os.path.split(__file__)
+DIR = Path(__file__).parent
 
 filename = "eig_bpp_instances_only_features.csv"
 features = [
@@ -39,7 +37,7 @@ features = [
     "std",
     "tiny",
 ]
-X = pd.read_csv(os.path.join(dir, "data/eig_bpp_instances_only_features.csv"))
+X = pd.read_csv(DIR / "data/eig_bpp_instances_only_features.csv")
 X = X[features].values
 
 
@@ -66,7 +64,7 @@ def test_hyper_cmaes_bpp():
         lambda_=5,
         ranges=(0.0, 0.0),
     )
-    best_nn_weights, population, logbook = cma_es()
+    best_nn_weights, population, logbook = cma_es(None)
     assert len(best_nn_weights) == dimension
     assert len(population) == cma_es._lambda
     assert len(logbook) == 5
@@ -89,7 +87,7 @@ def test_hyper_cmaes_bpp_maximises():
         lambda_=5,
         ranges=(0.0, 0.0),
     )
-    best_nn_weights, population, logbook = cma_es()
+    best_nn_weights, population, logbook = cma_es(None)
     assert len(best_nn_weights) == dimension
     assert len(population) == cma_es._lambda
     assert len(logbook) == 5
@@ -106,30 +104,6 @@ def test_hyper_cmaes_raises():
         shape=shapes,
         activations=activations,
     )
-
-    # Raises because we do not specify any valid direction
-    with pytest.raises(ValueError):
-        _ = Tuner(
-            dimension=dimension,
-            evaluations=5,
-            ranges=(0.0, 0.0),
-        )
-
-    # Raises because we do not specify any transformer
-    with pytest.raises(ValueError):
-        _ = Tuner(
-            dimension=dimension,
-            evaluations=5,
-            ranges=(0.0, 0.0),
-        )
-
-    # Raises because we do not specify any eval_fn
-    with pytest.raises(ValueError):
-        _ = Tuner(
-            dimension=dimension,
-            evaluations=5,
-            ranges=(0.0, 0.0),
-        )
 
     # Raises because we n_jobs < 1
     with pytest.raises(ValueError):

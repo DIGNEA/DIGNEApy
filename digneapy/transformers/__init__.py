@@ -11,10 +11,11 @@
 """
 
 from .pca import PCAEncoder
+from .protocol import Transformer
 
 __transformer_submodules = {"neural", "autoencoders", "tuner"}
 
-__all__ = ["PCAEncoder"]
+__all__ = ["Transformer", "PCAEncoder"]
 
 _TORCH_AVAILABLE = False
 try:

@@ -266,9 +266,9 @@ def test_cvt_archive_remove():
     cvt.extend(instances)
     current_len = len(cvt)
     assert current_len > 0
-    descriptors_to_remove = np.asarray([
-        instance.descriptor for instance in instances[:5]
-    ])
+    descriptors_to_remove = np.asarray(
+        [instance.descriptor for instance in instances[:5]]
+    )
     cvt.remove(descriptors_to_remove)
     assert len(cvt) < current_len
 

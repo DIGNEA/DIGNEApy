@@ -261,11 +261,13 @@ class TSPDomain(Domain):
         centroids_distances = np.linalg.norm(coords - expanded_centroids, axis=-1)
         radius = np.mean(centroids_distances, axis=1)
 
-        fractions = np.asarray([
-            np.unique(d[np.triu_indices_from(d, k=1)]).size
-            / (N_CITIES * (N_CITIES - 1) / 2)
-            for d in distances
-        ])
+        fractions = np.asarray(
+            [
+                np.unique(d[np.triu_indices_from(d, k=1)]).size
+                / (N_CITIES * (N_CITIES - 1) / 2)
+                for d in distances
+            ]
+        )
         # Top five only
         norm_distances = np.sort(distances, axis=2)[:, :, ::-1][:, :, :5] / np.max(
             distances, axis=(1, 2), keepdims=True
@@ -295,19 +297,21 @@ class TSPDomain(Domain):
             mean_cluster_radius[i] = (
                 np.mean(cluster_radius) if cluster_radius.size > 0 else 0.0
             )
-        return np.column_stack([
-            np.full(shape=len(_instances), fill_value=N_CITIES),
-            std_distances,
-            centroids[:, 0],
-            centroids[:, 1],
-            radius,
-            fractions,
-            areas,
-            variance_nnds,
-            variation_nnds,
-            cluster_ratio,
-            mean_cluster_radius,
-        ]).astype(np.float64)
+        return np.column_stack(
+            [
+                np.full(shape=len(_instances), fill_value=N_CITIES),
+                std_distances,
+                centroids[:, 0],
+                centroids[:, 1],
+                radius,
+                fractions,
+                areas,
+                variance_nnds,
+                variation_nnds,
+                cluster_ratio,
+                mean_cluster_radius,
+            ]
+        ).astype(np.float64)
 
     def extract_features_as_dict(
         self, instances: Sequence[Instance] | np.ndarray

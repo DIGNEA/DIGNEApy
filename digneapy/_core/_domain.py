@@ -108,6 +108,14 @@ class Domain(Protocol):
     def bounds(self):
         return self._bounds
 
+    @property
+    def lbs(self) -> np.ndarray:
+        return self._lbs
+
+    @property
+    def ubs(self) -> np.ndarray:
+        return self._ubs
+
     def get_bounds_at(self, i: int) -> tuple:
         if i < 0 or i > len(self._bounds):
             raise ValueError(

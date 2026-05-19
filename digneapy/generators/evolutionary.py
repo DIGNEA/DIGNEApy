@@ -27,9 +27,9 @@ from .._core.scores import PerformanceFn, max_gap_target
 from ..archives import Archive
 from ..operators import (
     Crossover,
-    Mutation,
     Replacement,
     Selection,
+    SingleMutation,
     binary_tournament_selection,
     generational_replacement,
     uniform_crossover,
@@ -55,7 +55,7 @@ class Evolutionary(BaseGenerator):
         cxrate: float = 0.5,
         mutrate: float = 0.8,
         crossover: Crossover = uniform_crossover,
-        mutation: Mutation = uniform_one_mutation,
+        mutation: SingleMutation = uniform_one_mutation,
         selection: Selection = binary_tournament_selection,
         replacement: Replacement = generational_replacement,
         phi: float = 0.85,
@@ -241,9 +241,9 @@ class Evolutionary(BaseGenerator):
         offspring = parent_1.clone()
         if self._rng.random() < self.cxrate:
             offspring = self.crossover(offspring, parent_2)
-            return self.mutation(offspring, self._domain.bounds)
+            return self.mutation(offspring, self._domain.lbs, self._domain.ubs)
         else:
-            return self.mutation(offspring, self._domain.bounds)
+            return self.mutation(offspring, self._domain.lbs, self._domain.ubs)
 
     def _compute_fitness(
         self, performance_biases: np.ndarray, novelty_scores: np.ndarray
@@ -282,7 +282,7 @@ class Dominated(Evolutionary):
         cxrate: float = 0.5,
         mutrate: float = 0.8,
         crossover: Crossover = uniform_crossover,
-        mutation: Mutation = uniform_one_mutation,
+        mutation: SingleMutation = uniform_one_mutation,
         selection: Selection = binary_tournament_selection,
         seed: Optional[int | np.random.SeedSequence] = None,
     ):

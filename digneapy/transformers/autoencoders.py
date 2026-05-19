@@ -215,8 +215,7 @@ class KPDecoder(Transformer):
                 f"Expected a np.ndarray with shape (M, {self._expected_latent_dim}). Instead got: {X.shape}"
             )
         y = (
-            self._decoder
-            .decode(torch.tensor(X, device=DEVICE, dtype=torch.float32))
+            self._decoder.decode(torch.tensor(X, device=DEVICE, dtype=torch.float32))
             .cpu()
             .detach()
             .numpy()

@@ -23,7 +23,7 @@ from .._core.descriptors import DescriptorPipeline
 from .._core.scores import PerformanceFn, max_gap_target
 from ..archives import CVTArchive, GridArchive
 from ..operators import (
-    Mutation,
+    BatchMutation,
     batch_uniform_one_mutation,
 )
 from ._base_generator import BaseGenerator, GenResult
@@ -38,7 +38,7 @@ class MapElites(BaseGenerator):
         portfolio: Sequence[Solver],
         pop_size: int,
         archive: GridArchive | CVTArchive,
-        mutation: Mutation,
+        mutation: BatchMutation,
         repetitions: int,
         describe_pipe: DescriptorPipeline = DescriptorPipeline("features"),
         performance_function: PerformanceFn = max_gap_target,

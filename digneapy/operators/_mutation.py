@@ -10,28 +10,42 @@
 @Desc    :   None
 """
 
-__all__ = ["uniform_one_mutation", "batch_uniform_one_mutation", "Mutation"]
+__all__ = [
+    "uniform_one_mutation",
+    "batch_uniform_one_mutation",
+    "SingleMutation",
+    "BatchMutation",
+]
 
-from collections.abc import Callable, Sequence
-from typing import Tuple
+from typing import Protocol
 
 import numpy as np
 
 from .._core import IndType
 
-Mutation = Callable[[IndType, Sequence[Tuple]], IndType]
+
+class SingleMutation(Protocol):
+    def __call__(
+        self, individual: IndType, lb: np.ndarray, ub: np.ndarray
+    ) -> IndType: ...
 
 
-def uniform_one_mutation(individual: IndType, bounds: Sequence[Tuple]) -> IndType:
-    if len(individual) != len(bounds):
-        msg = f"The size of individual ({len(individual)}) and bounds {len(bounds)} is different in uniform_one_mutation"
+class BatchMutation(Protocol):
+    def __call__(
+        self, population: np.ndarray, lb: np.ndarray, ub: np.ndarray
+    ) -> np.ndarray: ...
+
+
+def uniform_one_mutation(
+    individual: IndType, lb: np.ndarray, ub: np.ndarray
+) -> IndType:
+    if len(lb) != len(ub) or len(individual) != len(lb):
+        msg = f"The size of individual ({len(individual)}) and bounds {len(lb)} is different in uniform_one_mutation."
         raise ValueError(msg)
 
     rng = np.random.default_rng()
     mutation_point = rng.integers(low=0, high=len(individual))
-    new_value = rng.uniform(
-        low=bounds[mutation_point][0], high=bounds[mutation_point][1]
-    )
+    new_value = rng.uniform(low=lb[mutation_point], high=ub[mutation_point])
     individual[mutation_point] = new_value
     return individual
 
@@ -58,7 +72,7 @@ def batch_uniform_one_mutation(
         msg = f"The size of individuals ({dimension}) and bounds {len(lb)} is different in uniform_one_mutation"
         raise ValueError(msg)
 
-    rng = np.random.default_rng(84793258734753)
+    rng = np.random.default_rng()
     mutation_points = rng.integers(low=0, high=dimension, size=n_individuals)
     new_values = rng.uniform(
         low=lb[mutation_points], high=ub[mutation_points], size=n_individuals

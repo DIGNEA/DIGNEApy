@@ -97,9 +97,9 @@ def test_novelty_search_returns_zeros_if_population_smaller_than_K(
     k, threshold, random_population
 ):
     novelty_search = NS(Archive(threshold=threshold), k=k)
-    descriptors = np.asarray([
-        instance.descriptor for instance in random_population[:k]
-    ])
+    descriptors = np.asarray(
+        [instance.descriptor for instance in random_population[:k]]
+    )
     expected = np.zeros(len(descriptors), dtype=np.float64)
     print(descriptors.shape)
     # If len(pop) < k it should return zeros

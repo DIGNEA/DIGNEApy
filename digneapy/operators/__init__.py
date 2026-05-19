@@ -11,7 +11,12 @@
 """
 
 from ._crossover import Crossover, one_point_crossover, uniform_crossover
-from ._mutation import Mutation, batch_uniform_one_mutation, uniform_one_mutation
+from ._mutation import (
+    BatchMutation,
+    SingleMutation,
+    batch_uniform_one_mutation,
+    uniform_one_mutation,
+)
 from ._replacement import (
     Replacement,
     elitist_replacement,
@@ -22,7 +27,8 @@ from ._selection import Selection, binary_tournament_selection
 
 __all__ = [
     "Crossover",
-    "Mutation",
+    "SingleMutation",
+    "BatchMutation",
     "Selection",
     "Replacement",
     "one_point_crossover",

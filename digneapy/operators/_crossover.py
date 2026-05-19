@@ -71,4 +71,4 @@ def uniform_crossover(
     genotype = np.empty_like(individual)
     genotype = np.where(probs <= cxpb, individual, other)
 
-    return individual.clone_with(variables=genotype)
+    return individual.__class__(genotype)

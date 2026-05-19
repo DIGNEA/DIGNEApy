@@ -25,61 +25,29 @@ from digneapy.operators import (
 )
 
 
-@pytest.fixture
-def default_instance():
-    return Instance()
-
-
-@pytest.fixture
-def initialised_instances():
-    N = 100
-    rng = np.random.default_rng(42)
-    chr_1 = rng.integers(low=0, high=100, size=N)
-    chr_2 = rng.integers(low=0, high=100, size=N)
-    instance_1 = Instance(chr_1)
-    instance_2 = Instance(chr_2)
-    return (instance_1, instance_2)
-
-
-@pytest.fixture
-def default_solution():
-    return Solution()
-
-
-@pytest.fixture
-def initialised_solutions():
-    N = 100
-    rng = np.random.default_rng(42)
-    chr_1 = rng.integers(low=0, high=100, size=N)
-    chr_2 = rng.integers(low=0, high=100, size=N)
-    solution_1 = Solution(variables=chr_1)
-    solution_2 = Solution(variables=chr_2)
-    return (solution_1, solution_2)
-
-
-@pytest.fixture
-def population():
-    rng = np.random.default_rng(42)
-    instances = [
-        Instance(
-            variables=rng.integers(low=0, high=100, size=100),
-            fitness=rng.integers(0, 100),
+def create_populations(ind_cls, pop_size: int):
+    rng = np.random.default_rng()
+    population = [
+        ind_cls(
+            rng.integers(low=0, high=100, size=100),
+            fitness=rng.uniform(0, 100, size=1)[0],
         )
-        for _ in range(100)
+        for _ in range(pop_size)
     ]
-    return instances
-
-
-def test_generational(population):
-    rng = np.random.default_rng(30)
     offspring = [
-        Instance(
-            variables=rng.integers(low=0, high=100, size=100),
-            fitness=rng.integers(0, 100),
+        ind_cls(
+            rng.integers(low=0, high=100, size=100),
+            fitness=rng.uniform(0, 100, size=1)[0],
         )
-        for _ in range(100)
+        for _ in range(pop_size)
     ]
+    return population, offspring
 
+
+@pytest.mark.parametrize("pop_size", argvalues=(16, 32, 64, 128))
+@pytest.mark.parametrize("ind_type_cls", argvalues=(Instance, Solution))
+def test_generational(pop_size, ind_type_cls):
+    population, offspring = create_populations(ind_type_cls, pop_size)
     assert population != offspring
     assert all(i != j for i, j in zip(population, offspring))
     new_pop = generational_replacement(population, offspring)
@@ -91,16 +59,10 @@ def test_generational(population):
         generational_replacement(population, [])
 
 
-def test_first_improve_replacement(population):
-    rng = np.random.default_rng(30)
-    offspring = [
-        Instance(
-            variables=rng.integers(low=0, high=100, size=100),
-            fitness=rng.integers(0, 100),
-        )
-        for _ in range(100)
-    ]
-
+@pytest.mark.parametrize("pop_size", argvalues=(16, 32, 64, 128))
+@pytest.mark.parametrize("ind_type_cls", argvalues=(Instance, Solution))
+def test_first_improve_replacement(pop_size, ind_type_cls):
+    population, offspring = create_populations(ind_type_cls, pop_size)
     expected = [
         copy.copy(i) if i > j else copy.copy(j) for i, j in zip(population, offspring)
     ]
@@ -116,15 +78,10 @@ def test_first_improve_replacement(population):
         first_improve_replacement(population, [])
 
 
-def test_elitist_replacement(population):
-    rng = np.random.default_rng(30)
-    offspring = [
-        Instance(
-            variables=rng.integers(low=0, high=100, size=100),
-            fitness=rng.integers(0, 100),
-        )
-        for _ in range(100)
-    ]
+@pytest.mark.parametrize("pop_size", argvalues=(16, 32, 64, 128))
+@pytest.mark.parametrize("ind_type_cls", argvalues=(Instance, Solution))
+def test_elitist_replacement(pop_size, ind_type_cls):
+    population, offspring = create_populations(ind_type_cls, pop_size)
     new_best_f = (
         max(itertools.chain(population, offspring), key=attrgetter("fitness")).fitness
         + 10

@@ -17,54 +17,21 @@ from digneapy import Instance, Solution
 from digneapy.operators import binary_tournament_selection
 
 
-@pytest.fixture
-def default_instance():
-    return Instance()
+def create_population(ind_cls, dimension: int, pop_size: int = 2):
+    rng = np.random.default_rng()
+    return [
+        ind_cls(
+            rng.integers(low=0, high=100, size=dimension),
+            fitness=rng.uniform(0, 100, size=1)[0],
+        )
+        for _ in range(pop_size)
+    ]
 
 
-@pytest.fixture
-def initialised_instances():
-    N = 100
-    rng = np.random.default_rng(42)
-    chr_1 = rng.integers(low=0, high=100, size=N)
-    chr_2 = rng.integers(low=0, high=100, size=N)
-    instance_1 = Instance(chr_1)
-    instance_2 = Instance(chr_2)
-    return (instance_1, instance_2)
-
-
-@pytest.fixture
-def default_solution():
-    return Solution()
-
-
-@pytest.fixture
-def initialised_solutions():
-    N = 100
-    rng = np.random.default_rng(42)
-    chr_1 = rng.integers(low=0, high=100, size=N)
-    chr_2 = rng.integers(low=0, high=100, size=N)
-    solution_1 = Solution(variables=chr_1)
-    solution_2 = Solution(variables=chr_2)
-    return (solution_1, solution_2)
-
-
-def test_binary_selection_solutions(initialised_solutions):
-    population = list(initialised_solutions)
-    population[0].fitness = 100
-    population[1].fitness = 50
-    parent = binary_tournament_selection(population)
-    assert population[0] > population[1]
-    assert len(parent) == len(population[0])
-    assert id(parent) == id(population[0]) or id(parent) == id(population[1])
-    # We dont know for sure which individual will
-    # be returned so we can only check that
-    # the parent is in the population
-    assert parent in population
-
-
-def test_binary_selection_instances(initialised_instances):
-    population = list(initialised_instances)
+@pytest.mark.parametrize("dimension", argvalues=(50, 100, 500, 1_000))
+@pytest.mark.parametrize(argnames="ind_type_cls", argvalues=(Instance, Solution))
+def test_binary_selection(dimension, ind_type_cls):
+    population = create_population(ind_type_cls, dimension)
     population[0].fitness = 100
     population[1].fitness = 50
     parent = binary_tournament_selection(population)
@@ -85,23 +52,12 @@ def test_binary_selection_solutions_raises_empty():
         _ = binary_tournament_selection(list())
 
 
-def test_binary_selection_one_ind(initialised_solutions):
-    population = [initialised_solutions[0]]
+@pytest.mark.parametrize("dimension", argvalues=(50, 100, 500, 1_000))
+@pytest.mark.parametrize(argnames="ind_type_cls", argvalues=(Instance, Solution))
+def test_binary_selection_one_ind(dimension, ind_type_cls):
+    population = create_population(ind_type_cls, dimension, pop_size=1)
     expected = population[0]
     parent = binary_tournament_selection(population)
     assert isinstance(parent, expected.__class__)
     assert parent == expected
     assert id(parent) == id(expected)
-
-
-@pytest.fixture
-def population():
-    rng = np.random.default_rng(seed=42)
-    instances = [
-        Instance(
-            variables=rng.integers(low=0, high=100, size=100),
-            fitness=rng.integers(0, 100),
-        )
-        for _ in range(100)
-    ]
-    return instances

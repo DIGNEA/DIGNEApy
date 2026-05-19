@@ -58,7 +58,7 @@ cpdef list default_kp(problem: Knapsack):
 
 cpdef list map_kp(problem: Knapsack):
     if problem is None:
-        msg = "No problem found in args of default_kp heuristic"
+        msg = "No problem found in args of map_kp heuristic"
         raise ValueError(msg)    
     cdef uint q, packed
     cdef uint N, i
@@ -90,7 +90,7 @@ cpdef list map_kp(problem: Knapsack):
 @cython.wraparound(False)   # Deactivate negative indexing
 cpdef list miw_kp(problem: Knapsack):
     if problem is None:
-        msg = "No problem found in args of default_kp heuristic"
+        msg = "No problem found in args of miw_kp heuristic"
         raise ValueError(msg)    
 
     cdef uli profit
@@ -114,8 +114,7 @@ cpdef list miw_kp(problem: Knapsack):
 
 cpdef list mpw_kp(problem: Knapsack):
     if problem is None:
-        msg = "No problem found in args of default_kp heuristic"
-        raise ValueError(msg)    
+        raise ValueError("No problem found in args of mpw_kp heuristic")    
  
     cdef uint q, packed
     cdef uint N, i

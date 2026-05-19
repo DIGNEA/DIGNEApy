@@ -120,7 +120,7 @@ cpdef list mpw_kp(problem: Knapsack):
     cdef uint N, i
     cdef uli profit
     cdef uint [:] p, w
-    cdef unsigned short [:] variables
+    cdef unsigned int [:] variables
     cdef long [:] indices
 
     q = problem.capacity

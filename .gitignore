@@ -105,7 +105,6 @@ ENV/
 .vscode/
 .idea/
 gecco_env/
-uv.lock
 scripts/
 site/
 *.npy

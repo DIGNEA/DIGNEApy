@@ -129,11 +129,11 @@ cpdef list mpw_kp(problem: Knapsack):
     profit = 0
     p = problem.profits
     w = problem.weights
-    variables = np.zeros(N, dtype=np.uint16)
+    variables = np.zeros(N, dtype=np.uint32)
     indices = np.argsort([(p[i] / w[i]) for i in range(N)])[::-1]
 
     for i in indices:
-        if packed + w[i] <= q:
+        if (packed + w[i]) <= q:
             packed += w[i]
             profit += p[i]
             variables[i] = 1

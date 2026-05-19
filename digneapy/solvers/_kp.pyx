@@ -112,17 +112,21 @@ cpdef list miw_kp(problem: Knapsack):
     return [Solution(variables=variables, objectives=(profit,), fitness=np.float64(profit))]
 
 
+
+cpdef inline double ratio(uint p, uint w) nogil:
+    return p / <double>w
+
 cpdef list mpw_kp(problem: Knapsack):
     if problem is None:
         raise ValueError("No problem found in args of mpw_kp heuristic")    
  
     cdef uint q, packed
-    cdef uint N, i
+    cdef uint N
     cdef uli profit
     cdef uint [:] p, w
     cdef unsigned int [:] variables
     cdef long [:] indices
-
+    cdef Py_ssize_t  i
     q = problem.capacity
     N = len(problem)
     packed = 0
@@ -130,7 +134,8 @@ cpdef list mpw_kp(problem: Knapsack):
     p = problem.profits
     w = problem.weights
     variables = np.zeros(N, dtype=np.uint32)
-    indices = np.argsort([(p[i] / w[i]) for i in range(N)])[::-1]
+    #indices = sorted(range(N), key=lambda i: (ratio(p[i],  w[i]), -<int>w[i]), reverse=True)
+    indices = np.argsort([(p[i] / w[i]) for i in range(N)], kind='stable')[::-1]
 
     for i in indices:
         if (packed + w[i]) <= q:

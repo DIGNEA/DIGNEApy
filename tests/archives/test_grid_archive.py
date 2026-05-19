@@ -104,6 +104,8 @@ def test_grid_archive_populated():
     assert all(archive.lower_i(i) == 0 for i in range(len(archive.bounds)))
     assert all(archive.upper_i(i) == 10 for i in range(len(archive.bounds)))
     assert all(isinstance(i, Instance) for i in archive)
+    assert all(isinstance(i, Instance) for i in archive.instances)
+    np.testing.assert_array_equal(archive.index_of([]), np.empty(0))
 
 
 def test_grid_5d(grid_5d):

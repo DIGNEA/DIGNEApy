@@ -39,7 +39,7 @@ def setup_and_teardown_cvt():
     os.remove(f"{def_filename}.json")
 
 
-def test_cvt_can_be_create():
+def test_cvt_archive_interface():
     cvt = CVTArchive(
         k=100, ranges=[(0.0, 100.0), (0.0, 100.0), (0.0, 100.0)], n_samples=100
     )
@@ -72,6 +72,8 @@ def test_cvt_can_be_create():
     expected_str = f"CVArchive(dim=3,regions=100,centroids={cvt.centroids})"
     assert cvt.__str__() == expected_str
     assert cvt.__repr__() == expected_str
+
+    np.testing.assert_array_equal(cvt.index_of([]), np.empty(0))
 
 
 def test_cvt_init_raises(setup_and_teardown_cvt):
@@ -218,7 +220,7 @@ def test_cvt_archive_append():
     assert len(cvt) == 0
     cvt.append(instance)
     assert len(cvt) == 1
-
+    assert all(isinstance(i, Instance) for i in cvt.instances)
     with pytest.raises(TypeError):
         cvt.append(None)
 
@@ -264,9 +266,9 @@ def test_cvt_archive_remove():
     cvt.extend(instances)
     current_len = len(cvt)
     assert current_len > 0
-    descriptors_to_remove = np.asarray(
-        [instance.descriptor for instance in instances[:5]]
-    )
+    descriptors_to_remove = np.asarray([
+        instance.descriptor for instance in instances[:5]
+    ])
     cvt.remove(descriptors_to_remove)
     assert len(cvt) < current_len
 

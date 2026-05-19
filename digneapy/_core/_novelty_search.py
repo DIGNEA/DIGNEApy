@@ -10,7 +10,6 @@
 @Desc    :   None
 """
 
-import sys
 import warnings
 from typing import Optional, Tuple
 
@@ -32,7 +31,7 @@ class NS:
         """
         if k < 0:
             raise ValueError(
-                f"{__name__} k must be a positive integer and less than the number of instances."
+                f"In NS: k must be a positive integer and less than the number of instances. Got {k}"
             )
 
         if archive is not None and not isinstance(archive, Archive):
@@ -64,7 +63,7 @@ class NS:
             k (int, optional): Number of neighbors to consider in the computation of the sparseness. Defaults to 15.
 
         Raises:
-            ValueError: If len(instance_descriptors) <= k
+            ValueError: If len(instance_descriptors) == 0
 
         Returns:
             np.ndarray: novelty scores (s) of the instances descriptors
@@ -76,17 +75,14 @@ class NS:
         num_instances = len(instances_descriptors)
         num_archive = len(self.archive)
         result = np.zeros(num_instances, dtype=np.float64)
-        if num_archive == 0 and num_instances <= self._k:
-            # Initially, the archive is empty and we may not have enough instances to evaluate
-            print(
-                f"NS has an empty archive at this moment and the given population is not large enough to compute the sparseness. {num_instances} < k ({self._k}). Returning zeros.",
-                file=sys.stderr,
+        if num_archive + num_instances <= self._k:
+            # The archive may not have enough instances to evaluate
+            warnings.warn(
+                f"[NS]: The content of the archive ({num_archive}) + instances_descriptors ({num_instances}) is not large enough to compute the sparseness for k ({self._k}). "
+                f"Returning zeros.",
+                RuntimeWarning,
             )
             return result
-
-        if num_instances + num_archive <= self._k:
-            msg = f"Trying to calculate novelty search with k({self._k}) >= {num_instances} (instances) + {num_archive} (archive)."
-            raise ValueError(msg)
 
         combined = (
             instances_descriptors
@@ -144,15 +140,15 @@ def dominated_novelty_search(
     warnings.filterwarnings(
         "ignore", message="Mean of empty slice", category=RuntimeWarning
     )
+    if len(performances) != len(descriptors):
+        raise ValueError(
+            f"Array mismatch between performances and descriptors. len(performance) = {len(performances)} != {len(descriptors)} len(descriptors)"
+        )
     num_instances = len(descriptors)
     if num_instances <= k:
         msg = f"Trying to calculate the dominated novelty search with k({k}) > len(instances) = {num_instances}"
         raise ValueError(msg)
 
-    if len(performances) != len(descriptors):
-        raise ValueError(
-            f"Array mismatch between peformances and descriptors. len(performance) = {len(performances)} != {len(descriptors)} len(descriptors)"
-        )
     # Try to force only feasible performances to get proper biased instances
     is_unfeasible = (
         performances < 0.0 if force_feasible_only else (performances == -np.inf)

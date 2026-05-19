@@ -44,6 +44,23 @@ DOMAIN_CONTEXT = [
 ]
 
 
+def test_map_elites_raises_if_wrong_archive():
+    with pytest.raises(TypeError) as e:
+        _ = MapElites(
+            KnapsackDomain(),
+            portfolio=[],
+            archive=tuple(),
+            pop_size=100,
+            mutation=uniform_one_mutation,
+            describe_pipe=DescriptorPipeline("features"),
+            repetitions=1,
+        )
+    assert (
+        "MapElites expects an archive of class GridArchive or CVTArchive and got tuple"
+        in str(e.value)
+    )
+
+
 @pytest.mark.parametrize("domain_cls, portfolio, feat_desc_n", DOMAIN_CONTEXT)
 @pytest.mark.parametrize("dimension", ([50, 100]))
 @pytest.mark.parametrize("descriptor", ("features", "performance"))

@@ -11,10 +11,11 @@
 """
 
 import random
-from typing import Callable
+from typing import Callable, List
 
 import numpy as np
 
+from digneapy import Solution, Solver
 from digneapy.domains import Knapsack
 
 __all__ = ["shuffle_and_run_for_knapsack"]
@@ -25,11 +26,11 @@ def shuffle_and_run_for_knapsack(
     n_repetitions: int = 10,
     reduce_fn: Callable = np.max,
     verbose: bool = False,
-):
+) -> Solver:
     np.set_printoptions(legacy="1.21")
 
-    def solve(problem: Knapsack):
-        results = [None] * n_repetitions
+    def solve(problem: Knapsack) -> List[Solution]:
+        results: List[Solution] = [Solution()] * n_repetitions
         results[0] = solver(problem)[0]
         variables = np.asarray(problem, copy=True, dtype=np.uint32)
         items = [(w, p) for w, p in zip(variables[1::2], variables[2::2])]

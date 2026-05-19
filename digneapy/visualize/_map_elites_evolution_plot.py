@@ -44,6 +44,6 @@ def map_elites_evolution_plot(logbook=None, filename: Optional[str | Path] = "")
     plt.ylabel("Fitness")
     if filename:
         plt.savefig(filename)
-    else:
+    else:  # pragma: no cover
         plt.show()
     plt.close()

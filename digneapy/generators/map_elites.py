@@ -75,8 +75,8 @@ class MapElites(BaseGenerator):
             seed=seed,
         )
         if not isinstance(archive, (GridArchive, CVTArchive)):
-            raise ValueError(
-                f"MapElitesGenerator expects an archive of class GridArchive or CVTArchive and got {archive.__class__.__name__}"
+            raise TypeError(
+                f"MapElites expects an archive of class GridArchive or CVTArchive and got {archive.__class__.__name__}"
             )
 
         self._archive = archive
@@ -137,7 +137,7 @@ class MapElites(BaseGenerator):
                 generation=generation + 1, population=self._archive, feedback=verbose
             )
 
-        if verbose:  # pragme: no cover
+        if verbose:  # pragma: no cover
             # Clear the terminal
             blank = " " * 80
             print(f"\r{blank}\r", end="")

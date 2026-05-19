@@ -37,6 +37,26 @@ def random_population():
     return instances
 
 
+def test_default_novelty_search_raises():
+    with pytest.raises(ValueError) as k_error:
+        _ = NS(None, k=-10)
+    assert (
+        "In NS: k must be a positive integer and less than the number of instances. Got -10"
+        in str(k_error.value)
+    )
+    with pytest.raises(ValueError) as archive_error:
+        _ = NS(archive=list(), k=10)
+    assert "You must provide a valid Archive object" in str(archive_error.value)
+
+    with pytest.warns(
+        RuntimeWarning,
+        match=r"\[NS\]: The content of the archive \(0\) \+ instances_descriptors \(5\) is not large enough to compute the sparseness for k \(10\)\. Returning zeros.",
+    ):
+        ns = NS(archive=Archive(threshold=1), k=10)
+        population = np.random.default_rng().integers(0, 10, size=(5, 6))
+        _ = ns(population)
+
+
 @pytest.mark.parametrize("k", [3, 15, 30])
 @pytest.mark.parametrize("threshold", [0.01, 1.0, 5.0, 10.0])
 def test_default_novelty_search_object(k, threshold):
@@ -77,9 +97,9 @@ def test_novelty_search_returns_zeros_if_population_smaller_than_K(
     k, threshold, random_population
 ):
     novelty_search = NS(Archive(threshold=threshold), k=k)
-    descriptors = np.asarray(
-        [instance.descriptor for instance in random_population[:k]]
-    )
+    descriptors = np.asarray([
+        instance.descriptor for instance in random_population[:k]
+    ])
     expected = np.zeros(len(descriptors), dtype=np.float64)
     print(descriptors.shape)
     # If len(pop) < k it should return zeros
@@ -103,9 +123,23 @@ def test_dominated_novelty_search_different_ks(k, random_population):
 
 
 def test_dominated_novelty_search_raises_if_wrong_args():
-    # If empty population it should raise
-    with pytest.raises(Exception):
-        dominated_novelty_search(descriptors=np.empty(0), performances=np.arange(10))
+
     # If len(pop) < k it should raise
-    with pytest.raises(Exception):
-        dominated_novelty_search(descriptors=np.arange(10), performances=np.empty(0))
+    with pytest.raises(ValueError) as k_error:
+        dominated_novelty_search(
+            descriptors=np.arange(10), performances=np.empty(10), k=15
+        )
+    assert (
+        "Trying to calculate the dominated novelty search with k(15) > len(instances) = 10"
+        in str(k_error.value)
+    )
+
+    # If len(performacnes) != len(descriptors)
+    with pytest.raises(ValueError) as mismatch_error:
+        dominated_novelty_search(
+            descriptors=np.arange(20), performances=np.empty(17), k=15
+        )
+    assert (
+        "Array mismatch between performances and descriptors. len(performance) = 17 != 20 len(descriptors)"
+        in str(mismatch_error.value)
+    )

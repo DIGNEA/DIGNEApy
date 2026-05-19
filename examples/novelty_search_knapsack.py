@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*-coding:utf-8 -*-
 """
-@File    :   nn_transformer_gecco_23.py
+@File    :   novelty_search_knapsack.py
 @Time    :   2023/11/10 14:09:41
 @Author  :   Alejandro Marrero
 @Version :   1.0

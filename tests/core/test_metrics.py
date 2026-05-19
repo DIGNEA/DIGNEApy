@@ -11,6 +11,7 @@
 """
 
 import numpy as np
+import pandas as pd
 import pytest
 from deap import tools as deap_tools
 
@@ -62,6 +63,9 @@ def test_logbook():
     assert isinstance(log.logbook, deap_tools.Logbook)
     log.update(generation=0, population=instances)
     assert len(log) == 1
+    df = log.to_df()
+    assert len(df) == 1
+    assert isinstance(df, pd.DataFrame)
     # Logbook doesn't accept negative generations
     with pytest.raises(ValueError):
         _ = log.update(-10, population=[])

@@ -15,11 +15,13 @@ permissions:
 jobs:
   test:
     strategy:
+      fail-fast: false
       matrix:
         python-version: ["3.12", "3.13", "3.14"]
-    runs-on: ubuntu-latest
+        os: [ubuntu-latest, windows-latest, macos-latest]
 
-    name: Test application with Python ${{ matrix.python-version }}
+    runs-on: ${{ matrix.os }}
+    name: Test application on ${{ matrix.os }} with Python ${{ matrix.python-version }}
     steps:
       - uses: actions/checkout@v4
       - name: Install uv

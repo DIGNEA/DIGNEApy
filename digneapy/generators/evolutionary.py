@@ -109,6 +109,9 @@ class Evolutionary(BaseGenerator):
             msg = f"Phi must be a float number in the range [0.0-1.0]. Got: {phi}."
             raise ValueError(msg)
 
+        if not isinstance(novelty_approach, NS):
+            raise TypeError("Novelty Search cannot be None in Evolutionary Generator")
+
         self.phi = phi
         self._novelty_search = novelty_approach
         self._solution_set = None  # By default there's not solution set
@@ -130,8 +133,6 @@ class Evolutionary(BaseGenerator):
             raise ValueError(
                 "The portfolio is empty. To run the generator you must provide a valid portfolio of solvers"
             )
-        if self._novelty_search is None:
-            raise ValueError("Novelty Search cannot be None in Evolutionary Generator")
 
         self._population = self._domain.generate_instances(n=self._pop_size)
         perf_biases, portfolio_scores = self._evaluate_population(self._population)
@@ -307,7 +308,7 @@ class Dominated(Evolutionary):
             domain=domain,
             portfolio=portfolio,
             pop_size=pop_size,
-            novelty_approach=None,
+            novelty_approach=NS(),
             performance_function=performance_function,
             generations=generations,
             repetitions=repetitions,
@@ -321,6 +322,7 @@ class Dominated(Evolutionary):
         )
         self.k = k
         self.offspring_size = pop_size
+        del self._novelty_search  # Not necessary here.
 
     def __call__(self, verbose: bool = False) -> GenResult:
         if self._domain is None:

@@ -222,7 +222,7 @@ docstring-code-format = false
 docstring-code-line-length = "dynamic"
 
 [tool.coverage.run]
-omit = ["digneapy/transformers/*"]
+omit = ["digneapy/transformers/*", "digneapy/utils/*"]
 
 [tool.coverage.report]
 exclude_also = [

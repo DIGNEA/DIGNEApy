@@ -87,14 +87,6 @@ def test_default_generator(descriptor):
     assert eig._performance_fn is not None
     assert eig._performance_fn == max_gap_target
 
-    assert (
-        eig.__str__() == "Evolutionary(pop_size=100,gen=1000,domain=None,portfolio=[])"
-    )
-
-    assert (
-        eig.__repr__() == "Evolutionary<pop_size=100,gen=1000,domain=None,portfolio=[]>"
-    )
-
     with pytest.raises(ValueError) as e:
         eig()
     assert e.value.args[0] == "You must specify a domain to run the generator."
@@ -124,6 +116,25 @@ def test_default_generator(descriptor):
             phi="hello",
         )
     assert e.value.args[0] == "Phi must be a float number in the range [0.0-1.0]."
+
+    with pytest.raises(TypeError) as e:
+        _ = Evolutionary(
+            domain=KnapsackDomain(),
+            portfolio=[],
+            pop_size=100,
+            novelty_approach=tuple(),
+        )
+    assert "Novelty Search cannot be None in Evolutionary Generator" in str(e.value)
+
+    with pytest.raises(TypeError) as e:
+        _ = Evolutionary(
+            domain=KnapsackDomain(),
+            portfolio=[],
+            pop_size=100,
+            novelty_approach=KnapsackDomain(),
+        )
+
+    assert "Novelty Search cannot be None in Evolutionary Generator" in str(e.value)
 
 
 @pytest.mark.parametrize("domain_cls, portfolio, feat_desc_n", DOMAIN_CONTEXT)

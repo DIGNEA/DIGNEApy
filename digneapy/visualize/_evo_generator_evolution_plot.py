@@ -70,6 +70,6 @@ def ea_generator_evolution_plot(logbook=None, filename: Optional[str | Path] = "
     plt.title(r"Evolution of $s$ and $p$")
     if filename:
         plt.savefig(filename)
-    else:
+    else:  # pragma: no cover
         plt.show()
     plt.close()

@@ -136,7 +136,7 @@ class Logbook:
                 f"generation value {generation} must be greater than zero in Logbook.update()"
             )
         self._logbook.record(gen=generation, **self._statistics(population))
-        if feedback:
+        if feedback:  # pragma: no cover
             print(self._logbook.stream)
 
     def to_df(self):

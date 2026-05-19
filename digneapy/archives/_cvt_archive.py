@@ -11,6 +11,7 @@
 """
 
 import json
+import warnings
 from collections.abc import Sequence
 from typing import Optional, Tuple
 
@@ -261,11 +262,15 @@ class CVTArchive(GridArchive):
             file_pattern (str, optional): Pattern of the expected filenames. Defaults to "CVTArchive".
         """
         if self._centroids is None:
-            raise RuntimeWarning("Skipping centroids since they're uninitialised.")
+            warnings.warn(
+                "Skipping centroids since they're uninitialised.", RuntimeWarning
+            )
         else:
             np.save(f"{file_pattern}_centroids.npy", self._centroids)
         if self._samples is None:
-            raise RuntimeWarning("Skipping samples since they're uninitialised.")
+            warnings.warn(
+                "Skipping samples since they're uninitialised.", RuntimeWarning
+            )
         else:
             np.save(f"{file_pattern}_samples.npy", self._samples)
 

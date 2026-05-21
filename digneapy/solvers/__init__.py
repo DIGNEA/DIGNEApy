@@ -15,6 +15,7 @@ from ._kp import default_kp, map_kp, miw_kp, mpw_kp
 from ._tsp_opt import three_opt, two_opt
 from .bpp import best_fit, first_fit, next_fit, worst_fit
 from .evolutionary import EA
+from .random import random_solver
 from .tsp import greedy, nneighbour
 from .utils import shuffle_and_run_for_knapsack
 

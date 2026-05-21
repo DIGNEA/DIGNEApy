@@ -10,7 +10,8 @@
 @Desc    :   None
 """
 
+from ._archive_plotter import ArchivePlotter
 from ._evo_generator_evolution_plot import ea_generator_evolution_plot
 from ._map_elites_evolution_plot import map_elites_evolution_plot
 
-__all__ = ["ea_generator_evolution_plot", "map_elites_evolution_plot"]
+__all__ = ["ea_generator_evolution_plot", "map_elites_evolution_plot", "ArchivePlotter"]

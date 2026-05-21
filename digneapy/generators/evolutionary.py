@@ -26,14 +26,14 @@ from .._core import (
 from .._core.scores import PerformanceFn, max_gap_target
 from ..archives import Archive
 from ..operators import (
+    UCX,
+    BinarySelection,
     Crossover,
+    Generational,
+    Mutation,
     Replacement,
     Selection,
-    SingleMutation,
-    binary_tournament_selection,
-    generational_replacement,
-    uniform_crossover,
-    uniform_one_mutation,
+    UMut,
 )
 from ._base_generator import BaseGenerator, GenResult
 
@@ -54,10 +54,10 @@ class Evolutionary(BaseGenerator):
         descriptor_pipe: DescriptorPipeline = DescriptorPipeline("features"),
         cxrate: float = 0.5,
         mutrate: float = 0.8,
-        crossover: Crossover = uniform_crossover,
-        mutation: SingleMutation = uniform_one_mutation,
-        selection: Selection = binary_tournament_selection,
-        replacement: Replacement = generational_replacement,
+        crossover: Crossover = UCX(cxpb=0.5, seed=None),
+        mutation: Mutation = UMut(None),
+        selection: Selection = BinarySelection(),
+        replacement: Replacement = Generational(),
         phi: float = 0.85,
         seed: Optional[int | np.random.SeedSequence] = None,
     ):
@@ -95,9 +95,8 @@ class Evolutionary(BaseGenerator):
             pop_size,
             performance_function,
             descriptor_pipe,
-            generations,
-            repetitions,
-            seed,
+            generations=generations,
+            repetitions=repetitions,
         )
 
         try:
@@ -125,6 +124,13 @@ class Evolutionary(BaseGenerator):
         self.mutation = mutation
         self.selection = selection
         self.replacement = replacement
+        self.seed = (
+            seed
+            if isinstance(seed, np.random.SeedSequence)
+            else np.random.SeedSequence(seed)
+        )
+
+        self._rng = np.random.default_rng(self.seed)
 
     def __call__(self, verbose: bool = False) -> GenResult:
         if self._domain is None:
@@ -281,9 +287,9 @@ class Dominated(Evolutionary):
         descriptor_pipe: DescriptorPipeline = DescriptorPipeline("features"),
         cxrate: float = 0.5,
         mutrate: float = 0.8,
-        crossover: Crossover = uniform_crossover,
-        mutation: SingleMutation = uniform_one_mutation,
-        selection: Selection = binary_tournament_selection,
+        crossover: Crossover = UCX(cxpb=0.5, seed=None),
+        mutation: Mutation = UMut(None),
+        selection: Selection = BinarySelection(),
         seed: Optional[int | np.random.SeedSequence] = None,
     ):
         """Creates a Evolutionary Instance Generator based on Novelty Search

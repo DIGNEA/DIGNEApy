@@ -12,17 +12,33 @@
 
 __all__ = ["binary_tournament_selection", "Selection"]
 
-from collections.abc import Callable, Sequence
+from collections.abc import Sequence
 from operator import attrgetter
+from typing import Optional, Protocol
 
 import numpy as np
 
 from .._core import IndType
 
-Selection = Callable[[Sequence[IndType]], IndType]
+
+class Selection(Protocol):
+    """Protocol that defines the Selection mechanism"""
+
+    def __call__(
+        self,
+        population: Sequence[IndType] | np.ndarray,
+        seed: Optional[int | np.random.SeedSequence] = None,
+        *arg,
+        **kwargs,
+    ) -> IndType: ...
 
 
-def binary_tournament_selection(population: Sequence[IndType]) -> IndType:
+def binary_tournament_selection(
+    population: Sequence[IndType],
+    seed: Optional[int | np.random.SeedSequence] = None,
+    *args,
+    **kwargs,
+) -> IndType:
     """Binary Tournament Selection Operator
 
     Args:
@@ -40,7 +56,7 @@ def binary_tournament_selection(population: Sequence[IndType]) -> IndType:
     elif len(population) == 1:
         return population[0]
     else:
-        idx1, idx2 = np.random.default_rng().integers(
+        idx1, idx2 = np.random.default_rng(seed).integers(
             low=0, high=len(population), size=2
         )
         return max(population[idx1], population[idx2], key=attrgetter("fitness"))

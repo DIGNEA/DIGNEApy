@@ -16,7 +16,7 @@ import numpy as np
 import pytest
 
 from digneapy import Instance, Solution
-from digneapy.operators import one_point_crossover, uniform_crossover
+from digneapy.operators import OPCX, UCX, OnePointCrossover, UniformCrossover
 
 
 @pytest.mark.parametrize(
@@ -25,18 +25,21 @@ from digneapy.operators import one_point_crossover, uniform_crossover
 @pytest.mark.parametrize("ub", (10, 50, 100))
 @pytest.mark.parametrize("lb", argvalues=(0,))
 @pytest.mark.parametrize("dimension", (50, 100, 500, 1000))
-def test_uniform_crossover_solutions(dimension, lb, ub, cxpb):
-    rng = np.random.default_rng(seed=13)
-    solution = Solution(rng.integers(low=lb, high=ub, size=dimension))
-    other = Solution(rng.integers(low=lb, high=ub, size=dimension))
+@pytest.mark.parametrize(argnames="ind_type_cls", argvalues=(Instance, Solution))
+def test_uniform_crossover(ind_type_cls, dimension, lb, ub, cxpb):
+    seed_sequence = np.random.SeedSequence()
+    rng_seed, cx_seed = seed_sequence.spawn(2)
+    rng = np.random.default_rng(seed=rng_seed)
+    solution = ind_type_cls(rng.integers(low=lb, high=ub, size=dimension))
+    other = ind_type_cls(rng.integers(low=lb, high=ub, size=dimension))
     assert solution != other
-    offspring = uniform_crossover(solution, other, cxpb=cxpb)
+    offspring = UniformCrossover(cxpb, seed=cx_seed)(solution, other)
     try:
         assert offspring != solution
         assert offspring != other
     except AssertionError:
         warnings.warn(
-            f"Uniform crossover [solutions] didn't change anythin with cxpb {cxpb} and N {dimension}",
+            f"Uniform crossover [{ind_type_cls.__name__}] didn't change anything with cxpb {cxpb} and N {dimension}",
             UserWarning,
         )
     assert len(offspring) == dimension
@@ -46,53 +49,23 @@ def test_uniform_crossover_solutions(dimension, lb, ub, cxpb):
 @pytest.mark.parametrize("ub", (10, 50, 100))
 @pytest.mark.parametrize("lb", argvalues=(0,))
 @pytest.mark.parametrize("dimension", (50, 100, 500, 1000))
-def test_one_point_crossover_solutions(dimension, lb, ub):
-    rng = np.random.default_rng(seed=13)
-    solution = Solution(rng.integers(low=lb, high=ub, size=dimension))
-    other = Solution(rng.integers(low=lb, high=ub, size=dimension))
+@pytest.mark.parametrize(argnames="ind_type_cls", argvalues=(Instance, Solution))
+def test_one_point_crossover_(ind_type_cls, dimension, lb, ub):
+    seed_sequence = np.random.SeedSequence()
+    rng_seed, cx_seed = seed_sequence.spawn(2)
+    rng = np.random.default_rng(seed=rng_seed)
+    solution = ind_type_cls(rng.integers(low=lb, high=ub, size=dimension))
+    other = ind_type_cls(rng.integers(low=lb, high=ub, size=dimension))
     assert solution != other
-    offspring = one_point_crossover(solution, other)
-    assert offspring != solution
-    assert offspring != other
-    assert len(offspring) == dimension
-    assert all(lb <= x <= ub for x in offspring)
-
-
-@pytest.mark.parametrize(
-    "cxpb", np.random.default_rng().uniform(low=0, high=1, size=10)
-)
-@pytest.mark.parametrize("ub", (10, 50, 100))
-@pytest.mark.parametrize("lb", argvalues=(0,))
-@pytest.mark.parametrize("dimension", (50, 100, 500, 1000))
-def test_uniform_crossover_instances(dimension, lb, ub, cxpb):
-    rng = np.random.default_rng(seed=42)
-    instance = Instance(rng.integers(low=lb, high=ub, size=dimension))
-    other = Instance(rng.integers(low=lb, high=ub, size=dimension))
-    assert instance != other
-    offspring = uniform_crossover(instance, other, cxpb=cxpb)
+    offspring = OnePointCrossover(seed=cx_seed)(solution, other)
     try:
-        assert offspring != instance
+        assert offspring != solution
         assert offspring != other
     except AssertionError:
         warnings.warn(
-            f"Uniform crossover [instances] didn't change anythin with cxpb {cxpb} and N {dimension}",
+            f"OnePointCrossover [{ind_type_cls.__name__}] didn't change anything and N {dimension}",
             UserWarning,
         )
-    assert len(offspring) == dimension
-    assert all(lb <= x <= ub for x in offspring)
-
-
-@pytest.mark.parametrize("ub", (10, 50, 100))
-@pytest.mark.parametrize("lb", argvalues=(0,))
-@pytest.mark.parametrize("dimension", (50, 100, 500, 1000))
-def test_one_point_crossover_instances(dimension, lb, ub):
-    rng = np.random.default_rng(seed=42)
-    instance = Instance(rng.integers(low=lb, high=ub, size=dimension))
-    other = Instance(rng.integers(low=lb, high=ub, size=dimension))
-    assert instance != other
-    offspring = one_point_crossover(instance, other)
-    assert offspring != instance
-    assert offspring != other
     assert len(offspring) == dimension
     assert all(lb <= x <= ub for x in offspring)
 
@@ -106,7 +79,7 @@ def test_uniform_crossover_raises():
     instance_2 = Instance(chr_2)
 
     with pytest.raises(ValueError):
-        uniform_crossover(instance_1, instance_2)
+        UCX(cxpb=0.0, seed=None)(instance_1, instance_2)
 
 
 def test_one_point_crossover_raises():
@@ -118,4 +91,4 @@ def test_one_point_crossover_raises():
     instance_2 = Instance(chr_2)
 
     with pytest.raises(ValueError):
-        one_point_crossover(instance_1, instance_2)
+        OPCX()(instance_1, instance_2)

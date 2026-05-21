@@ -23,9 +23,10 @@ from .._core.descriptors import DescriptorPipeline
 from .._core.scores import PerformanceFn, max_gap_target
 from ..archives import CVTArchive, GridArchive
 from ..operators import (
-    BatchMutation,
-    batch_uniform_one_mutation,
+    BatchUMut,
+    Mutation,
 )
+from ..visualize import ArchivePlotter
 from ._base_generator import BaseGenerator, GenResult
 
 
@@ -38,8 +39,8 @@ class MapElites(BaseGenerator):
         portfolio: Sequence[Solver],
         pop_size: int,
         archive: GridArchive | CVTArchive,
-        mutation: BatchMutation,
-        repetitions: int,
+        mutation: Mutation = BatchUMut(seed=None),
+        repetitions: int = 1,
         describe_pipe: DescriptorPipeline = DescriptorPipeline("features"),
         performance_function: PerformanceFn = max_gap_target,
         generations: int = 1_000,
@@ -69,10 +70,9 @@ class MapElites(BaseGenerator):
             portfolio,
             pop_size,
             performance_function,
-            describe_pipe,
-            generations,
-            repetitions,
-            seed=seed,
+            descriptor_pipe=describe_pipe,
+            generations=generations,
+            repetitions=repetitions,
         )
         if not isinstance(archive, (GridArchive, CVTArchive)):
             raise TypeError(
@@ -81,12 +81,50 @@ class MapElites(BaseGenerator):
 
         self._archive = archive
         self._mutation = mutation
+        self._seed_sequence = (
+            seed
+            if isinstance(seed, np.random.SeedSequence)
+            else np.random.SeedSequence(seed)
+        )
+        me_seed, mut_seed = self._seed_sequence.spawn(2)
+        self._rng = np.random.default_rng(me_seed)
+        self.__mut_seed = mut_seed
 
     @property
     def archive(self):
         return self._archive
 
-    def __call__(self, verbose: bool = False) -> GenResult:
+    def _run_generation(self, generation: int, verbose: bool):
+        indices = self._rng.choice(
+            list(self._archive.filled_cells), size=self._pop_size
+        )
+        parents = np.asarray(self._archive[indices], copy=True)
+        offspring = self._mutation(
+            parents,
+            self._domain._lbs,
+            ub=self._domain._ubs,
+        )
+        perf_biases, portfolio_scores = self._evaluate_population(offspring)
+        descriptors = self._descriptor_pipe(offspring, portfolio_scores, self._domain)
+
+        offspring_population = [
+            Instance(
+                variables=offspring[i],
+                fitness=perf_biases[i],
+                descriptor=descriptors[i],
+                portfolio_scores=portfolio_scores[i],
+                p=perf_biases[i],
+                # Todo: Consider remove features attr features=features[i] if features is not None else None,
+            )
+            for i in range(len(offspring))
+        ]
+        self._archive.extend(instances=offspring_population, descriptors=descriptors)
+        # Record the stats and update the performed gens
+        self._logbook.update(
+            generation=generation + 1, population=self._archive, feedback=verbose
+        )
+
+    def _initialise_grid(self, verbose: bool):
         instances = self._domain.generate_instances(n=self._pop_size)
         perf_biases, portfolio_scores = self._evaluate_population(instances)
         descriptors = self._descriptor_pipe(instances, portfolio_scores, self._domain)
@@ -105,37 +143,57 @@ class MapElites(BaseGenerator):
         self._archive.extend(instances=initial_instances, descriptors=descriptors)
         self._logbook.update(generation=0, population=instances, feedback=verbose)
 
+    def __call__(self, verbose: bool = False) -> GenResult:
+        # instances = self._domain.generate_instances(n=self._pop_size)
+        # perf_biases, portfolio_scores = self._evaluate_population(instances)
+        # descriptors = self._descriptor_pipe(instances, portfolio_scores, self._domain)
+        # initial_instances = [
+        #     Instance(
+        #         variables=instances[i].variables,
+        #         fitness=perf_biases[i],
+        #         descriptor=descriptors[i],
+        #         portfolio_scores=portfolio_scores[i],
+        #         p=perf_biases[i],
+        #     )
+        #     for i in range(len(instances))
+        # ]
+        # # Here we do not care for p >= 0. We are starting the archive
+        # # Must be removed later on
+        # self._archive.extend(instances=initial_instances, descriptors=descriptors)
+        # self._logbook.update(generation=0, population=instances, feedback=verbose)
+        self._initialise_grid(verbose)
         for generation in range(self._generations):
-            indices = self._rng.choice(
-                list(self._archive.filled_cells), size=self._pop_size
-            )
-            parents = np.asarray(self._archive[indices], copy=True)
-            offspring = batch_uniform_one_mutation(
-                parents, self._domain._lbs, ub=self._domain._ubs
-            )
-            perf_biases, portfolio_scores = self._evaluate_population(offspring)
-            descriptors = self._descriptor_pipe(
-                offspring, portfolio_scores, self._domain
-            )
+            self._run_generation(generation, verbose)
+            # indices = self._rng.choice(
+            #     list(self._archive.filled_cells), size=self._pop_size
+            # )
+            # parents = np.asarray(self._archive[indices], copy=True)
+            # offspring = batch_uniform_one_mutation(
+            #     parents, self._domain._lbs, ub=self._domain._ubs
+            # )
+            # perf_biases, portfolio_scores = self._evaluate_population(offspring)
+            # descriptors = self._descriptor_pipe(
+            #     offspring, portfolio_scores, self._domain
+            # )
 
-            offspring_population = [
-                Instance(
-                    variables=offspring[i],
-                    fitness=perf_biases[i],
-                    descriptor=descriptors[i],
-                    portfolio_scores=portfolio_scores[i],
-                    p=perf_biases[i],
-                    # Todo: Consider remove features attr features=features[i] if features is not None else None,
-                )
-                for i in range(len(offspring))
-            ]
-            self._archive.extend(
-                instances=offspring_population, descriptors=descriptors
-            )
-            # Record the stats and update the performed gens
-            self._logbook.update(
-                generation=generation + 1, population=self._archive, feedback=verbose
-            )
+            # offspring_population = [
+            #     Instance(
+            #         variables=offspring[i],
+            #         fitness=perf_biases[i],
+            #         descriptor=descriptors[i],
+            #         portfolio_scores=portfolio_scores[i],
+            #         p=perf_biases[i],
+            #         # Todo: Consider remove features attr features=features[i] if features is not None else None,
+            #     )
+            #     for i in range(len(offspring))
+            # ]
+            # self._archive.extend(
+            #     instances=offspring_population, descriptors=descriptors
+            # )
+            # # Record the stats and update the performed gens
+            # self._logbook.update(
+            #     generation=generation + 1, population=self._archive, feedback=verbose
+            # )
 
         if verbose:  # pragma: no cover
             # Clear the terminal
@@ -147,4 +205,77 @@ class MapElites(BaseGenerator):
             target=self._portfolio[0].__name__,
             instances=self._archive,
             history=self._logbook,
+        )
+
+
+class PlottedMapElites:
+    """Wraps a MapElites generator and injects live plotting after each generation.
+
+    It replaces the generator's internal loop with an equivalent one that calls
+    ``plotter.update()`` every *refresh_every* generations.  Because it accesses
+    the generator's internals (all prefixed ``_``), pin your digneapy version.
+
+    Args:
+        generator:       A ``MapElites`` instance (not yet called).
+        feat_names:      Labels for the two archive axes.
+        attr:            Instance attribute to plot. Default ``"p"``.
+        cmap:            Matplotlib colourmap. Default ``"viridis"``.
+        vmin / vmax:     Fixed colour limits (``None`` = auto).
+        refresh_every:   Redraw every N generations. Default 1.
+        save_final:      If not ``None``, saves the final frame to this path.
+    """
+
+    def __init__(
+        self,
+        generator,
+        feat_names: Optional[Sequence[str]] = None,
+        attr: str = "p",
+        cmap: str = "viridis",
+        vmin: Optional[float] = None,
+        vmax: Optional[float] = None,
+        refresh_every: int = 1,
+        save_final: Optional[str] = None,
+    ):
+        self._gen = generator
+        self._feat_names = feat_names
+        self._attr = attr
+        self._cmap = cmap
+        self._vmin = vmin
+        self._vmax = vmax
+        self._refresh_every = max(1, refresh_every)
+        self._save_final = save_final
+
+    def __call__(self, verbose: bool = False):
+        """Runs the full MAP-Elites loop and shows the live heatmap.
+
+        Returns the same ``GenResult`` the underlying generator would return.
+        """
+        self._gen._initialise_grid(verbose)
+        plotter = ArchivePlotter(
+            self._gen._archive,
+            attr=self._attr,
+            feat_names=self._feat_names,
+            cmap=self._cmap,
+            vmin=self._vmin,
+            vmax=self._vmax,
+            title=f"MAP-Elites — {self._gen._domain.__name__}",
+        )
+        plotter.update(generation=0)
+
+        for generation in range(self._gen._generations):
+            self._gen._run_generation(generation, verbose)
+            if (generation + 1) % self._refresh_every == 0:
+                plotter.update(generation=generation + 1)
+
+        self._gen._archive.purge_unfeasible()
+        plotter.update(generation=self._gen._generations)
+
+        if self._save_final:
+            plotter.save(self._save_final)
+
+        plotter.show()
+        return GenResult(
+            target=self._gen._portfolio[0].__name__,
+            instances=self._gen._archive,
+            history=self._gen._logbook,
         )

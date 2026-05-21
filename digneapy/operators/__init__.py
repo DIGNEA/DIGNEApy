@@ -10,33 +10,41 @@
 @Desc    :   None
 """
 
-from ._crossover import Crossover, one_point_crossover, uniform_crossover
-from ._mutation import (
-    BatchMutation,
-    SingleMutation,
-    batch_uniform_one_mutation,
-    uniform_one_mutation,
+from .crossover import OPCX, UCX, Crossover, OnePointCrossover, UniformCrossover
+from .mutation import (
+    BatchUMut,
+    BatchUniformMutation,
+    ILMut,
+    ISOLineMutation,
+    Mutation,
+    UMut,
+    UniformMutation,
 )
-from ._replacement import (
+from .replacement import (
+    Elitist,
+    Generational,
+    GreedyReplacement,
     Replacement,
-    elitist_replacement,
-    first_improve_replacement,
-    generational_replacement,
 )
-from ._selection import Selection, binary_tournament_selection
+from .selection import BinarySelection, Selection
 
 __all__ = [
-    "Crossover",
-    "SingleMutation",
-    "BatchMutation",
+    "Mutation",
+    "UniformMutation",
+    "UMut",
+    "BatchUniformMutation",
+    "BatchUMut",
+    "ISOLineMutation",
+    "ILMut",
     "Selection",
+    "BinarySelection",
+    "Crossover",
+    "OnePointCrossover",
+    "OPCX",
+    "UniformCrossover",
+    "UCX",
     "Replacement",
-    "one_point_crossover",
-    "uniform_crossover",
-    "uniform_one_mutation",
-    "batch_uniform_one_mutation",
-    "elitist_replacement",
-    "first_improve_replacement",
-    "generational_replacement",
-    "binary_tournament_selection",
+    "Generational",
+    "GreedyReplacement",
+    "Elitist",
 ]

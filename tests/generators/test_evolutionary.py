@@ -24,10 +24,11 @@ from digneapy.generators import (
     Evolutionary,
 )
 from digneapy.operators import (
-    binary_tournament_selection,
-    generational_replacement,
-    uniform_crossover,
-    uniform_one_mutation,
+    Crossover,
+    Generational,
+    Mutation,
+    Replacement,
+    Selection,
 )
 from digneapy.solvers import (
     best_fit,
@@ -79,10 +80,10 @@ def test_default_generator(descriptor):
     assert eig._repetitions == 1
     assert np.isclose(eig.cxrate, 0.5)
     assert np.isclose(eig.mutrate, 0.8)
-    assert eig.crossover == uniform_crossover
-    assert eig.mutation == uniform_one_mutation
-    assert eig.selection == binary_tournament_selection
-    assert eig.replacement == generational_replacement
+    assert isinstance(eig.crossover, Crossover)
+    assert isinstance(eig.mutation, Mutation)
+    assert isinstance(eig.selection, Selection)
+    assert isinstance(eig.replacement, Replacement)
     assert np.isclose(eig.phi, 0.85)
     assert eig._performance_fn is not None
     assert eig._performance_fn == max_gap_target
@@ -157,7 +158,7 @@ def test_evolutionary_generator(
         portfolio=portfolio,
         repetitions=1,
         descriptor_pipe=descriptor_pipeline,
-        replacement=generational_replacement,
+        replacement=Generational(),
     )
     builded_pipeline = eig.descriptor_pipeline
     assert builded_pipeline._key == descriptor

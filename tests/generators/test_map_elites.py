@@ -21,7 +21,7 @@ from digneapy.generators import (
     MapElites,
 )
 from digneapy.operators import (
-    uniform_one_mutation,
+    UMut,
 )
 from digneapy.solvers import (
     best_fit,
@@ -51,7 +51,7 @@ def test_map_elites_raises_if_wrong_archive():
             portfolio=[],
             archive=tuple(),
             pop_size=100,
-            mutation=uniform_one_mutation,
+            mutation=UMut(seed=42),
             describe_pipe=DescriptorPipeline("features"),
             repetitions=1,
         )
@@ -84,7 +84,7 @@ def test_map_elites_with_grid_archive(
         portfolio=portfolio,
         archive=archive,
         pop_size=ps,
-        mutation=uniform_one_mutation,
+        mutation=UMut(seed=42),
         generations=generations,
         describe_pipe=descriptor_pipeline,
         repetitions=1,
@@ -183,7 +183,7 @@ def test_map_elites_domain_cvt(domain_cls, portfolio, dimension, descriptor, ps)
         portfolio=portfolio,
         archive=archive,
         pop_size=ps,
-        mutation=uniform_one_mutation,
+        mutation=UMut(seed=42),
         generations=generations,
         describe_pipe=DescriptorPipeline(key=descriptor),
         repetitions=1,

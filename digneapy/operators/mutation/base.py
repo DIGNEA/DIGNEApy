@@ -19,8 +19,12 @@ from digneapy._core._types import IndType
 
 
 class Mutation(ABC):
-    def __init__(self, seed: Optional[int | np.random.SeedSequence]):
-        self._seed = seed
+    def __init__(self, seed: Optional[int | np.random.SeedSequence] = None):
+        self._seed = (
+            seed
+            if isinstance(seed, (int | np.random.SeedSequence))
+            else np.random.SeedSequence()
+        )
         self._rng = np.random.default_rng(seed)
 
     @abstractmethod

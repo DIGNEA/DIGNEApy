@@ -10,25 +10,29 @@
 @Desc    :   None
 """
 
-import warnings
-from collections import deque
 from pathlib import Path
 
 import numpy as np
 import pytest
 
-from digneapy import NS, Archive, DescriptorPipeline, Domain, max_gap_target
+from digneapy import DescriptorPipeline, Domain, max_gap_target
+from digneapy.archives import ProximityArchive
 from digneapy.domains import BPPDomain, KnapsackDomain, TSPDomain
 from digneapy.generators import (
-    Dominated,
     Evolutionary,
 )
 from digneapy.operators import (
+    OPCX,
+    UCX,
+    BinarySelection,
     Crossover,
+    Elitist,
     Generational,
+    GreedyReplacement,
     Mutation,
     Replacement,
     Selection,
+    UMut,
 )
 from digneapy.solvers import (
     best_fit,
@@ -67,7 +71,7 @@ def test_default_generator(descriptor):
         pop_size=100,
         domain=None,
         portfolio=[],
-        novelty_approach=NS(k=15),
+        archive=ProximityArchive(k=15, threshold=1.0),
         descriptor_pipe=descriptor_pipeline,
     )
     assert eig._pop_size == 100
@@ -102,7 +106,11 @@ def test_default_generator(descriptor):
 
     with pytest.raises(ValueError) as e:
         _ = Evolutionary(
-            pop_size=100, domain=None, portfolio=[], novelty_approach=NS(k=15), phi=-1.0
+            pop_size=100,
+            domain=None,
+            portfolio=[],
+            archive=ProximityArchive(k=15, threshold=1.0),
+            phi=-1.0,
         )
     assert (
         e.value.args[0]
@@ -113,7 +121,7 @@ def test_default_generator(descriptor):
             pop_size=100,
             domain=None,
             portfolio=[],
-            novelty_approach=NS(k=15),
+            archive=ProximityArchive(k=15, threshold=1.0),
             phi="hello",
         )
     assert e.value.args[0] == "Phi must be a float number in the range [0.0-1.0]."
@@ -123,42 +131,72 @@ def test_default_generator(descriptor):
             domain=KnapsackDomain(),
             portfolio=[],
             pop_size=100,
-            novelty_approach=tuple(),
+            archive=tuple(),
         )
-    assert "Novelty Search cannot be None in Evolutionary Generator" in str(e.value)
+    assert "archive must be a subclass of Archive" in str(e.value)
 
     with pytest.raises(TypeError) as e:
         _ = Evolutionary(
             domain=KnapsackDomain(),
             portfolio=[],
             pop_size=100,
-            novelty_approach=KnapsackDomain(),
+            archive=KnapsackDomain(),
         )
 
-    assert "Novelty Search cannot be None in Evolutionary Generator" in str(e.value)
+    assert "archive must be a subclass of Archive" in str(e.value)
 
 
 @pytest.mark.parametrize("domain_cls, portfolio, feat_desc_n", DOMAIN_CONTEXT)
 @pytest.mark.parametrize("descriptor", ("features", "performance", "instance"))
 @pytest.mark.parametrize("dimension", [50, 100])
 @pytest.mark.parametrize("k", [3, 15])
-@pytest.mark.parametrize("ps", [64, 128])
+@pytest.mark.parametrize("popsize", [64, 128])
+@pytest.mark.parametrize("crossover", (UCX, OPCX))
+@pytest.mark.parametrize("mutation", (UMut,))
+@pytest.mark.parametrize("selection", (BinarySelection,))
+@pytest.mark.parametrize("replacement", (Generational, GreedyReplacement, Elitist))
+# The following lines are commented to avoid HUGE amount of testing. Just check the foundational components
+# @pytest.mark.parametrize(
+#     "phi", np.random.default_rng().uniform(low=0.0, high=1.0, size=3)
+# )
+# @pytest.mark.parametrize(
+#     "threshold", np.random.default_rng().uniform(low=0.0, high=10.0, size=3)
+# )
+# @pytest.mark.parametrize(
+#     "cxrate", np.random.default_rng().uniform(low=0.0, high=1.0, size=3)
+# )
+# @pytest.mark.parametrize(
+#     "mutrate", np.random.default_rng().uniform(low=0.0, high=1.0, size=3)
+# )
 def test_evolutionary_generator(
-    domain_cls, portfolio, feat_desc_n, descriptor, dimension, k, ps
+    domain_cls,
+    portfolio,
+    feat_desc_n,
+    descriptor,
+    dimension,
+    k,
+    popsize,
+    crossover,
+    mutation,
+    selection,
+    replacement,
 ):
     descriptor_pipeline = DescriptorPipeline(descriptor)
     domain = domain_cls(dimension=dimension)
     generations = 10
     eig = Evolutionary(
-        pop_size=ps,
+        pop_size=popsize,
         generations=generations,
         domain=domain,
-        novelty_approach=NS(k=k),
-        solution_set=Archive(threshold=3),
+        archive=ProximityArchive(k=k, threshold=3),
+        solution_set=ProximityArchive(k=k, threshold=3),
         portfolio=portfolio,
         repetitions=1,
         descriptor_pipe=descriptor_pipeline,
-        replacement=Generational(),
+        crossover=crossover(),
+        mutation=mutation(),
+        selection=selection(),
+        replacement=replacement(),
     )
     builded_pipeline = eig.descriptor_pipeline
     assert builded_pipeline._key == descriptor
@@ -166,9 +204,8 @@ def test_evolutionary_generator(
     result = eig()
     solution_set = result.instances
     # It could be empty
-    assert isinstance(solution_set, Archive)
+    assert isinstance(solution_set, ProximityArchive)
     if len(solution_set) != 0:
-        # Dominated always returns something. Even though they could be unfeasible
         desc_dimension = 0
         match descriptor:
             case "performance":
@@ -195,96 +232,3 @@ def test_evolutionary_generator(
     ea_generator_evolution_plot(log.logbook, filename=filename)
     assert filename.exists()
     filename.unlink()
-
-
-@pytest.mark.parametrize("domain_cls, portfolio, feat_desc_n", DOMAIN_CONTEXT)
-@pytest.mark.parametrize("k", [3, 15])
-@pytest.mark.parametrize("descriptor", ["features", "performance", "instance"])
-@pytest.mark.parametrize("dimension", [50, 100])
-@pytest.mark.parametrize("ps", [64, 128])
-def test_dominated_generator(
-    domain_cls, portfolio, feat_desc_n, k, descriptor, dimension, ps
-):
-    pop_size = ps
-    domain = domain_cls(dimension=dimension)
-    generations = 10
-    descriptor_pipeline = DescriptorPipeline(descriptor)
-    deig = Dominated(
-        pop_size=pop_size,
-        generations=generations,
-        domain=domain,
-        portfolio=portfolio,
-        repetitions=1,
-        k=k,
-        descriptor_pipe=descriptor_pipeline,
-    )
-    portfolio_names = [s.__name__ for s in portfolio]
-    expected_str = f"pop_size={pop_size},gen={generations},domain={domain.__name__},portfolio={portfolio_names}"
-    assert deig.__str__() == f"Dominated({expected_str})"
-    assert deig.__repr__() == f"Dominated<{expected_str}>"
-    result = deig()
-    assert len(result.instances) == pop_size
-    instances = result.instances
-    # They could be empty
-    assert isinstance(instances, list)
-    assert all(len(s) == len(instances[0]) for s in instances[1:])
-    # Fitness feasibility is not guaranted
-    try:
-        assert all(s.fitness >= 0.0 for s in instances)
-    except AssertionError:
-        warnings.warn(
-            f"Fitness feasibility check failed - "
-            f"Domain: {domain_cls.__name__}, Descriptor: {descriptor}, N: {dimension}, Portfolio: {portfolio_names}, K: {k}",
-            UserWarning,
-            2,
-        )
-    # It means that fitness is sorted
-    fitness = [s.fitness for s in instances]
-    sorted_fitness = sorted(fitness, reverse=True)
-    assert fitness == sorted_fitness
-    # Dominated always returns something. Even though they could be unfeasible
-    desc_dimension = 0
-    match descriptor:
-        case "performance":
-            desc_dimension = len(portfolio)
-        case "instance":
-            desc_dimension = len(instances[0])
-        case "features":
-            desc_dimension = feat_desc_n
-
-    assert all(len(s.descriptor) == desc_dimension for s in instances)
-    assert all(len(s.portfolio_scores) == len(portfolio) for s in instances)
-    # DNS do not guarantees the biased aspect of the instances
-    # but all scores of the target must be positive --> Forces feasibility
-    p_scores = [s.portfolio_scores for s in instances]
-    assert all(p_scores[i][0] >= 0.0 for i in range(len(p_scores)))
-
-
-@pytest.mark.parametrize("descriptor", ["features", "performance", "instance"])
-def test_dominated_evolutionary_generator_raises_if_wrong_args(descriptor):
-    descriptor_pipeline = DescriptorPipeline(descriptor)
-
-    portfolio = deque([default_kp, map_kp, miw_kp, mpw_kp])
-    generations = 10
-    eig = Dominated(
-        pop_size=10,
-        generations=generations,
-        domain=None,
-        portfolio=portfolio,
-        repetitions=1,
-        descriptor_pipe=descriptor_pipeline,
-    )
-    with pytest.raises(ValueError):
-        _ = eig()
-
-    with pytest.raises(ValueError):
-        kp_domain = KnapsackDomain(dimension=50)
-        eig = Dominated(
-            pop_size=10,
-            generations=generations,
-            domain=kp_domain,
-            portfolio=list(),
-            repetitions=1,
-            descriptor_pipe=descriptor_pipeline,
-        )
-        _ = eig()

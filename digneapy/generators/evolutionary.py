@@ -10,18 +10,17 @@
 @Desc    :   None
 """
 
-from typing import Optional, Sequence
+from collections.abc import Sequence
+from typing import Optional
 
 import numpy as np
 
 from digneapy._core.descriptors import DescriptorPipeline
 
 from .._core import (
-    NS,
     Domain,
     Instance,
     Solver,
-    dominated_novelty_search,
 )
 from .._core.scores import PerformanceFn, max_gap_target
 from ..archives import Archive
@@ -46,16 +45,16 @@ class Evolutionary(BaseGenerator):
         domain: Domain,
         portfolio: Sequence[Solver],
         pop_size: int,
-        novelty_approach: NS,
+        archive: Archive,
+        solution_set: Optional[Archive] = None,
         performance_function: PerformanceFn = max_gap_target,
         generations: int = 1000,
         repetitions: int = 1,
-        solution_set: Optional[Archive] = None,
         descriptor_pipe: DescriptorPipeline = DescriptorPipeline("features"),
         cxrate: float = 0.5,
         mutrate: float = 0.8,
-        crossover: Crossover = UCX(cxpb=0.5, seed=None),
-        mutation: Mutation = UMut(None),
+        crossover: Crossover = UCX(),
+        mutation: Mutation = UMut(),
         selection: Selection = BinarySelection(),
         replacement: Replacement = Generational(),
         phi: float = 0.85,
@@ -69,11 +68,11 @@ class Evolutionary(BaseGenerator):
             domain (Domain): Domain for which the instances are generated for.
             portfolio (Sequence[Solver]): Sequence item of callable objects that can evaluate a instance.
             pop_size (int, optional): Number of instances in the population to evolve. Defaults to 100.
-            novelty_approach (NS): Novelty Search strategy to produce diverse instances.
+            archive (Archive): Container to store diverse instances.
+            solution_set (Optional[Archive], optional): Solution set to store the instances. Defaults to None.
             performance_function (PerformanceFn, optional): Performance function to calculate the performance score. Defaults to max_gap_target.
             generations (int, optional): Number of generations to perform. Defaults to 1000.
             repetitions (int, optional): Number times a solver in the portfolio must be run over the same instance. Defaults to 1.
-            solution_set (Optional[Archive], optional): Solution set to store the instances. Defaults to None.
             describe_by (DESCRIPTORS, optional): _Descriptor used to calculate the diversity. The options available are defined in the dictionary digneapy.DESCRIPTORS. Defaults to "features".
             cxrate (float, optional): Crossover rate. Defaults to 0.5.
             mutrate (float, optional): Mutation rate. Defaults to 0.8.
@@ -99,27 +98,22 @@ class Evolutionary(BaseGenerator):
             repetitions=repetitions,
         )
 
-        try:
-            phi = float(phi)
-        except ValueError:
-            raise ValueError("Phi must be a float number in the range [0.0-1.0].")
-
-        if phi < 0.0 or phi > 1.0:
-            msg = f"Phi must be a float number in the range [0.0-1.0]. Got: {phi}."
+        if any(param < 0.0 or param > 1.0 for param in (cxrate, mutrate, phi)):
+            msg = f"cxrate, mutrate and phi must be a float number in the range [0.0-1.0]. Got: cxrate={cxrate}, mutrate={mutrate}, phi={phi}."
             raise ValueError(msg)
 
-        if not isinstance(novelty_approach, NS):
-            raise TypeError("Novelty Search cannot be None in Evolutionary Generator")
+        if not isinstance(archive, Archive):
+            raise TypeError("archive must be a subclass of Archive")
 
-        self.phi = phi
-        self._novelty_search = novelty_approach
-        self._solution_set = None  # By default there's not solution set
-        if solution_set is not None:
-            self._ns_solution_set = NS(archive=solution_set, k=1)
+        if solution_set is not None and not isinstance(solution_set, Archive):
+            raise TypeError("solution_set must be a subclass of Archive")
 
+        self.phi = float(phi)
+        self._archive = archive
+        self._solution_set = solution_set
         self.offspring_size = self._pop_size
-        self.cxrate = cxrate
-        self.mutrate = mutrate
+        self.cxrate = float(cxrate)
+        self.mutrate = float(mutrate)
         self.crossover = crossover
         self.mutation = mutation
         self.selection = selection
@@ -133,12 +127,6 @@ class Evolutionary(BaseGenerator):
         self._rng = np.random.default_rng(self.seed)
 
     def __call__(self, verbose: bool = False) -> GenResult:
-        if self._domain is None:
-            raise ValueError("You must specify a domain to run the generator.")
-        if len(self._portfolio) == 0:
-            raise ValueError(
-                "The portfolio is empty. To run the generator you must provide a valid portfolio of solvers"
-            )
 
         self._population = self._domain.generate_instances(n=self._pop_size)
         perf_biases, portfolio_scores = self._evaluate_population(self._population)
@@ -153,7 +141,7 @@ class Evolutionary(BaseGenerator):
                 scores=portfolio_scores,
                 domain=self._domain,
             )
-            novelty_scores = self._novelty_search(instances_descriptors=descriptors)
+            novelty_scores = self._archive(descriptors=descriptors)
             offspring_fitness = self._compute_fitness(perf_biases, novelty_scores)
 
             # Update to include this
@@ -177,17 +165,15 @@ class Evolutionary(BaseGenerator):
             # Only the feasible instances are considered to be included
             # in the archive and the solution set.
             feasible_indeces = np.where(perf_biases > 0)[0]
-            self._novelty_search.archive.extend(
+            self._archive.extend(
                 instances=[offspring[i] for i in feasible_indeces],
                 descriptors=descriptors[feasible_indeces],
                 novelty_scores=novelty_scores[feasible_indeces],
             )
 
-            if self._ns_solution_set:
-                novelty_solution_set = self._ns_solution_set(
-                    instances_descriptors=descriptors
-                )
-                self._ns_solution_set.archive.extend(
+            if self._solution_set:
+                novelty_solution_set = self._solution_set(descriptors=descriptors)
+                self._solution_set.extend(
                     instances=[offspring[i] for i in feasible_indeces],
                     descriptors=descriptors[feasible_indeces],
                     novelty_scores=novelty_solution_set[feasible_indeces],
@@ -206,9 +192,7 @@ class Evolutionary(BaseGenerator):
             print(f"\r{blank}\r", end="")
 
         _instances = (
-            self._ns_solution_set.archive
-            if self._ns_solution_set is not None
-            else self._novelty_search.archive
+            self._solution_set if self._solution_set is not None else self._archive
         )
         return GenResult(
             target=self._portfolio[0].__name__,
@@ -267,159 +251,3 @@ class Evolutionary(BaseGenerator):
         fitness = np.zeros(len(performance_biases))
         fitness = (performance_biases * self.phi) + (novelty_scores * phi_r)
         return fitness
-
-
-class Dominated(Evolutionary):
-    """
-    Object to generate instances based on a Evolutionary Algorithn
-    with a Dominated Novelty Search approach
-    """
-
-    def __init__(
-        self,
-        domain: Domain,
-        portfolio: Sequence[Solver],
-        pop_size: int = 128,
-        performance_function: PerformanceFn = max_gap_target,
-        generations: int = 1000,
-        repetitions: int = 1,
-        k: int = 15,
-        descriptor_pipe: DescriptorPipeline = DescriptorPipeline("features"),
-        cxrate: float = 0.5,
-        mutrate: float = 0.8,
-        crossover: Crossover = UCX(cxpb=0.5, seed=None),
-        mutation: Mutation = UMut(None),
-        selection: Selection = BinarySelection(),
-        seed: Optional[int | np.random.SeedSequence] = None,
-    ):
-        """Creates a Evolutionary Instance Generator based on Novelty Search
-
-        Args:
-            domain (Domain): Domain for which the instances are generated for.
-            portfolio (Sequence[Solver]): Sequence item of callable objects that can evaluate a instance.
-            pop_size (int, optional): Number of instances in the population to evolve. Defaults to 128.
-            offspring_size (int, optional): Number of instances in the offspring population. Defaults to 128.
-            generations (int, optional): Number of total generations to perform. Defaults to 1000.
-            k (int, optional): Number of neighbours to calculate the sparseness. Defaults to 15.
-            descriptor_strategy (str, optional): Descriptor used to calculate the diversity. The options available are defined in the dictionary digneapy.qd.descriptor_strategies. Defaults to "features".
-            repetitions (int, optional): Number times a solver in the portfolio must be run over the same instance. Defaults to 1.
-            cxrate (float, optional): Crossover rate. Defaults to 0.5.
-            mutrate (float, optional): Mutation rate. Defaults to 0.8.
-            crossover (Crossover, optional): Crossover operator. Defaults to uniform_crossover.
-            mutation (Mutation, optional): Mutation operator. Defaults to uniform_one_mutation.
-            selection (Selection, optional): Selection operator. Defaults to binary_tournament_selection.
-            performance_function (PerformanceFn, optional): Performance function to calculate the performance score. Defaults to max_gap_target.
-        """
-        super().__init__(
-            domain=domain,
-            portfolio=portfolio,
-            pop_size=pop_size,
-            novelty_approach=NS(),
-            performance_function=performance_function,
-            generations=generations,
-            repetitions=repetitions,
-            cxrate=cxrate,
-            mutrate=mutrate,
-            crossover=crossover,
-            mutation=mutation,
-            selection=selection,
-            descriptor_pipe=descriptor_pipe,
-            seed=seed,
-        )
-        self.k = k
-        self.offspring_size = pop_size
-        del self._novelty_search  # Not necessary here.
-
-    def __call__(self, verbose: bool = False) -> GenResult:
-        if self._domain is None:
-            raise ValueError("You must specify a domain to run the generator.")
-        if len(self._portfolio) == 0:
-            raise ValueError(
-                "The portfolio is empty. To run the generator you must provide a valid portfolio of solvers"
-            )
-        self._population = self._domain.generate_instances(n=self._pop_size)
-        perf_biases, portfolio_scores = self._evaluate_population(self._population)
-        descriptors = self._descriptor_pipe(
-            population=self._population,
-            scores=portfolio_scores,
-            domain=self._domain,
-        )
-
-        # if features is not None:
-        #     combined_features = np.empty(
-        #         shape=(self._pop_size * 2, features.shape[1]), dtype=np.float32
-        #     )
-        for pgen in range(self._generations):
-            offspring = self.generate(self._pop_size)
-            off_perf_biases, off_portfolio_scores = self._evaluate_population(offspring)
-
-            off_descriptors = self._descriptor_pipe(
-                population=offspring,
-                scores=off_portfolio_scores,
-                domain=self._domain,
-            )
-            combined_descriptors = np.concatenate(
-                (descriptors, off_descriptors), axis=0
-            )
-            combined_performances = np.concatenate(
-                (perf_biases, off_perf_biases), axis=0
-            )
-            combined_port_scores = np.concatenate(
-                (portfolio_scores, portfolio_scores), axis=0
-            )
-            genotypes = np.concatenate(
-                (np.asarray(self._population, copy=True), offspring), axis=0
-            )
-            # if features is not None:
-            #     combined_features = np.concatenate((features, off_features), axis=0)
-
-            (
-                sorted_descriptors,
-                sorted_performances,
-                sorted_competition_fitness,
-                sorted_indexing,
-            ) = dominated_novelty_search(
-                descriptors=combined_descriptors,
-                performances=combined_performances,
-                k=self.k,
-                force_feasible_only=True,
-            )
-
-            # Keep the top N for the next generation
-            sorted_indexing = sorted_indexing[: self._pop_size]
-            fitness = sorted_competition_fitness[: self._pop_size]
-            descriptors = sorted_descriptors[: self._pop_size]
-            perf_biases = sorted_performances[: self._pop_size]
-            # Track from the combined arrays based on the indexing
-            portfolio_scores = combined_port_scores[sorted_indexing]
-            genotypes = genotypes[sorted_indexing]
-            # if features is not None:
-            #     features = combined_features[sorted_indexing]
-            # Both population and offspring are used in the replacement
-            # Record the stats and update the performed gens
-            self._population = [
-                Instance(
-                    variables=genotypes[i],
-                    fitness=fitness[i],
-                    descriptor=descriptors[i],
-                    portfolio_scores=portfolio_scores[i],
-                    p=perf_biases[i],
-                    # Todo: Consider remove explicit features attr features=features[i] if features is not None else (),
-                )
-                for i in range(self._pop_size)
-            ]
-
-            self._logbook.update(
-                generation=pgen, population=self._population, feedback=verbose
-            )
-
-        if verbose:  # pragma: no cover
-            # Clear the terminal
-            blank = " " * 80
-            print(f"\r{blank}\r", end="")
-
-        return GenResult(
-            target=self._portfolio[0].__name__,
-            instances=self._population,
-            history=self._logbook,
-        )

@@ -20,10 +20,18 @@ from digneapy._core._types import IndType
 
 class Crossover(ABC):
     def __init__(
-        self, cxpb: float, seed: Optional[int | np.random.SeedSequence], *args, **kwargs
+        self, cxpb: float = 0.5, seed: Optional[int | np.random.SeedSequence] = None
     ):
+        if cxpb < 0.0 or cxpb > 1.0:
+            raise ValueError(
+                f"Crossover expects cxpb in the range [0.0, 1.0]. Got {cxpb}"
+            )
         self._cxpb = np.float64(cxpb)
-        self._seed = seed
+        self._seed = (
+            seed
+            if isinstance(seed, (int | np.random.SeedSequence))
+            else np.random.SeedSequence()
+        )
         self._rng = np.random.default_rng(seed)
 
     @abstractmethod

@@ -21,7 +21,7 @@ from .base import Crossover
 
 class OnePointCrossover(Crossover):
     def __init__(
-        self, cxpb: float = 0.0, seed: Optional[int | np.random.SeedSequence] = None
+        self, cxpb: float = 0.5, seed: Optional[int | np.random.SeedSequence] = None
     ):
         super().__init__(cxpb, seed)
 

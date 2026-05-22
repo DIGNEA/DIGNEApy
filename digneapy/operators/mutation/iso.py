@@ -10,6 +10,8 @@
 @Desc    :   None
 """
 
+from typing import Optional
+
 import numpy as np
 
 from .base import Mutation
@@ -17,7 +19,10 @@ from .base import Mutation
 
 class ISOLineMutation(Mutation):
     def __init__(
-        self, sigma_iso: float, sigma_line: float, seed: int | np.random.SeedSequence
+        self,
+        sigma_iso: float,
+        sigma_line: float,
+        seed: Optional[int | np.random.SeedSequence] = None,
     ):
         super().__init__(seed)
         try:

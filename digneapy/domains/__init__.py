@@ -12,6 +12,16 @@
 
 from .bpp import BPP, BPPDomain
 from .kp import Knapsack, KnapsackDomain
+from .sphere import Sphere, SphereDomain
 from .tsp import TSP, TSPDomain
 
-__all__ = ["BPP", "BPPDomain", "Knapsack", "KnapsackDomain", "TSP", "TSPDomain"]
+__all__ = [
+    "BPP",
+    "BPPDomain",
+    "Knapsack",
+    "KnapsackDomain",
+    "TSP",
+    "TSPDomain",
+    "Sphere",
+    "SphereDomain",
+]

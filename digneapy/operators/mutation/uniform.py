@@ -20,7 +20,7 @@ from .base import Mutation
 
 
 class UniformMutation(Mutation):
-    def __init__(self, seed: Optional[int | np.random.SeedSequence]):
+    def __init__(self, seed: Optional[int | np.random.SeedSequence] = None):
         super().__init__(seed)
 
     def __call__(self, individual: IndType, lb: np.ndarray, ub: np.ndarray) -> IndType:
@@ -49,7 +49,7 @@ class UniformMutation(Mutation):
 
 
 class BatchUniformMutation(Mutation):
-    def __init__(self, seed: Optional[int | np.random.SeedSequence]):
+    def __init__(self, seed: Optional[int | np.random.SeedSequence] = None):
         super().__init__(seed)
 
     def __call__(

@@ -11,12 +11,14 @@
 """
 
 from ._base_generator import BaseGenerator, GenResult
-from .evolutionary import Dominated, Evolutionary
+from .evolutionary import Evolutionary
+from .dominated import Dominated, dominated_novelty_search
 from .map_elites import MapElites, PlottedMapElites
 
 __all__ = [
     "Evolutionary",
     "Dominated",
+    "dominated_novelty_search",
     "MapElites",
     "PlottedMapElites",
     "BaseGenerator",

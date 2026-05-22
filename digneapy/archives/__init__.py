@@ -10,8 +10,9 @@
 @Desc    :   None
 """
 
-from digneapy.archives._base_archive import Archive
-from digneapy.archives._cvt_archive import CVTArchive
-from digneapy.archives._grid_archive import GridArchive
+from ._cvt_archive import CVTArchive
+from ._grid_archive import GridArchive
+from ._proximity import ProximityArchive
+from .base import Archive
 
-__all__ = ["Archive", "GridArchive", "CVTArchive"]
+__all__ = ["Archive", "GridArchive", "CVTArchive", "Proximity"]

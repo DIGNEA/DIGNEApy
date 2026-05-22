@@ -10,9 +10,9 @@
 @Desc    :   None
 """
 
-from abc import abstractmethod
+from abc import ABC, abstractmethod
 from collections.abc import Sequence
-from typing import Dict, List, Optional, Protocol
+from typing import Dict, List, Optional
 
 import numpy as np
 
@@ -20,7 +20,7 @@ from ._instance import Instance
 from ._problem import Problem
 
 
-class Domain(Protocol):
+class Domain(ABC):
     """Domain is a class that defines the domain of the problem.
     The domain is defined by its dimension and the bounds of each variable.
 

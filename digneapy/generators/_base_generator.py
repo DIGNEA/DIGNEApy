@@ -82,8 +82,20 @@ class BaseGenerator(ABC):
             describe_by (DESCRIPTORS, optional): _Descriptor used to calculate the diversity. The options available are defined in the dictionary digneapy.DESCRIPTORS. Defaults to "features".
             generations (int, optional): Number of generations to perform. Defaults to 1000.
             repetitions (int, optional): Number times a solver in the portfolio must be run over the same instance. Defaults to 1.
-
         """
+
+        if any(param < 0 for param in (pop_size, repetitions, generations)):
+            raise ValueError(
+                f"BaseGenerator: pop_size, repetitions and/or generations are negative. pop_size: {pop_size}, repetitions: {repetitions}, generations: {generations}"
+            )
+        if not isinstance(domain, Domain):
+            raise ValueError(f"BaseGenerator: Invalid domain. Got {domain}.")
+        if len(portfolio) == 0 or any(
+            not isinstance(solver, Solver) for solver in portfolio
+        ):
+            raise ValueError(
+                f"BaseGenerator: the portfolio is empty or contains invalid solvers. {portfolio}"
+            )
         self._domain = domain
         self._portfolio = tuple(portfolio)
         self._pop_size = pop_size

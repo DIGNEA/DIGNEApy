@@ -14,17 +14,21 @@ from typing import List, Sequence, overload
 
 import numpy as np
 
-from digneapy import Instance
+from digneapy import Archive, CVTArchive, GridArchive, Instance
 
 
 @overload
 def sort_knapsack_instances(instances: np.ndarray) -> np.ndarray: ...
 @overload
 def sort_knapsack_instances(instances: Sequence[Instance]) -> List[Instance]: ...
+@overload
+def sort_knapsack_instances(
+    instances: Archive | CVTArchive | GridArchive,
+) -> List[Instance]: ...
 
 
 def sort_knapsack_instances(
-    instances: np.ndarray | Sequence[Instance],
+    instances: np.ndarray | Sequence[Instance] | Archive | CVTArchive | GridArchive,
 ) -> np.ndarray | List[Instance]:
     """Sorts a collection of Knapsack Instances Genotypes based on lexicograph order by (w_i, p_i)
 

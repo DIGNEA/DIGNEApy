@@ -41,13 +41,13 @@ class ProximityArchive(Archive):
             raise ValueError(
                 f"ProximityArchive expects k to be a positive integer. Got {k}"
             )
-        if type(threshold) is not float or threshold < 0.0:
+        if type(threshold) not in (float, int) or threshold < 0.0:
             raise ValueError(
                 f"ProximityArchive expects a floating point threshold >= 0. Got {threshold}"
             )
         super().__init__(instances, dtype)
         self._k = k
-        self._threshold = threshold
+        self._threshold = float(threshold)
 
     @property
     def k(self):

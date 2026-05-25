@@ -9,7 +9,6 @@
 @License :   (C)Copyright 2024, Alejandro Marrero
 @Desc    :   None
 """
-from .base import Keys
 
 import json
 import warnings
@@ -22,6 +21,7 @@ from sklearn.cluster import KMeans
 from sklearn.neighbors import KDTree
 
 from ._grid_archive import GridArchive
+from .base import Keys
 
 
 class CVTArchive(GridArchive):
@@ -239,13 +239,17 @@ class CVTArchive(GridArchive):
         """
         if self._centroids is None:
             warnings.warn(
-                "Skipping centroids since they're uninitialised.", RuntimeWarning
+                "Skipping centroids since they're uninitialised.",
+                RuntimeWarning,
+                stacklevel=2,
             )
         else:
             np.save(f"{file_pattern}_centroids.npy", self._centroids)
         if self._samples is None:
             warnings.warn(
-                "Skipping samples since they're uninitialised.", RuntimeWarning
+                "Skipping samples since they're uninitialised.",
+                RuntimeWarning,
+                stacklevel=2,
             )
         else:
             np.save(f"{file_pattern}_samples.npy", self._samples)

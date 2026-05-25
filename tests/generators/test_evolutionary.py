@@ -69,8 +69,8 @@ def test_default_generator(descriptor):
     descriptor_pipeline = DescriptorPipeline(descriptor)
     eig = Evolutionary(
         pop_size=100,
-        domain=None,
-        portfolio=[],
+        domain=KnapsackDomain(),
+        portfolio=[default_kp],
         archive=ProximityArchive(k=15, threshold=1.0),
         descriptor_pipe=descriptor_pipeline,
     )
@@ -79,8 +79,8 @@ def test_default_generator(descriptor):
     builded_pipeline = eig.descriptor_pipeline
     assert builded_pipeline._key == descriptor
     assert len(builded_pipeline._transformers) == 0
-    assert eig._domain is None
-    assert eig._portfolio == tuple()
+    assert isinstance(eig._domain, KnapsackDomain)
+    assert eig._portfolio == tuple([default_kp])
     assert eig._repetitions == 1
     assert np.isclose(eig.cxrate, 0.5)
     assert np.isclose(eig.mutrate, 0.8)
@@ -93,43 +93,57 @@ def test_default_generator(descriptor):
     assert eig._performance_fn == max_gap_target
 
     with pytest.raises(ValueError) as e:
-        eig()
-    assert e.value.args[0] == "You must specify a domain to run the generator."
+        _ = Evolutionary(
+            pop_size=100,
+            domain=None,
+            portfolio=[default_kp],
+            archive=ProximityArchive(k=15, threshold=1.0),
+            descriptor_pipe=descriptor_pipeline,
+        )
+    assert e.value.args[0] == "BaseGenerator: Invalid domain. Got None."
 
     with pytest.raises(ValueError) as e:
-        eig._domain = KnapsackDomain()
-        eig()
+        _ = Evolutionary(
+            pop_size=100,
+            domain=KnapsackDomain(),
+            portfolio=tuple(),
+            archive=ProximityArchive(k=15, threshold=1.0),
+            descriptor_pipe=descriptor_pipeline,
+        )
     assert (
         e.value.args[0]
-        == "The portfolio is empty. To run the generator you must provide a valid portfolio of solvers"
+        == "BaseGenerator: the portfolio is empty or contains invalid solvers. ()"
     )
 
     with pytest.raises(ValueError) as e:
         _ = Evolutionary(
             pop_size=100,
-            domain=None,
-            portfolio=[],
+            domain=KnapsackDomain(),
+            portfolio=[default_kp],
             archive=ProximityArchive(k=15, threshold=1.0),
             phi=-1.0,
         )
     assert (
         e.value.args[0]
-        == "Phi must be a float number in the range [0.0-1.0]. Got: -1.0."
+        == "Invalid parameters. cxrate, mutrate and phi must be a float number in the range [0.0-1.0]. Got: cxrate=0.5, mutrate=0.8, phi=-1.0."
     )
     with pytest.raises(ValueError) as e:
         _ = Evolutionary(
             pop_size=100,
-            domain=None,
-            portfolio=[],
+            domain=KnapsackDomain(),
+            portfolio=[default_kp],
             archive=ProximityArchive(k=15, threshold=1.0),
             phi="hello",
         )
-    assert e.value.args[0] == "Phi must be a float number in the range [0.0-1.0]."
+    assert (
+        e.value.args[0]
+        == "Invalid parameters. cxrate, mutrate and phi must be a float number in the range [0.0-1.0]. Got: cxrate=0.5, mutrate=0.8, phi=hello."
+    )
 
     with pytest.raises(TypeError) as e:
         _ = Evolutionary(
             domain=KnapsackDomain(),
-            portfolio=[],
+            portfolio=[default_kp],
             pop_size=100,
             archive=tuple(),
         )
@@ -138,7 +152,7 @@ def test_default_generator(descriptor):
     with pytest.raises(TypeError) as e:
         _ = Evolutionary(
             domain=KnapsackDomain(),
-            portfolio=[],
+            portfolio=[default_kp],
             pop_size=100,
             archive=KnapsackDomain(),
         )
@@ -148,44 +162,29 @@ def test_default_generator(descriptor):
 
 @pytest.mark.parametrize("domain_cls, portfolio, feat_desc_n", DOMAIN_CONTEXT)
 @pytest.mark.parametrize("descriptor", ("features", "performance", "instance"))
-@pytest.mark.parametrize("dimension", [50, 100])
-@pytest.mark.parametrize("k", [3, 15])
-@pytest.mark.parametrize("popsize", [64, 128])
 @pytest.mark.parametrize("crossover", (UCX, OPCX))
 @pytest.mark.parametrize("mutation", (UMut,))
-@pytest.mark.parametrize("selection", (BinarySelection,))
 @pytest.mark.parametrize("replacement", (Generational, GreedyReplacement, Elitist))
-# The following lines are commented to avoid HUGE amount of testing. Just check the foundational components
-# @pytest.mark.parametrize(
-#     "phi", np.random.default_rng().uniform(low=0.0, high=1.0, size=3)
-# )
-# @pytest.mark.parametrize(
-#     "threshold", np.random.default_rng().uniform(low=0.0, high=10.0, size=3)
-# )
-# @pytest.mark.parametrize(
-#     "cxrate", np.random.default_rng().uniform(low=0.0, high=1.0, size=3)
-# )
-# @pytest.mark.parametrize(
-#     "mutrate", np.random.default_rng().uniform(low=0.0, high=1.0, size=3)
-# )
 def test_evolutionary_generator(
     domain_cls,
     portfolio,
     feat_desc_n,
     descriptor,
-    dimension,
-    k,
-    popsize,
     crossover,
     mutation,
-    selection,
     replacement,
 ):
+    # It can be parametrised more, but it takes hours to run the test suit
+    generations = 10
+    k = 3
+    dimension = 100
+
     descriptor_pipeline = DescriptorPipeline(descriptor)
     domain = domain_cls(dimension=dimension)
-    generations = 10
+
+    selection = BinarySelection()
     eig = Evolutionary(
-        pop_size=popsize,
+        pop_size=32,
         generations=generations,
         domain=domain,
         archive=ProximityArchive(k=k, threshold=3),
@@ -195,7 +194,7 @@ def test_evolutionary_generator(
         descriptor_pipe=descriptor_pipeline,
         crossover=crossover(),
         mutation=mutation(),
-        selection=selection(),
+        selection=selection,
         replacement=replacement(),
     )
     builded_pipeline = eig.descriptor_pipeline

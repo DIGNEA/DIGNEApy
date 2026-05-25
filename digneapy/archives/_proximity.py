@@ -41,13 +41,13 @@ class ProximityArchive(Archive):
             raise ValueError(
                 f"ProximityArchive expects k to be a positive integer. Got {k}"
             )
-        if threshold < 0.0:
+        if type(threshold) is not float or threshold < 0.0:
             raise ValueError(
                 f"ProximityArchive expects a floating point threshold >= 0. Got {threshold}"
             )
         super().__init__(instances, dtype)
         self._k = k
-        self._threshold = float(threshold)
+        self._threshold = threshold
 
     @property
     def k(self):
@@ -84,7 +84,7 @@ class ProximityArchive(Archive):
             descriptors (np.ndarray): Numpy array with the descriptors of the instances
 
         Raises:
-            ValueError: If len(instance_descriptors) == 0 or >= k
+            ValueError: If len(instance_descriptors) == 0 or in combination with archive is <= k
 
         Returns:
             np.ndarray: novelty scores (s) of the instances descriptors
@@ -94,14 +94,16 @@ class ProximityArchive(Archive):
                 f"ProximityArchive was given an empty population to compute the sparseness. Shape is: {descriptors.shape}"
             )
         num_instances = len(descriptors)
-        num_archive = len(self._storage[Keys.instances])
+        num_archive = len(self._storage[Keys.descriptors])
         result = np.zeros(num_instances, dtype=np.float64)
-        if num_archive + num_instances <= self._k:
+        if (num_archive + num_instances) <= self._k:
             # The archive may not have enough instances to evaluate
             warnings.warn(
-                f"The content of the archive ({num_archive}) + instances_descriptors ({num_instances}) is not large enough to compute the sparseness for k ({self._k}). "
+                f"Not enough neighbors to compute sparseness for k={self._k}. "
+                f"(archive={num_archive}, instances={num_instances}). "
                 f"Returning zeros.",
                 RuntimeWarning,
+                stacklevel=3,
             )
             return result
 
@@ -115,7 +117,13 @@ class ProximityArchive(Archive):
             mask[i] = False
             differences = combined[i] - combined[np.nonzero(mask)]
             distances = np.linalg.norm(differences, axis=1)
-            _neighbors = np.partition(distances, self._k + 1)[1 : self._k + 1]
+            try:
+                _neighbors = np.partition(distances, self._k)[: self._k]
+            except ValueError as ve:
+                if "out of bounds" in str(ve) and len(combined) == self._k + 1:
+                    _neighbors = distances
+                else:
+                    raise
             result[i] = np.sum(_neighbors) / self._k
 
         return result

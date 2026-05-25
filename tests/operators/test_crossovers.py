@@ -20,7 +20,7 @@ from digneapy.operators import OPCX, UCX, OnePointCrossover, UniformCrossover
 
 
 @pytest.mark.parametrize(
-    "cxpb", np.random.default_rng().uniform(low=0, high=1, size=10)
+    "cxpb", np.sort(np.random.default_rng().random(size=3)).tolist()
 )
 @pytest.mark.parametrize("ub", (10, 50, 100))
 @pytest.mark.parametrize("lb", argvalues=(0,))

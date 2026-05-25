@@ -167,7 +167,7 @@ def test_proximity_archive_raises():
 
     with pytest.warns(
         RuntimeWarning,
-        match=r"The content of the archive \(0\) \+ instances_descriptors \(5\) is not large enough to compute the sparseness for k \(10\)\. Returning zeros.",
+        match=r"Not enough neighbors to compute sparseness for k=10\. \(archive=0, instances=5\)\. Returning zeros\.",
     ):
         archive = ProximityArchive(k=10, threshold=1.0)
         population = np.random.default_rng().integers(0, 10, size=(5, 6))
@@ -213,3 +213,15 @@ def test_proximity_archive_returns_zeros_if_population_smaller_than_K(
     # If len(pop) < k it should return zeros
     result = archive(descriptors)
     np.testing.assert_array_equal(result, expected)
+
+
+def test_proximity_archive_uses_available_neighbors_when_not_enough_distances():
+    archive = ProximityArchive(threshold=0.0, k=2)
+    descriptors = np.asarray(
+        [[0.0, 0.0], [1.0, 0.0], [0.0, 5.0]],
+        dtype=np.float64,
+    )
+
+    result = archive(descriptors)
+
+    np.testing.assert_allclose(result, np.asarray([3, 3.04951, 5.04951]))

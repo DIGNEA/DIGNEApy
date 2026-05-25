@@ -73,16 +73,18 @@ class DescriptorPipeline:
             raise KeyError(
                 f"Unknown descriptor key {key}. Registered keys are: {descriptors_registry.keys()}"
             )
-        if any(isinstance(t, Transformer) for t in transformers):
-            raise TypeError("All transformers must implement the Transformer Protocol.")
+        if any(not isinstance(t, Transformer) for t in transformers):
+            raise TypeError(
+                f"All transformers must implement the Transformer Protocol. Got: {transformers}"
+            )
         self._key = key
         self._transformers = tuple(transformers)
 
     def __call__(
         self,
         population: np.ndarray | Sequence[Instance],
-        scores: Optional[np.ndarray],
-        domain: Optional[Domain],
+        scores: Optional[np.ndarray] = None,
+        domain: Optional[Domain] = None,
         *args,
         **kwargs,
     ) -> np.ndarray:

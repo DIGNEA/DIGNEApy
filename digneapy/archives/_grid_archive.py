@@ -10,14 +10,13 @@
 @Desc    :   None
 """
 
-from collections.abc import Sequence, Iterable
+from collections.abc import Iterable, Sequence
 from typing import Optional, Tuple
 
 import numpy as np
 
 from .._core import Instance
 from .base import Archive, Keys
-
 
 
 class GridArchive(Archive):
@@ -30,6 +29,7 @@ class GridArchive(Archive):
     solution that `maximizes` the objective function for the measures in that
     cell.
     """
+
     def __init__(
         self,
         dimensions: Sequence[int],
@@ -81,10 +81,8 @@ class GridArchive(Archive):
         self._storage: dict[Keys, dict | set] = {
             Keys.instances: {},
             Keys.descriptors: {},
-            Keys.grid: set()
+            Keys.grid: set(),
         }
-        
-                
 
         _bounds = []
         for dimension, l_b, u_b in zip(
@@ -139,7 +137,7 @@ class GridArchive(Archive):
     @property
     def filled_cells(self):
         return self._storage[Keys.grid]
-    
+
     @property
     def instances(self) -> Iterable[Instance]:
         return self._storage[Keys.instances].values()
@@ -148,10 +146,10 @@ class GridArchive(Archive):
         return iter(self._storage[Keys.instances].values())
 
     def __str__(self) -> str:
-        return f"GridArchive(dim={self._dimensions},cells={self._cells},bounds={self._boundaries})"
+        return f"GridArchive(dim={self._dimensions},cells={self._cells:,},bounds={self._boundaries})"
 
     def __repr__(self) -> str:
-        return f"GridArchive(dim={self._dimensions},cells={self._cells},bounds={self._boundaries})"
+        return f"GridArchive(dim={self._dimensions},cells={self._cells:,},bounds={self._boundaries})"
 
     def __len__(self) -> int:
         return len(self._storage[Keys.grid])

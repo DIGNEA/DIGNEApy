@@ -117,28 +117,22 @@ def test_dominated_novelty_search_raises_if_wrong_args():
 
 
 @pytest.mark.parametrize("domain_cls, portfolio, feat_desc_n", DOMAIN_CONTEXT)
-@pytest.mark.parametrize("k", [3, 15])
 @pytest.mark.parametrize("descriptor", ["features", "performance", "instance"])
-@pytest.mark.parametrize("dimension", [50, 100])
-@pytest.mark.parametrize("posize", [64, 128])
 @pytest.mark.parametrize("crossover", (UCX, OPCX))
-@pytest.mark.parametrize("mutation", (UMut,))
-@pytest.mark.parametrize("selection", (BinarySelection,))
 def test_dominated_generator(
     domain_cls,
     portfolio,
     feat_desc_n,
-    k,
     descriptor,
-    dimension,
-    posize,
     crossover,
-    mutation,
-    selection,
 ):
-    pop_size = posize
+    pop_size = 32
+    k = 3
+    dimension = 100
     domain = domain_cls(dimension=dimension)
     generations = 10
+    selection = BinarySelection()
+    mutation = UMut()
     descriptor_pipeline = DescriptorPipeline(descriptor)
     deig = Dominated(
         pop_size=pop_size,
@@ -149,8 +143,8 @@ def test_dominated_generator(
         k=k,
         descriptor_pipe=descriptor_pipeline,
         crossover=crossover(),
-        mutation=mutation(),
-        selection=selection(),
+        mutation=mutation,
+        selection=selection,
     )
     portfolio_names = [s.__name__ for s in portfolio]
     expected_str = f"pop_size={pop_size},gen={generations},domain={domain.__name__},portfolio={portfolio_names}"
@@ -200,16 +194,16 @@ def test_dominated_evolutionary_generator_raises_if_wrong_args(descriptor):
 
     portfolio = deque([default_kp, map_kp, miw_kp, mpw_kp])
     generations = 10
-    eig = Dominated(
-        pop_size=10,
-        generations=generations,
-        domain=None,
-        portfolio=portfolio,
-        repetitions=1,
-        descriptor_pipe=descriptor_pipeline,
-    )
+
     with pytest.raises(ValueError):
-        _ = eig()
+        _ = Dominated(
+            pop_size=10,
+            generations=generations,
+            domain=None,
+            portfolio=portfolio,
+            repetitions=1,
+            descriptor_pipe=descriptor_pipeline,
+        )
 
     with pytest.raises(ValueError):
         kp_domain = KnapsackDomain(dimension=50)

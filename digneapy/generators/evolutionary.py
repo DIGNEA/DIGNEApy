@@ -98,8 +98,11 @@ class Evolutionary(BaseGenerator):
             repetitions=repetitions,
         )
 
-        if any(param < 0.0 or param > 1.0 for param in (cxrate, mutrate, phi)):
-            msg = f"cxrate, mutrate and phi must be a float number in the range [0.0-1.0]. Got: cxrate={cxrate}, mutrate={mutrate}, phi={phi}."
+        if any(
+            type(param) not in (float,) or (param < 0.0 or param > 1.0)
+            for param in (cxrate, mutrate, phi)
+        ):
+            msg = f"Invalid parameters. cxrate, mutrate and phi must be a float number in the range [0.0-1.0]. Got: cxrate={cxrate}, mutrate={mutrate}, phi={phi}."
             raise ValueError(msg)
 
         if not isinstance(archive, Archive):
@@ -108,12 +111,12 @@ class Evolutionary(BaseGenerator):
         if solution_set is not None and not isinstance(solution_set, Archive):
             raise TypeError("solution_set must be a subclass of Archive")
 
-        self.phi = float(phi)
+        self.phi = phi
         self._archive = archive
         self._solution_set = solution_set
         self.offspring_size = self._pop_size
-        self.cxrate = float(cxrate)
-        self.mutrate = float(mutrate)
+        self.cxrate = cxrate
+        self.mutrate = mutrate
         self.crossover = crossover
         self.mutation = mutation
         self.selection = selection
@@ -251,3 +254,188 @@ class Evolutionary(BaseGenerator):
         fitness = np.zeros(len(performance_biases))
         fitness = (performance_biases * self.phi) + (novelty_scores * phi_r)
         return fitness
+
+
+def cast_to_instances(
+    genotypes, descriptors, fitness, portfolio_scores, diversity_scores
+) -> list[Instance]:
+    expected = len(genotypes)
+    if any(
+        len(l) != expected
+        for l in (genotypes, descriptors, fitness, portfolio_scores, diversity_scores)
+    ):
+        raise RuntimeError("Length mismatch")
+    return [
+        Instance(
+            variables=genotypes[i],
+            fitness=fitness[i],
+            descriptor=descriptors[i],
+            p=fitness[i],
+            portfolio_scores=portfolio_scores[i],
+            s=diversity_scores[i],
+        )
+        for i in range(expected)
+    ]
+
+
+class ES(BaseGenerator):
+    """Object to generate instances based on a Evolutionary Stategy with set of diverse solutions"""
+
+    def __init__(
+        self,
+        generator_dimension: int,
+        domain: Domain,
+        portfolio: Sequence[Solver],
+        lambda_: int,
+        archives: Sequence[Archive],
+        keep_only_feasible: bool = True,
+        sigma: float = 0.5,
+        performance_function: PerformanceFn = max_gap_target,
+        generations: int = 1_000,
+        repetitions: int = 1,
+        descriptor_pipe: DescriptorPipeline = DescriptorPipeline("features"),
+        seed: Optional[int | np.random.SeedSequence] = None,
+        workers: int = 1,
+    ):
+        """Creates a Evolutionary Instance Generator based on Novelty Search
+        The generator uses a set of solvers to evaluate the instances and
+        a novelty search algorithm to guide the evolution of the instances.
+
+        Args:
+            domain (Domain): Domain for which the instances are generated for.
+            portfolio (Sequence[Solver]): Sequence item of callable objects that can evaluate a instance.
+            pop_size (int, optional): Number of instances in the population to evolve. Defaults to 100.
+            archives (Sequence[Archive]): Containers to store diverse instances.
+            performance_function (PerformanceFn, optional): Performance function to calculate the performance score. Defaults to max_gap_target.
+            generations (int, optional): Number of generations to perform. Defaults to 1000.
+            repetitions (int, optional): Number times a solver in the portfolio must be run over the same instance. Defaults to 1.
+            describe_by (DESCRIPTORS, optional): _Descriptor used to calculate the diversity. The options available are defined in the dictionary digneapy.DESCRIPTORS. Defaults to "features".
+            seed (int, optional): Seed for the RNG protocol. Defaults to 42.
+
+        Raises:
+            KeyError: Raises error if the descriptor strategy is not available in the DESCRIPTORS dictionary
+        """
+        if len(descriptor_pipe._transformers) == 0:
+            raise ValueError(
+                "ES is expected to be use with a DescriptorPipeline that includes at least one transformer object."
+            )
+        super().__init__(
+            domain=domain,
+            portfolio=portfolio,
+            pop_size=lambda_,
+            performance_function=performance_function,
+            descriptor_pipe=descriptor_pipe,
+            generations=generations,
+            repetitions=repetitions,
+        )
+        if any(param < 0 for param in (workers,)):
+            raise ValueError(
+                f"These parameters cannot be negative:\n\t- workers. Got {workers}"
+            )
+        if any(not isinstance(archive, Archive) for archive in archives):
+            raise TypeError("archives must be a subclass of Archive")
+        self._generator_dimension = generator_dimension
+        self._archives = archives
+        self._sigma = sigma
+        self._workers = workers
+        self.seed = (
+            seed
+            if isinstance(seed, np.random.SeedSequence)
+            else np.random.SeedSequence(seed)
+        )
+
+        self._rng = np.random.default_rng(self.seed)
+        self._keep_feasible = keep_only_feasible
+
+    def _update_archive(
+        self,
+        archive: Archive,
+        individuals: np.ndarray,
+        descriptors: np.ndarray,
+        perf_biases: np.ndarray,
+        portfolio_scores: np.ndarray,
+        diversity: Optional[np.ndarray] = None,
+    ):
+        diversity_scores = np.zeros(shape=(len(individuals), 1))
+        if diversity is None:
+            try:
+                diversity_scores = archive(descriptors=individuals)
+            except NotImplementedError:
+                diversity_scores = np.zeros(shape=(len(individuals), 1))
+
+        instances = cast_to_instances(
+            descriptors,
+            individuals,
+            perf_biases,
+            portfolio_scores=portfolio_scores,
+            diversity_scores=diversity_scores,
+        )
+        archive.extend(
+            instances=instances,
+            descriptors=individuals,
+            novelty_scores=diversity_scores,
+        )
+        return instances
+
+    def __call__(self, verbose: bool = False) -> GenResult:
+        import cma
+
+        _x0 = self._rng.uniform(
+            size=(self._generator_dimension),
+        )
+        strategy = cma.CMAEvolutionStrategy(
+            _x0,
+            sigma0=self._sigma,
+            inopts={
+                "popsize": self._pop_size,
+            },
+        )
+        _current_generation = 0
+        while _current_generation < self._generations:
+            individuals = strategy.ask()
+            individuals = np.asarray(individuals)
+            descriptors = self._descriptor_pipe(individuals, scores=None, domain=None)
+            perf_biases, portfolio_scores = self._evaluate_population(descriptors)
+            instances = self._update_archive(
+                self._archives[0],
+                individuals,
+                descriptors,
+                perf_biases,
+                portfolio_scores,
+            )
+            if len(self._archives) > 1:
+                _valid_indices = (
+                    np.where(perf_biases > 0)[0]
+                    if self._keep_feasible
+                    else np.arange(len(individuals))
+                )
+                if len(_valid_indices) > 1:
+                    # feasible_indeces = np.where(perf_biases > 0)[0]
+                    feasible_individuals = individuals[_valid_indices]
+                    feasible_descriptors = descriptors[_valid_indices]
+                    feasible_performances = perf_biases[_valid_indices]
+                    feasible_scores = portfolio_scores[_valid_indices]
+                    for archive in self._archives[1:]:
+                        _ = self._update_archive(
+                            archive,
+                            feasible_individuals,
+                            feasible_descriptors,
+                            feasible_performances,
+                            feasible_scores,
+                        )
+
+            self._logbook.update(
+                generation=_current_generation, population=instances, feedback=verbose
+            )
+            strategy.tell(individuals, -perf_biases)
+
+            _current_generation += 1
+
+        _instances = (
+            self._archives[0] if len(self._archives) == 1 else self._archives[1]
+        )
+        return GenResult(
+            target=self._portfolio[0].__name__,
+            instances=_instances,
+            history=self._logbook,
+        ), self._archives

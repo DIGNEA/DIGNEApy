@@ -12,10 +12,6 @@
 
 from typing import Optional, Sequence
 
-import matplotlib
-
-matplotlib.use("Qt5Agg")  # must be first, before pyplot
-
 import matplotlib.colors as mcolors
 import matplotlib.pyplot as plt
 import numpy as np

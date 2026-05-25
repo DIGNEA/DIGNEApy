@@ -84,7 +84,10 @@ class BaseGenerator(ABC):
             repetitions (int, optional): Number times a solver in the portfolio must be run over the same instance. Defaults to 1.
         """
 
-        if any(param < 0 for param in (pop_size, repetitions, generations)):
+        if any(
+            type(param) not in (int,) or param < 0
+            for param in (pop_size, repetitions, generations)
+        ):
             raise ValueError(
                 f"BaseGenerator: pop_size, repetitions and/or generations are negative. pop_size: {pop_size}, repetitions: {repetitions}, generations: {generations}"
             )

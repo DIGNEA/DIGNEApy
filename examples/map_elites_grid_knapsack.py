@@ -16,14 +16,15 @@ from functools import partial
 from multiprocessing.pool import Pool
 
 from digneapy import GridArchive
+from digneapy._core import DescriptorPipeline
 from digneapy.domains import KnapsackDomain
 from digneapy.generators import MapElites
-from digneapy.operators import uniform_one_mutation
+from digneapy.operators import BatchUMut
 from digneapy.solvers import default_kp, map_kp, miw_kp, mpw_kp
 from digneapy.utils import save_results_to_files
 
 
-def generate_instancess(
+def generate_instances(
     portfolio,
     dimension: int,
     pop_size: int,
@@ -41,9 +42,9 @@ def generate_instancess(
         portfolio=portfolio,
         archive=archive,
         pop_size=pop_size,
-        mutation=uniform_one_mutation,
+        mutation=BatchUMut(),
         generations=generations,
-        describe_by="instance",
+        describe_pipe=DescriptorPipeline("instance"),
         repetitions=1,
     )
 
@@ -109,7 +110,7 @@ if __name__ == "__main__":
     with Pool(4) as pool:
         results = pool.map(
             partial(
-                generate_instancess,
+                generate_instances,
                 dimension=dimension,
                 pop_size=population_size,
                 generations=generations,

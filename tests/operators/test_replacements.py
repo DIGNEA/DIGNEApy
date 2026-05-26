@@ -19,9 +19,9 @@ import pytest
 
 from digneapy import Instance, Solution
 from digneapy.operators import (
-    elitist_replacement,
-    first_improve_replacement,
-    generational_replacement,
+    Elitist,
+    Generational,
+    GreedyReplacement,
 )
 
 
@@ -50,18 +50,18 @@ def test_generational(pop_size, ind_type_cls):
     population, offspring = create_populations(ind_type_cls, pop_size)
     assert population != offspring
     assert all(i != j for i, j in zip(population, offspring))
-    new_pop = generational_replacement(population, offspring)
+    new_pop = Generational()(population, offspring)
     assert new_pop != population
     assert new_pop == offspring
     assert all(i == j for i, j in zip(offspring, new_pop))
 
     with pytest.raises(Exception):
-        generational_replacement(population, [])
+        Generational()(population, [])
 
 
 @pytest.mark.parametrize("pop_size", argvalues=(16, 32, 64, 128))
 @pytest.mark.parametrize("ind_type_cls", argvalues=(Instance, Solution))
-def test_first_improve_replacement(pop_size, ind_type_cls):
+def test_greedy_replacement(pop_size, ind_type_cls):
     population, offspring = create_populations(ind_type_cls, pop_size)
     expected = [
         copy.copy(i) if i > j else copy.copy(j) for i, j in zip(population, offspring)
@@ -69,13 +69,13 @@ def test_first_improve_replacement(pop_size, ind_type_cls):
 
     assert population != offspring
     assert all(i != j for i, j in zip(population, offspring))
-    new_pop = first_improve_replacement(population, offspring)
+    new_pop = GreedyReplacement()(population, offspring)
     assert new_pop != population
     assert new_pop != offspring
     assert new_pop == expected
 
     with pytest.raises(Exception):
-        first_improve_replacement(population, [])
+        GreedyReplacement()(population, [])
 
 
 @pytest.mark.parametrize("pop_size", argvalues=(16, 32, 64, 128))
@@ -90,11 +90,11 @@ def test_elitist_replacement(pop_size, ind_type_cls):
 
     assert population != offspring
     assert all(i != j for i, j in zip(population, offspring))
-    new_pop = elitist_replacement(population, offspring)
+    new_pop = Elitist()(population, offspring)
     assert new_pop != population
     assert new_pop != offspring
     assert max(new_pop, key=attrgetter("fitness")).fitness == new_best_f
     assert new_pop[0].fitness == new_best_f
 
     with pytest.raises(Exception):
-        elitist_replacement(population, [])
+        Elitist()(population, [])

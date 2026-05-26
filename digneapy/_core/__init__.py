@@ -13,7 +13,6 @@
 from ._domain import Domain
 from ._instance import Instance
 from ._metrics import Logbook, Statistics, qd_score, qd_score_auc
-from ._novelty_search import NS, dominated_novelty_search
 from ._problem import Problem
 from ._solution import Solution
 from ._solver import Solver
@@ -33,8 +32,6 @@ __all__ = [
     "Solver",
     "IndType",
     "Direction",
-    "NS",
-    "dominated_novelty_search",
     "qd_score",
     "qd_score_auc",
     "Statistics",

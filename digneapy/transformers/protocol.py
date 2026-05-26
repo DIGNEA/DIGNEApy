@@ -10,22 +10,18 @@
 @Desc    :   None
 """
 
-from abc import abstractmethod
-from typing import Protocol, runtime_checkable
+from abc import ABC, abstractmethod
 
 import numpy as np
 
 from .._core._types import IndType
 
 
-@runtime_checkable
-class Transformer(Protocol):
-    """Protocol to type check all the transformer types in digneapy.
+class Transformer(ABC):
+    """Base class to type check all the transformer types in digneapy.
     A Transformer is any callable type that receives a sequence and transforms it
     to other sequence.
     """
-
-    _name: str
 
     def __init__(self, name: str):
         self._name = name

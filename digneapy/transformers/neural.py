@@ -13,9 +13,6 @@
 import os
 
 os.environ["KERAS_BACKEND"] = "torch"
-
-__all__ = ["NNEncoder"]
-
 from collections.abc import Sequence
 from typing import Callable, Optional
 

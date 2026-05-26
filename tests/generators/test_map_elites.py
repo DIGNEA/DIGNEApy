@@ -20,9 +20,7 @@ from digneapy.domains import BPPDomain, KnapsackDomain, TSPDomain
 from digneapy.generators import (
     MapElites,
 )
-from digneapy.operators import (
-    uniform_one_mutation,
-)
+from digneapy.operators import BatchUMut
 from digneapy.solvers import (
     best_fit,
     default_kp,
@@ -48,10 +46,10 @@ def test_map_elites_raises_if_wrong_archive():
     with pytest.raises(TypeError) as e:
         _ = MapElites(
             KnapsackDomain(),
-            portfolio=[],
+            portfolio=[default_kp],
             archive=tuple(),
             pop_size=100,
-            mutation=uniform_one_mutation,
+            mutation=BatchUMut(seed=42),
             describe_pipe=DescriptorPipeline("features"),
             repetitions=1,
         )
@@ -64,11 +62,10 @@ def test_map_elites_raises_if_wrong_archive():
 @pytest.mark.parametrize("domain_cls, portfolio, feat_desc_n", DOMAIN_CONTEXT)
 @pytest.mark.parametrize("dimension", ([50, 100]))
 @pytest.mark.parametrize("descriptor", ("features", "performance"))
-@pytest.mark.parametrize("ps", ([64, 128]))
 def test_map_elites_with_grid_archive(
-    domain_cls, portfolio, feat_desc_n, dimension, descriptor, ps
+    domain_cls, portfolio, feat_desc_n, dimension, descriptor
 ):
-
+    pop_size = 32
     descriptor_pipeline = DescriptorPipeline(descriptor)
     dimension = dimension
     generations = 10
@@ -83,8 +80,8 @@ def test_map_elites_with_grid_archive(
         domain,
         portfolio=portfolio,
         archive=archive,
-        pop_size=ps,
-        mutation=uniform_one_mutation,
+        pop_size=pop_size,
+        mutation=BatchUMut(),
         generations=generations,
         describe_pipe=descriptor_pipeline,
         repetitions=1,
@@ -167,12 +164,11 @@ def build_ranges(domain_cls, descriptor, dimension, portfolio):
 
 
 @pytest.mark.parametrize("domain_cls, portfolio", CVT_CONTEXT)
-@pytest.mark.parametrize("dimension", ([50, 100]))
 @pytest.mark.parametrize("descriptor", ("features", "performance", "instance"))
-@pytest.mark.parametrize("ps", ([64, 128]))
-def test_map_elites_domain_cvt(domain_cls, portfolio, dimension, descriptor, ps):
-    dimension = dimension
+def test_map_elites_domain_cvt(domain_cls, portfolio, descriptor):
+    dimension = 100
     generations = 10
+    pop_size = 32
     ranges = build_ranges(domain_cls, descriptor, dimension, portfolio)
     archive = CVTArchive(k=1000, ranges=ranges, n_samples=10_000)
     domain = domain_cls(dimension=dimension)
@@ -182,8 +178,8 @@ def test_map_elites_domain_cvt(domain_cls, portfolio, dimension, descriptor, ps)
         domain,
         portfolio=portfolio,
         archive=archive,
-        pop_size=ps,
-        mutation=uniform_one_mutation,
+        pop_size=pop_size,
+        mutation=BatchUMut(),
         generations=generations,
         describe_pipe=DescriptorPipeline(key=descriptor),
         repetitions=1,

@@ -17,10 +17,11 @@ from typing import List
 
 import numpy as np
 
-from digneapy import NS, Archive, DescriptorKey, DescriptorPipeline
+from digneapy import DescriptorKey, DescriptorPipeline
+from digneapy.archives import UnstructuredArchive
 from digneapy.domains import BPPDomain
 from digneapy.generators import Evolutionary
-from digneapy.operators import generational_replacement
+from digneapy.operators import Generational
 from digneapy.solvers import best_fit, first_fit, next_fit, worst_fit
 from digneapy.utils import save_results_to_files
 
@@ -52,12 +53,12 @@ def generate_instances(
         generations=generations,
         domain=domain,
         portfolio=portfolio,
-        novelty_approach=NS(Archive(threshold=archive_threshold), k=k),
-        solution_set=Archive(threshold=ss_threshold),
+        archive=UnstructuredArchive(threshold=archive_threshold, k=k),
+        solution_set=UnstructuredArchive(threshold=ss_threshold, k=1),
         repetitions=1,
         descriptor_pipe=DescriptorPipeline(descriptor),
         seed=seed,
-        replacement=generational_replacement,
+        replacement=Generational(),
     )
     result = eig(verbose=verbose)
     if verbose:

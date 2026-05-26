@@ -10,9 +10,9 @@
 @Desc    :   None
 """
 
-from abc import abstractmethod
+from abc import ABC, abstractmethod
 from collections.abc import Sequence
-from typing import Any, Optional, Protocol, Tuple
+from typing import Any, Optional, Tuple
 
 import numpy as np
 from numpy import typing as npt
@@ -21,7 +21,7 @@ from ._instance import Instance
 from ._solution import Solution
 
 
-class Problem(Protocol):
+class Problem(ABC):
     def __init__(
         self,
         dimension: int,
@@ -64,6 +64,14 @@ class Problem(Protocol):
     def bounds(self):
         return self._bounds
 
+    @property
+    def lbs(self):
+        return self._lbs
+
+    @property
+    def ubs(self):
+        return self._ubs
+
     def get_bounds_at(self, i: int) -> tuple:
         if i < 0 or i > len(self._bounds):
             raise ValueError(
@@ -89,13 +97,10 @@ class Problem(Protocol):
 
     @abstractmethod
     def evaluate(self, individual: Sequence | Solution | np.ndarray) -> Tuple[float]:
-        """Evaluates the candidate individual with the information of the Knapsack
+        """Evaluates the candidate individual with the information of the problem
 
         Args:
             individual (Sequence | Solution | np.ndarray): Individual to evaluate
-
-        Raises:
-            ValueError: Raises an error if the len(individual) != len(instance) / 2
 
         Returns:
             Tuple[float]: fitness

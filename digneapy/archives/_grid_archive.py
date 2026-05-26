@@ -10,14 +10,13 @@
 @Desc    :   None
 """
 
-import json
-from collections.abc import Sequence
-from typing import Dict, Optional, Tuple
+from collections.abc import Iterable, Sequence
+from typing import Optional, Tuple
 
 import numpy as np
 
 from .._core import Instance
-from ._base_archive import Archive
+from .base import Archive, Keys
 
 
 class GridArchive(Archive):
@@ -62,7 +61,7 @@ class GridArchive(Archive):
         Raises:
             ValueError: ``dimensions`` and ``ranges`` are not the same length
         """
-        Archive.__init__(self, threshold=0.0, dtype=dtype)
+        super().__init__(None, dtype=dtype)
         if len(ranges) == 0 or len(dimensions) == 0:
             raise ValueError("dimensions and ranges must have length >= 1")
         if len(ranges) != len(dimensions):
@@ -78,8 +77,12 @@ class GridArchive(Archive):
         self._eps = eps
         self._cells = np.prod(self._dimensions, dtype=object)
 
-        self._grid: Dict[int, np.ndarray] = {}
-        self._storage: Dict[int, Instance] = {}
+        del self._storage
+        self._storage: dict[Keys, dict | set] = {
+            Keys.instances: {},
+            Keys.descriptors: {},
+            Keys.grid: set(),
+        }
 
         _bounds = []
         for dimension, l_b, u_b in zip(
@@ -126,27 +129,30 @@ class GridArchive(Archive):
         Returns:
             float: Filled cells over the total available.
         """
-        if len(self._grid) == 0:
+        if len(self._storage[Keys.grid]) == 0:
             return np.float64(0)
 
-        return np.float64(len(self._grid) / self._cells)
+        return np.float64(len(self._storage[Keys.grid]) / self._cells)
 
     @property
     def filled_cells(self):
-        return self._grid.keys()
+        return self._storage[Keys.grid]
 
     @property
-    def instances(self) -> Sequence[Instance]:
-        return list(self._storage.values())
+    def instances(self) -> Iterable[Instance]:
+        return self._storage[Keys.instances].values()
+
+    def __iter__(self):
+        return iter(self._storage[Keys.instances].values())
 
     def __str__(self) -> str:
-        return f"GridArchive(dim={self._dimensions},cells={self._cells},bounds={self._boundaries})"
+        return f"GridArchive(dim={self._dimensions},cells={self._cells:,},bounds={self._boundaries})"
 
     def __repr__(self) -> str:
-        return f"GridArchive(dim={self._dimensions},cells={self._cells},bounds={self._boundaries})"
+        return f"GridArchive(dim={self._dimensions},cells={self._cells:,},bounds={self._boundaries})"
 
     def __len__(self) -> int:
-        return len(self._grid)
+        return len(self._storage[Keys.grid])
 
     def __getitem__(self, key):
         """Returns a dictionary with the descriptors as the keys. The values are the instances found.
@@ -184,16 +190,8 @@ class GridArchive(Archive):
         if isinstance(indices, int):
             indices = [indices]
 
-        instances = [self._storage[idx] for idx in indices]
+        instances = [self._storage[Keys.instances][idx] for idx in indices]
         return instances
-
-    def __iter__(self):
-        """Iterates over the dictionary of instances
-
-        Returns:
-            Iterator: Yields position in the hypercube and instance located in such position
-        """
-        return iter(self._storage.values())
 
     def lower_i(self, i):
         if i < 0 or i > len(self._lower_bounds):
@@ -225,9 +223,16 @@ class GridArchive(Archive):
             np.asarray(instance.descriptor) if descriptor is None else descriptor
         )
         index = self.index_of([descriptor])[0]
-        if index not in self._grid or instance > self._grid[index]:
-            self._grid[index] = descriptor
-            self._storage[index] = instance.clone()
+        if (
+            index not in self._storage[Keys.grid]
+            or instance > self._storage[Keys.instances][index]
+        ):
+            self._storage[Keys.grid].add(index)
+            self._storage[Keys.instances][index] = instance.clone()
+            self._storage[Keys.descriptors][index] = descriptor
+
+    def __call__(self, *args, **kwargs) -> np.ndarray:
+        raise NotImplementedError("Not implemented in GridArchive")
 
     def extend(
         self,
@@ -257,27 +262,35 @@ class GridArchive(Archive):
         for idx, instance, descriptor in zip(
             indices, instances, descriptors, strict=True
         ):
-            if idx not in self._grid or instance.fitness > self._storage[idx].fitness:
-                self._storage[idx] = instance.clone()
-                self._grid[idx] = descriptor
+            if (
+                idx not in self._storage[Keys.grid]
+                or instance.fitness > self._storage[Keys.instances][idx].fitness
+            ):
+                self._storage[Keys.grid].add(idx)
+                self._storage[Keys.instances][idx] = instance.clone()
+                self._storage[Keys.descriptors][idx] = descriptor
 
     def remove(self, descriptors: np.ndarray) -> None:
         """Removes all the instances with the matching descriptors in iterable from the grid"""
 
         indices_to_remove = self.index_of(descriptors)
         for index in indices_to_remove:
-            if index in self._grid:
-                del self._grid[index]
-                del self._storage[index]
+            if index in self._storage[Keys.grid]:
+                self._storage[Keys.grid].remove(index)
+                del self._storage[Keys.instances][index]
+                del self._storage[Keys.descriptors][index]
 
     def purge_unfeasible(self, attr: str = "p") -> None:
         """Removes all the unfeasible instances from the grid"""
         keys_to_remove = [
-            i for i in self._storage.keys() if getattr(self._storage[i], attr) < 0
+            i
+            for i in self._storage[Keys.instances].keys()
+            if getattr(self._storage[Keys.instances][i], attr) < 0
         ]
         for i in keys_to_remove:
-            del self._grid[i]
-            del self._storage[i]
+            self._storage[Keys.grid].remove(i)
+            del self._storage[Keys.instances][i]
+            del self._storage[Keys.descriptors][i]
 
     def index_of(self, descriptors) -> np.ndarray:
         """Computes the indices of a batch of descriptors.
@@ -356,11 +369,5 @@ class GridArchive(Archive):
             "lbs": self._lower_bounds.tolist(),
             "ubs": self._upper_bounds.tolist(),
             "n_cells": self._cells,
-            "instances": {
-                i: instance.asdict()
-                for i, instance in enumerate(self._storage.values())
-            },
+            **super().asdict(),
         }
-
-    def to_json(self) -> str:
-        return json.dumps(self.asdict(), indent=4)

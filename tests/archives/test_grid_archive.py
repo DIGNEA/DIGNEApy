@@ -124,7 +124,7 @@ def test_grid_5d(grid_5d):
         grid_5d.int_to_grid_index(index_of_one), np.asarray(grid_one)
     )
 
-    expected_str = f"GridArchive(dim={grid_5d.dimensions},cells={grid_5d._cells},bounds={grid_5d.bounds})"
+    expected_str = f"GridArchive(dim={grid_5d.dimensions},cells={grid_5d._cells:,},bounds={grid_5d.bounds})"
     assert grid_5d.__str__() == expected_str
     assert grid_5d.__repr__() == expected_str
 

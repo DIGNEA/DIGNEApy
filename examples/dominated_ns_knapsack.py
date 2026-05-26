@@ -34,7 +34,7 @@ def generate_instances(
     seeds: list[np.random.SeedSequence],
     verbose,
 ):
-    domain = KnapsackDomain(dimension, capacity_approach="percentage")
+    domain = KnapsackDomain(dimension, capacity_approach="evolved")
     seed = seeds[current_process()._identity[0]]
     deig = Dominated(
         pop_size=pop_size,

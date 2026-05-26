@@ -21,9 +21,9 @@ import numpy as np
 import numpy.typing as npt
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 from scipy.stats import lognorm
 
+from .._core._types import IndType
 from .protocol import Transformer
 
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
@@ -33,6 +33,8 @@ VAEOutput = namedtuple("VAEOutput", ["output", "codings_mean", "codings_logvar"]
 
 
 def vae_loss(y_pred, y_target, kl_weight=1.0):
+    import torch.nn.functional as F
+
     output, mean, logvar = y_pred
     kl_div = -0.5 * torch.sum(1 + logvar - logvar.exp() - mean.square(), dim=-1)
     return F.mse_loss(output, y_target) + kl_weight * kl_div.mean() / 101
@@ -77,8 +79,8 @@ class VAE(nn.Module):
 
 
 class KPEncoder(Transformer):
-    def __init__(self, name: str = "KPEncoder"):
-        super().__init__(name)
+    def __init__(self):
+        super().__init__("KPEncoder")
 
         self._expected_input_dim = 101
         self._encoder = torch.load(
@@ -95,7 +97,16 @@ class KPEncoder(Transformer):
     def expected_input_dim(self) -> int:
         return self._expected_input_dim
 
-    def __call__(self, X: npt.NDArray) -> np.ndarray:
+    def train(self, x: np.ndarray | list[IndType]):
+        raise NotImplementedError("train method not implemented in KPEncoder")
+
+    def predict(self, x: np.ndarray | list[IndType]) -> np.ndarray:
+        return self.__call__(x)
+
+    def save(self):
+        raise NotImplementedError("save method not implemented in KPEncoder")
+
+    def __call__(self, x: np.ndarray | list[IndType]) -> np.ndarray:
         """Encodes a numpy array of 50d-KP instances into 2D encodings.
 
         Args:
@@ -107,14 +118,14 @@ class KPEncoder(Transformer):
         Returns:
             np.ndarray: _description_
         """
-        if not isinstance(X, np.ndarray):
-            X = np.asarray(X)
-        if X.shape[1] != self._expected_input_dim:
+        if not isinstance(x, np.ndarray):
+            x = np.asarray(x)
+        if x.shape[1] != self._expected_input_dim:
             raise ValueError(
-                f"Expected a np.ndarray with shape (M, {self._expected_input_dim}). Instead got: {X.shape}"
+                f"Expected a np.ndarray with shape (M, {self._expected_input_dim}). Instead got: {x.shape}"
             )
         codings_means, codings_log_var = self._encoder.encode(
-            torch.tensor(X, device=DEVICE, dtype=torch.float32)
+            torch.tensor(x, device=DEVICE, dtype=torch.float32)
         )
         codings = self._encoder.sample_codings(codings_means, codings_log_var)
         # Mean and Logarithm of the variance
@@ -122,8 +133,8 @@ class KPEncoder(Transformer):
 
 
 class KPDecoder(Transformer):
-    def __init__(self, name: str = "KPDecoder", scale_method: str = "learnt"):
-        super().__init__(name)
+    def __init__(self, scale_method: str = "learnt"):
+        super().__init__("KPDecoder")
         if scale_method not in ("learnt", "sample"):
             raise ValueError(
                 "KPDecoder expects the scale method to be either learnt or sample"
@@ -215,7 +226,8 @@ class KPDecoder(Transformer):
                 f"Expected a np.ndarray with shape (M, {self._expected_latent_dim}). Instead got: {X.shape}"
             )
         y = (
-            self._decoder.decode(torch.tensor(X, device=DEVICE, dtype=torch.float32))
+            self._decoder
+            .decode(torch.tensor(X, device=DEVICE, dtype=torch.float32))
             .cpu()
             .detach()
             .numpy()

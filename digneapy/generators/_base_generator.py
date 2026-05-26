@@ -10,10 +10,10 @@
 @Desc    :   None
 """
 
-from abc import abstractmethod
+from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from operator import attrgetter
-from typing import List, Optional, Protocol, Sequence, Tuple
+from typing import List, Optional, Sequence, Tuple
 
 import numpy as np
 import pandas as pd
@@ -51,7 +51,7 @@ class GenResult:
             self.metrics = Statistics()(self.instances, as_series=True)
 
 
-class BaseGenerator(Protocol):
+class BaseGenerator(ABC):
     """Abstract base class for all Quality-Diversity generators.
 
     Handles:
@@ -60,18 +60,6 @@ class BaseGenerator(Protocol):
     - Result formatting
     - Statistics tracking
     """
-
-    _domain: Domain
-    _portfolio: Sequence[Solver]
-    _pop_size: np.uint32
-    _population: List
-    _performance_fn: PerformanceFn
-    _descriptor_pipe: DescriptorPipeline
-    _generations: np.uint32
-    _repetitions: np.uint16
-    _logbook: Logbook
-    _rng: np.random.Generator
-    _seed: Optional[int | np.random.SeedSequence]
 
     def __init__(
         self,
@@ -94,9 +82,23 @@ class BaseGenerator(Protocol):
             describe_by (DESCRIPTORS, optional): _Descriptor used to calculate the diversity. The options available are defined in the dictionary digneapy.DESCRIPTORS. Defaults to "features".
             generations (int, optional): Number of generations to perform. Defaults to 1000.
             repetitions (int, optional): Number times a solver in the portfolio must be run over the same instance. Defaults to 1.
-            seed (int, optional): Seed for the RNG protocol. Defaults to 42.
-
         """
+
+        if any(
+            type(param) not in (int,) or param < 0
+            for param in (pop_size, repetitions, generations)
+        ):
+            raise ValueError(
+                f"BaseGenerator: pop_size, repetitions and/or generations are negative. pop_size: {pop_size}, repetitions: {repetitions}, generations: {generations}"
+            )
+        if not isinstance(domain, Domain):
+            raise ValueError(f"BaseGenerator: Invalid domain. Got {domain}.")
+        if len(portfolio) == 0 or any(
+            not isinstance(solver, Solver) for solver in portfolio
+        ):
+            raise ValueError(
+                f"BaseGenerator: the portfolio is empty or contains invalid solvers. {portfolio}"
+            )
         self._domain = domain
         self._portfolio = tuple(portfolio)
         self._pop_size = pop_size
@@ -106,8 +108,6 @@ class BaseGenerator(Protocol):
         self._generations = generations
         self._repetitions = repetitions
         self._logbook = Logbook()
-        self._seed = seed
-        self._rng = np.random.default_rng(seed)
 
     @property
     def log(self) -> Logbook:

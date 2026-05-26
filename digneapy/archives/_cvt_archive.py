@@ -20,8 +20,8 @@ import numpy.typing as npt
 from sklearn.cluster import KMeans
 from sklearn.neighbors import KDTree
 
-from .._core import Instance
 from ._grid_archive import GridArchive
+from .base import Keys
 
 
 class CVTArchive(GridArchive):
@@ -190,35 +190,11 @@ class CVTArchive(GridArchive):
         """
         return (self._lower_bounds, self._upper_bounds)
 
-    @property
-    def instances(self) -> list[Instance]:
-        return list(self._storage.values())
-
     def __str__(self):
         return f"CVArchive(dim={self._dimensions},regions={self._k},centroids={self._centroids})"
 
     def __repr__(self):
         return f"CVArchive(dim={self._dimensions},regions={self._k},centroids={self._centroids})"
-
-    def __iter__(self):
-        """Iterates over the dictionary of instances
-
-        Returns:
-            Iterator: Yields position in the hypercube and instance located in such position
-        """
-        return iter(self._storage.values())
-
-    def lower_i(self, i) -> np.float64:
-        if i < 0 or i > len(self._lower_bounds):
-            msg = f"index {i} is out of bounds. Valid values are [0-{len(self._lower_bounds)}]"
-            raise ValueError(msg)
-        return self._lower_bounds[i]
-
-    def upper_i(self, i) -> np.float64:
-        if i < 0 or i > len(self._upper_bounds):
-            msg = f"index {i} is out of bounds. Valid values are [0-{len(self._upper_bounds)}]"
-            raise ValueError(msg)
-        return self._upper_bounds[i]
 
     def index_of(self, descriptors) -> np.ndarray:
         """Computes the indeces of a batch of descriptors.
@@ -263,13 +239,17 @@ class CVTArchive(GridArchive):
         """
         if self._centroids is None:
             warnings.warn(
-                "Skipping centroids since they're uninitialised.", RuntimeWarning
+                "Skipping centroids since they're uninitialised.",
+                RuntimeWarning,
+                stacklevel=2,
             )
         else:
             np.save(f"{file_pattern}_centroids.npy", self._centroids)
         if self._samples is None:
             warnings.warn(
-                "Skipping samples since they're uninitialised.", RuntimeWarning
+                "Skipping samples since they're uninitialised.",
+                RuntimeWarning,
+                stacklevel=2,
             )
         else:
             np.save(f"{file_pattern}_samples.npy", self._samples)
@@ -332,7 +312,7 @@ class CVTArchive(GridArchive):
             "samples": self._samples.tolist() if self._samples is not None else [],
             "instances": {
                 i: instance.asdict()
-                for i, instance in enumerate(self._storage.values())
+                for i, instance in enumerate(self._storage[Keys.instances])
             },
         }
 

@@ -11,7 +11,7 @@
 """
 
 from digneapy import DescriptorPipeline
-from digneapy.archives import GridArchive, ProximityArchive
+from digneapy.archives import GridArchive, UnstructuredArchive
 from digneapy.domains import KnapsackDomain
 from digneapy.generators import ES
 from digneapy.solvers import (
@@ -42,13 +42,12 @@ def generate_instances(
         portfolio=portfolio,
         keep_only_feasible=False,
         archives=[
-            ProximityArchive(k=15, threshold=0.1),
-            ProximityArchive(k=1, threshold=0.01),
+            UnstructuredArchive(k=15, threshold=0.1),
+            UnstructuredArchive(k=1, threshold=0.01),
             GridArchive(
                 dimensions=(100,) * 2,
                 ranges=[(-30.0, 10.0), (-30.0, 10.0)],
             ),
-            # ProximityArchive(k=1, threshold=0.01),
         ],
         repetitions=1,
         descriptor_pipe=descriptor_pipeline,

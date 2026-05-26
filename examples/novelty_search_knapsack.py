@@ -17,10 +17,10 @@ from multiprocessing import Pool, current_process
 
 import numpy as np
 
-from digneapy import NS, Archive, DescriptorKey, DescriptorPipeline
+from digneapy import DescriptorKey, DescriptorPipeline, UnstructuredArchive
 from digneapy.domains import KnapsackDomain
 from digneapy.generators import Evolutionary
-from digneapy.operators import generational_replacement
+from digneapy.operators import UCX, Generational, UMut
 from digneapy.solvers import (
     default_kp,
     map_kp,
@@ -42,20 +42,22 @@ def generate_instances(
     seeds: list[np.random.SeedSequence],
     verbose: bool,
 ):
-    seed = seeds[current_process()._identity[0]]
-
-    domain = KnapsackDomain(dimension)
+    sequence = seeds[current_process()._identity[0]]
+    domain_seed, cx_seed, mut_seed, replacement_seed, generator_seed = sequence.spawn(5)
+    domain = KnapsackDomain(dimension, seed=domain_seed)
     eig = Evolutionary(
         pop_size=pop_size,
         generations=generations,
         domain=domain,
         portfolio=portfolio,
-        novelty_approach=NS(Archive(threshold=archive_threshold), k=k),
-        solution_set=Archive(threshold=ss_threshold),
+        archive=UnstructuredArchive(threshold=archive_threshold, k=k),
+        solution_set=UnstructuredArchive(threshold=ss_threshold, k=1),
         repetitions=1,
         descriptor_pipe=DescriptorPipeline(descriptor),
-        replacement=generational_replacement,
-        seed=seed,
+        replacement=Generational(seed=replacement_seed),
+        crossover=UCX(cxpb=0.9, seed=cx_seed),
+        mutation=UMut(seed=mut_seed),
+        seed=generator_seed,
     )
 
     result = eig(verbose=verbose)

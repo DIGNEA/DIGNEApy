@@ -20,7 +20,7 @@ import numpy as np
 from digneapy import CVTArchive, DescriptorKey, DescriptorPipeline
 from digneapy.domains import KnapsackDomain
 from digneapy.generators import MapElites
-from digneapy.operators import uniform_one_mutation
+from digneapy.operators import BatchUMut
 from digneapy.solvers import default_kp, map_kp, miw_kp, mpw_kp
 from digneapy.utils import save_results_to_files
 
@@ -55,7 +55,7 @@ def generate_instances(
         portfolio=portfolio,
         archive=cvt_archive,
         pop_size=pop_size,
-        mutation=uniform_one_mutation,
+        mutation=BatchUMut(),
         generations=generations,
         describe_pipe=DescriptorPipeline(descriptor),
         repetitions=1,

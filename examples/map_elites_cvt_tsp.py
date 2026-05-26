@@ -21,7 +21,7 @@ from digneapy import DescriptorKey, DescriptorPipeline
 from digneapy.archives import CVTArchive
 from digneapy.domains import TSPDomain
 from digneapy.generators import MapElites
-from digneapy.operators import uniform_one_mutation
+from digneapy.operators import BatchUMut
 from digneapy.solvers import greedy, nneighbour, two_opt
 from digneapy.utils import save_results_to_files
 
@@ -56,7 +56,7 @@ def generate_instances(
         portfolio=portfolio,
         archive=cvt_archive,
         pop_size=pop_size,
-        mutation=uniform_one_mutation,
+        mutation=BatchUMut(),
         generations=generations,
         describe_pipe=DescriptorPipeline(descriptor),
         repetitions=1,

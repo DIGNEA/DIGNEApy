@@ -110,11 +110,10 @@ class MapElites(BaseGenerator):
         offspring_population = [
             Instance(
                 variables=offspring[i],
-                fitness=perf_biases[i],
+                fitness=perf_biases[i],  # In MapElites fitness == performance_bias (p)
                 descriptor=descriptors[i],
                 portfolio_scores=portfolio_scores[i],
                 p=perf_biases[i],
-                # Todo: Consider remove features attr features=features[i] if features is not None else None,
             )
             for i in range(len(offspring))
         ]
@@ -144,57 +143,12 @@ class MapElites(BaseGenerator):
         self._logbook.update(generation=0, population=instances, feedback=verbose)
 
     def __call__(self, verbose: bool = False) -> GenResult:
-        # instances = self._domain.generate_instances(n=self._pop_size)
-        # perf_biases, portfolio_scores = self._evaluate_population(instances)
-        # descriptors = self._descriptor_pipe(instances, portfolio_scores, self._domain)
-        # initial_instances = [
-        #     Instance(
-        #         variables=instances[i].variables,
-        #         fitness=perf_biases[i],
-        #         descriptor=descriptors[i],
-        #         portfolio_scores=portfolio_scores[i],
-        #         p=perf_biases[i],
-        #     )
-        #     for i in range(len(instances))
-        # ]
-        # # Here we do not care for p >= 0. We are starting the archive
-        # # Must be removed later on
-        # self._archive.extend(instances=initial_instances, descriptors=descriptors)
-        # self._logbook.update(generation=0, population=instances, feedback=verbose)
+        # Here we do not care for p >= 0. We are starting the archive
+        # Must be removed later on
         self._initialise_grid(verbose)
         for generation in range(self._generations):
+            # Refactored to use plotted version
             self._run_generation(generation, verbose)
-            # indices = self._rng.choice(
-            #     list(self._archive.filled_cells), size=self._pop_size
-            # )
-            # parents = np.asarray(self._archive[indices], copy=True)
-            # offspring = batch_uniform_one_mutation(
-            #     parents, self._domain._lbs, ub=self._domain._ubs
-            # )
-            # perf_biases, portfolio_scores = self._evaluate_population(offspring)
-            # descriptors = self._descriptor_pipe(
-            #     offspring, portfolio_scores, self._domain
-            # )
-
-            # offspring_population = [
-            #     Instance(
-            #         variables=offspring[i],
-            #         fitness=perf_biases[i],
-            #         descriptor=descriptors[i],
-            #         portfolio_scores=portfolio_scores[i],
-            #         p=perf_biases[i],
-            #         # Todo: Consider remove features attr features=features[i] if features is not None else None,
-            #     )
-            #     for i in range(len(offspring))
-            # ]
-            # self._archive.extend(
-            #     instances=offspring_population, descriptors=descriptors
-            # )
-            # # Record the stats and update the performed gens
-            # self._logbook.update(
-            #     generation=generation + 1, population=self._archive, feedback=verbose
-            # )
-
         if verbose:  # pragma: no cover
             # Clear the terminal
             blank = " " * 80

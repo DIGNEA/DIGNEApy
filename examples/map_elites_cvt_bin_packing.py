@@ -19,7 +19,7 @@ import numpy as np
 from digneapy import CVTArchive, DescriptorKey, DescriptorPipeline
 from digneapy.domains import BPPDomain
 from digneapy.generators import MapElites
-from digneapy.operators import uniform_one_mutation
+from digneapy.operators import BatchUMut
 from digneapy.solvers import best_fit, first_fit, next_fit, worst_fit
 from digneapy.utils import save_results_to_files
 
@@ -69,7 +69,7 @@ def generate_instances(
         portfolio=portfolio,
         archive=cvt_archive,
         pop_size=pop_size,
-        mutation=uniform_one_mutation,
+        mutation=BatchUMut(),
         generations=generations,
         describe_pipe=DescriptorPipeline(descriptor),
         repetitions=1,

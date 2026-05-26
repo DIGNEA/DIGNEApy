@@ -264,7 +264,7 @@ def test_evolutionary_strategy(
         lambda_=32,
         archives=[
             UnstructuredArchive(k=k, threshold=1.0),
-            GridArchive(dimensions=(2,) * 10, ranges=[(-30.0, 10.0), (-30.0, 10.0)]),
+            GridArchive(dimensions=(100,) * 2, ranges=[(-30.0, 10.0), (-30.0, 10.0)]),
         ],
         generations=generations,
         repetitions=1,

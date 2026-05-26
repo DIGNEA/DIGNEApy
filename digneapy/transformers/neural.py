@@ -10,9 +10,13 @@
 @Desc    :   None
 """
 
+import os
+
+os.environ["KERAS_BACKEND"] = "torch"
 from collections.abc import Sequence
 from typing import Callable, Optional
 
+import keras
 import numpy as np
 import numpy.typing as npt
 from sklearn.preprocessing import StandardScaler
@@ -21,11 +25,6 @@ from .protocol import Transformer
 
 
 class NNEncoder(Transformer):
-    import os
-
-    os.environ["KERAS_BACKEND"] = "torch"
-    import keras
-
     def __init__(
         self,
         name: str,

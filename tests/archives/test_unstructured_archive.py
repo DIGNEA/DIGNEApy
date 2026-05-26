@@ -15,7 +15,7 @@ import copy
 import numpy as np
 import pytest
 
-from digneapy import Instance, ProximityArchive
+from digneapy import Instance, UnstructuredArchive
 
 N_INSTANCES = 100
 DIMENSION = 101
@@ -52,18 +52,18 @@ def default_archive():
         )
         for _ in range(N_INSTANCES)
     ]
-    return ProximityArchive(threshold=0.0, k=1, instances=instances)
+    return UnstructuredArchive(threshold=0.0, k=1, instances=instances)
 
 
 @pytest.fixture
 def empty_archive():
-    return ProximityArchive(threshold=0.0, k=1)
+    return UnstructuredArchive(threshold=0.0, k=1)
 
 
 @pytest.mark.parametrize("k", [3, 15, 30])
 @pytest.mark.parametrize("threshold", [0.01, 1.0, 5.0, 10.0])
 def test_default_empty_archive(k, threshold):
-    archive = ProximityArchive(threshold=threshold, k=k)
+    archive = UnstructuredArchive(threshold=threshold, k=k)
     assert archive.k == k
     assert len(archive) == 0
 
@@ -112,7 +112,7 @@ def test_bool_on_default_archive(default_archive):
 def test_archive_magic(default_archive):
     assert (
         default_archive.__str__()
-        == f"ProximityArchive(threshold=0.0,data=(|{N_INSTANCES}|))"
+        == f"UnstructuredArchive(threshold=0.0,data=(|{N_INSTANCES}|))"
     )
     duplicated = copy.deepcopy(default_archive)
     assert hash(duplicated) == hash(default_archive)
@@ -127,14 +127,14 @@ def test_Archive_can_be_indexed(default_archive):
 
 
 def test_archive_repr(default_archive):
-    assert f"ProximityArchive(threshold=0.0,data=(|{N_INSTANCES}|))" == format(
+    assert f"UnstructuredArchive(threshold=0.0,data=(|{N_INSTANCES}|))" == format(
         repr(default_archive),
     )
 
 
 @pytest.mark.parametrize("threshold", [0.01, 1.0, 5.0, 10.0])
 def test_archive_extend(threshold):
-    empty_archive = ProximityArchive(k=1, threshold=threshold)
+    empty_archive = UnstructuredArchive(k=1, threshold=threshold)
     rng = np.random.default_rng()
     scores = rng.uniform(low=threshold - 0.5, high=threshold + 1.5, size=N_INSTANCES)
     instances = [
@@ -154,22 +154,23 @@ def test_archive_extend(threshold):
 
 def test_proximity_archive_raises():
     with pytest.raises(ValueError) as k_error:
-        _ = ProximityArchive(k=-10, threshold=1.0)
-    assert "ProximityArchive expects k to be a positive integer. Got -10" in str(
+        _ = UnstructuredArchive(k=-10, threshold=1.0)
+    assert "UnstructuredArchive expects k to be a positive integer. Got -10" in str(
         k_error.value
     )
 
     with pytest.raises(ValueError) as k_error:
-        _ = ProximityArchive(k=10, threshold=-1.0)
-    assert "ProximityArchive expects a floating point threshold >= 0. Got -1.0" in str(
-        k_error.value
+        _ = UnstructuredArchive(k=10, threshold=-1.0)
+    assert (
+        "UnstructuredArchive expects a floating point threshold >= 0. Got -1.0"
+        in str(k_error.value)
     )
 
     with pytest.warns(
         RuntimeWarning,
         match=r"Not enough neighbors to compute sparseness for k=10\. \(archive=0, instances=5\)\. Returning zeros\.",
     ):
-        archive = ProximityArchive(k=10, threshold=1.0)
+        archive = UnstructuredArchive(k=10, threshold=1.0)
         population = np.random.default_rng().integers(0, 10, size=(5, 6))
         r = archive(population)
         print(r)
@@ -180,7 +181,7 @@ def test_proximity_archive_raises():
 def test_proximity_archive_random_instances_and_k_and_threshold(
     k, threshold, random_population
 ):
-    archive = ProximityArchive(threshold=threshold, k=k)
+    archive = UnstructuredArchive(threshold=threshold, k=k)
     descriptors = np.asarray([instance.descriptor for instance in random_population])
     assert descriptors.shape == (N_INSTANCES, N_FEATURES)
 
@@ -193,7 +194,7 @@ def test_proximity_archive_random_instances_and_k_and_threshold(
 @pytest.mark.parametrize("k", [3, 15, 30])
 @pytest.mark.parametrize("threshold", [0.01, 1.0, 5.0, 10.0])
 def test_proximity_archive_raises_if_empty_population(k, threshold):
-    archive = ProximityArchive(threshold=threshold, k=k)
+    archive = UnstructuredArchive(threshold=threshold, k=k)
     # If empty population it should raise
     with pytest.raises(Exception):
         archive(np.empty(0))
@@ -204,7 +205,7 @@ def test_proximity_archive_raises_if_empty_population(k, threshold):
 def test_proximity_archive_returns_zeros_if_population_smaller_than_K(
     k, threshold, random_population
 ):
-    archive = ProximityArchive(threshold=threshold, k=k)
+    archive = UnstructuredArchive(threshold=threshold, k=k)
     descriptors = np.asarray([
         instance.descriptor for instance in random_population[:k]
     ])
@@ -216,7 +217,7 @@ def test_proximity_archive_returns_zeros_if_population_smaller_than_K(
 
 
 def test_proximity_archive_uses_available_neighbors_when_not_enough_distances():
-    archive = ProximityArchive(threshold=0.0, k=2)
+    archive = UnstructuredArchive(threshold=0.0, k=2)
     descriptors = np.asarray(
         [[0.0, 0.0], [1.0, 0.0], [0.0, 5.0]],
         dtype=np.float64,

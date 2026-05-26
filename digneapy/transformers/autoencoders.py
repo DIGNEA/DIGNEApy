@@ -21,7 +21,6 @@ import numpy as np
 import numpy.typing as npt
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 from scipy.stats import lognorm
 
 from .._core._types import IndType
@@ -34,6 +33,8 @@ VAEOutput = namedtuple("VAEOutput", ["output", "codings_mean", "codings_logvar"]
 
 
 def vae_loss(y_pred, y_target, kl_weight=1.0):
+    import torch.nn.functional as F
+
     output, mean, logvar = y_pred
     kl_div = -0.5 * torch.sum(1 + logvar - logvar.exp() - mean.square(), dim=-1)
     return F.mse_loss(output, y_target) + kl_weight * kl_div.mean() / 101

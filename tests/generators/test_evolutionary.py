@@ -10,17 +10,16 @@
 @Desc    :   None
 """
 
+import importlib
 from pathlib import Path
 
 import numpy as np
 import pytest
 
-from digneapy import DescriptorPipeline, Domain, max_gap_target
-from digneapy.archives import ProximityArchive
+from digneapy import DescriptorPipeline, Domain, GridArchive, max_gap_target
+from digneapy.archives import UnstructuredArchive
 from digneapy.domains import BPPDomain, KnapsackDomain, TSPDomain
-from digneapy.generators import (
-    Evolutionary,
-)
+from digneapy.generators import ES, Evolutionary
 from digneapy.operators import (
     OPCX,
     UCX,
@@ -71,7 +70,7 @@ def test_default_generator(descriptor):
         pop_size=100,
         domain=KnapsackDomain(),
         portfolio=[default_kp],
-        archive=ProximityArchive(k=15, threshold=1.0),
+        archive=UnstructuredArchive(k=15, threshold=1.0),
         descriptor_pipe=descriptor_pipeline,
     )
     assert eig._pop_size == 100
@@ -97,7 +96,7 @@ def test_default_generator(descriptor):
             pop_size=100,
             domain=None,
             portfolio=[default_kp],
-            archive=ProximityArchive(k=15, threshold=1.0),
+            archive=UnstructuredArchive(k=15, threshold=1.0),
             descriptor_pipe=descriptor_pipeline,
         )
     assert e.value.args[0] == "BaseGenerator: Invalid domain. Got None."
@@ -107,7 +106,7 @@ def test_default_generator(descriptor):
             pop_size=100,
             domain=KnapsackDomain(),
             portfolio=tuple(),
-            archive=ProximityArchive(k=15, threshold=1.0),
+            archive=UnstructuredArchive(k=15, threshold=1.0),
             descriptor_pipe=descriptor_pipeline,
         )
     assert (
@@ -120,7 +119,7 @@ def test_default_generator(descriptor):
             pop_size=100,
             domain=KnapsackDomain(),
             portfolio=[default_kp],
-            archive=ProximityArchive(k=15, threshold=1.0),
+            archive=UnstructuredArchive(k=15, threshold=1.0),
             phi=-1.0,
         )
     assert (
@@ -132,7 +131,7 @@ def test_default_generator(descriptor):
             pop_size=100,
             domain=KnapsackDomain(),
             portfolio=[default_kp],
-            archive=ProximityArchive(k=15, threshold=1.0),
+            archive=UnstructuredArchive(k=15, threshold=1.0),
             phi="hello",
         )
     assert (
@@ -187,8 +186,8 @@ def test_evolutionary_generator(
         pop_size=32,
         generations=generations,
         domain=domain,
-        archive=ProximityArchive(k=k, threshold=3),
-        solution_set=ProximityArchive(k=k, threshold=3),
+        archive=UnstructuredArchive(k=k, threshold=3),
+        solution_set=UnstructuredArchive(k=k, threshold=3),
         portfolio=portfolio,
         repetitions=1,
         descriptor_pipe=descriptor_pipeline,
@@ -203,7 +202,7 @@ def test_evolutionary_generator(
     result = eig()
     solution_set = result.instances
     # It could be empty
-    assert isinstance(solution_set, ProximityArchive)
+    assert isinstance(solution_set, UnstructuredArchive)
     if len(solution_set) != 0:
         desc_dimension = 0
         match descriptor:
@@ -231,3 +230,66 @@ def test_evolutionary_generator(
     ea_generator_evolution_plot(log.logbook, filename=filename)
     assert filename.exists()
     filename.unlink()
+
+
+@pytest.mark.skipif(importlib.util.find_spec("torch") is None, reason="requires torch")
+@pytest.mark.parametrize(
+    "portfolio",
+    [
+        [default_kp, map_kp, miw_kp, mpw_kp],
+        [map_kp, default_kp, miw_kp, mpw_kp],
+        [miw_kp, default_kp, map_kp, mpw_kp],
+        [mpw_kp, default_kp, map_kp, miw_kp],
+    ],
+)
+@pytest.mark.parametrize("descriptor", ("instance",))
+def test_evolutionary_strategy(
+    portfolio,
+    descriptor,
+):
+    from digneapy.transformers.autoencoders import KPDecoder
+
+    # It can be parametrised more, but it takes hours to run the test suit
+    generations = 100
+    generator_dimension = 2
+    domain_dimension = 50
+    k = 3
+    descriptor_pipeline = DescriptorPipeline(descriptor, KPDecoder())
+    domain = KnapsackDomain(dimension=domain_dimension)
+
+    stratey = ES(
+        generator_dimension=generator_dimension,
+        domain=domain,
+        portfolio=portfolio,
+        lambda_=32,
+        archives=[
+            UnstructuredArchive(k=k, threshold=1.0),
+            GridArchive(dimensions=(2,) * 10, ranges=[(-30.0, 10.0), (-30.0, 10.0)]),
+        ],
+        generations=generations,
+        repetitions=1,
+        descriptor_pipe=descriptor_pipeline,
+    )
+    builded_pipeline = stratey.descriptor_pipeline
+    assert builded_pipeline._key == descriptor
+    assert len(builded_pipeline._transformers) == 0
+    result, archives = stratey()
+    solution_set = result.instances
+    # It could be empty
+    assert isinstance(solution_set, GridArchive)
+    assert id(solution_set) == id(archives[1])
+    assert isinstance(archives[0], UnstructuredArchive)
+    if len(solution_set) != 0:
+        assert all(s.fitness >= 0.0 for s in solution_set)
+        assert all(s.p >= 0 for s in solution_set)
+        assert all(s.s >= 0 for s in solution_set)
+        assert all(
+            len(s.descriptor) == domain_dimension for s in solution_set
+        )  # Based on descriptor
+        assert all(len(s.portfolio_scores) == len(portfolio) for s in solution_set)
+        p_scores = [s.portfolio_scores for s in solution_set]
+        assert all(max(p_scores[i]) == p_scores[i][0] for i in range(len(p_scores)))
+
+    # Test the creation of the evolution images
+    log = stratey._logbook
+    assert len(log) == stratey._generations

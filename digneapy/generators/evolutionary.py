@@ -257,12 +257,36 @@ class Evolutionary(BaseGenerator):
 
 
 def cast_to_instances(
-    genotypes, descriptors, fitness, portfolio_scores, diversity_scores
+    genotypes, descriptors, fitness, portfolio_scores, diversity_scores, bias_score
 ) -> list[Instance]:
+    """Creates objects of type Instance from a collection of np.ndarray
+
+    Args:
+        genotypes (_type_): Genotypes of the instances
+        descriptors (_type_): Descriptors of the instances
+        fitness (_type_): Fitness values of the instances
+        portfolio_scores (_type_): Scores of the instances
+        diversity_scores (_type_): Diversity scores of the instances
+        bias_score (_type_): Performance bias scores of the instances
+
+    Raises:
+        RuntimeError: If the len() of any list differs from the rest
+
+    Returns:
+        list[Instance]: List of Instance objects ready to be inserted in the archives
+    """
     expected = len(genotypes)
     if any(
         len(l) != expected
-        for l in (genotypes, descriptors, fitness, portfolio_scores, diversity_scores)
+        for l in (
+            genotypes,
+            descriptors,
+            fitness,
+            portfolio_scores,
+            diversity_scores,
+            fitness,
+            bias_score,
+        )
     ):
         raise RuntimeError("Length mismatch")
     return [
@@ -270,7 +294,7 @@ def cast_to_instances(
             variables=genotypes[i],
             fitness=fitness[i],
             descriptor=descriptors[i],
-            p=fitness[i],
+            p=bias_score[i],
             portfolio_scores=portfolio_scores[i],
             s=diversity_scores[i],
         )
@@ -319,6 +343,11 @@ class ES(BaseGenerator):
             raise ValueError(
                 "ES is expected to be use with a DescriptorPipeline that includes at least one transformer object."
             )
+        if descriptor_pipe._key == "performance":
+            raise ValueError(
+                "ES is expected to be use with a DescriptorPipeline that uses either features or instance as key. Performance not allowed yet!"
+            )
+
         super().__init__(
             domain=domain,
             portfolio=portfolio,
@@ -347,33 +376,45 @@ class ES(BaseGenerator):
         self._rng = np.random.default_rng(self.seed)
         self._keep_feasible = keep_only_feasible
 
+    def _compute_fitness(
+        self, performance_biases: np.ndarray, diversity_scores: np.ndarray
+    ) -> np.ndarray:
+        """Calculates the fitness of each instance in the population
+
+        Args:
+            performance_biases (np.ndarray): Performance biases or scores of each instance
+            novelty_scores (np.ndarray): Novelty scores of each instance
+
+        Returns:
+            fitness of each instance (np.ndarray)
+        """
+        phi_r = 1.0 - 0.5
+        fitness = np.zeros(len(performance_biases))
+        fitness = (performance_biases * 0.5) + (diversity_scores * phi_r)
+        return fitness
+
     def _update_archive(
         self,
         archive: Archive,
         individuals: np.ndarray,
         descriptors: np.ndarray,
-        perf_biases: np.ndarray,
         portfolio_scores: np.ndarray,
-        diversity: Optional[np.ndarray] = None,
+        diversity: np.ndarray,
+        bias_score: np.ndarray,
+        fitness: np.ndarray,
     ):
-        diversity_scores = np.zeros(shape=(len(individuals), 1))
-        if diversity is None:
-            try:
-                diversity_scores = archive(descriptors=individuals)
-            except NotImplementedError:
-                diversity_scores = np.zeros(shape=(len(individuals), 1))
-
         instances = cast_to_instances(
             descriptors,
             individuals,
-            perf_biases,
+            fitness,
             portfolio_scores=portfolio_scores,
-            diversity_scores=diversity_scores,
+            diversity_scores=diversity,
+            bias_score=bias_score,
         )
         archive.extend(
             instances=instances,
             descriptors=individuals,
-            novelty_scores=diversity_scores,
+            novelty_scores=diversity,
         )
         return instances
 
@@ -392,42 +433,66 @@ class ES(BaseGenerator):
         )
         _current_generation = 0
         while _current_generation < self._generations:
-            individuals = strategy.ask()
-            individuals = np.asarray(individuals)
-            descriptors = self._descriptor_pipe(individuals, scores=None, domain=None)
-            perf_biases, portfolio_scores = self._evaluate_population(descriptors)
+            descriptors = np.asarray(strategy.ask())
+            individual_genotypes = self._descriptor_pipe(
+                descriptors, scores=None, domain=self._domain
+            )
+            perf_biases, portfolio_scores = self._evaluate_population(
+                individual_genotypes
+            )
+            diversity_scores = np.zeros(shape=(len(descriptors), 1))
+            try:
+                diversity_scores = self._archives[0](descriptors=descriptors)
+            except NotImplementedError:
+                diversity_scores = np.zeros(shape=(len(descriptors), 1))
+
+            fitness = self._compute_fitness(perf_biases, diversity_scores)
             instances = self._update_archive(
                 self._archives[0],
-                individuals,
+                individual_genotypes,
                 descriptors,
-                perf_biases,
                 portfolio_scores,
+                diversity_scores,
+                perf_biases,
+                fitness,
             )
             if len(self._archives) > 1:
                 _valid_indices = (
                     np.where(perf_biases > 0)[0]
                     if self._keep_feasible
-                    else np.arange(len(individuals))
+                    else np.arange(len(individual_genotypes))
                 )
                 if len(_valid_indices) > 1:
                     # feasible_indeces = np.where(perf_biases > 0)[0]
-                    feasible_individuals = individuals[_valid_indices]
+                    feasible_individuals = individual_genotypes[_valid_indices]
                     feasible_descriptors = descriptors[_valid_indices]
                     feasible_performances = perf_biases[_valid_indices]
                     feasible_scores = portfolio_scores[_valid_indices]
+                    feasible_fitness = fitness[_valid_indices]
                     for archive in self._archives[1:]:
+                        try:
+                            feasible_div_scores = archive(
+                                descriptors=descriptors[_valid_indices]
+                            )
+                        except NotImplementedError:
+                            feasible_div_scores = np.zeros(
+                                shape=(len(descriptors[_valid_indices]), 1)
+                            )
                         _ = self._update_archive(
                             archive,
                             feasible_individuals,
                             feasible_descriptors,
-                            feasible_performances,
                             feasible_scores,
+                            feasible_div_scores,
+                            feasible_performances,
+                            feasible_fitness,
                         )
 
             self._logbook.update(
                 generation=_current_generation, population=instances, feedback=verbose
             )
-            strategy.tell(individuals, -perf_biases)
+            # Tell the descriptors and their corresponding fitness
+            strategy.tell(descriptors, -fitness)
 
             _current_generation += 1
 

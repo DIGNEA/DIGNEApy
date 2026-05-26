@@ -12,7 +12,7 @@
 
 from ._cvt_archive import CVTArchive
 from ._grid_archive import GridArchive
-from ._proximity import ProximityArchive
+from ._unstructured import UnstructuredArchive
 from .base import Archive
 
-__all__ = ["Archive", "GridArchive", "CVTArchive", "Proximity"]
+__all__ = ["Archive", "GridArchive", "CVTArchive", "UnstructuredArchive"]

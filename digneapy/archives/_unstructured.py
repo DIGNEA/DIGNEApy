@@ -21,7 +21,7 @@ from .._core import Instance
 from .base import Archive, Keys
 
 
-class ProximityArchive(Archive):
+class UnstructuredArchive(Archive):
     """Archive that stores solutions based on their distances"""
 
     def __init__(
@@ -39,11 +39,11 @@ class ProximityArchive(Archive):
         """
         if type(k) is not int or k < 0:
             raise ValueError(
-                f"ProximityArchive expects k to be a positive integer. Got {k}"
+                f"UnstructuredArchive expects k to be a positive integer. Got {k}"
             )
         if type(threshold) not in (float, int) or threshold < 0.0:
             raise ValueError(
-                f"ProximityArchive expects a floating point threshold >= 0. Got {threshold}"
+                f"UnstructuredArchive expects a floating point threshold >= 0. Got {threshold}"
             )
         super().__init__(instances, dtype)
         self._k = k
@@ -59,7 +59,7 @@ class ProximityArchive(Archive):
 
     def __getitem__(self, key):
         if isinstance(key, slice):
-            return ProximityArchive(
+            return UnstructuredArchive(
                 k=self._k,
                 threshold=self._threshold,
                 instances=self._storage[Keys.instances][key],
@@ -68,10 +68,10 @@ class ProximityArchive(Archive):
         return self._storage[Keys.instances][index]
 
     def __str__(self):
-        return f"ProximityArchive(threshold={self._threshold},data=(|{len(self)}|))"
+        return f"UnstructuredArchive(threshold={self._threshold},data=(|{len(self)}|))"
 
     def __repr__(self):
-        return f"ProximityArchive(threshold={self._threshold},data=(|{len(self)}|))"
+        return f"UnstructuredArchive(threshold={self._threshold},data=(|{len(self)}|))"
 
     def __call__(self, descriptors: np.ndarray) -> np.ndarray:
         return self.compute_novelty(descriptors)
@@ -91,7 +91,7 @@ class ProximityArchive(Archive):
         """
         if len(descriptors) == 0:
             raise ValueError(
-                f"ProximityArchive was given an empty population to compute the sparseness. Shape is: {descriptors.shape}"
+                f"UnstructuredArchive was given an empty population to compute the sparseness. Shape is: {descriptors.shape}"
             )
         num_instances = len(descriptors)
         num_archive = len(self._storage[Keys.descriptors])

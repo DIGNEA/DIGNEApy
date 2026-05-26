@@ -23,7 +23,7 @@ from .._core import (
 )
 from .._core.descriptors import DescriptorPipeline
 from .._core.scores import PerformanceFn, max_gap_target
-from ..archives import ProximityArchive
+from ..archives import UnstructuredArchive
 from ..operators import (
     UCX,
     BinarySelection,
@@ -173,7 +173,7 @@ class Dominated(Evolutionary):
             selection=selection,
             descriptor_pipe=descriptor_pipe,
             seed=seed,
-            archive=ProximityArchive(threshold=0.1, k=1),
+            archive=UnstructuredArchive(threshold=0.1, k=1),
         )
         self._k = k
         self.offspring_size = pop_size

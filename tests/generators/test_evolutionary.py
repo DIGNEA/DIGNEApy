@@ -257,7 +257,7 @@ def test_evolutionary_strategy(
     descriptor_pipeline = DescriptorPipeline(descriptor, KPDecoder())
     domain = KnapsackDomain(dimension=domain_dimension)
 
-    stratey = ES(
+    strategy = ES(
         generator_dimension=generator_dimension,
         domain=domain,
         portfolio=portfolio,
@@ -270,12 +270,14 @@ def test_evolutionary_strategy(
         repetitions=1,
         descriptor_pipe=descriptor_pipeline,
     )
-    builded_pipeline = stratey.descriptor_pipeline
+    builded_pipeline = strategy.descriptor_pipeline
     assert builded_pipeline._key == descriptor
-    assert len(builded_pipeline._transformers) == 0
-    result, archives = stratey()
+    assert len(builded_pipeline._transformers) == 1
+    result, archives = strategy()
     solution_set = result.instances
     # It could be empty
+    for instance in solution_set:
+        print(instance.descriptor.shape, len(instance.descriptor), instance.descriptor)
     assert isinstance(solution_set, GridArchive)
     assert id(solution_set) == id(archives[1])
     assert isinstance(archives[0], UnstructuredArchive)
@@ -283,13 +285,11 @@ def test_evolutionary_strategy(
         assert all(s.fitness >= 0.0 for s in solution_set)
         assert all(s.p >= 0 for s in solution_set)
         assert all(s.s >= 0 for s in solution_set)
-        assert all(
-            len(s.descriptor) == domain_dimension for s in solution_set
-        )  # Based on descriptor
+        assert all(len(s.descriptor) == generator_dimension for s in solution_set)
         assert all(len(s.portfolio_scores) == len(portfolio) for s in solution_set)
         p_scores = [s.portfolio_scores for s in solution_set]
         assert all(max(p_scores[i]) == p_scores[i][0] for i in range(len(p_scores)))
 
     # Test the creation of the evolution images
-    log = stratey._logbook
-    assert len(log) == stratey._generations
+    log = strategy._logbook
+    assert len(log) == strategy._generations

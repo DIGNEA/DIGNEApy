@@ -317,7 +317,7 @@ class ES(BaseGenerator):
         performance_function: PerformanceFn = max_gap_target,
         generations: int = 1_000,
         repetitions: int = 1,
-        descriptor_pipe: DescriptorPipeline = DescriptorPipeline("features"),
+        descriptor_pipe: DescriptorPipeline = DescriptorPipeline("instance"),
         seed: Optional[int | np.random.SeedSequence] = None,
         workers: int = 1,
     ):
@@ -343,9 +343,9 @@ class ES(BaseGenerator):
             raise ValueError(
                 "ES is expected to be use with a DescriptorPipeline that includes at least one transformer object."
             )
-        if descriptor_pipe._key == "performance":
+        if descriptor_pipe._key != "instance":
             raise ValueError(
-                "ES is expected to be use with a DescriptorPipeline that uses either features or instance as key. Performance not allowed yet!"
+                "ES is expected to be use with a DescriptorPipeline that uses instance as key. Performance or Features not allowed yet!"
             )
 
         super().__init__(
@@ -403,10 +403,11 @@ class ES(BaseGenerator):
         bias_score: np.ndarray,
         fitness: np.ndarray,
     ):
+
         instances = cast_to_instances(
-            descriptors,
-            individuals,
-            fitness,
+            genotypes=individuals,
+            descriptors=descriptors,
+            fitness=fitness,
             portfolio_scores=portfolio_scores,
             diversity_scores=diversity,
             bias_score=bias_score,
@@ -433,6 +434,7 @@ class ES(BaseGenerator):
         )
         _current_generation = 0
         while _current_generation < self._generations:
+            # Here descriptors have shape (lambda_, generator_dimension)
             descriptors = np.asarray(strategy.ask())
             individual_genotypes = self._descriptor_pipe(
                 descriptors, scores=None, domain=self._domain
@@ -440,21 +442,21 @@ class ES(BaseGenerator):
             perf_biases, portfolio_scores = self._evaluate_population(
                 individual_genotypes
             )
-            diversity_scores = np.zeros(shape=(len(descriptors), 1))
             try:
                 diversity_scores = self._archives[0](descriptors=descriptors)
             except NotImplementedError:
                 diversity_scores = np.zeros(shape=(len(descriptors), 1))
 
             fitness = self._compute_fitness(perf_biases, diversity_scores)
+
             instances = self._update_archive(
                 self._archives[0],
-                individual_genotypes,
-                descriptors,
-                portfolio_scores,
-                diversity_scores,
-                perf_biases,
-                fitness,
+                individuals=descriptors,  # Genotypes extracted from the transformed
+                descriptors=descriptors,
+                portfolio_scores=portfolio_scores,
+                diversity=diversity_scores,
+                bias_score=perf_biases,
+                fitness=fitness,
             )
             if len(self._archives) > 1:
                 _valid_indices = (
@@ -463,8 +465,6 @@ class ES(BaseGenerator):
                     else np.arange(len(individual_genotypes))
                 )
                 if len(_valid_indices) > 1:
-                    # feasible_indeces = np.where(perf_biases > 0)[0]
-                    feasible_individuals = individual_genotypes[_valid_indices]
                     feasible_descriptors = descriptors[_valid_indices]
                     feasible_performances = perf_biases[_valid_indices]
                     feasible_scores = portfolio_scores[_valid_indices]
@@ -480,12 +480,12 @@ class ES(BaseGenerator):
                             )
                         _ = self._update_archive(
                             archive,
-                            feasible_individuals,
-                            feasible_descriptors,
-                            feasible_scores,
-                            feasible_div_scores,
-                            feasible_performances,
-                            feasible_fitness,
+                            individuals=feasible_descriptors,
+                            descriptors=feasible_descriptors,
+                            portfolio_scores=feasible_scores,
+                            diversity=feasible_div_scores,
+                            bias_score=feasible_performances,
+                            fitness=feasible_fitness,
                         )
 
             self._logbook.update(

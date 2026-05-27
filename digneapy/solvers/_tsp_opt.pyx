@@ -27,10 +27,10 @@ ctypedef unsigned short ushort
 
 @cython.boundscheck(False)  # Deactivate bounds checking
 cdef float evaluate(cnp.ndarray individual, cnp.ndarray distances):
-    cdef float distance = 0.0
-    cdef float fitness = 0.0
-    cdef ushort i
-    cdef ushort N = len(individual)
+    cdef cnp.float32_t distance = 0.0
+    cdef cnp.float64_t fitness = 0.0
+    cdef cnp.uint16_t i
+    cdef cnp.uint16_t N = len(individual)
     counter = Counter(individual)
 
     if any(counter[c] != 1 for c in counter if c != 0) or (individual[0] != 0 or individual[-1] != 0):
@@ -58,15 +58,15 @@ cpdef list two_opt(object problem):
     if problem is None:
         raise ValueError("No problem found in two_opt heuristic")
 
-    cdef ushort N = problem.dimension
-    cdef cnp.ndarray[ushort] tour = np.arange(start=0, stop=N+1, step=1, dtype=np.uint16)
+    cdef cnp.uint16_t N = problem.dimension
+    cdef cnp.ndarray[cnp.uint16_t, ndim=1] tour = np.arange(start=0, stop=N+1, step=1, dtype=np.uint16)
     tour[N] = 0
-    cdef ushort tour_length = len(tour)
-    cdef cnp.ndarray distances = problem._distances
+    cdef cnp.uint16_t tour_length = len(tour)
+    cdef cnp.ndarray[cnp.float64_t, ndim=2] distances = problem._distances
     cdef bint improve = True
-    cdef ushort i, j
-    cdef double current, newer
-    cdef float fitness
+    cdef cnp.uint16_t i, j
+    cdef cnp.float64_t current, newer
+    
     while improve:
         improve = False
         for i in range(1, tour_length - 2):
@@ -83,7 +83,7 @@ cpdef list two_opt(object problem):
                 if newer < current:
                     tour[i:j] = tour[j - 1 : i - 1 : -1]
                     improve = True
-    fitness = evaluate(tour, distances)
+    cdef cnp.float64_t fitness = evaluate(tour, distances)
     return [Solution(variables=tour, objectives=(fitness,), fitness=fitness)]
 
 
@@ -102,10 +102,10 @@ cpdef list three_opt(object problem):
     """
     if problem is None:
         raise ValueError("No problem found in three_opt heuristic")
-    cdef ushort N = problem.dimension 
-    cdef cnp.ndarray[ushort] tour = np.arange(start=0, stop=N+1, step=1, dtype=np.uint16)
-    cdef cnp.ndarray distances = problem._distances
-    cdef ushort i, j
+    cdef cnp.uint16_t N = problem.dimension 
+    cdef cnp.ndarray[cnp.uint16_t, ndim=1] tour = np.arange(start=0, stop=N+1, step=1, dtype=np.uint16)
+    cdef cnp.ndarray[cnp.float64_t, ndim=2] distances = problem._distances
+    cdef cnp.uint16_t i, j
     cdef bint improve = True
     tour[-1] = 0
     while improve:
@@ -134,7 +134,7 @@ cpdef list three_opt(object problem):
                         tour = new_tour
                         improve = True
 
-    fitness = problem.evaluate(tour)[0]
+    cdef cnp.float64_t fitness = problem.evaluate(tour)[0]
     return [
-        Solution(variables=tour, objectives=(fitness,), fitness=np.float64(fitness))
+        Solution(variables=tour, objectives=(fitness,), fitness=fitness)
     ]

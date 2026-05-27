@@ -222,7 +222,11 @@ docstring-code-format = false
 docstring-code-line-length = "dynamic"
 
 [tool.coverage.run]
-omit = ["digneapy/transformers/*", "digneapy/utils/*"]
+omit = [
+    "digneapy/transformers/*",
+    "digneapy/utils/*",
+    "digneapy/visualize/_archive_plotter.py",
+]
 
 [tool.coverage.report]
 exclude_also = [
@@ -230,6 +234,7 @@ exclude_also = [
     "def __str__",
     'raise NotImplementedError',
     '@(abc\.)?abstractmethod',
+    "class PlottedMapElites",
 ]
 
 [tool.pyrefly]

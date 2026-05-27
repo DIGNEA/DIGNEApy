@@ -32,12 +32,7 @@ class ISOLineMutation(Mutation):
             raise ValueError("sigma_iso and sigma_line must be float.")
 
     def __call__(
-        self,
-        population: np.ndarray,
-        lb: np.ndarray,
-        ub: np.ndarray,
-        sigma_iso: float = 0.01,
-        sigma_line: float = 0.2,
+        self, population: np.ndarray, lb: np.ndarray, ub: np.ndarray
     ) -> np.ndarray:
         """Performs ISO+Line mutation from Vassiliades & Mouret 2018
 
@@ -64,8 +59,8 @@ class ISOLineMutation(Mutation):
         parents_b = np.asarray(
             population[self._rng.choice(indices, size=len(population))], copy=True
         )
-        iso_noise = self._rng.normal(0, sigma_iso, size=parents_a.shape)
-        line_steps = self._rng.uniform(0, sigma_line, size=(len(parents_a), 1))
+        iso_noise = self._rng.normal(0, self._sigma_iso, size=parents_a.shape)
+        line_steps = self._rng.uniform(0, self._sigma_line, size=(len(parents_a), 1))
         direction = parents_b - parents_a
         offspring = parents_a + iso_noise + line_steps * direction
         offspring = np.clip(offspring, lb, ub)

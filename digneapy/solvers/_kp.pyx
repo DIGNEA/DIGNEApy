@@ -25,7 +25,7 @@ from digneapy.domains.kp import Knapsack
 
 ctypedef unsigned short ushort
 ctypedef unsigned int uint # 16b [0, 65,535]
-ctypedef unsigned int uli # 32b [0, 4,294,967,295]
+ctypedef unsigned long uli # 32b [0, 4,294,967,295]
 
 @cython.boundscheck(False)  # Deactivate bounds checking
 @cython.wraparound(False)   # Deactivate negative indexing
@@ -34,12 +34,11 @@ cpdef list default_kp(problem: Knapsack):
         msg = "No problem found in args of default_kp heuristic"
         raise ValueError(msg)
 
-    cdef uli q, packed, profit
-    cdef uli [:] p, w
-    cdef uint N, i
-    cdef unsigned short [:] variables
+    cdef cnp.uint64_t q, packed, profit
+    cdef cnp.uint32_t [:] p, w
+    cdef cnp.uint16_t N, i
+    cdef cnp.uint16_t [:] variables
     
-
     q = problem.capacity
     N = len(problem)
     packed = 0
@@ -60,12 +59,11 @@ cpdef list map_kp(problem: Knapsack):
     if problem is None:
         msg = "No problem found in args of map_kp heuristic"
         raise ValueError(msg)    
-    cdef uint q, packed
-    cdef uint N, i
-    cdef uli profit
-    cdef uint [:] p, w
-    cdef unsigned short [:] variables
-    cdef long [:] indices
+    cdef cnp.uint64_t q, packed, profit
+    cdef cnp.uint16_t N, i
+    cdef cnp.uint32_t [:] p, w
+    cdef cnp.uint16_t [:] variables
+    cdef cnp.int64_t [:] indices
 
     q = problem.capacity
     N = len(problem)
@@ -93,18 +91,18 @@ cpdef list miw_kp(problem: Knapsack):
         msg = "No problem found in args of miw_kp heuristic"
         raise ValueError(msg)    
 
-    cdef uli profit
-    cdef uint N, q
-    cdef cnp.ndarray[uint, ndim=1] variables
-    cdef cnp.ndarray[long, ndim=1] indices  
-    cdef cnp.ndarray[uint, ndim=1] np_w = np.asarray(problem.weights)
-    cdef cnp.ndarray[uint, ndim=1] np_p = np.asarray(problem.profits)
+    cdef cnp.uint64_t profit, q
+    cdef cnp.uint16_t N
+    cdef cnp.ndarray[cnp.uint16_t, ndim=1] variables
+    cdef cnp.ndarray[cnp.int64_t, ndim=1] indices  
+    cdef cnp.ndarray[cnp.uint32_t, ndim=1] np_w = np.asarray(problem.weights)
+    cdef cnp.ndarray[cnp.uint32_t, ndim=1] np_p = np.asarray(problem.profits)
 
     q = problem.capacity
     N = len(problem)
 
     indices = np.argsort(np_w)
-    variables = np.zeros(N, dtype=np.uint32)
+    variables = np.zeros(N, dtype=np.uint16)
     weights_cumsum = np.cumsum(np_w[indices])
     selected = indices[weights_cumsum <= q]
     variables[selected] = 1
@@ -113,28 +111,26 @@ cpdef list miw_kp(problem: Knapsack):
 
 
 
-cpdef inline double ratio(uint p, uint w) nogil:
+cpdef inline double ratio(cnp.uint32_t p, cnp.uint32_t w) nogil:
     return p / <double>w
 
 cpdef list mpw_kp(problem: Knapsack):
     if problem is None:
         raise ValueError("No problem found in args of mpw_kp heuristic")    
  
-    cdef uint q, packed
-    cdef uint N
-    cdef uli profit
-    cdef uint [:] p, w
-    cdef unsigned int [:] variables
-    cdef long [:] indices
-    cdef Py_ssize_t  i
+    cdef cnp.uint64_t q, packed, profit
+    cdef cnp.uint16_t N, i
+    cdef cnp.uint32_t [:] p, w
+    cdef cnp.uint16_t [:] variables
+    cdef cnp.int64_t [:] indices
+
     q = problem.capacity
     N = len(problem)
     packed = 0
     profit = 0
     p = problem.profits
     w = problem.weights
-    variables = np.zeros(N, dtype=np.uint32)
-    #indices = sorted(range(N), key=lambda i: (ratio(p[i],  w[i]), -<int>w[i]), reverse=True)
+    variables = np.zeros(N, dtype=np.uint16)
     indices = np.argsort([(p[i] / w[i]) for i in range(N)], kind='stable')[::-1]
 
     for i in indices:

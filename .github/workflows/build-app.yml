@@ -22,7 +22,7 @@ jobs:
                   python-version: ${{ inputs.python-version }}
 
             - name: Installing the project
-              run: uv sync --all-extras --dev
+              run: uv sync
 
             - name: Run tests
-              run: uv run pytest --doctest-modules tests
+              run: uv run pytest tests

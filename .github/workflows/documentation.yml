@@ -19,7 +19,7 @@ jobs:
           python-version: "3.13"
 
       - name: Installing the project
-        run: uv sync --all-extras --dev
+        run: uv sync --all-extras --group dev
 
       - name: Build the site
         run: mkdocs build

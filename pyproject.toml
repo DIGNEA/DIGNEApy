@@ -77,7 +77,7 @@ source = "https://github.com/DIGNEA/DIGNEApy"
 issues = "https://github.com/DIGNEA/DIGNEApy/issues"
 
 [project.optional-dependencies]
-test = ["pytest>=3"]
+test = ["pytest>=8.3.5"]
 
 [dependency-groups]
 dev = [

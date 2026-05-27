@@ -30,6 +30,9 @@ jobs:
             - name: Installing the project
               run: uv sync --all-extras --dev
 
+            - name: Install coveralls
+              run: uv pip install coveralls
+
             - name: Run coverage and send to coveralls
               env:
                   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

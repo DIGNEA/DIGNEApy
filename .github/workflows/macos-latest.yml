@@ -1,0 +1,18 @@
+name: MacOs-latest
+
+on:
+    push:
+        branches: "**"
+    pull_request:
+        branches: "**"
+
+jobs:
+    ubuntu-latest-build:
+        strategy:
+            matrix:
+                python-version: ["3.12", "3.13", "3.14"]
+
+        uses: ./.github/workflows/build-app.yml
+        with:
+            os: macos-latest
+            python-version: ${{ matrix.python-version }}

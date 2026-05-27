@@ -1,0 +1,13 @@
+name: Ubuntu-latest
+
+on:
+    push:
+        branches: "**"
+    pull_request:
+        branches: "**"
+
+jobs:
+    ubuntu-latest-build:
+        uses: ./.github/workflows/build-app.yml
+        with:
+            os: ubuntu-latest

@@ -32,13 +32,13 @@ cython_extensions = [
     Extension(
         "digneapy.solvers._kp",
         sources=["digneapy/solvers/_kp.pyx"],
-        libraries=["m"],
+        # libraries=["m"],
         include_dirs=[str(get_numpy_include())],
     ),
     Extension(
         "digneapy.solvers._tsp_opt",
         sources=["digneapy/solvers/_tsp_opt.pyx"],
-        libraries=["m"],
+        # libraries=["m"],
         include_dirs=[str(get_numpy_include())],
     ),
 ]

@@ -1,15 +1,17 @@
 # DIGNEApy
 ---
 Diverse Instance Generator with Novelty Search and Evolutionary Algorithms
-  
-[![Test](https://github.com/DIGNEA/DIGNEApy/actions/workflows/python-app.yml/badge.svg)](https://github.com/DIGNEA/DIGNEApy/actions/workflows/python-app.yml)
+
+[![Ubuntu-latest](https://github.com/DIGNEA/DIGNEApy/actions/workflows/ubuntu-latest.yml/badge.svg)](https://github.com/DIGNEA/DIGNEApy/actions/workflows/ubuntu-latest.yml)
+[![MacOs-latest](https://github.com/DIGNEA/DIGNEApy/actions/workflows/macos-latest.yml/badge.svg)](https://github.com/DIGNEA/DIGNEApy/actions/workflows/macos-latest.yml)
+[![windows-latest](https://github.com/DIGNEA/DIGNEApy/actions/workflows/windows-latest.yml/badge.svg)](https://github.com/DIGNEA/DIGNEApy/actions/workflows/windows-latest.yml)
 [![Coverage Status](https://coveralls.io/repos/github/DIGNEA/DIGNEApy/badge.svg?branch=main)](https://coveralls.io/github/DIGNEA/DIGNEApy?branch=main)
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 
 
 Repository containing the Python version of DIGNEA, a Diverse Instance Generator with Novelty Search and Evolutionary Algorithms. This framework is an extensible tool for generating diverse and discriminatory instances for any desired domain. The instances obtained generated will be biased to the performance of a *target* in a specified portfolio of algorithms. 
 
-* Documentation: https://dignea.github.io
+* Documentation: https://dignea.github.io/DIGNEApy
 * Contributing: https://github.com/DIGNEA/DIGNEApy/blob/main/CONTRIBUTING.md
 * Bug reports: https://github.com/DIGNEA/DIGNEApy/issues
 * A brief tutorial on how to create domains and solvers can be found [here](docs/tutorial/0_getting_started.md)

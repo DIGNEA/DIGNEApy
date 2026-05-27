@@ -7,7 +7,7 @@ on:
         branches: "**"
 
 jobs:
-    ubuntu-latest-build:
+    macos-latest-build:
         strategy:
             matrix:
                 python-version: ["3.12", "3.13", "3.14"]

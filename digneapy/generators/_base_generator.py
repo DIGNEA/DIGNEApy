@@ -11,12 +11,12 @@
 """
 
 from abc import ABC, abstractmethod
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from operator import attrgetter
 from typing import List, Optional, Sequence, Tuple
 
 import numpy as np
-import pandas as pd
+import polars as pl
 
 from digneapy._core.descriptors import DescriptorPipeline
 
@@ -41,14 +41,16 @@ class GenResult:
         metrics (Optional[pd.Series], optional): Metrics of the instances. Defaults to None.
     """
 
-    target: str
+    target: str  # TODO: Change target for solvers.
     instances: np.ndarray | CVTArchive | GridArchive
     history: Logbook
-    metrics: Optional[pd.Series] = None
+    metrics: pl.DataFrame = field(default_factory=pl.DataFrame)
 
     def __post_init__(self):
         if len(self.instances) != 0:
-            self.metrics = Statistics()(self.instances, as_series=True)
+            self.metrics = Statistics()(self.instances, as_dataframe=True)
+        else:
+            self._metrics = pl.Series()
 
 
 class BaseGenerator(ABC):

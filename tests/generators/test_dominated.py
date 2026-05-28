@@ -18,7 +18,7 @@ import pytest
 
 from digneapy import DescriptorPipeline, Domain, Instance
 from digneapy.domains import BPPDomain, KnapsackDomain, TSPDomain
-from digneapy.generators import Dominated, dominated_novelty_search
+from digneapy.generators import DNSResult, Dominated, dominated_novelty_search
 from digneapy.operators import (
     OPCX,
     UCX,
@@ -83,28 +83,21 @@ def test_dominated_novelty_search_different_ks(k, random_population):
     descriptors = np.asarray([instance.descriptor for instance in random_population])
     performances = np.asarray([instance.p for instance in random_population])
     assert all(len(d) != 0 for d in descriptors)
-    sorted_descriptors, sorted_performances, competition_fitness, indexing = (
-        dominated_novelty_search(descriptors, performances=performances, k=k)
-    )
-    assert sorted_descriptors.shape == descriptors.shape
-    assert sorted_performances.shape == performances.shape
-    assert np.all(competition_fitness[:-1] >= competition_fitness[1:])
-    assert len(indexing) == len(random_population)
-    assert all(f != 0.0 for f in competition_fitness)
-
-
-def test_dominated_novelty_search_raises_if_wrong_args():
-
-    # If len(pop) < k it should raise
-    with pytest.raises(ValueError) as k_error:
-        dominated_novelty_search(
-            descriptors=np.arange(10), performances=np.empty(10), k=15
-        )
-    assert (
-        "Trying to calculate the dominated novelty search with k(15) > len(instances) = 10"
-        in str(k_error.value)
+    result: DNSResult = dominated_novelty_search(
+        descriptors, performances=performances, k=k
     )
 
+    assert result.descriptors.shape == descriptors.shape
+    assert result.performances.shape == performances.shape
+    assert result.comp_f.shape == performances.shape
+    assert all(f != 0.0 for f in result.comp_f)
+    # Check that the function can be sorted
+    sorted_indices = np.argsort(-result.comp_f)
+    sorted_comp_fitness = result.comp_f[sorted_indices]
+    assert not np.array_equal(result.comp_f, sorted_comp_fitness)
+
+
+def test_dominated_novelty_search_edge_cases():
     # If len(performacnes) != len(descriptors)
     with pytest.raises(ValueError) as mismatch_error:
         dominated_novelty_search(
@@ -114,6 +107,12 @@ def test_dominated_novelty_search_raises_if_wrong_args():
         "Array mismatch between performances and descriptors. len(performance) = 17 != 20 len(descriptors)"
         in str(mismatch_error.value)
     )
+
+    # If len(pop) < k it should return zeros
+    result = dominated_novelty_search(
+        descriptors=np.arange(0), performances=np.empty(0), k=15
+    )
+    np.testing.assert_equal(result.comp_f, np.zeros(0))
 
 
 @pytest.mark.parametrize("domain_cls, portfolio, feat_desc_n", DOMAIN_CONTEXT)

@@ -11,7 +11,7 @@
 """
 
 from ._base_generator import BaseGenerator, GenResult
-from .dominated import Dominated, dominated_novelty_search
+from .dominated import DNSResult, Dominated, dominated_novelty_search
 from .evolutionary import ES, Evolutionary
 from .map_elites import MapElites, PlottedMapElites
 
@@ -20,6 +20,7 @@ __all__ = [
     "ES",
     "Dominated",
     "dominated_novelty_search",
+    "DNSResult",
     "MapElites",
     "PlottedMapElites",
     "BaseGenerator",

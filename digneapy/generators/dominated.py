@@ -12,13 +12,16 @@
 
 import warnings
 from collections.abc import Sequence
+from dataclasses import dataclass
 from typing import Optional
 
 import numpy as np
+from scipy.spatial.distance import cdist
+
+from digneapy.generators._utils import cast_to_instances
 
 from .._core import (
     Domain,
-    Instance,
     Solver,
 )
 from .._core.descriptors import DescriptorPipeline
@@ -36,12 +39,21 @@ from ._base_generator import GenResult
 from .evolutionary import Evolutionary
 
 
+@dataclass
+class DNSResult:
+    """Result of the Dominated Novelty Search computation. The attributes are sorted based on competition fitness."""
+
+    descriptors: np.ndarray
+    performances: np.ndarray
+    comp_f: np.ndarray
+
+
 def dominated_novelty_search(
     descriptors: np.ndarray,
     performances: np.ndarray,
     k: int,
     force_feasible_only: bool = True,
-) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+) -> DNSResult:
     """
     Dominated Novelty Search (DNS)
         Bahlous-Boldi, R., Faldor, M., Grillotti, L., Janmohamed, H., Coiffard, L., Spector, L., & Cully, A. (2025).
@@ -80,41 +92,39 @@ def dominated_novelty_search(
             f"Array mismatch between performances and descriptors. len(performance) = {len(performances)} != {len(descriptors)} len(descriptors)"
         )
     num_instances = len(descriptors)
-    if num_instances <= k:
-        msg = f"Trying to calculate the dominated novelty search with k({k}) > len(instances) = {num_instances}"
-        raise ValueError(msg)
+    if num_instances == 0:
+        return DNSResult(
+            descriptors,
+            performances,
+            np.zeros(num_instances),
+        )
+    k_effective = min(k, num_instances - 1)
 
     # Try to force only feasible performances to get proper biased instances
     is_unfeasible = (
         performances < 0.0 if force_feasible_only else (performances == -np.inf)
     )
-    fitter = performances[:, None] <= performances[None, :]
-    fitter = np.where(is_unfeasible[None, :], False, fitter)
-    np.fill_diagonal(fitter, False)
-    distance = np.linalg.norm(
-        descriptors[:, None, :] - descriptors[None, :, :], axis=-1
-    )
-    distance = np.where(fitter, distance, np.inf)
-    neg_dist = -distance
-    indices = np.argpartition(neg_dist, -k, axis=-1)[..., -k:]
-    values = np.take_along_axis(neg_dist, indices, axis=-1)
-    indices = np.argsort(values, axis=-1)[..., ::-1]
-    values = np.take_along_axis(values, indices, axis=-1)
-    indices = np.take_along_axis(indices, indices, axis=-1)
-    with np.errstate(invalid="ignore"):
-        distance = np.mean(
-            -values,
-            where=np.take_along_axis(fitter, indices, axis=1),
-            axis=-1,
-        )
-        distance = np.where(np.isnan(distance), np.inf, distance)
-    distance = np.where(is_unfeasible, -np.inf, distance)
-    sorted_indices = np.argsort(-distance)
-    return (
-        descriptors[sorted_indices],
-        performances[sorted_indices],
-        distance[sorted_indices],
-        sorted_indices,
+    distances = cdist(descriptors, descriptors)
+    np.fill_diagonal(distances, np.inf)
+
+    fitter_mask = performances[None, :] >= performances[:, None]
+    fitter_mask = np.where(is_unfeasible[None, :], False, fitter_mask)
+    distances_fitter = np.where(fitter_mask, distances, np.inf)
+    # K smallest distances
+    partition = np.partition(distances_fitter, k_effective - 1, axis=1)[:, :k_effective]
+    finite_mask = np.isfinite(partition)
+    counts = finite_mask.sum(axis=1)
+    # Non-dominated instances are set to 1 to avoid ZeroDivisionError
+    safe_counts = np.where(counts == 0, 1, counts)
+    sums = np.where(finite_mask, partition, 0).sum(axis=1)
+    means = sums / safe_counts
+    means = np.where(counts == 0, np.inf, means)
+    means = np.where(is_unfeasible, -np.inf, means)
+
+    return DNSResult(
+        descriptors=descriptors,
+        performances=performances,
+        comp_f=means,
     )
 
 
@@ -194,10 +204,6 @@ class Dominated(Evolutionary):
             domain=self._domain,
         )
 
-        # if features is not None:
-        #     combined_features = np.empty(
-        #         shape=(self._pop_size * 2, features.shape[1]), dtype=np.float32
-        #     )
         for pgen in range(self._generations):
             offspring = self.generate(self._pop_size)
             off_perf_biases, off_portfolio_scores = self._evaluate_population(offspring)
@@ -207,56 +213,40 @@ class Dominated(Evolutionary):
                 scores=off_portfolio_scores,
                 domain=self._domain,
             )
-            combined_descriptors = np.concatenate(
-                (descriptors, off_descriptors), axis=0
-            )
-            combined_performances = np.concatenate(
-                (perf_biases, off_perf_biases), axis=0
-            )
-            combined_port_scores = np.concatenate(
-                (portfolio_scores, portfolio_scores), axis=0
-            )
-            genotypes = np.concatenate(
-                (np.asarray(self._population, copy=True), offspring), axis=0
-            )
-            # if features is not None:
-            #     combined_features = np.concatenate((features, off_features), axis=0)
+            combined_descriptors = np.concatenate((descriptors, off_descriptors))
+            combined_performances = np.concatenate((perf_biases, off_perf_biases))
+            combined_port_scores = np.concatenate((portfolio_scores, portfolio_scores))
+            genotypes = np.concatenate((np.asarray(self._population), offspring))
 
-            (
-                sorted_descriptors,
-                sorted_performances,
-                sorted_competition_fitness,
-                sorted_indexing,
-            ) = dominated_novelty_search(
+            dns_result: DNSResult = dominated_novelty_search(
                 descriptors=combined_descriptors,
                 performances=combined_performances,
                 k=self._k,
-                force_feasible_only=True,
+                force_feasible_only=False,
             )
 
             # Keep the top N for the next generation
-            sorted_indexing = sorted_indexing[: self._pop_size]
-            fitness = sorted_competition_fitness[: self._pop_size]
-            descriptors = sorted_descriptors[: self._pop_size]
-            perf_biases = sorted_performances[: self._pop_size]
-            # Track from the combined arrays based on the indexing
-            portfolio_scores = combined_port_scores[sorted_indexing]
-            genotypes = genotypes[sorted_indexing]
-            # if features is not None:
-            #     features = combined_features[sorted_indexing]
+            sorted_indices = np.argpartition(-dns_result.comp_f, self._pop_size - 1)[
+                : self._pop_size
+            ]
+            sorted_indices = sorted_indices[
+                np.argsort(-dns_result.comp_f[sorted_indices])
+            ]
+            fitness = dns_result.comp_f[sorted_indices]
+            descriptors = dns_result.descriptors[sorted_indices]
+            perf_biases = dns_result.performances[sorted_indices]
+            portfolio_scores = combined_port_scores[sorted_indices]
+            genotypes = genotypes[sorted_indices]
             # Both population and offspring are used in the replacement
             # Record the stats and update the performed gens
-            self._population = [
-                Instance(
-                    variables=genotypes[i],
-                    fitness=fitness[i],
-                    descriptor=descriptors[i],
-                    portfolio_scores=portfolio_scores[i],
-                    p=perf_biases[i],
-                    # Todo: Consider remove explicit features attr features=features[i] if features is not None else (),
-                )
-                for i in range(self._pop_size)
-            ]
+            self._population = cast_to_instances(
+                genotypes=genotypes,
+                descriptors=descriptors,
+                fitness=fitness,
+                portfolio_scores=portfolio_scores,
+                diversity_scores=np.zeros_like(fitness),
+                bias_score=perf_biases,
+            )
 
             self._logbook.update(
                 generation=pgen, population=self._population, feedback=verbose

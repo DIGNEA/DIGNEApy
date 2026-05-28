@@ -35,6 +35,7 @@ from ..operators import (
     UMut,
 )
 from ._base_generator import BaseGenerator, GenResult
+from ._utils import cast_to_instances
 
 
 class Evolutionary(BaseGenerator):
@@ -152,19 +153,15 @@ class Evolutionary(BaseGenerator):
             # 2. Performance bias --> perf_biases
             # 3. Fitness --> oiffspring_fitness
             # 4. Descriptor --> descriptors
+            offspring = cast_to_instances(
+                genotypes=offspring,
+                descriptors=descriptors,
+                fitness=offspring_fitness,
+                portfolio_scores=portfolio_scores,
+                diversity_scores=novelty_scores,
+                bias_score=perf_biases,
+            )
 
-            offspring = [
-                Instance(
-                    variables=offspring[i],
-                    fitness=offspring_fitness[i],
-                    descriptor=descriptors[i],
-                    portfolio_scores=portfolio_scores[i],
-                    p=perf_biases[i],
-                    s=novelty_scores[i],
-                    # Todo: Consider remove features as explicit attribute features=features[i] if features is not None else None,
-                )
-                for i in range(len(offspring))
-            ]
             # Only the feasible instances are considered to be included
             # in the archive and the solution set.
             feasible_indeces = np.where(perf_biases > 0)[0]
@@ -174,7 +171,7 @@ class Evolutionary(BaseGenerator):
                 novelty_scores=novelty_scores[feasible_indeces],
             )
 
-            if self._solution_set:
+            if self._solution_set is not None:
                 novelty_solution_set = self._solution_set(descriptors=descriptors)
                 self._solution_set.extend(
                     instances=[offspring[i] for i in feasible_indeces],
@@ -254,52 +251,6 @@ class Evolutionary(BaseGenerator):
         fitness = np.zeros(len(performance_biases))
         fitness = (performance_biases * self.phi) + (novelty_scores * phi_r)
         return fitness
-
-
-def cast_to_instances(
-    genotypes, descriptors, fitness, portfolio_scores, diversity_scores, bias_score
-) -> list[Instance]:
-    """Creates objects of type Instance from a collection of np.ndarray
-
-    Args:
-        genotypes (_type_): Genotypes of the instances
-        descriptors (_type_): Descriptors of the instances
-        fitness (_type_): Fitness values of the instances
-        portfolio_scores (_type_): Scores of the instances
-        diversity_scores (_type_): Diversity scores of the instances
-        bias_score (_type_): Performance bias scores of the instances
-
-    Raises:
-        RuntimeError: If the len() of any list differs from the rest
-
-    Returns:
-        list[Instance]: List of Instance objects ready to be inserted in the archives
-    """
-    expected = len(genotypes)
-    if any(
-        len(l) != expected
-        for l in (
-            genotypes,
-            descriptors,
-            fitness,
-            portfolio_scores,
-            diversity_scores,
-            fitness,
-            bias_score,
-        )
-    ):
-        raise RuntimeError("Length mismatch")
-    return [
-        Instance(
-            variables=genotypes[i],
-            fitness=fitness[i],
-            descriptor=descriptors[i],
-            p=bias_score[i],
-            portfolio_scores=portfolio_scores[i],
-            s=diversity_scores[i],
-        )
-        for i in range(expected)
-    ]
 
 
 class ES(BaseGenerator):

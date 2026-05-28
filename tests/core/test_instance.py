@@ -132,12 +132,6 @@ def test_boolean(initialised_instance, default_instance):
     assert initialised_instance
 
 
-def test_str():
-    instance = Instance(fitness=100, p=10.0, s=3.0)
-    expected = "Instance(f=100.0,p=10.0,s=3.0,features=0,descriptor=array([], dtype=float32),performance=([], dtype=float64))"
-    assert str(instance) == expected
-
-
 def test_instance_iterable(initialised_instance):
     expected = list(range(100))
     assert all(a == b for a, b in zip(initialised_instance, expected))
@@ -158,22 +152,25 @@ def test_instance_as_dict(initialised_instance):
     assert "p" in data
     assert "portfolio_scores" in data
     assert "variables" in data
+    assert len(list(data["portfolio_scores"].values())) == len(
+        initialised_instance.portfolio_scores
+    )
     assert len(list(data["variables"].values())) == len(initialised_instance)
 
 
-def test_instance_as_series(initialised_instance):
-    import pandas as pd
+def test_instance_as_lazy_frame(initialised_instance):
+    import polars as pl
 
-    data = initialised_instance.to_series()
-    assert isinstance(data, pd.Series)
-
-    assert "fitness" in data
-    assert "s" in data
-    assert "p" in data
+    data = initialised_instance.to_lazyframe()
+    assert isinstance(data, pl.LazyFrame)
+    df = data.collect()
+    assert "fitness" in df
+    assert "s" in df
+    assert "p" in df
     for i in range(len(initialised_instance.portfolio_scores)):
-        assert f"portfolio_scores_{i}" in data
+        assert f"solver_{i}" in df
     for i in range(len(initialised_instance)):
-        assert f"v{i}" in data
+        assert f"v{i}" in df
 
 
 def test_instance_can_be_cloned(initialised_instance):

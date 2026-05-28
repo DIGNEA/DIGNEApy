@@ -15,7 +15,7 @@ from typing import Optional, Self, Sequence
 
 import numpy as np
 import numpy.typing as npt
-import pandas as pd
+import polars as pl
 
 
 class Instance:
@@ -298,68 +298,43 @@ class Instance:
 
     def asdict(
         self,
-        only_genotype: bool = False,
         variables_names: Optional[Sequence[str]] = None,
-        features_names: Optional[Sequence[str]] = None,
-        score_names: Optional[Sequence[str]] = None,
+        portfolio_names: Optional[Sequence[str]] = None,
     ) -> dict:
         """Convert the instance to a dictionary. The keys are the names of the attributes
         and the values are the values of the attributes.
 
         Args:
-            only_genotype (bool, Default True): Whether to return the Instance as a dictionary containing only the variables.
             variables_names (Optional[Sequence[str]], optional): Names of the variables in the dictionary, otherwise v_i. Defaults to None.
-            features_names (Optional[Sequence[str]], optional): Name of the features in the dictionary, otherwise f_i. Defaults to None.
-            score_names (Optional[Sequence[str]], optional): Name of the solvers, otherwise solver_i. Defaults to None.
+            portfolio_names (Optional[Sequence[str]], optional): Name of the solvers, otherwise solver_i. Defaults to None.
 
         Returns:
             dict: Dictionary with the attributes of the instance as keys and the values of the attributes as values.
         """
         _data = {}
-        if variables_names:
-            if len(variables_names) != len(self._vars):
-                print(
-                    f"Error in asdict(). len(variables_names) = {len(variables_names)} != len(variables) ({len(self._vars)}). Fallback to v#"
-                )
-                _data["variables"] = {f"v{i}": v for i, v in enumerate(self._vars)}
-            else:
-                _data["variables"] = {
-                    vk: v for vk, v in zip(variables_names, self._vars)
-                }
-
+        if variables_names is not None and len(variables_names) == len(self._vars):
+            _data["variables"] = {vk: v for vk, v in zip(variables_names, self._vars)}
         else:
             _data["variables"] = {f"v{i}": v for i, v in enumerate(self._vars)}
-        if only_genotype:
-            return _data
 
+        if portfolio_names is not None and len(portfolio_names) == len(self._pscores):
+            _data["portfolio_scores"] = {
+                sk: v for sk, v in zip(portfolio_names, self._pscores)
+            }
         else:
-            sckeys = (
-                [f"solver_{i}" for i in range(len(self._pscores))]
-                if score_names is None
-                else score_names
-            )
-            _data = {
-                "fitness": self._fit,
-                "s": self._s,
-                "p": self._p,
-                "portfolio_scores": {sk: v for sk, v in zip(sckeys, self._pscores)},
-                **_data,
+            _data["portfolio_scores"] = {
+                f"solver_{i}": v
+                for i, v in zip(range(len(self._pscores)), self._pscores)
             }
 
-            if len(self._desc) not in (
-                len(self._vars),
-                len(self._features),
-                len(self._pscores),
-            ):  # Transformed descriptor
-                _data["descriptor"] = {f"d{i}": v for i, v in enumerate(self._desc)}
-            if len(self.features) != 0:
-                f_keys = (
-                    [f"f{i}" for i in range(len(self._features))]
-                    if features_names is None or len(features_names) == 0
-                    else features_names
-                )
-                _data["features"] = {fk: v for fk, v in zip(f_keys, self._features)}
-
+        _data = {
+            "target": portfolio_names[0] if portfolio_names is not None else "solver_0",
+            "fitness": self._fit,
+            "s": self._s,
+            "p": self._p,
+            **{f"d{i}": v for i, v in enumerate(self._desc)},
+            **_data,
+        }
         return _data
 
     def to_json(self) -> str:
@@ -373,34 +348,28 @@ class Instance:
 
         return json.dumps(self.asdict(), sort_keys=True, indent=4)
 
-    def to_series(
+    def to_lazyframe(
         self,
-        only_genotype: bool = False,
         variables_names: Optional[Sequence[str]] = None,
-        features_names: Optional[Sequence[str]] = None,
-        score_names: Optional[Sequence[str]] = None,
-    ) -> pd.Series:
-        """Creates a pandas Series from the instance.
+        portfolio_names: Optional[Sequence[str]] = None,
+    ) -> pl.LazyFrame:
+        """Creates a Polars LazyFrame from the instance.
 
         Args:
-            only_genotype (bool, Default True): Whether to return the Instance as a pd.Series containing only the variables.
             variables_names (Optional[Sequence[str]], optional): Names of the variables in the dictionary, otherwise v_i. Defaults to None.
-            features_names (Optional[Sequence[str]], optional): Name of the features in the dictionary, otherwise f_i. Defaults to None.
-            score_names (Optional[Sequence[str]], optional): Name of the solvers, otherwise solver_i. Defaults to None.
+            portfolio_names (Optional[Sequence[str]], optional): Name of the solvers, otherwise solver_i. Defaults to None.
 
         Returns:
-            pd.Series: Pandas Series with the attributes of the instance as keys and the values of the attributes as values.
+            pl.Series: Polars LazyFrame with the attributes of the instance as keys and the values of the attributes as values.
         """
         _flatten_data = {}
         for key, value in self.asdict(
-            only_genotype=only_genotype,
             variables_names=variables_names,
-            features_names=features_names,
-            score_names=score_names,
+            portfolio_names=portfolio_names,
         ).items():
             if isinstance(value, dict):  # Flatten nested dicts
                 for sub_key, sub_value in value.items():
                     _flatten_data[f"{sub_key}"] = sub_value
             else:
                 _flatten_data[key] = value
-        return pd.Series(_flatten_data)
+        return pl.LazyFrame(_flatten_data)

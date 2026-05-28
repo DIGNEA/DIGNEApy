@@ -16,6 +16,7 @@ from collections.abc import Sequence
 from typing import Optional
 
 import numpy as np
+from scipy.spatial.distance import cdist
 
 from .._core import Instance
 from .base import Archive, Keys
@@ -95,7 +96,7 @@ class UnstructuredArchive(Archive):
             )
         num_instances = len(descriptors)
         num_archive = len(self._storage[Keys.descriptors])
-        result = np.zeros(num_instances, dtype=np.float64)
+        novelty_scores = np.zeros(num_instances, dtype=np.float64)
         if (num_archive + num_instances) <= self._k:
             # The archive may not have enough instances to evaluate
             warnings.warn(
@@ -105,28 +106,19 @@ class UnstructuredArchive(Archive):
                 RuntimeWarning,
                 stacklevel=3,
             )
-            return result
+            return novelty_scores
 
-        combined = (
-            descriptors
-            if num_archive == 0
-            else np.vstack([descriptors, self._storage[Keys.descriptors]])
-        )
-        for i in range(num_instances):
-            mask = np.ones(num_instances, bool)
-            mask[i] = False
-            differences = combined[i] - combined[np.nonzero(mask)]
-            distances = np.linalg.norm(differences, axis=1)
-            try:
-                _neighbors = np.partition(distances, self._k)[: self._k]
-            except ValueError as ve:
-                if "out of bounds" in str(ve) and len(combined) == self._k + 1:
-                    _neighbors = distances
-                else:
-                    raise
-            result[i] = np.sum(_neighbors) / self._k
+        if num_archive == 0:
+            combined = descriptors
+        else:
+            combined = np.vstack([descriptors, self._storage[Keys.descriptors]])
 
-        return result
+        distances = cdist(descriptors, combined)
+        # We set the diagonal to INF to avoid select d(i,i) = 0 in partition
+        np.fill_diagonal(distances, np.inf)
+        knn = np.partition(distances, self._k - 1, axis=1)[:, : self._k]
+        novelty_scores = np.mean(knn, axis=1)
+        return novelty_scores
 
     def extend(
         self,
@@ -147,7 +139,6 @@ class UnstructuredArchive(Archive):
             if novelty_scores is not None
             else np.asarray([instance.s for instance in instances])
         )
-
         descriptors = (
             descriptors
             if descriptors is not None

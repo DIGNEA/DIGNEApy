@@ -90,10 +90,7 @@ class UnstructuredArchive(Archive):
         Returns:
             np.ndarray: novelty scores (s) of the instances descriptors
         """
-        if len(descriptors) == 0:
-            raise ValueError(
-                f"UnstructuredArchive was given an empty population to compute the sparseness. Shape is: {descriptors.shape}"
-            )
+
         num_instances = len(descriptors)
         num_archive = len(self._storage[Keys.descriptors])
         novelty_scores = np.zeros(num_instances, dtype=np.float64)

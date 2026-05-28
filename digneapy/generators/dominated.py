@@ -10,7 +10,6 @@
 @Desc    :   None
 """
 
-import warnings
 from collections.abc import Sequence
 from dataclasses import dataclass
 from typing import Optional
@@ -52,7 +51,6 @@ def dominated_novelty_search(
     descriptors: np.ndarray,
     performances: np.ndarray,
     k: int,
-    force_feasible_only: bool = True,
 ) -> DNSResult:
     """
     Dominated Novelty Search (DNS)
@@ -77,16 +75,12 @@ def dominated_novelty_search(
         descriptors (np.ndarray): Numpy array with the descriptors of the instances
         performances (np.ndarray): Numpy array with the performance values of the instances
         k (int): Number of nearest neighbours to calculate the competition fitness. Default to 15.
-        force_feasible_only (bool): Allow only instances with performance >= 0 to be considered. Default True.
     Raises:
         ValueError: If len(d) where d is the descriptor of each instance i differs from another
 
     Returns:
         Tuple[np.ndarray]: Tuple with the descriptors, performances and competition fitness values sorted, plus the sorted indexing (descending order).
     """
-    warnings.filterwarnings(
-        "ignore", message="Mean of empty slice", category=RuntimeWarning
-    )
     if len(performances) != len(descriptors):
         raise ValueError(
             f"Array mismatch between performances and descriptors. len(performance) = {len(performances)} != {len(descriptors)} len(descriptors)"
@@ -100,15 +94,15 @@ def dominated_novelty_search(
         )
     k_effective = min(k, num_instances - 1)
 
-    # Try to force only feasible performances to get proper biased instances
-    is_unfeasible = (
-        performances < 0.0 if force_feasible_only else (performances == -np.inf)
-    )
+    # To penalise unfeasible performances with the hope of getting proper biased instances
+    is_feasible = performances >= 0.0
     distances = cdist(descriptors, descriptors)
     np.fill_diagonal(distances, np.inf)
 
-    fitter_mask = performances[None, :] >= performances[:, None]
-    fitter_mask = np.where(is_unfeasible[None, :], False, fitter_mask)
+    fitter_mask = (performances[None, :] >= performances[:, None]) & (
+        is_feasible[None, :]
+    )
+    # fitter_mask = np.where(is_unfeasible[None, :], False, fitter_mask)
     distances_fitter = np.where(fitter_mask, distances, np.inf)
     # K smallest distances
     partition = np.partition(distances_fitter, k_effective - 1, axis=1)[:, :k_effective]
@@ -119,8 +113,7 @@ def dominated_novelty_search(
     sums = np.where(finite_mask, partition, 0).sum(axis=1)
     means = sums / safe_counts
     means = np.where(counts == 0, np.inf, means)
-    means = np.where(is_unfeasible, -np.inf, means)
-
+    means = np.where(~is_feasible, performances, means)
     return DNSResult(
         descriptors=descriptors,
         performances=performances,
@@ -222,7 +215,6 @@ class Dominated(Evolutionary):
                 descriptors=combined_descriptors,
                 performances=combined_performances,
                 k=self._k,
-                force_feasible_only=False,
             )
 
             # Keep the top N for the next generation

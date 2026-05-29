@@ -14,7 +14,7 @@ import argparse
 import os
 
 import matplotlib.pyplot as plt
-import pandas as pd
+import polars as pl
 import seaborn as sns
 
 from digneapy.domains import BPP
@@ -47,7 +47,7 @@ def main(path: str):
         results.setdefault("next_fit", []).append(next_f)
         results.setdefault("worst_fit", []).append(worst_f)
 
-    df = pd.DataFrame.from_dict(results)
+    df = pl.from_dict(results)
     blank = " " * 80
     print(f"\r{blank}\r", end="")
     print(df.head())

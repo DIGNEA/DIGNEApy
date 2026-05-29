@@ -17,7 +17,7 @@ torch = pytest.importorskip("torch", reason="PyTorch not available on this platf
 from pathlib import Path
 
 import numpy as np
-import pandas as pd
+import polars as pl
 from sklearn.metrics import mean_squared_error
 
 from digneapy.transformers import Transformer
@@ -39,9 +39,12 @@ features = [
     "std",
     "tiny",
 ]
-X = pd.read_csv(DIR / "data/eig_bpp_instances_only_features.csv")
-X = X[features]
-rng = np.random.default_rng(seed=42)
+X = (
+    pl.scan_csv(DIR / "data/eig_bpp_instances_only_features.csv")
+    .select(features)
+    .collect()
+)
+rng = np.random.default_rng()
 
 
 @pytest.fixture

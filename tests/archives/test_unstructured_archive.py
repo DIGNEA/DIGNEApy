@@ -192,12 +192,10 @@ def test_proximity_archive_random_instances_and_k_and_threshold(
 
 
 @pytest.mark.parametrize("k", [3, 15, 30])
-@pytest.mark.parametrize("threshold", [0.01, 1.0, 5.0, 10.0])
-def test_proximity_archive_raises_if_empty_population(k, threshold):
-    archive = UnstructuredArchive(threshold=threshold, k=k)
-    # If empty population it should raise
-    with pytest.raises(Exception):
-        archive(np.empty(0))
+def test_proximity_archive_return_zero(k):
+    archive = UnstructuredArchive(threshold=1.0, k=k)
+    scores = archive(np.ones(k // 2))
+    assert np.array_equal(scores, np.zeros(k // 2))
 
 
 @pytest.mark.parametrize("k", [3, 15, 30])

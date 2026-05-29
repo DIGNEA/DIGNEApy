@@ -49,7 +49,7 @@ def test_map_elites_raises_if_wrong_archive():
             portfolio=[default_kp],
             archive=tuple(),
             pop_size=100,
-            mutation=BatchUMut(seed=42),
+            mutation=BatchUMut(),
             describe_pipe=DescriptorPipeline("features"),
             repetitions=1,
         )

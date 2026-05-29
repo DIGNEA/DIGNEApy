@@ -20,7 +20,7 @@ from digneapy.solvers import greedy, nneighbour, three_opt, two_opt
 
 @pytest.fixture
 def default_tsp_instance():
-    rng = np.random.default_rng(seed=42)
+    rng = np.random.default_rng()
 
     N = 20
     _coords = rng.integers(
@@ -51,7 +51,7 @@ def test_two_opt_is_deterministic(default_tsp_instance):
 
 
 def test_three_opt_solves_sample():
-    rng = np.random.default_rng(seed=42)
+    rng = np.random.default_rng()
     N = 5
     tsp = TSP(
         nodes=N,

@@ -24,7 +24,7 @@ from ._solution import Solution
 class Problem(ABC):
     def __init__(
         self,
-        dimension: int,
+        dimension: np.uint32,
         bounds: Sequence[tuple],
         name: str = "DefaultProblem",
         dtype=np.float64,
@@ -42,6 +42,8 @@ class Problem(ABC):
             dtype (_type_, optional): Type of the variables. Defaults to np.float64.
             seed (int, optional): Seed for the random number generation (_rng). Defaults to None.
         """
+        if type(dimension) != int or dimension <= 0:
+            raise ValueError(f"Cannot create a Problem({name}) with negative dimensions. It must be a positive integer. Got: {dimension}")
         self.__name__ = name
         self._dimension = dimension
         self._bounds = bounds

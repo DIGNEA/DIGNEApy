@@ -14,6 +14,8 @@ from typing import Optional, Sequence
 
 import numpy as np
 
+from digneapy.generators._utils import extract_solvers_name
+
 from .._core import (
     Domain,
     Instance,
@@ -37,13 +39,13 @@ class MapElites(BaseGenerator):
         self,
         domain: Domain,
         portfolio: Sequence[Solver],
-        pop_size: int,
+        pop_size: np.uint32,
         archive: GridArchive | CVTArchive,
         mutation: Mutation = BatchUMut(seed=None),
-        repetitions: int = 1,
+        repetitions: np.uint16 = np.uint16(1),
         describe_pipe: DescriptorPipeline = DescriptorPipeline("features"),
         performance_function: PerformanceFn = max_gap_target,
-        generations: int = 1_000,
+        generations: np.uint32 = np.uint32(1_000),
         seed: Optional[int | np.random.SeedSequence] = None,
     ):
         """Creates a MAP-Elites instance generator.
@@ -154,9 +156,9 @@ class MapElites(BaseGenerator):
             blank = " " * 80
             print(f"\r{blank}\r", end="")
 
-        self._archive.purge_unfeasible()
+        # self._archive.purge_unfeasible()
         return GenResult(
-            target=self._portfolio[0].__name__,
+            solvers=tuple(extract_solvers_name(self._portfolio)),
             instances=self._archive,
             history=self._logbook,
         )
@@ -221,7 +223,6 @@ class PlottedMapElites:
             if (generation + 1) % self._refresh_every == 0:
                 plotter.update(generation=generation + 1)
 
-        self._gen._archive.purge_unfeasible()
         plotter.update(generation=self._gen._generations)
 
         if self._save_final:
@@ -229,7 +230,7 @@ class PlottedMapElites:
 
         plotter.show()
         return GenResult(
-            target=self._gen._portfolio[0].__name__,
+            solvers=tuple(extract_solvers_name(self._gen._portfolio)),
             instances=self._gen._archive,
             history=self._gen._logbook,
         )

@@ -18,15 +18,19 @@ matplotlib.use("Agg")  # Non-interactive backend
 from pathlib import Path
 
 import matplotlib.pyplot as plt
-import pandas as pd
+import polars as pl
 import seaborn as sns
 
+from digneapy import Logbook
 
-def map_elites_evolution_plot(logbook=None, filename: Optional[str | Path] = ""):
-    df = pd.DataFrame(logbook.select("avg"), columns=["avg"])
-    df["min"] = logbook.select("min")
-    df["max"] = logbook.select("max")
-    df["Generation"] = logbook.select("gen")
+
+def map_elites_evolution_plot(logbook: Logbook, filename: Optional[str | Path] = ""):
+    generations = pl.Series("generation", values=logbook.select("gen"))
+    avg = pl.Series(name="avg", values=logbook.select("avg"))
+    max_values = pl.Series(name="max", values=logbook.select("max"))
+    min_values = pl.Series(name="min", values=logbook.select("min"))
+    df = pl.DataFrame([generations, min_values, avg, max_values])
+
     # Plot configuration
     plt.rcParams["font.family"] = "serif"
     plt.rcParams["font.sans-serif"] = [

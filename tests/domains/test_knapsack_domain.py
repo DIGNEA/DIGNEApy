@@ -69,7 +69,7 @@ def test_default_kp_instance_can_evaluate_correctly(default_kp):
     s = np.zeros(100, dtype=int)
     s[:10] = 1
 
-    np.random.default_rng(seed=42).shuffle(s)
+    np.random.default_rng().shuffle(s)
     profit = default_kp.evaluate(s)
     assert not np.isclose(profit, 0.0)
 

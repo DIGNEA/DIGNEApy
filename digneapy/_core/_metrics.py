@@ -17,7 +17,7 @@ import numpy as np
 import polars as pl
 from deap import tools
 
-from ..archives import CVTArchive, GridArchive
+from ..archives import Archive
 from ._instance import Instance
 
 
@@ -68,7 +68,7 @@ class Statistics:
         self._stats.register("qd_score", np.sum)
 
     def __call__(
-        self, population: Sequence[Instance], as_dataframe: bool = False
+        self, population: Sequence[Instance] | Archive, as_dataframe: bool = False
     ) -> Mapping | pl.DataFrame:
         """Calculates the statistics of the population.
         Args:
@@ -103,63 +103,54 @@ class Statistics:
                 return record
 
 
-class Logbook:
+class Logbook(tools.Logbook):
     def __init__(self):
+        super().__init__()
         self._statistics = Statistics()
-        self._logbook = tools.Logbook()
-        self._logbook.header = "gen", "s", "p", "fitness"
-        self._headers = (
+        self.header = "gen", "s", "p", "fitness"
+        self._chapters_headers = (
             "min",
             "mean",
             "std",
             "max",
             "qd_score",
         )
-        self._logbook.chapters["s"].header = self._headers[:-1]
-        self._logbook.chapters["p"].header = self._headers
-        self._logbook.chapters["fitness"].header = self._headers
-
-    def __len__(self):
-        return len(self._logbook)
-
-    @property
-    def logbook(self):
-        return self._logbook
+        self.chapters["s"].header = self._chapters_headers[:-1]
+        self.chapters["p"].header = self._chapters_headers
+        self.chapters["fitness"].header = self._chapters_headers
 
     def update(
         self,
         generation: int,
-        population: Sequence[Instance] | CVTArchive | GridArchive,
+        population: Sequence[Instance] | Archive,
         feedback: bool = False,
     ):
         if generation < 0:
             raise ValueError(
                 f"generation value {generation} must be greater than zero in Logbook.update()"
             )
-        self._logbook.record(
-            gen=generation, **self._statistics(population, as_dataframe=False)
-        )
+        self.record(gen=generation, **self._statistics(population, as_dataframe=False))
         if feedback:  # pragma: no cover
-            print(self._logbook.stream)
+            print(self.stream)
 
     def to_df(self) -> pl.DataFrame:
-        fitness = pl.from_dicts(self._logbook.chapters["fitness"], schema=self._headers)
-        diversity = pl.from_dicts(self._logbook.chapters["s"], schema=self._headers)
-        performance = pl.from_dicts(self._logbook.chapters["p"], schema=self._headers)
-        generations = pl.Series("generation", self._logbook.select("gen"))
+        fitness = pl.from_dicts(self.chapters["fitness"], schema=self._chapters_headers)
+        diversity = pl.from_dicts(self.chapters["s"], schema=self._chapters_headers)
+        performance = pl.from_dicts(self.chapters["p"], schema=self._chapters_headers)
+        generations = pl.Series("generation", self.select("gen"))
         df = (
             fitness
-            .rename({h: f"{h}_fitness" for h in self._headers})
+            .rename({h: f"{h}_fitness" for h in self._chapters_headers})
             .with_columns(generations)
             .join(
                 diversity.rename({
-                    h: f"{h}_diversity" for h in self._headers
+                    h: f"{h}_diversity" for h in self._chapters_headers
                 }).with_columns(generations),
                 on="generation",
             )
             .join(
                 performance.rename({
-                    h: f"{h}_performance" for h in self._headers
+                    h: f"{h}_performance" for h in self._chapters_headers
                 }).with_columns(generations),
                 on="generation",
             )

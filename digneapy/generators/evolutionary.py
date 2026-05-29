@@ -11,7 +11,7 @@
 """
 
 from collections.abc import Sequence
-from typing import Optional
+from typing import Optional, Tuple
 
 import numpy as np
 
@@ -35,7 +35,7 @@ from ..operators import (
     UMut,
 )
 from ._base_generator import BaseGenerator, GenResult
-from ._utils import cast_to_instances
+from ._utils import cast_to_instances, extract_solvers_name
 
 
 class Evolutionary(BaseGenerator):
@@ -45,12 +45,12 @@ class Evolutionary(BaseGenerator):
         self,
         domain: Domain,
         portfolio: Sequence[Solver],
-        pop_size: int,
+        pop_size: np.uint32,
         archive: Archive,
         solution_set: Optional[Archive] = None,
         performance_function: PerformanceFn = max_gap_target,
-        generations: int = 1000,
-        repetitions: int = 1,
+        generations: np.uint32 = np.uint32(1000),
+        repetitions: np.uint16 = np.uint16(1),
         descriptor_pipe: DescriptorPipeline = DescriptorPipeline("features"),
         cxrate: float = 0.5,
         mutrate: float = 0.8,
@@ -195,7 +195,7 @@ class Evolutionary(BaseGenerator):
             self._solution_set if self._solution_set is not None else self._archive
         )
         return GenResult(
-            target=self._portfolio[0].__name__,
+            solvers=tuple(extract_solvers_name(self._portfolio)),
             instances=_instances,
             history=self._logbook,
         )
@@ -370,7 +370,7 @@ class ES(BaseGenerator):
         )
         return instances
 
-    def __call__(self, verbose: bool = False) -> GenResult:
+    def __call__(self, verbose: bool = False) -> Tuple[GenResult, Sequence[Archive]]:
         import cma
 
         _x0 = self._rng.uniform(
@@ -450,8 +450,11 @@ class ES(BaseGenerator):
         _instances = (
             self._archives[0] if len(self._archives) == 1 else self._archives[1]
         )
-        return GenResult(
-            target=self._portfolio[0].__name__,
-            instances=_instances,
-            history=self._logbook,
-        ), self._archives
+        return (
+            GenResult(
+                solvers=tuple(extract_solvers_name(self._portfolio)),
+                instances=_instances,
+                history=self._logbook,
+            ),
+            self._archives,
+        )

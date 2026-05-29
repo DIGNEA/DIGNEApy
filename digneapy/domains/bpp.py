@@ -25,16 +25,17 @@ class BPP(Problem):
     def __init__(
         self,
         items: Iterable[int],
-        capacity: int,
+        capacity: np.uint32,
         seed: Optional[int | np.random.SeedSequence] = None,
         *args,
         **kwargs,
     ):
+        if capacity < 0:
+            raise ValueError("Cannot create a BPP Problem with negative capacity.")
+
         self._items = tuple(items)
         self._capacity = capacity
         dim = len(self._items)
-        assert len(self._items) > 0
-        assert self._capacity > 0
 
         bounds = list((0, dim - 1) for _ in range(dim))
         super().__init__(dimension=dim, bounds=bounds, name="BPP", seed=seed)
@@ -118,16 +119,14 @@ class BPPDomain(Domain):
 
     def __init__(
         self,
-        dimension: int = 50,
-        min_i: int = 1,
-        max_i: int = 1000,
+        dimension: np.uint32 = np.uint32(50),
+        min_i: np.uint32 = np.uint32(1),
+        max_i: np.uint32 = np.uint32(1_000),
         capacity_approach: str = "fixed",
-        max_capacity: int = 100,
+        max_capacity: np.uint32 = np.uint32(100),
         capacity_ratio: float = 0.8,
         seed: Optional[int | np.random.SeedSequence] = None,
     ):
-        if dimension < 0:
-            raise ValueError(f"Expected dimension > 0 got {dimension}")
         if min_i < 0:
             raise ValueError(f"Expected min_i > 0 got {min_i}")
         if max_i < 0:
@@ -141,7 +140,11 @@ class BPPDomain(Domain):
         self._max_i = max_i
         self._max_capacity = max_capacity
 
-        if capacity_ratio < 0.0 or capacity_ratio > 1.0 or not float(capacity_ratio):
+        if (
+            type(capacity_ratio) not in (int, float)
+            or capacity_ratio < 0.0
+            or capacity_ratio > 1.0
+        ):
             self.capacity_ratio = 0.8  # Default
             msg = "The capacity ratio must be a float number in the range [0.0-1.0]. Set as 0.8 as default."
             print(msg)
@@ -178,7 +181,7 @@ class BPPDomain(Domain):
         else:
             self._capacity_approach = app
 
-    def generate_instances(self, n: int = 1) -> List[Instance]:
+    def generate_instances(self, n: np.uint32 = np.uint32(1)) -> List[Instance]:
         """Generates N instances for the domain.
 
         Args:

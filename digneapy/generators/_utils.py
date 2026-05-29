@@ -10,7 +10,11 @@
 @Desc    :   None
 """
 
-from .._core import Instance
+from collections.abc import Sequence
+from typing import Generator
+
+from .._core._instance import Instance
+from .._core._solver import Solver
 
 
 def cast_to_instances(
@@ -57,3 +61,16 @@ def cast_to_instances(
         )
         for i in range(expected)
     ]
+
+
+def extract_solvers_name(portfolio: Sequence[Solver]) -> Generator[str]:
+    """Simple generator to extract the names of the solvers in the portfolio
+
+    Args:
+        portfolio (Sequence[Solver]): Sequence of solvers used to evaluate the instances
+
+    Yields:
+        Generator[str]: Generator of strings
+    """
+    for solver in portfolio:
+        yield solver.__name__

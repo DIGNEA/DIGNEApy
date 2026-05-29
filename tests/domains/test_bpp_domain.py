@@ -20,7 +20,7 @@ from digneapy.domains.bpp import BPP, BPPDomain
 
 @pytest.fixture
 def default_bpp():
-    rng = np.random.default_rng(seed=42)
+    rng = np.random.default_rng()
     items = rng.integers(low=0, high=1000, size=100)
     return BPP(items, capacity=100)
 

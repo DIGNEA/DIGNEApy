@@ -11,14 +11,16 @@
 """
 
 from abc import ABC, abstractmethod
+from collections.abc import Sequence
 from dataclasses import dataclass, field
 from operator import attrgetter
-from typing import List, Optional, Sequence, Tuple
+from typing import List, Mapping, Optional, Tuple
 
 import numpy as np
 import polars as pl
 
 from digneapy._core.descriptors import DescriptorPipeline
+from digneapy.generators._utils import extract_solvers_name
 
 from .._core import (
     Domain,
@@ -28,23 +30,23 @@ from .._core import (
     Statistics,
 )
 from .._core.scores import PerformanceFn, max_gap_target
-from ..archives import CVTArchive, GridArchive
+from ..archives import Archive
 
 
 @dataclass
 class GenResult:
     """Class to store the results of the generator
     Attributes:
-        target (str): Name of the target solver used to evaluate the instances.
+        solvers (Sequence[str]): Name of the solvers used to evaluate the instances.
         instances (Sequence[Instance]): List of generated instances.
         history (Logbook): Logbook with the history of the generator.
         metrics (Optional[pd.Series], optional): Metrics of the instances. Defaults to None.
     """
 
-    target: str  # TODO: Change target for solvers.
-    instances: np.ndarray | CVTArchive | GridArchive
+    solvers: Sequence[str]
+    instances: Archive | np.ndarray | Sequence[Instance]
     history: Logbook
-    metrics: pl.DataFrame = field(default_factory=pl.DataFrame)
+    metrics: pl.DataFrame | Mapping = field(default_factory=pl.DataFrame)
 
     def __post_init__(self):
         if len(self.instances) != 0:
@@ -120,7 +122,7 @@ class BaseGenerator(ABC):
         return self._descriptor_pipe
 
     def __str__(self):
-        port_names = [s.__name__ for s in self._portfolio]
+        port_names = tuple(extract_solvers_name(self._portfolio))
         domain_name = self._domain.__name__ if self._domain is not None else "None"
         return f"{self.__class__.__name__}(pop_size={self._pop_size},gen={self._generations},domain={domain_name},portfolio={port_names!r})"
 

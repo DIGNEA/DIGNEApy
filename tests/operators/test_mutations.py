@@ -24,12 +24,12 @@ from digneapy.operators import BatchUMut, ILMut, UniformMutation
 @pytest.mark.parametrize("ub", (10, 50, 100))
 @pytest.mark.parametrize(argnames="ind_type_cls", argvalues=(Instance, Solution))
 def test_uniform_one_mutation(ind_type_cls, dimension, lb, ub):
-    rng = np.random.default_rng(seed=42)
+    rng = np.random.default_rng()
     instance = ind_type_cls(rng.integers(low=lb, high=ub, size=dimension))
     original = instance.clone()
     lbs = np.full(shape=dimension, fill_value=lb)
     ubs = np.full(shape=dimension, fill_value=ub)
-    instance = UniformMutation(seed=13)(instance, lbs, ubs)
+    instance = UniformMutation()(instance, lbs, ubs)
     try:
         assert instance != original
         assert sum(1 for i, j in zip(original, instance) if i != j) == 1
@@ -55,7 +55,7 @@ def test_batch_uniform_one_mutation(ind_type_cls, n_solutions, lb, ub, dimension
     ubs = np.full(shape=dimension, fill_value=ub)
     cloned = np.asarray(solutions, copy=True)
     assert cloned is not solutions
-    cloned = BatchUMut(seed=32)(cloned, lbs, ubs)
+    cloned = BatchUMut()(cloned, lbs, ubs)
     assert cloned is not solutions
     assert cloned.shape == solutions.shape
     for original, clone in zip(solutions, cloned):
@@ -76,7 +76,10 @@ def test_iso_line_mutation(ind_type_cls, lb, ub, dimension):
     ubs = np.full(shape=dimension, fill_value=ub)
     cloned = np.asarray(solutions, copy=True)
     assert cloned is not solutions
-    cloned = ILMut(0.01, 0.2, seed=32)(cloned, lbs, ubs)
+    cloned = ILMut(
+        0.01,
+        0.2,
+    )(cloned, lbs, ubs)
     assert cloned is not solutions
     assert cloned.shape == solutions.shape
 
@@ -88,12 +91,12 @@ def test_uniform_one_raises():
     with pytest.raises(ValueError):
         lbs = np.full(shape=N, fill_value=0)
         ubs = np.full(shape=N // 2, fill_value=100)
-        _ = UniformMutation(seed=13)(solution, lbs, ubs)
+        _ = UniformMutation()(solution, lbs, ubs)
 
     with pytest.raises(ValueError):
         lbs = np.full(shape=N // 2, fill_value=0)
         ubs = np.full(shape=N // 2, fill_value=100)
-        _ = UniformMutation(seed=13)(solution, lbs, ubs)
+        _ = UniformMutation()(solution, lbs, ubs)
 
 
 def test_batch_uniform_one_raises():
@@ -103,13 +106,13 @@ def test_batch_uniform_one_raises():
         # Raises because bounds shapes doesn't match
         lb = np.zeros(100)
         ub = np.ones(50)
-        _ = BatchUMut(seed=32)(solutions, lb=lb, ub=ub)
+        _ = BatchUMut()(solutions, lb=lb, ub=ub)
 
     with pytest.raises(ValueError):
         # Raises because bounds and dimension
         lb = np.zeros(200)
         ub = np.ones(200)
-        _ = BatchUMut(seed=32)(solutions, lb=lb, ub=ub)
+        _ = BatchUMut()(solutions, lb=lb, ub=ub)
 
 
 def test_iso_line_raises():
@@ -119,10 +122,16 @@ def test_iso_line_raises():
         # Raises because bounds shapes doesn't match
         lb = np.zeros(100)
         ub = np.ones(50)
-        _ = ILMut(sigma_iso="hello", sigma_line=0.0, seed=32)(solutions, lb=lb, ub=ub)
+        _ = ILMut(
+            sigma_iso="hello",
+            sigma_line=0.0,
+        )(solutions, lb=lb, ub=ub)
 
     with pytest.raises(ValueError):
         # Raises because bounds and dimension
         lb = np.zeros(200)
         ub = np.ones(200)
-        _ = ILMut(sigma_iso=0.0, sigma_line="hello", seed=32)(solutions, lb=lb, ub=ub)
+        _ = ILMut(
+            sigma_iso=0.0,
+            sigma_line="hello",
+        )(solutions, lb=lb, ub=ub)

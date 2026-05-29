@@ -210,7 +210,7 @@ def test_cvt_archive_append():
     cvt = CVTArchive(
         k=100, ranges=[(0.0, 100.0), (0.0, 100.0), (0.0, 100.0)], n_samples=100
     )
-    rng = np.random.default_rng(seed=42)
+    rng = np.random.default_rng()
     instance = Instance(
         variables=rng.integers(low=1, high=10, size=10),
         fitness=100,
@@ -230,7 +230,7 @@ def test_cvt_archive_extend():
     cvt = CVTArchive(
         k=100, ranges=[(0.0, 10000.0) for _ in range(dimension)], n_samples=100
     )
-    rng = np.random.default_rng(seed=42)
+    rng = np.random.default_rng()
     instances = [
         Instance(
             variables=rng.integers(low=1, high=10, size=10),
@@ -252,7 +252,7 @@ def test_cvt_archive_remove():
     cvt = CVTArchive(
         k=100, ranges=[(0.0, 10000.0) for _ in range(dimension)], n_samples=100
     )
-    rng = np.random.default_rng(seed=42)
+    rng = np.random.default_rng()
     instances = [
         Instance(
             variables=rng.integers(low=1, high=10, size=10),
@@ -266,9 +266,9 @@ def test_cvt_archive_remove():
     cvt.extend(instances)
     current_len = len(cvt)
     assert current_len > 0
-    descriptors_to_remove = np.asarray(
-        [instance.descriptor for instance in instances[:5]]
-    )
+    descriptors_to_remove = np.asarray([
+        instance.descriptor for instance in instances[:5]
+    ])
     cvt.remove(descriptors_to_remove)
     assert len(cvt) < current_len
 

@@ -28,7 +28,7 @@ class Domain(ABC):
 
     def __init__(
         self,
-        dimension: int,
+        dimension: np.uint32,
         bounds: Sequence[tuple],
         dtype=np.float64,
         name: str = "Domain",
@@ -37,6 +37,9 @@ class Domain(ABC):
         *args,
         **kwargs,
     ):
+
+        if dimension < 0:
+            raise ValueError(f"Cannot create a Domain({name}) with negative dimensions")
 
         self.__name__ = name
         self._dimension = dimension
@@ -52,7 +55,7 @@ class Domain(ABC):
         self._rng = np.random.default_rng(seed)
 
     @abstractmethod
-    def generate_instances(self, n: int = 1) -> List[Instance]:
+    def generate_instances(self, n: np.uint32 = np.uint32(1)) -> List[Instance]:
         """Generates N instances for the domain.
 
         Args:

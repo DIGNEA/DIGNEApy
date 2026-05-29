@@ -18,7 +18,7 @@ from functools import partial
 from pathlib import Path
 
 import numpy as np
-import pandas as pd
+import polars as pl
 from sklearn.metrics import mean_squared_error
 
 from digneapy.transformers.neural import NNEncoder
@@ -40,8 +40,11 @@ features = [
     "std",
     "tiny",
 ]
-X = pd.read_csv(DIR / "data/eig_bpp_instances_only_features.csv")
-X = X[features].values
+X = (
+    pl.scan_csv(DIR / "data/eig_bpp_instances_only_features.csv")
+    .select(features)
+    .collect()
+)
 
 
 def experimental_work_test(X: np.ndarray, transformer: NNEncoder):

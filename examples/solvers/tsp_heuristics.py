@@ -1,7 +1,7 @@
 import argparse
 
 import matplotlib.pyplot as plt
-import pandas as pd
+import polars as pl
 import seaborn as sns
 import tqdm
 
@@ -36,7 +36,7 @@ def main(dimension: int, amount: int):
         results["nneighbour"].append(nn_fitness)
         results["greedy"].append(greedy_fitness)
 
-    df = pd.DataFrame.from_dict(results)
+    df = pl.from_dict(results)
     blank = " " * 80
     print(f"\r{blank}\r", end="")
     print(df.head())

@@ -49,7 +49,7 @@ def test_map_elites_raises_if_wrong_archive():
             portfolio=[default_kp],
             archive=tuple(),
             pop_size=100,
-            mutation=BatchUMut(seed=42),
+            mutation=BatchUMut(),
             describe_pipe=DescriptorPipeline("features"),
             repetitions=1,
         )
@@ -100,7 +100,7 @@ def test_map_elites_with_grid_archive(
 
     # Is able to print the log
     log = map_elites.log
-    map_elites_evolution_plot(log.logbook, "example.png")
+    map_elites_evolution_plot(log, "example.png")
     assert os.path.exists("example.png")
     os.remove("example.png")
 
@@ -198,6 +198,6 @@ def test_map_elites_domain_cvt(domain_cls, portfolio, descriptor):
     log = map_elites.log
     filename = Path("example.png")
 
-    map_elites_evolution_plot(log.logbook, filename=filename)
+    map_elites_evolution_plot(log, filename=filename)
     assert filename.exists()
     filename.unlink()

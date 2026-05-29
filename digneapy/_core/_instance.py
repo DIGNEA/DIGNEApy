@@ -139,11 +139,11 @@ class Instance:
         return self._vars
 
     @variables.setter
-    def variables(self, new_variables: npt.ArrayLike):
+    def variables(self, new_variables: np.ndarray):
         if len(new_variables) != len(self._vars):
             raise ValueError(
-                "Updating the variables of an Instance object with a different number of values."
-                f"Instance have {len(self._vars)}"
+                "Updating the variables of an Instance object with a different number of values. "
+                f"Instance have {len(self._vars)} "
                 f"variables and the new_variables sequence have {len(new_variables)}"
             )
         self._vars = np.asarray(new_variables)

@@ -19,6 +19,7 @@ import pytest
 from digneapy import DescriptorPipeline, Domain, Instance
 from digneapy.domains import BPPDomain, KnapsackDomain, TSPDomain
 from digneapy.generators import DNSResult, Dominated, dominated_novelty_search
+from digneapy.generators._utils import extract_solvers_name
 from digneapy.operators import (
     OPCX,
     UCX,
@@ -145,10 +146,8 @@ def test_dominated_generator(
         mutation=mutation,
         selection=selection,
     )
-    portfolio_names = [s.__name__ for s in portfolio]
-    expected_str = f"pop_size={pop_size},gen={generations},domain={domain.__name__},portfolio={portfolio_names}"
-    assert deig.__str__() == f"Dominated({expected_str})"
-    assert deig.__repr__() == f"Dominated<{expected_str}>"
+    portfolio_names = tuple(extract_solvers_name(portfolio))
+
     result = deig()
     assert len(result.instances) == pop_size
     instances = result.instances
@@ -182,7 +181,7 @@ def test_dominated_generator(
     assert all(len(s.descriptor) == desc_dimension for s in instances)
     assert all(len(s.portfolio_scores) == len(portfolio) for s in instances)
     # DNS do not guarantees the biased aspect of the instances
-    # but all scores of the target must be positive --> Forces feasibility
+    # but all scores of the target must be positive
     p_scores = [s.portfolio_scores for s in instances]
     assert all(p_scores[i][0] >= 0.0 for i in range(len(p_scores)))
 

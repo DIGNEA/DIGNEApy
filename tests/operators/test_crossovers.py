@@ -19,9 +19,7 @@ from digneapy import Instance, Solution
 from digneapy.operators import OPCX, UCX, OnePointCrossover, UniformCrossover
 
 
-@pytest.mark.parametrize(
-    "cxpb", np.sort(np.random.default_rng().random(size=3)).tolist()
-)
+@pytest.mark.parametrize("cxpb", argvalues=(0.5, 0.7, 0.8))
 @pytest.mark.parametrize("ub", (10, 50, 100))
 @pytest.mark.parametrize("lb", argvalues=(0,))
 @pytest.mark.parametrize("dimension", (50, 100, 500, 1000))

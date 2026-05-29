@@ -23,7 +23,7 @@ from digneapy.domains.tsp import TSP, TSPDomain
 @pytest.fixture
 def default_tsp():
     N = 100
-    _coords = np.random.default_rng(seed=42).integers(
+    _coords = np.random.default_rng().integers(
         low=(0),
         high=(1000),
         size=(N, 2),
@@ -56,7 +56,7 @@ def test_default_tsp_attrs(default_tsp):
 
 
 def test_tsp_problem_raises_if_invalid_coords():
-    _coords = np.random.default_rng(seed=42).integers(
+    _coords = np.random.default_rng().integers(
         low=(0),
         high=(1000),
         size=(100, 4),
@@ -68,9 +68,9 @@ def test_tsp_problem_raises_if_invalid_coords():
 
 def test_tsp_can_be_created_with_list():
     N = 100
-    __coords = np.asarray(
-        [[random.randint(0, 1_000), random.randint(0, 1_000)] for _ in range(N)]
-    )
+    __coords = np.asarray([
+        [random.randint(0, 1_000), random.randint(0, 1_000)] for _ in range(N)
+    ])
     problem = TSP(nodes=N, coords=__coords)
     assert isinstance(problem, TSP)
     assert len(problem) == N
@@ -179,9 +179,7 @@ def test_bpp_domain_to_features_dict():
 
 def test_tsp_domain_to_instance():
     dimension = 100
-    variables = np.random.default_rng(seed=42).integers(
-        low=1, high=1000, size=(dimension, 2)
-    )
+    variables = np.random.default_rng().integers(low=1, high=1000, size=(dimension, 2))
     variables = variables.flatten()
     instance = Instance(variables)
 
@@ -197,9 +195,7 @@ def test_tsp_domain_creates_problems():
     DIMENSION = 100
     instances = [
         Instance(
-            np.random.default_rng(seed=42).integers(
-                low=1, high=1_000, size=(DIMENSION, 2)
-            )
+            np.random.default_rng().integers(low=1, high=1_000, size=(DIMENSION, 2))
         )
         for _ in range(N)
     ]

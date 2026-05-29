@@ -26,13 +26,10 @@ class Sphere(Problem):
 
     def __init__(
         self,
-        dimension: int,
+        dimension: np.uint32,
         seed: Optional[int | np.random.SeedSequence] = None,
     ):
-        if type(dimension) is not int or dimension <= 0:
-            raise ValueError(
-                f"Dimension must be a positive integer. Got {type(dimension)} = {dimension}"
-            )
+        
         bounds = [(-5.12, 5.12)] * dimension
         super().__init__(
             dimension=dimension,
@@ -99,7 +96,7 @@ class SphereDomain(Domain):
 
     def __init__(
         self,
-        dimension: int = 2,
+        dimension: np.uint32 = np.uint32(2),
         lb: float = -5.12,
         ub: float = 5.12,
         seed: Optional[int | np.random.SeedSequence] = None,
@@ -115,7 +112,7 @@ class SphereDomain(Domain):
             seed=seed,
         )
 
-    def generate_instances(self, n: int = 1) -> List[Instance]:
+    def generate_instances(self, n: np.uint32 = np.uint32(1)) -> List[Instance]:
         """Generates n random sphere centre points as Instance objects."""
         points = self._rng.uniform(
             low=self._lbs, high=self._ubs, size=(n, self._dimension)

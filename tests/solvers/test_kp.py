@@ -27,7 +27,7 @@ def default_instance():
 
 @pytest.fixture
 def default_large_knap():
-    rng = np.random.default_rng(seed=42)
+    rng = np.random.default_rng()
     c = rng.integers(1e3, 1e5)
     w = rng.integers(1000, 5000, size=1000, dtype=np.uint32)
     p = rng.integers(1000, 5000, size=1000, dtype=np.uint32)

@@ -11,8 +11,7 @@
 """
 
 from collections.abc import Sequence
-from operator import attrgetter
-from typing import List, Optional, Tuple
+from typing import Optional, Tuple
 
 import numpy as np
 
@@ -36,7 +35,7 @@ from ..operators import (
     UMut,
 )
 from ._base_generator import BaseGenerator, GenResult
-from ._utils import cast_to_instances
+from ._utils import cast_to_instances, extract_solvers_name
 
 
 class Evolutionary(BaseGenerator):
@@ -46,12 +45,12 @@ class Evolutionary(BaseGenerator):
         self,
         domain: Domain,
         portfolio: Sequence[Solver],
-        pop_size: int,
+        pop_size: np.uint32,
         archive: Archive,
         solution_set: Optional[Archive] = None,
         performance_function: PerformanceFn = max_gap_target,
-        generations: int = 1000,
-        repetitions: int = 1,
+        generations: np.uint32 = np.uint32(1000),
+        repetitions: np.uint16 = np.uint16(1),
         descriptor_pipe: DescriptorPipeline = DescriptorPipeline("features"),
         cxrate: float = 0.5,
         mutrate: float = 0.8,
@@ -196,12 +195,12 @@ class Evolutionary(BaseGenerator):
             self._solution_set if self._solution_set is not None else self._archive
         )
         return GenResult(
-            target=self._portfolio[0].__name__,
+            solvers=tuple(extract_solvers_name(self._portfolio)),
             instances=_instances,
             history=self._logbook,
         )
 
-    def generate(self, pop_size: int) -> np.ndarray:
+    def generate(self, pop_size: np.uint32) -> np.ndarray:
         """Generates a offspring population of size |offspring_size| from the current population
 
         Args:
@@ -262,13 +261,13 @@ class ES(BaseGenerator):
         generator_dimension: int,
         domain: Domain,
         portfolio: Sequence[Solver],
-        lambda_: int,
+        lambda_: np.uint32,
         archives: Sequence[Archive],
         keep_only_feasible: bool = True,
         sigma: float = 0.5,
         performance_function: PerformanceFn = max_gap_target,
-        generations: int = 1_000,
-        repetitions: int = 1,
+        generations: np.uint32 = np.uint32(1_000),
+        repetitions: np.uint16 = np.uint16(1),
         descriptor_pipe: DescriptorPipeline = DescriptorPipeline("instance"),
         seed: Optional[int | np.random.SeedSequence] = None,
         workers: int = 1,
@@ -371,38 +370,7 @@ class ES(BaseGenerator):
         )
         return instances
 
-    def _evaluate_population(
-        self,
-        population: np.ndarray | List[Instance],
-    ) -> Tuple[np.ndarray, np.ndarray]:
-        """Evaluates the population of instances using the portfolio of solvers.
-           Rewritten to make sure that all
-        Args:
-            population (Sequence[Instance]): Sequence of instances to evaluate
-        """
-        solvers_scores = np.zeros(
-            shape=(len(population), len(self._portfolio), self._repetitions)
-        )
-        problems_to_solve = self._domain.generate_problems_from_instances(population)
-        for j, problem in enumerate(problems_to_solve):
-            for i, solver in enumerate(self._portfolio):
-                # There is no need to change anything in the evaluation code when using Pisinger solvers
-                # because the algs. only return one solution per run (len(solutions) == 1)
-                # The same happens with the simple KP heuristics. However, when using Pisinger solvers
-                # the lower the running time the better they're considered to work an instance
-                scores = np.zeros(self._repetitions)
-                for rep in range(self._repetitions):
-                    scores[rep] = max(
-                        solver(problem), key=attrgetter("fitness")
-                    ).fitness
-
-                solvers_scores[j, i, :] = scores
-
-        mean_solvers_scores = np.mean(solvers_scores, axis=2)
-        performance_biases = self._performance_fn(mean_solvers_scores)
-        return performance_biases, solvers_scores
-
-    def __call__(self, verbose: bool = False) -> GenResult:
+    def __call__(self, verbose: bool = False) -> Tuple[GenResult, Sequence[Archive]]:
         import cma
 
         _x0 = self._rng.uniform(
@@ -485,8 +453,11 @@ class ES(BaseGenerator):
         _instances = (
             self._archives[0] if len(self._archives) == 1 else self._archives[1]
         )
-        return GenResult(
-            target=self._portfolio[0].__name__,
-            instances=_instances,
-            history=self._logbook,
-        ), self._archives
+        return (
+            GenResult(
+                solvers=tuple(extract_solvers_name(self._portfolio)),
+                instances=_instances,
+                history=self._logbook,
+            ),
+            self._archives,
+        )

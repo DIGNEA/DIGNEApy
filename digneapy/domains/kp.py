@@ -37,7 +37,7 @@ class Knapsack(Problem):
                 f"The number of weights and profits is different in Knapsack. Got {len(weights)} weights and {len(profits)} profits"
             )
         if capacity <= 0:
-            raise ValueError(f"Capacity must be a positive integer. Got {capacity}")
+            raise ValueError(f"Cannot create a Knapsack Problem with negative capacity. Got {capacity}")
 
         super().__init__(dimension=len(profits), bounds=[], name="KP", seed=seed)
 
@@ -139,7 +139,7 @@ class KnapsackDomain(Domain):
 
     def __init__(
         self,
-        dimension: int = 50,
+        dimension: np.uint32 = np.uint32(50),
         min_p: np.uint32 = np.uint32(1),
         min_w: np.uint32 = np.uint32(1),
         max_p: np.uint32 = np.uint32(1_000),
@@ -155,7 +155,7 @@ class KnapsackDomain(Domain):
         self.max_w = max_w
         self.max_capacity = max_capacity
 
-        if capacity_ratio < 0.0 or capacity_ratio > 1.0 or not float(capacity_ratio):
+        if type(capacity_ratio) not in (int, float) or capacity_ratio < 0.0 or capacity_ratio > 1.0:
             self.capacity_ratio = 0.8  # Default
             msg = "The capacity ratio must be a float number in the range [0.0-1.0]. Set as 0.8 as default."
             print(msg)
@@ -199,7 +199,7 @@ class KnapsackDomain(Domain):
         else:
             self._capacity_approach = app
 
-    def generate_instances(self, n: int = 1) -> List[Instance]:
+    def generate_instances(self, n: np.uint32 = np.uint32(1)) -> List[Instance]:
         """Generates N instances for the domain.
 
         Args:

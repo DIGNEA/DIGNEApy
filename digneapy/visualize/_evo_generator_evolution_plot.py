@@ -18,15 +18,19 @@ matplotlib.use("Agg")  # Non-interactive backend
 from pathlib import Path
 
 import matplotlib.pyplot as plt
-import pandas as pd
+import polars as pl
 import seaborn as sns
 from matplotlib.lines import Line2D
 
+from digneapy import Logbook
 
-def ea_generator_evolution_plot(logbook=None, filename: Optional[str | Path] = ""):
-    df = pd.DataFrame(logbook.chapters["s"].select("avg"), columns=[r"$s$"])
-    df[r"$p$"] = logbook.chapters["p"].select("avg")
-    df["Generations"] = logbook.select("gen")
+
+def ea_generator_evolution_plot(logbook: Logbook, filename: Optional[str | Path] = ""):
+    generations = pl.Series("generation", values=logbook.select("gen"))
+    avg_s = pl.Series(name=r"$s$", values=logbook.chapters["s"].select("avg"))
+    avg_p = pl.Series(name=r"$p$", values=logbook.chapters["p"].select("avg"))
+
+    df = pl.DataFrame([generations, avg_s, avg_p])
 
     # Plot configuration
     plt.rcParams["font.family"] = "serif"
@@ -40,7 +44,7 @@ def ea_generator_evolution_plot(logbook=None, filename: Optional[str | Path] = "
     plt.figure(figsize=(12, 8))
     ax = sns.lineplot(
         data=df,
-        x="Generations",
+        x="generation",
         y=r"$s$",
         marker="o",
         color="blue",
@@ -51,7 +55,7 @@ def ea_generator_evolution_plot(logbook=None, filename: Optional[str | Path] = "
     ax2 = plt.twinx()
     sns.lineplot(
         data=df,
-        x="Generations",
+        x="generation",
         y=r"$p$",
         marker="X",
         markersize=5,

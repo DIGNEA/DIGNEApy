@@ -33,7 +33,7 @@ def grid_5d():
 
 def test_grid_archive_raises():
     # Raises ValueError when dimension < 1
-    rng = np.random.default_rng(seed=42)
+    rng = np.random.default_rng()
     with pytest.raises(ValueError):
         _ = GridArchive(dimensions=[], ranges=[])
 
@@ -89,7 +89,7 @@ def test_grid_archive_raises():
 
 def test_grid_archive_populated():
     instances = []
-    rng = np.random.default_rng(seed=42)
+    rng = np.random.default_rng()
     for _ in range(10):
         instance = Instance()
         instance.features = rng.integers(low=0, high=10, size=2)
@@ -145,7 +145,7 @@ def test_grid_5d(grid_5d):
 
 def test_grid_archive_5d_storage(grid_5d):
     n_instances = 10
-    rng = np.random.default_rng(seed=42)
+    rng = np.random.default_rng()
     domain = KnapsackDomain(dimension=100)
     instances = domain.generate_instances(n=n_instances)
     descriptors = rng.random(size=(n_instances, 5))
@@ -170,7 +170,7 @@ def test_grid_archive_5d_storage(grid_5d):
 
 
 def test_grid_limits():
-    rng = np.random.default_rng(seed=42)
+    rng = np.random.default_rng()
 
     archive = GridArchive(
         dimensions=(5, 5),
@@ -197,7 +197,7 @@ def test_grid_limits():
 
 
 def test_grid_extend_outside_bounds():
-    rng = np.random.default_rng(seed=42)
+    rng = np.random.default_rng()
 
     archive = GridArchive(
         dimensions=(5, 5),
@@ -228,7 +228,7 @@ def test_grid_extend_outside_bounds():
 
 
 def test_grid_extend_under_bounds():
-    rng = np.random.default_rng(seed=42)
+    rng = np.random.default_rng()
 
     archive = GridArchive(
         dimensions=(5, 5),
@@ -317,7 +317,7 @@ def test_grid_archive_with_KP_instances_separated_descriptors():
 
 
 def test_grid_archive_getitem():
-    rng = np.random.default_rng(seed=42)
+    rng = np.random.default_rng()
 
     instances = []
     for _ in range(1000):

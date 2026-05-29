@@ -11,6 +11,7 @@
 """
 
 from ._base_generator import BaseGenerator, GenResult
+from ._utils import InstanceBuilder, cast_to_instances
 from .dominated import DNSResult, Dominated, dominated_novelty_search
 from .evolutionary import ES, Evolutionary
 from .map_elites import MapElites, PlottedMapElites
@@ -25,4 +26,6 @@ __all__ = [
     "PlottedMapElites",
     "BaseGenerator",
     "GenResult",
+    "InstanceBuilder",
+    "cast_to_instances",
 ]

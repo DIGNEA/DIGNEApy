@@ -26,7 +26,7 @@ class TSP(Problem):
 
     def __init__(
         self,
-        nodes: int,
+        nodes: np.uint,
         coords: np.ndarray,
         seed: Optional[int | np.random.SeedSequence] = None,
         *args,
@@ -148,7 +148,7 @@ class TSPDomain(Domain):
 
     def __init__(
         self,
-        dimension: int = 100,
+        dimension: np.uint32 = np.uint32(100),
         x_range: Tuple[int, int] = (0, 1000),
         y_range: Tuple[int, int] = (0, 1000),
         seed: Optional[int | np.random.SeedSequence] = None,
@@ -165,8 +165,6 @@ class TSPDomain(Domain):
             ValueError: If x_range OR y_range does not have 2 dimensions each
             ValueError: If minimum ranges are greater than maximum ranges
         """
-        if dimension < 0:
-            raise ValueError(f"Expected dimension > 0 got {dimension}")
         if len(x_range) != 2 or len(y_range) != 2:
             raise ValueError(
                 f"Expected x_range and y_range to be a tuple with only to integers. Got: x_range = {x_range} and y_range = {y_range}"
@@ -191,7 +189,7 @@ class TSPDomain(Domain):
 
         super().__init__(dimension=dimension, bounds=__bounds, name="TSP", seed=seed)
 
-    def generate_instances(self, n: int = 1) -> List[Instance]:
+    def generate_instances(self, n: np.uint32 = np.uint32(1)) -> List[Instance]:
         """Generates N instances using numpy. It can return the instances in two formats:
         1. A numpy ndarray with the definition of the instances
         2. A list of Instance objects created from the raw numpy generation

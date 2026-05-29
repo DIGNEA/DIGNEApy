@@ -10,6 +10,7 @@
 @Desc    :   None
 """
 
+import warnings
 from collections.abc import Sequence
 from dataclasses import dataclass
 from typing import Optional
@@ -17,7 +18,7 @@ from typing import Optional
 import numpy as np
 from scipy.spatial.distance import cdist
 
-from digneapy.generators._utils import cast_to_instances
+from digneapy.generators._utils import cast_to_instances, extract_solvers_name
 
 from .._core import (
     Domain,
@@ -50,7 +51,7 @@ class DNSResult:
 def dominated_novelty_search(
     descriptors: np.ndarray,
     performances: np.ndarray,
-    k: int,
+    k: np.uint32,
 ) -> DNSResult:
     """
     Dominated Novelty Search (DNS)
@@ -85,8 +86,14 @@ def dominated_novelty_search(
         raise ValueError(
             f"Array mismatch between performances and descriptors. len(performance) = {len(performances)} != {len(descriptors)} len(descriptors)"
         )
+
     num_instances = len(descriptors)
-    if num_instances == 0:
+    if num_instances == 0 or k <= 0:
+        warnings.warn(
+            f"DNS called with either |descriptors| = 0 ({num_instances}) or k <= 0 ({k}). Returning zeros.",
+            RuntimeWarning,
+            stacklevel=3,
+        )
         return DNSResult(
             descriptors,
             performances,
@@ -131,11 +138,11 @@ class Dominated(Evolutionary):
         self,
         domain: Domain,
         portfolio: Sequence[Solver],
-        pop_size: int = 128,
+        pop_size: np.uint32 = np.uint32(128),
         performance_function: PerformanceFn = max_gap_target,
-        generations: int = 1000,
-        repetitions: int = 1,
-        k: int = 15,
+        generations: np.uint32 = np.uint32(1000),
+        repetitions: np.uint16 = np.uint16(1),
+        k: np.uint32 = np.uint32(15),
         descriptor_pipe: DescriptorPipeline = DescriptorPipeline("features"),
         cxrate: float = 0.5,
         mutrate: float = 0.8,
@@ -250,7 +257,7 @@ class Dominated(Evolutionary):
             print(f"\r{blank}\r", end="")
 
         return GenResult(
-            target=self._portfolio[0].__name__,
+            solvers=tuple(extract_solvers_name(self._portfolio)),
             instances=self._population,
             history=self._logbook,
         )

@@ -11,13 +11,13 @@
 """
 
 from operator import attrgetter
-from typing import Sequence
+from typing import Mapping, Sequence
 
 import numpy as np
-import pandas as pd
+import polars as pl
 from deap import tools
 
-from ..archives import CVTArchive, GridArchive
+from ..archives import Archive
 from ._instance import Instance
 
 
@@ -68,13 +68,14 @@ class Statistics:
         self._stats.register("qd_score", np.sum)
 
     def __call__(
-        self, population: Sequence[Instance], as_series: bool = False
-    ) -> dict | pd.Series:
+        self, population: Sequence[Instance] | Archive, as_dataframe: bool = False
+    ) -> Mapping | pl.DataFrame:
         """Calculates the statistics of the population.
         Args:
-            population (Sequence[Instance]): List of instances to calculate the statistics.
+            as_dataframe (Sequence[Instance]): List of instances to calculate the statistics.
+            as_series (bool): Whether to build a Polars DataFrame or not. Default False.
         Returns:
-            dict: Dictionary with the statistics of the population.
+            Mapping | pl.DataFrame: Statistics of the population.
         """
 
         if len(population) == 0:
@@ -89,7 +90,7 @@ class Statistics:
             record = self._stats.compile(
                 population
             )  # ignore np.inf values which can occur in early steps
-            if as_series:
+            if as_dataframe:
                 _flatten_record = {}
                 for key, value in record.items():
                     if isinstance(value, dict):  # Flatten nested dicts
@@ -97,62 +98,62 @@ class Statistics:
                             _flatten_record[f"{key}_{sub_key}"] = sub_value
                     else:
                         _flatten_record[key] = value
-                return pd.Series(_flatten_record)
+                return pl.from_dict(_flatten_record)
             else:
                 return record
 
 
-class Logbook:
+class Logbook(tools.Logbook):
     def __init__(self):
+        super().__init__()
         self._statistics = Statistics()
-        self._logbook = tools.Logbook()
-        self._logbook.header = "gen", "s", "p", "fitness"
-        self._headers = (
+        self.header = "gen", "s", "p", "fitness"
+        self._chapters_headers = (
             "min",
             "mean",
             "std",
             "max",
             "qd_score",
         )
-        self._logbook.chapters["s"].header = self._headers[:-1]
-        self._logbook.chapters["p"].header = self._headers
-        self._logbook.chapters["fitness"].header = self._headers
-
-    def __len__(self):
-        return len(self._logbook)
-
-    @property
-    def logbook(self):
-        return self._logbook
+        self.chapters["s"].header = self._chapters_headers[:-1]
+        self.chapters["p"].header = self._chapters_headers
+        self.chapters["fitness"].header = self._chapters_headers
 
     def update(
         self,
         generation: int,
-        population: Sequence[Instance] | CVTArchive | GridArchive,
+        population: Sequence[Instance] | Archive,
         feedback: bool = False,
     ):
         if generation < 0:
             raise ValueError(
                 f"generation value {generation} must be greater than zero in Logbook.update()"
             )
-        self._logbook.record(gen=generation, **self._statistics(population))
+        self.record(gen=generation, **self._statistics(population, as_dataframe=False))
         if feedback:  # pragma: no cover
-            print(self._logbook.stream)
+            print(self.stream)
 
-    def to_df(self):
-        df_f = pd.DataFrame(
-            self._logbook.chapters["fitness"], columns=["gen", *self._headers]
+    def to_df(self) -> pl.DataFrame:
+        fitness = pl.from_dicts(self.chapters["fitness"], schema=self._chapters_headers)
+        diversity = pl.from_dicts(self.chapters["s"], schema=self._chapters_headers)
+        performance = pl.from_dicts(self.chapters["p"], schema=self._chapters_headers)
+        generations = pl.Series("generation", self.select("gen"))
+        df = (
+            fitness
+            .rename({h: f"{h}_fitness" for h in self._chapters_headers})
+            .with_columns(generations)
+            .join(
+                diversity.rename({
+                    h: f"{h}_diversity" for h in self._chapters_headers
+                }).with_columns(generations),
+                on="generation",
+            )
+            .join(
+                performance.rename({
+                    h: f"{h}_performance" for h in self._chapters_headers
+                }).with_columns(generations),
+                on="generation",
+            )
         )
-        df_f.columns = ["gen", *[f"{h}_f" for h in self._headers]]
-        df_s = pd.DataFrame(
-            self._logbook.chapters["s"], columns=["gen", *self._headers]
-        )
-        df_s.columns = ["gen", *[f"{h}_s" for h in self._headers]]
-        df_p = pd.DataFrame(
-            self._logbook.chapters["p"], columns=["gen", *self._headers]
-        )
-        df_p.columns = ["gen", *[f"{h}_p" for h in self._headers]]
-        df = pd.merge(df_f, df_s, on=["gen"])
-        df = pd.merge(df, df_p, on=["gen"])
 
-        return df
+        return df.select(["generation", *[c for c in df.columns if c != "generation"]])

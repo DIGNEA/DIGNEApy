@@ -11,7 +11,8 @@
 """
 
 from collections.abc import Sequence
-from typing import Optional
+from operator import attrgetter
+from typing import List, Optional, Tuple
 
 import numpy as np
 
@@ -370,6 +371,37 @@ class ES(BaseGenerator):
         )
         return instances
 
+    def _evaluate_population(
+        self,
+        population: np.ndarray | List[Instance],
+    ) -> Tuple[np.ndarray, np.ndarray]:
+        """Evaluates the population of instances using the portfolio of solvers.
+           Rewritten to make sure that all
+        Args:
+            population (Sequence[Instance]): Sequence of instances to evaluate
+        """
+        solvers_scores = np.zeros(
+            shape=(len(population), len(self._portfolio), self._repetitions)
+        )
+        problems_to_solve = self._domain.generate_problems_from_instances(population)
+        for j, problem in enumerate(problems_to_solve):
+            for i, solver in enumerate(self._portfolio):
+                # There is no need to change anything in the evaluation code when using Pisinger solvers
+                # because the algs. only return one solution per run (len(solutions) == 1)
+                # The same happens with the simple KP heuristics. However, when using Pisinger solvers
+                # the lower the running time the better they're considered to work an instance
+                scores = np.zeros(self._repetitions)
+                for rep in range(self._repetitions):
+                    scores[rep] = max(
+                        solver(problem), key=attrgetter("fitness")
+                    ).fitness
+
+                solvers_scores[j, i, :] = scores
+
+        mean_solvers_scores = np.mean(solvers_scores, axis=2)
+        performance_biases = self._performance_fn(mean_solvers_scores)
+        return performance_biases, solvers_scores
+
     def __call__(self, verbose: bool = False) -> GenResult:
         import cma
 
@@ -384,26 +416,27 @@ class ES(BaseGenerator):
             },
         )
         _current_generation = 0
+        mn, mx = np.asarray(self._domain.bounds()).T
         while _current_generation < self._generations:
             # Here descriptors have shape (lambda_, generator_dimension)
             descriptors = np.asarray(strategy.ask())
-            individual_genotypes = self._descriptor_pipe(
-                descriptors, scores=None, domain=self._domain
-            )
-            perf_biases, portfolio_scores = self._evaluate_population(
-                individual_genotypes
-            )
+            genotypes = self._descriptor_pipe(descriptors, domain=self._domain)
+            # Some genotypes may be outside of the bounds of the domain
+            # For instance, KPDecoder could generate negative Qs and items
+            valid_mask = ((genotypes >= mn) & (genotypes <= mx)).all(axis=1)
+            valid_genotypes = genotypes[valid_mask]
+            valid_descriptors = descriptors[valid_mask]
+            perf_biases, portfolio_scores = self._evaluate_population(valid_genotypes)
             try:
-                diversity_scores = self._archives[0](descriptors=descriptors)
+                diversity_scores = self._archives[0](descriptors=valid_descriptors)
             except NotImplementedError:
-                diversity_scores = np.zeros(shape=(len(descriptors), 1))
+                diversity_scores = np.zeros(shape=(len(valid_descriptors), 1))
 
             fitness = self._compute_fitness(perf_biases, diversity_scores)
-
             instances = self._update_archive(
                 self._archives[0],
-                individuals=descriptors,  # Genotypes extracted from the transformed
-                descriptors=descriptors,
+                individuals=valid_descriptors,  # Valid genotypes extracted from the transformed
+                descriptors=valid_descriptors,
                 portfolio_scores=portfolio_scores,
                 diversity=diversity_scores,
                 bias_score=perf_biases,
@@ -413,7 +446,7 @@ class ES(BaseGenerator):
                 _valid_indices = (
                     np.where(perf_biases > 0)[0]
                     if self._keep_feasible
-                    else np.arange(len(individual_genotypes))
+                    else np.arange(len(valid_descriptors))
                 )
                 if len(_valid_indices) > 1:
                     feasible_descriptors = descriptors[_valid_indices]
@@ -443,8 +476,10 @@ class ES(BaseGenerator):
                 generation=_current_generation, population=instances, feedback=verbose
             )
             # Tell the descriptors and their corresponding fitness
-            strategy.tell(descriptors, -fitness)
-
+            full_fitness = np.full(len(descriptors), -np.inf)  # Invalid ones get -INF
+            full_fitness[valid_mask] = fitness
+            # CMA-ES minimises, so -INF becomes large unfeasible individuals
+            strategy.tell(valid_descriptors, -full_fitness)
             _current_generation += 1
 
         _instances = (

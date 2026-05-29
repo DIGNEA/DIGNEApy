@@ -200,7 +200,7 @@ class Evolutionary(BaseGenerator):
             history=self._logbook,
         )
 
-    def generate(self, pop_size: int) -> np.ndarray:
+    def generate(self, pop_size: np.uint32) -> np.ndarray:
         """Generates a offspring population of size |offspring_size| from the current population
 
         Args:
@@ -261,13 +261,13 @@ class ES(BaseGenerator):
         generator_dimension: int,
         domain: Domain,
         portfolio: Sequence[Solver],
-        lambda_: int,
+        lambda_: np.uint32,
         archives: Sequence[Archive],
         keep_only_feasible: bool = True,
         sigma: float = 0.5,
         performance_function: PerformanceFn = max_gap_target,
-        generations: int = 1_000,
-        repetitions: int = 1,
+        generations: np.uint32 = np.uint32(1_000),
+        repetitions: np.uint16 = np.uint16(1),
         descriptor_pipe: DescriptorPipeline = DescriptorPipeline("instance"),
         seed: Optional[int | np.random.SeedSequence] = None,
         workers: int = 1,

@@ -11,35 +11,70 @@
 """
 
 from collections.abc import Sequence
-from typing import Generator
+from typing import Any, Generator, Self
+
+import numpy as np
 
 from .._core._instance import Instance
 from .._core._solver import Solver
 
 
+class InstanceBuilder:
+    """Class to create Instances using the Builder Pattern
+    - Call add_component with the key and value to include in the new Instance
+    - Finally call build() to generate a new Instance
+    - Calling build() flushes the given components and gets the builder object ready to start again
+    - Expected keys are: variables, fitness, descriptor, portfolio_scores, p, s.
+    """
+
+    def __init__(self):
+        self._components: dict[str, Any] = {}
+
+    def add_component(self, key: str, value: Any) -> Self:
+        self._components[key] = value
+        return self
+
+    def build(self) -> Instance:
+        if "variables" not in self._components:
+            raise ValueError("Cannot create an Instance without variables.")
+        instance = Instance(variables=self._components["variables"])
+        for key, value in self._components.items():
+            if key == "variables":
+                continue
+            setattr(instance, key, value)
+
+        self._components.clear()
+        return instance
+
+
 def cast_to_instances(
-    genotypes, descriptors, fitness, portfolio_scores, diversity_scores, bias_score
+    genotypes: np.ndarray,
+    descriptors: np.ndarray,
+    fitness: np.ndarray,
+    portfolio_scores: np.ndarray,
+    diversity_scores: np.ndarray,
+    bias_score: np.ndarray,
 ) -> list[Instance]:
     """Creates objects of type Instance from a collection of np.ndarray
 
     Args:
-        genotypes (_type_): Genotypes of the instances
-        descriptors (_type_): Descriptors of the instances
-        fitness (_type_): Fitness values of the instances
-        portfolio_scores (_type_): Scores of the instances
-        diversity_scores (_type_): Diversity scores of the instances
-        bias_score (_type_): Performance bias scores of the instances
+        genotypes (np.ndarray): Genotypes of the instances
+        descriptors (np.ndarray): Descriptors of the instances
+        fitness (np.ndarray): Fitness values of the instances
+        portfolio_scores (np.ndarray): Scores of the instances
+        diversity_scores (np.ndarray): Diversity scores of the instances
+        bias_score (np.ndarray): Performance bias scores of the instances
 
     Raises:
-        RuntimeError: If the len() of any list differs from the rest
+        RuntimeError: If the len() of any np.ndarray differs from the rest
 
     Returns:
         list[Instance]: List of Instance objects ready to be inserted in the archives
     """
     expected = len(genotypes)
     if any(
-        len(l) != expected
-        for l in (
+        len(component) != expected
+        for component in (
             genotypes,
             descriptors,
             fitness,
@@ -49,7 +84,7 @@ def cast_to_instances(
             bias_score,
         )
     ):
-        raise RuntimeError("Length mismatch")
+        raise RuntimeError("Length mismatch of components in cast_to_instances")
     return [
         Instance(
             variables=genotypes[i],

@@ -87,9 +87,8 @@ class BaseGenerator(ABC):
             generations (int, optional): Number of generations to perform. Defaults to 1000.
             repetitions (int, optional): Number times a solver in the portfolio must be run over the same instance. Defaults to 1.
         """
-
         if any(
-            type(param) not in (int,) or param < 0
+            not isinstance(param, (int, np.integer, np.unsignedinteger)) or param <= 0
             for param in (pop_size, repetitions, generations)
         ):
             raise ValueError(

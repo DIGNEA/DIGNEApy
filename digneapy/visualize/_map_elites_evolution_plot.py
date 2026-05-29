@@ -42,7 +42,7 @@ def map_elites_evolution_plot(logbook: Logbook, filename: Optional[str | Path] =
     plt.rcParams["font.size"] = 16
     plt.figure(figsize=(12, 8))
     for key, color in zip(["avg", "min", "max"], ["blue", "green", "red"]):
-        sns.lineplot(data=df, x="Generation", y=key, color=color, label=key)
+        sns.lineplot(data=df, x="generation", y=key, color=color, label=key)
     plt.legend(loc="best")
     plt.title(r"Evolution of fitness in the Map-Elites generator")
     plt.ylabel("Fitness")

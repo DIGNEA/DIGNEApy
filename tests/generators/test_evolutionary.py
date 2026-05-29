@@ -227,7 +227,7 @@ def test_evolutionary_generator(
     log = eig._logbook
     assert len(log) == eig._generations
     filename = Path("test_evolution.png")
-    ea_generator_evolution_plot(log.logbook, filename=filename)
+    ea_generator_evolution_plot(log, filename=filename)
     assert filename.exists()
     filename.unlink()
 

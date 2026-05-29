@@ -22,7 +22,6 @@ def save_results_to_files(
     filename_pattern: str,
     result: GenResult,
     variables_names: Optional[Sequence[str]] = None,
-    portfolio_names: Optional[Sequence[str]] = None,
     only_instances: bool = False,
     files_format: Literal["csv", "parquet"] = "parquet",
 ):
@@ -31,7 +30,6 @@ def save_results_to_files(
         filename_pattern (str): Pattern for the filenames.
         result (GenResult): Result of the generation.
         variables_names (Sequence[str]): Names of the variables.
-        portfolio_names (Sequence[str]): Names of the solvers.
         only_instances (bool): Generate only the files with the resulting instances. Default True. If False, it would generate an history and arhice_metrics files.
         files_format (Literal[str] = "csv" or "parquet"): Format to store the resulting instances file. Parquet is the most efficient for large datasets.
     """
@@ -43,7 +41,7 @@ def save_results_to_files(
         [
             instance.to_lazyframe(
                 variables_names=variables_names,
-                portfolio_names=portfolio_names,
+                portfolio_names=result.solvers,
             )
             for instance in result.instances
         ],

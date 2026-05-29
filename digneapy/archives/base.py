@@ -51,6 +51,14 @@ class Archive(ABC):
 
         self._dtype = dtype
 
+    def purge_unfeasible(self, attr: str = "p") -> None:
+        """Removes all the unfeasible instances from the grid"""
+        for i, instance in self._storage[Keys.instances]:
+            if getattr(instance, attr) < 0:
+                self._storage[Keys.grid].remove(i)
+                del self._storage[Keys.instances][i]
+                del self._storage[Keys.descriptors][i]
+
     @abstractmethod
     def extend(
         self,

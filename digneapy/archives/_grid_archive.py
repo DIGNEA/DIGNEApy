@@ -11,12 +11,14 @@
 """
 
 from collections.abc import Iterable, Sequence
-from typing import Optional, Tuple
+from typing import Optional, Tuple, override
 
 import numpy as np
 
 from .._core import Instance
 from .base import Archive, Keys
+
+type NestedDict = dict[str, NestedDict | set]
 
 
 class GridArchive(Archive):
@@ -78,7 +80,7 @@ class GridArchive(Archive):
         self._cells = np.prod(self._dimensions, dtype=object)
 
         del self._storage
-        self._storage: dict[Keys, dict | set] = {
+        self._storage: dict[Keys, NestedDict | set] = {
             Keys.instances: {},
             Keys.descriptors: {},
             Keys.grid: set(),
@@ -193,6 +195,19 @@ class GridArchive(Archive):
         instances = [self._storage[Keys.instances][idx] for idx in indices]
         return instances
 
+    @override
+    def purge_unfeasible(self, attr: str = "p") -> None:
+        """Removes all the unfeasible instances from the grid"""
+        idx_to_remove = list(
+            i
+            for (i, instance) in self._storage[Keys.instances].items()
+            if getattr(instance, attr) < 0
+        )
+        for i in idx_to_remove:
+            self._storage[Keys.grid].remove(i)
+            del self._storage[Keys.instances][i]
+            del self._storage[Keys.descriptors][i]
+
     def lower_i(self, i):
         if i < 0 or i > len(self._lower_bounds):
             msg = f"index {i} is out of bounds. Valid values are [0-{len(self._boundaries)}]"
@@ -279,18 +294,6 @@ class GridArchive(Archive):
                 self._storage[Keys.grid].remove(index)
                 del self._storage[Keys.instances][index]
                 del self._storage[Keys.descriptors][index]
-
-    def purge_unfeasible(self, attr: str = "p") -> None:
-        """Removes all the unfeasible instances from the grid"""
-        keys_to_remove = [
-            i
-            for i in self._storage[Keys.instances].keys()
-            if getattr(self._storage[Keys.instances][i], attr) < 0
-        ]
-        for i in keys_to_remove:
-            self._storage[Keys.grid].remove(i)
-            del self._storage[Keys.instances][i]
-            del self._storage[Keys.descriptors][i]
 
     def index_of(self, descriptors) -> np.ndarray:
         """Computes the indices of a batch of descriptors.

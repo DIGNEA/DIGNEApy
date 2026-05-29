@@ -11,9 +11,8 @@
 """
 
 import argparse
+import concurrent.futures
 import itertools
-from functools import partial
-from multiprocessing import Pool, current_process
 
 import numpy as np
 
@@ -27,42 +26,36 @@ from digneapy.solvers import (
     miw_kp,
     mpw_kp,
 )
-from digneapy.utils import save_results_to_files, sort_knapsack_instances
+from digneapy.utils import save_results_to_files
 
 
 def generate_instances(
     portfolio,
-    dimension: int,
-    pop_size: int,
-    generations: int,
+    dimension: np.uint32,
+    pop_size: np.uint32,
+    generations: np.uint32,
     archive_threshold: float,
     ss_threshold: float,
-    k: int,
+    k: np.uint32,
     descriptor: DescriptorKey,
-    seeds: list[np.random.SeedSequence],
     verbose: bool,
 ):
-    sequence = seeds[current_process()._identity[0]]
-    domain_seed, cx_seed, mut_seed, replacement_seed, generator_seed = sequence.spawn(5)
-    domain = KnapsackDomain(dimension, seed=domain_seed)
+
+    domain = KnapsackDomain(dimension)
     eig = Evolutionary(
         pop_size=pop_size,
         generations=generations,
         domain=domain,
         portfolio=portfolio,
         archive=UnstructuredArchive(threshold=archive_threshold, k=k),
-        solution_set=UnstructuredArchive(threshold=ss_threshold, k=1),
-        repetitions=1,
+        solution_set=UnstructuredArchive(threshold=ss_threshold, k=np.uint32(1)),
+        repetitions=np.uint16(1),
         descriptor_pipe=DescriptorPipeline(descriptor),
-        replacement=Generational(seed=replacement_seed),
-        crossover=UCX(cxpb=0.9, seed=cx_seed),
-        mutation=UMut(seed=mut_seed),
-        seed=generator_seed,
+        replacement=Generational(),
+        crossover=UCX(),
+        mutation=UMut(),
     )
-
     result = eig(verbose=verbose)
-    if verbose:
-        print(f"Target: {result.target} completed.")
     return result
 
 
@@ -73,7 +66,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "-n",
         "-number_of_items",
-        type=int,
+        type=np.uint32,
         required=True,
         help="Size of the knapsack problem.",
         default=50,
@@ -87,7 +80,7 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "-k",
-        type=int,
+        type=np.uint32,
         required=True,
         help="Number of neighbors to use for the NS.",
         default=3,
@@ -112,7 +105,7 @@ if __name__ == "__main__":
         "-p",
         "--population_size",
         default=128,
-        type=int,
+        type=np.uint32,
         required=True,
         help="Number of instances to evolve.",
     )
@@ -120,7 +113,7 @@ if __name__ == "__main__":
         "-g",
         "--generations",
         default=1000,
-        type=int,
+        type=np.uint32,
         required=True,
         help="Number of generations to perform.",
     )
@@ -150,12 +143,17 @@ if __name__ == "__main__":
         [miw_kp, default_kp, map_kp, mpw_kp],
         [mpw_kp, default_kp, map_kp, miw_kp],
     ]
-    root_sequence = np.random.SeedSequence(4213)
-    workers_seeds = root_sequence.spawn(len(portfolios) + 1)
-    with Pool(4) as pool:
-        results = pool.map(
-            partial(
+
+    features_names = KnapsackDomain().feat_names if descriptor == "features" else None
+    vars_names = ["capacity"] + list(
+        itertools.chain.from_iterable([(f"w_{i}", f"p_{i}") for i in range(dimension)])
+    )
+    with concurrent.futures.ProcessPoolExecutor(max_workers=4) as executor:
+        futures = []
+        for i in range(len(portfolios)):
+            f = executor.submit(
                 generate_instances,
+                portfolio=portfolios[i],
                 dimension=dimension,
                 pop_size=population_size,
                 generations=generations,
@@ -163,27 +161,18 @@ if __name__ == "__main__":
                 ss_threshold=solution_set_threshold,
                 k=k,
                 descriptor=descriptor,
-                seeds=workers_seeds,
                 verbose=verbose,
-            ),
-            portfolios,
-        )
+            )
+            futures.append(f)
 
-    pool.close()
-    pool.join()
-    features_names = KnapsackDomain().feat_names if descriptor == "features" else None
-    vars_names = ["capacity"] + list(
-        itertools.chain.from_iterable([(f"w_{i}", f"p_{i}") for i in range(dimension)])
-    )
-    for i, result in enumerate(results):
-        solvers_names = [p.__name__ for p in portfolios[i]]
-        if len(result.instances) > 0:
-            result.instances = sort_knapsack_instances(result.instances)
-        save_results_to_files(
-            f"sorted_ns_{descriptor}_N_{dimension}_target_{result.target}_rep_{rep}",
-            result,
-            only_genotypes=True,
-            only_instances=True,
-            vars_names=vars_names,
-            files_format="csv",
-        )
+        for future in concurrent.futures.as_completed(futures):
+            try:
+                result = future.result()
+                save_results_to_files(
+                    f"ns_{descriptor}_N_{dimension}_target_{result.solvers[0]}_rep_{rep}",
+                    result,
+                    variables_names=vars_names,
+                    files_format="csv",
+                )
+            except Exception as e:
+                print(e)

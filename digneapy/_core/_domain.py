@@ -38,8 +38,13 @@ class Domain(ABC):
         **kwargs,
     ):
 
-        if dimension < 0:
-            raise ValueError(f"Cannot create a Domain({name}) with negative dimensions")
+        if (
+            not isinstance(dimension, (int, np.integer, np.unsignedinteger))
+            or dimension <= 0
+        ):
+            raise ValueError(
+                f"Cannot create a Domain({name}) with negative or equal to zero dimensions. Got {dimension}."
+            )
 
         self.__name__ = name
         self._dimension = dimension

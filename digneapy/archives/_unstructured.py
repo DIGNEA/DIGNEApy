@@ -27,7 +27,7 @@ class UnstructuredArchive(Archive):
 
     def __init__(
         self,
-        k: int,
+        k: np.uint32,
         threshold: float,
         instances: Optional[Sequence[Instance]] = None,
         dtype=np.float64,
@@ -38,7 +38,7 @@ class UnstructuredArchive(Archive):
             threshold (float): Minimum value of sparseness to include an Instance into the archive.
             instances (Iterable[Instance], optional): Instances to initialise the archive. Defaults to None.
         """
-        if type(k) is not int or k < 0:
+        if not isinstance(k, (int, np.integer, np.unsignedinteger)) or k <= 0:
             raise ValueError(
                 f"UnstructuredArchive expects k to be a positive integer. Got {k}"
             )

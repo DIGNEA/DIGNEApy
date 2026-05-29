@@ -156,7 +156,7 @@ class MapElites(BaseGenerator):
             blank = " " * 80
             print(f"\r{blank}\r", end="")
 
-        # self._archive.purge_unfeasible()
+        self._archive.purge_unfeasible()
         return GenResult(
             solvers=tuple(extract_solvers_name(self._portfolio)),
             instances=self._archive,
@@ -224,7 +224,7 @@ class PlottedMapElites:
                 plotter.update(generation=generation + 1)
 
         plotter.update(generation=self._gen._generations)
-
+        self._gen._archive.purge_unfeasible()
         if self._save_final:
             plotter.save(self._save_final)
 

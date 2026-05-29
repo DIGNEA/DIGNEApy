@@ -44,7 +44,7 @@ def ea_generator_evolution_plot(logbook: Logbook, filename: Optional[str | Path]
     plt.figure(figsize=(12, 8))
     ax = sns.lineplot(
         data=df,
-        x="Generations",
+        x="generation",
         y=r"$s$",
         marker="o",
         color="blue",
@@ -55,7 +55,7 @@ def ea_generator_evolution_plot(logbook: Logbook, filename: Optional[str | Path]
     ax2 = plt.twinx()
     sns.lineplot(
         data=df,
-        x="Generations",
+        x="generation",
         y=r"$p$",
         marker="X",
         markersize=5,

@@ -98,7 +98,7 @@ def cast_to_instances(
     ]
 
 
-def extract_solvers_name(portfolio: Sequence[Solver]) -> Generator[str]:
+def extract_solvers_name(portfolio: Sequence[Solver]) -> Generator[str, None, None]:
     """Simple generator to extract the names of the solvers in the portfolio
 
     Args:

@@ -384,7 +384,7 @@ class ES(BaseGenerator):
             },
         )
         _current_generation = 0
-        mn, mx = np.asarray(self._domain.bounds()).T
+        mn, mx = np.asarray(self._domain.bounds).T
         while _current_generation < self._generations:
             # Here descriptors have shape (lambda_, generator_dimension)
             descriptors = np.asarray(strategy.ask())

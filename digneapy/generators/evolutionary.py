@@ -447,7 +447,7 @@ class ES(BaseGenerator):
             full_fitness = np.full(len(descriptors), -np.inf)  # Invalid ones get -INF
             full_fitness[valid_mask] = fitness
             # CMA-ES minimises, so -INF becomes large unfeasible individuals
-            strategy.tell(valid_descriptors, -full_fitness)
+            strategy.tell(descriptors, -full_fitness)
             _current_generation += 1
 
         _instances = (

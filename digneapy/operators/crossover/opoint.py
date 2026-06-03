@@ -14,7 +14,7 @@ from typing import Optional
 
 import numpy as np
 
-from digneapy._core._types import IndType
+from digneapy.typing import IndType
 
 from .base import Crossover
 

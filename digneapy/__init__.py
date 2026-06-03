@@ -10,9 +10,7 @@ from ._core import (
     DescriptorFn,
     DescriptorKey,
     DescriptorPipeline,
-    Direction,
     Domain,
-    IndType,
     Instance,
     Problem,
     Solution,
@@ -26,6 +24,7 @@ from ._core.scores import PerformanceFn, max_gap_target, runtime_score
 from .archives import Archive, CVTArchive, GridArchive, UnstructuredArchive
 from .generators import ES, BaseGenerator, Dominated, Evolutionary, GenResult, MapElites
 from .transformers import Transformer
+from .typing import Direction, IndType
 
 __dignea_submodules = {"utils", "generators", "solvers", "visualize"}
 

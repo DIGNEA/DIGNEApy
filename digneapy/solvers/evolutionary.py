@@ -18,7 +18,8 @@ from typing import Optional
 import numpy as np
 from deap import algorithms, base, creator, tools
 
-from digneapy._core import Direction, Problem, Solution, Solver
+from digneapy._core import Problem, Solution, Solver
+from digneapy.typing import Direction
 
 
 def _gen_dignea_ind(icls, rng, size: int, min_value, max_value):

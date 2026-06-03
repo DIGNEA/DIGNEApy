@@ -104,6 +104,8 @@ class Statistics:
 
 
 class Logbook(tools.Logbook):
+    """Extends Deap.tools.Logbook to include additionaly features such as to_df."""
+
     def __init__(self):
         super().__init__()
         self._statistics = Statistics()

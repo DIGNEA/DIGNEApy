@@ -20,11 +20,14 @@ import numpy as np
 
 from .._core import Instance
 
+type NestedDict = dict[int, Instance | np.ndarray]
+
 
 class Keys(Enum):
     instances = "instances"
     descriptors = "descriptors"
     grid = "grid"
+    objectives = "objectives"
 
 
 class Archive(ABC):
@@ -41,13 +44,19 @@ class Archive(ABC):
             threshold (float): Minimum value of sparseness to include an Instance into the archive.
             instances (Iterable[Instance], optional): Instances to initialise the archive. Defaults to None.
         """
-        self._storage = {Keys.instances: [], Keys.descriptors: []}
-
+        self._storage: dict[Keys, list] = {
+            Keys.instances: [],
+            Keys.descriptors: [],
+        }
         if initial_instances is not None and len(initial_instances) > 0:
-            self._storage[Keys.instances].extend(initial_instances)
-            self._storage[Keys.descriptors].extend(
-                np.asarray([instance.descriptor for instance in initial_instances])
-            )
+            for instance in enumerate(initial_instances):
+                if isinstance(instance, Instance):
+                    self._storage[Keys.instances].append(instance)
+                    self._storage[Keys.descriptors].append(instance.descriptor)
+                else:
+                    raise TypeError(
+                        f"Initial instances must be of type Instance. Got {instance}."
+                    )
 
         self._dtype = dtype
 
@@ -55,7 +64,6 @@ class Archive(ABC):
         """Removes all the unfeasible instances from the grid"""
         for i, instance in self._storage[Keys.instances]:
             if getattr(instance, attr) < 0:
-                self._storage[Keys.grid].remove(i)
                 del self._storage[Keys.instances][i]
                 del self._storage[Keys.descriptors][i]
 
@@ -69,7 +77,7 @@ class Archive(ABC):
         raise NotImplementedError("To be implemented in subclasses")
 
     @abstractmethod
-    def __call__(self, *args, **kwargs) -> np.ndarray:
+    def __call__(self, *args, **kwargs):
         raise NotImplementedError("To be implemented in subclasses")
 
     @property

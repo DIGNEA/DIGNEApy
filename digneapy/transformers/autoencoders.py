@@ -23,7 +23,7 @@ import torch
 import torch.nn as nn
 from scipy.stats import lognorm
 
-from .._core._types import IndType
+from ..typing import IndType
 from .protocol import Transformer
 
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"

@@ -16,7 +16,6 @@ from ._metrics import Logbook, Statistics, qd_score, qd_score_auc
 from ._problem import Problem
 from ._solution import Solution
 from ._solver import Solver
-from ._types import Direction, IndType
 from .descriptors import (
     DescriptorFn,
     DescriptorKey,
@@ -30,8 +29,6 @@ __all__ = [
     "Problem",
     "Solution",
     "Solver",
-    "IndType",
-    "Direction",
     "qd_score",
     "qd_score_auc",
     "Statistics",

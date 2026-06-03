@@ -16,9 +16,7 @@ from typing import Optional, Tuple, override
 import numpy as np
 
 from .._core import Instance
-from .base import Archive, Keys
-
-type NestedDict = dict[str, NestedDict | set]
+from .base import Archive, Keys, NestedDict
 
 
 class GridArchive(Archive):

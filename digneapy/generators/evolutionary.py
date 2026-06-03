@@ -164,19 +164,20 @@ class Evolutionary(BaseGenerator):
 
             # Only the feasible instances are considered to be included
             # in the archive and the solution set.
-            feasible_indeces = np.where(perf_biases > 0)[0]
+            feasible_indices = np.where(perf_biases > 0)[0]
             self._archive.extend(
-                instances=[offspring[i] for i in feasible_indeces],
-                descriptors=descriptors[feasible_indeces],
-                novelty_scores=novelty_scores[feasible_indeces],
+                instances=[offspring[i] for i in feasible_indices],
+                descriptors=descriptors[feasible_indices],
+                novelty_scores=novelty_scores[feasible_indices],
+                objectives=perf_biases[feasible_indices],
             )
 
             if self._solution_set is not None:
                 novelty_solution_set = self._solution_set(descriptors=descriptors)
                 self._solution_set.extend(
-                    instances=[offspring[i] for i in feasible_indeces],
-                    descriptors=descriptors[feasible_indeces],
-                    novelty_scores=novelty_solution_set[feasible_indeces],
+                    instances=[offspring[i] for i in feasible_indices],
+                    descriptors=descriptors[feasible_indices],
+                    novelty_scores=novelty_solution_set[feasible_indices],
                 )
 
             # However the whole offspring population is used in the replacement operator
@@ -367,6 +368,7 @@ class ES(BaseGenerator):
             instances=instances,
             descriptors=individuals,
             novelty_scores=diversity,
+            objectives=bias_score,
         )
         return instances
 

@@ -12,15 +12,10 @@
 
 __all__ = ["PerformanceFn", "max_gap_target", "runtime_score"]
 
-from collections.abc import Callable
 
 import numpy as np
 
-"""Performance Function type. From any sequence it calculates the performance score.
-Returns:
-    float: Performance score
-"""
-PerformanceFn = Callable[[np.ndarray], np.ndarray]
+from ..typing import PerformanceFn
 
 
 def max_gap_target(scores: np.ndarray) -> np.ndarray:

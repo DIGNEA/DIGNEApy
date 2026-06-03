@@ -14,7 +14,7 @@ from abc import ABC, abstractmethod
 
 import numpy as np
 
-from .._core._types import IndType
+from ..typing import IndType
 
 
 class Transformer(ABC):

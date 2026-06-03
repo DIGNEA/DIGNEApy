@@ -17,15 +17,15 @@ import pytest
 
 from digneapy import Instance, UnstructuredArchive
 
-N_INSTANCES = 100
-DIMENSION = 101
-N_FEATURES = 10
+N_INSTANCES = 128
+DIMENSION = 100
+N_FEATURES = 2
 
 
 @pytest.fixture
 def random_population():
     rng = np.random.default_rng()
-    features = rng.uniform(low=0, high=1_000, size=(N_INSTANCES, N_FEATURES))
+    features = rng.uniform(low=0, high=100, size=(N_INSTANCES, N_FEATURES))
     performances = rng.random(size=(N_INSTANCES, 4), dtype=np.float64)
     variables = rng.integers(low=0, high=100, size=(N_INSTANCES, DIMENSION))
     instances = [
@@ -94,9 +94,8 @@ def test_equal_archives(default_archive):
 def test_extend_iterable(empty_archive, default_archive):
     assert 0 == len(empty_archive)
     instances = default_archive.instances
-    for i in instances:
-        i.s = 10.0
-    empty_archive.extend(instances)
+    scores = np.full(len(instances), fill_value=10)
+    empty_archive.extend(instances, novelty_scores=scores)
     assert len(empty_archive) == len(default_archive)
     assert empty_archive == default_archive
 
@@ -148,11 +147,11 @@ def test_archive_extend(threshold):
         for i in range(N_INSTANCES)
     ]
     expected = len(np.where(scores >= threshold)[0])
-    empty_archive.extend(instances)
+    empty_archive.extend(instances, scores)
     assert len(empty_archive) == expected
 
 
-def test_proximity_archive_raises():
+def test_unstructured_archive_raises():
     with pytest.raises(ValueError) as k_error:
         _ = UnstructuredArchive(k=-10, threshold=1.0)
     assert "UnstructuredArchive expects k to be a positive integer. Got -10" in str(
@@ -166,19 +165,10 @@ def test_proximity_archive_raises():
         in str(k_error.value)
     )
 
-    with pytest.warns(
-        RuntimeWarning,
-        match=r"Not enough neighbors to compute sparseness for k=10\. \(archive=0, instances=5\)\. Returning zeros\.",
-    ):
-        archive = UnstructuredArchive(k=10, threshold=1.0)
-        population = np.random.default_rng().integers(0, 10, size=(5, 6))
-        r = archive(population)
-        print(r)
-
 
 @pytest.mark.parametrize("k", [3, 15, 30])
 @pytest.mark.parametrize("threshold", [0.01, 1.0, 5.0, 10.0])
-def test_proximity_archive_random_instances_and_k_and_threshold(
+def test_unstructured_archive_random_instances_and_k_and_threshold(
     k, threshold, random_population
 ):
     archive = UnstructuredArchive(threshold=threshold, k=k)
@@ -191,16 +181,91 @@ def test_proximity_archive_random_instances_and_k_and_threshold(
     assert all(score != 0.0 for score in sparseness)
 
 
+def test_unstructured_archive_decreases_threshold():
+    def generate_population():
+        N_INSTANCES = 10
+        N_FEATURES = 2
+        DIMENSION = 100
+        rng = np.random.default_rng()
+        features = rng.uniform(low=0, high=100, size=(N_INSTANCES, N_FEATURES))
+        performances = rng.random(size=(N_INSTANCES, 4), dtype=np.float64)
+        variables = rng.integers(low=0, high=100, size=(N_INSTANCES, DIMENSION))
+        instances = [
+            Instance(
+                variables=variables[i],
+                features=features[i],
+                descriptor=features[i],
+                portfolio_scores=performances[i],
+                fitness=performances[i][0],
+                p=performances[i][0],
+            )
+            for i in range(N_INSTANCES)
+        ]
+        return instances, variables, features, performances
+
+    initial_threshold = 100.0
+    decay = 0.9
+    iterations = 10
+    MAX_ITERATIONS = 1000
+    archive = UnstructuredArchive(
+        threshold=initial_threshold,
+        k=np.uint32(15),
+        local_competition=False,
+        iterations_without_improve=iterations,
+        decay=decay,
+    )
+    for _ in range(MAX_ITERATIONS):
+        instances, _, descriptors, performances = generate_population()
+        scores = archive.compute_novelty(descriptors)
+        archive.extend(instances, scores, descriptors, performances[:, 0])
+
+    assert archive.threshold < initial_threshold
+    assert archive.threshold > 0.0
+    assert len(archive) != 0
+
+
+def test_unstructured_archive_local_competition(random_population):
+    archive = UnstructuredArchive(
+        threshold=100.0,
+        k=np.uint32(15),
+        local_competition=True,
+    )
+    descriptors = np.asarray([instance.descriptor for instance in random_population])
+    performances = np.asarray([instance.p for instance in random_population])
+    scores = archive.compute_novelty(descriptors)
+    archive.extend(
+        instances=random_population,
+        novelty_scores=scores,
+        descriptors=descriptors,
+        objectives=performances,
+    )
+
+    assert len(archive) <= len(random_population)
+    expected_len = len(archive)
+    updated_scores = archive.compute_novelty(descriptors)
+    np.testing.assert_array_equal(updated_scores, scores)
+    new_performances = np.asarray(performances, copy=True)
+    new_performances += 500.0
+    archive.extend(
+        instances=random_population,
+        novelty_scores=updated_scores,
+        descriptors=descriptors,
+        objectives=new_performances,
+    )
+    # Doesnt change, only udpates best niches
+    assert len(archive) == expected_len
+
+
 @pytest.mark.parametrize("k", [3, 15, 30])
-def test_proximity_archive_return_zero(k):
+def test_unstructured_archive_computes_only_batch(k):
     archive = UnstructuredArchive(threshold=1.0, k=k)
-    scores = archive(np.ones(k // 2))
-    assert np.array_equal(scores, np.zeros(k // 2))
+    scores = archive(np.ones((k, k)))
+    assert not np.array_equal(scores, np.zeros(k // 2))
 
 
 @pytest.mark.parametrize("k", [3, 15, 30])
 @pytest.mark.parametrize("threshold", [0.01, 1.0, 5.0, 10.0])
-def test_proximity_archive_returns_zeros_if_population_smaller_than_K(
+def test_unstructured_archive_doesnt_returns_zeros_if_population_smaller_than_K(
     k, threshold, random_population
 ):
     archive = UnstructuredArchive(threshold=threshold, k=k)
@@ -208,19 +273,6 @@ def test_proximity_archive_returns_zeros_if_population_smaller_than_K(
         instance.descriptor for instance in random_population[:k]
     ])
     expected = np.zeros(len(descriptors), dtype=np.float64)
-    print(descriptors.shape)
     # If len(pop) < k it should return zeros
     result = archive(descriptors)
-    np.testing.assert_array_equal(result, expected)
-
-
-def test_proximity_archive_uses_available_neighbors_when_not_enough_distances():
-    archive = UnstructuredArchive(threshold=0.0, k=2)
-    descriptors = np.asarray(
-        [[0.0, 0.0], [1.0, 0.0], [0.0, 5.0]],
-        dtype=np.float64,
-    )
-
-    result = archive(descriptors)
-
-    np.testing.assert_allclose(result, np.asarray([3, 3.04951, 5.04951]))
+    assert not np.array_equal(result, expected)

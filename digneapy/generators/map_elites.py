@@ -119,7 +119,11 @@ class MapElites(BaseGenerator):
             )
             for i in range(len(offspring))
         ]
-        self._archive.extend(instances=offspring_population, descriptors=descriptors)
+        self._archive.extend(
+            instances=offspring_population,
+            descriptors=descriptors,
+            objectives=perf_biases,
+        )
         # Record the stats and update the performed gens
         self._logbook.update(
             generation=generation + 1, population=self._archive, feedback=verbose

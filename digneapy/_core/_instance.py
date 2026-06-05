@@ -144,13 +144,13 @@ class Instance:
         """
         return type(self)(
             variables=list(self._variables),
-            # descriptor_dim=self._descriptor_dim,
-            # portfolio_dim=self._portfolio_dim,
             fitness=self._fitness,
             performance_bias=self._performance_bias,
             novelty=self._novelty,
-            descriptor=tuple(self._descriptor),
-            portfolio_scores=tuple(self._portfolio_scores),
+            descriptor=tuple(self._descriptor) if len(self._descriptor) > 0 else None,
+            portfolio_scores=tuple(self._portfolio_scores)
+            if len(self._portfolio_scores) > 0
+            else None,
         )
 
     def clone_with(self, **overrides):
@@ -259,7 +259,6 @@ class Instance:
     def __len__(self):
         return len(self._variables)
 
-    @deprecated("Accessor by [] to be removed.")
     def __getitem__(self, key: int | slice) -> Self | np.ndarray:
         """Accessor to variables of the Instance
 
@@ -278,11 +277,9 @@ class Instance:
             index = operator.index(key)
             return self._variables[index]
 
-    @deprecated("Accessor by [] to be removed.")
     def __setitem__(self, key: int | slice, value):
-        raise NotImplementedError(self)
-        # todo
-        # self._variables[key] = value
+        # Todo: Need to update the tests of ths functions
+        self._variables[key] = value
 
     def __eq__(self, other: Self) -> bool:
         """Compares two Instances based on their variables.

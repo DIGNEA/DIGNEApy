@@ -31,10 +31,14 @@ def test_uniform_crossover(ind_type_cls, dimension, lb, ub, cxpb):
     solution = ind_type_cls(rng.integers(low=lb, high=ub, size=dimension))
     other = ind_type_cls(rng.integers(low=lb, high=ub, size=dimension))
     assert solution != other
+    assert solution is not other
     offspring = UniformCrossover(cxpb, seed=cx_seed)(solution, other)
     try:
         assert offspring != solution
         assert offspring != other
+
+        assert offspring is not solution
+        assert offspring is not other
     except AssertionError:
         warnings.warn(
             f"Uniform crossover [{ind_type_cls.__name__}] didn't change anything with cxpb {cxpb} and N {dimension}",
@@ -59,6 +63,9 @@ def test_one_point_crossover_(ind_type_cls, dimension, lb, ub):
     try:
         assert offspring != solution
         assert offspring != other
+
+        assert offspring is not solution
+        assert offspring is not other
     except AssertionError:
         warnings.warn(
             f"OnePointCrossover [{ind_type_cls.__name__}] didn't change anything and N {dimension}",

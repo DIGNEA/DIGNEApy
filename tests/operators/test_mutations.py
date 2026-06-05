@@ -25,13 +25,14 @@ from digneapy.operators import BatchUMut, ILMut, UniformMutation
 @pytest.mark.parametrize(argnames="ind_type_cls", argvalues=(Instance, Solution))
 def test_uniform_one_mutation(ind_type_cls, dimension, lb, ub):
     rng = np.random.default_rng()
-    instance = ind_type_cls(rng.integers(low=lb, high=ub, size=dimension))
+    instance = ind_type_cls(variables=rng.integers(low=lb, high=ub, size=dimension))
     original = instance.clone()
     lbs = np.full(shape=dimension, fill_value=lb)
     ubs = np.full(shape=dimension, fill_value=ub)
     instance = UniformMutation()(instance, lbs, ubs)
     try:
         assert instance != original
+        assert instance is not original
         assert sum(1 for i, j in zip(original, instance) if i != j) == 1
     except AssertionError:
         warnings.warn(

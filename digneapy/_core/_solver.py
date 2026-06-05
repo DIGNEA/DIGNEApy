@@ -19,8 +19,10 @@ from ._solution import Solution
 
 @runtime_checkable
 class Solver(Protocol):
-    """Solver is any callable type that receives a Problem (P)
-    as argument and returns a list of Solution objects
+    """Protocol that defines any Solver in digneapy.
+
+    A Solver, is any callable type that receives a Problem (P)
+    as argument and returns a list of Solution objects.
     """
 
     @abstractmethod
@@ -28,7 +30,7 @@ class Solver(Protocol):
         """Solves a optimisation problem
 
         Args:
-            problem (Problem): Any optimisation problem or callablle that receives a Sequence and returns a Tuple[float]
+            problem (Problem): Any optimisation problem or callablle that receives a Sequence and returns a Tuple[float].
 
         Raises:
             NotImplementedError: Must be implemented by subclasses

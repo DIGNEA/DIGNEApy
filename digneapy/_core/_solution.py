@@ -13,7 +13,6 @@
 import operator
 from collections.abc import Iterable
 from typing import Optional, Self
-from warnings import deprecated
 
 import numpy as np
 
@@ -191,7 +190,6 @@ class Solution:
 
         return self.fitness > other.fitness
 
-    @deprecated("Accessor by [] to be removed.")
     def __getitem__(self, key: int | slice):
         """Accessor to variables of the Solution
 
@@ -210,6 +208,5 @@ class Solution:
             index = operator.index(key)
             return self.variables[index]
 
-    @deprecated("Accessor by [] to be removed.")
     def __setitem__(self, key: int | slice, value):
         self.variables[key] = value

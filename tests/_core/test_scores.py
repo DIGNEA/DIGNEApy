@@ -12,28 +12,40 @@
 
 import numpy as np
 import pytest
+from numpy.testing import assert_equal
 
 from digneapy import max_gap_target, runtime_score
 
-INSTANCES = 10
-SOLVERS = 10
-
 
 def test_max_gap_target():
-    scores = np.random.default_rng().integers(0, 10, size=(INSTANCES, SOLVERS))
-    expected = scores[:, 0] - np.max(scores[:, 1:], axis=1)
-    np.testing.assert_array_equal(max_gap_target(scores), expected)
+    instances = 10
+    scores = np.arange(0, 10) + np.zeros((instances, 1))
+    scores[:, 0] = 100.0
+    expected = 100.0 - (instances - 1)
+    assert_equal(max_gap_target(scores), expected)
     # Raises if the array is not a 2d matrix
     with pytest.raises(ValueError):
-        not_valid = np.random.default_rng().integers(0, 10, size=INSTANCES)
+        not_valid = np.random.default_rng().integers(0, 10, size=instances)
+        _ = max_gap_target(not_valid)
+
+
+def test_max_gap_target_raises():
+    # Raises if the array is not a 2d matrix
+    with pytest.raises(ValueError):
+        not_valid = np.random.default_rng().integers(0, 10, size=10)
         _ = max_gap_target(not_valid)
 
 
 def test_runtime_target():
-    scores = np.random.default_rng().integers(0, 10, size=(INSTANCES, SOLVERS))
-    expected = np.min(scores[:, 1:], axis=1) - scores[:, 0]
-    np.testing.assert_array_equal(runtime_score(scores), expected)
+    instances = 10
+    scores = np.arange(2, 10) + np.zeros((instances, 1))
+    scores[:, 0] = 0.5
+    expected = 3.0 - 0.5
+    assert_equal(runtime_score(scores), expected)
+
+
+def test_runtime_score_raises():
     # Raises if the array is not a 2d matrix
     with pytest.raises(ValueError):
-        not_valid = np.random.default_rng().integers(0, 10, size=INSTANCES)
+        not_valid = np.random.default_rng().integers(0, 10, size=10)
         _ = runtime_score(not_valid)

@@ -18,41 +18,47 @@ import numpy as np
 from ..typing import PerformanceFn
 
 
-def max_gap_target(scores: np.ndarray) -> np.ndarray:
-    """Maximum gap to target.
-    It tries to maximise the gap between the target solver
-    and the other solvers in the portfolio.
-    Use this metric to generate instances that are EASY to solve by the target algorithm
+def max_gap_target(portfolio_scores: np.ndarray) -> np.ndarray:
+    """Maximum performance bias gap between target and others.
+
+    Function to returns the fitness as the difference between the score of the target (position zero)
+    and the maximum score of the other solvers in the portfolio.
+
+    Use this metric to generate instances that are EASY to solve by the target algorithm. This is
+    a metric to maximise.
 
     Args:
-        scores (np.ndarray[float]): Scores of each solver over every instances. It is expected
+        portfolio_scores (np.ndarray[float]): Scores of each solver over every instances.
+        It is expected that the first value is the score of the target.
+
+    Returns:
+        np.ndarray: Performance biases for every instance. Instance.p attribute.
+    """
+    if portfolio_scores.ndim != 2:
+        raise ValueError(
+            "Expected a 2d numpy array (i, s). Where `i` is the number of instances, `s` the number of solvers in the portfolio. "
+            f"Instead, scores have shape: {portfolio_scores.shape}."
+        )
+    return portfolio_scores[:, 0] - np.max(portfolio_scores[:, 1:], axis=1)
+
+
+def runtime_score(portfolio_scores: np.ndarray) -> np.ndarray:
+    """Minimum runtime gap between target and others.
+
+    It tries to maximise the gap between the runtime of the target solver
+    and the other solvers in the portfolio. Use this metric with *^exact** solvers
+    which provide the same objective values for an instance.
+
+    Args:
+        portfolio_scores (np.ndarray[float]): Scores of each solver over every instances. It is expected
         that the first value is the score of the target.
 
     Returns:
         np.ndarray: Performance biases for every instance. Instance.p attribute.
     """
-    if scores.ndim != 2:
+    if portfolio_scores.ndim != 2:
         raise ValueError(
-            f"Expected a 2d numpy array (i, s). Where `i` is the number of instances, `s` the number of solvers in the portfolio. Instead, scores have shape: {scores.shape}"
+            "Expected a 2d numpy array (i, s). Where `i` is the number of instances, `s` the number of solvers in the portfolio. "
+            f"Instead, scores have shape: {portfolio_scores.shape}."
         )
-    return scores[:, 0] - np.max(scores[:, 1:], axis=1)
-
-
-def runtime_score(scores: np.ndarray) -> np.ndarray:
-    """Runtime based metric.
-        It tries to maximise the gap between the runing time of the target solver
-        and the other solvers in the portfolio. Use this metric with exact solvers
-        which provide the same objective values for an instance.
-
-    Args:
-            scores (np.ndarray[float]): Scores of each solver over every instances. It is expected
-            that the first value is the score of the target.
-
-        Returns:
-            np.ndarray: Performance biases for every instance. Instance.p attribute.
-    """
-    if scores.ndim != 2:
-        raise ValueError(
-            f"Expected a 2d numpy array (i, s). Where `i` is the number of instances, `s` the number of solvers in the portfolio. Instead, scores have shape: {scores.shape}"
-        )
-    return np.min(scores[:, 1:], axis=1) - scores[:, 0]
+    return np.min(portfolio_scores[:, 1:], axis=1) - portfolio_scores[:, 0]

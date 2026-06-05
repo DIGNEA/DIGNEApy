@@ -12,18 +12,32 @@
 
 import operator
 from typing import Optional, Self, Sequence
-from warnings import deprecated
 
 import numpy as np
 import polars as pl
 
 
-def validate_column_names(
+def _validate_column_names(
     attribute: str,
     names: None | Sequence[str],
     expected_len: int,
     fallback_keyword: str,
 ) -> Sequence[str]:
+    """Validates the names to Instance to_dict
+
+    Args:
+        attribute (str): Attribute to extract
+        names (None | Sequence[str]): Names of each item to extract.
+        expected_len (int): Expected number of items to extract
+        fallback_keyword (str): Fallback keyword if names is None
+
+    Raises:
+        ValueError: If the given names have a different len that expected
+        TypeError: If any given name is not a str
+
+    Returns:
+        Sequence[str]: Sequence of names to use in to_dict
+    """
     if names is None:
         # If None, fallback to the default keyword with index
         names = tuple(f"{fallback_keyword}{i}" for i in range(expected_len))
@@ -336,13 +350,6 @@ class Instance:
         else:
             return self.fitness >= other.fitness
 
-    @deprecated("To be removed")
-    def __hash__(self):
-        from functools import reduce
-
-        hashes = (hash(x) for x in self)
-        return reduce(operator.or_, hashes, 0)
-
     def to_dict(
         self,
         variables_names: Optional[Sequence[str]] = None,
@@ -363,21 +370,21 @@ class Instance:
         """
         _instance_data = {}
 
-        descriptor_names = validate_column_names(
+        descriptor_names = _validate_column_names(
             "descriptor", descriptor_names, len(self._descriptor), fallback_keyword="d"
         )
         _instance_data = {
             **{key: value for key, value in zip(descriptor_names, self._descriptor)}
         }
 
-        variables_names = validate_column_names(
+        variables_names = _validate_column_names(
             "variables_names", variables_names, len(self), fallback_keyword="v"
         )
         _instance_data["variables"] = {
             key: value for key, value in zip(variables_names, self._variables)
         }
 
-        portfolio_names = validate_column_names(
+        portfolio_names = _validate_column_names(
             "portfolio_names",
             portfolio_names,
             len(self.portfolio_scores),

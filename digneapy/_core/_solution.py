@@ -13,6 +13,7 @@
 import operator
 from collections.abc import Iterable
 from typing import Optional, Self
+from warnings import deprecated
 
 import numpy as np
 
@@ -20,19 +21,30 @@ import numpy as np
 class Solution:
     """
     Class representing a solution in a genetic algorithm.
+
     It contains the variables, objectives, constraints, and fitness of the solution.
     """
+
+    __slots__ = (
+        "_variables",
+        "_objectives",
+        "_constraints",
+        "_fitness",
+        "_dtype",
+        "_otype",
+    )
 
     def __init__(
         self,
         variables: Optional[Iterable] = [],
         objectives: Optional[Iterable] = [],
         constraints: Optional[Iterable] = [],
-        fitness: np.float64 = np.float64(0.0),
+        fitness: float | np.float64 = np.float64(0.0),
         dtype=np.uint32,
         otype=np.float64,
     ):
         """Creates a new solution object.
+
         The variables is a numpy array of the solution's genes.
         The objectives and constraints are numpy arrays of the solution's objectives and constraints.
         The fitness is a float representing the solution's fitness value.
@@ -46,10 +58,18 @@ class Solution:
 
         self._otype = otype
         self._dtype = dtype
-        self.variables = np.asarray(variables, dtype=self.dtype)
-        self.objectives = np.asarray(objectives, dtype=self.otype)
-        self.constraints = np.asarray(constraints, dtype=self.otype)
-        self.fitness = otype(fitness)
+        self._variables = np.asarray(variables, dtype=self.dtype)
+        self._objectives = np.asarray(objectives, dtype=self.otype)
+        self._constraints = np.asarray(constraints, dtype=self.otype)
+        try:
+            if fitness is None:
+                self._fitness = np.float64(0)
+            else:
+                self._fitness = np.float64(fitness)
+        except ValueError:
+            raise ValueError(
+                "Fitness must be convertible to float in Solution.__init__()"
+            )
 
     @property
     def dtype(self):
@@ -59,6 +79,62 @@ class Solution:
     def otype(self):
         return self._otype
 
+    @property
+    def variables(self):
+        return self._variables
+
+    @variables.setter
+    def variables(self, new_variables: np.ndarray):
+        if len(new_variables) != len(self._variables):
+            raise ValueError(
+                "Updating the variables of an Solution object with a different number of values. "
+                f"Solution have {len(self._variables)} "
+                f"variables and the new_variables sequence have {len(new_variables)}"
+            )
+        self._variables = np.asarray(new_variables)
+
+    @property
+    def fitness(self) -> np.float64:
+        return self._fitness
+
+    @fitness.setter
+    def fitness(self, f: np.float64):
+        try:
+            self._fitness = np.float64(f)
+            print(self._fitness)
+        except ValueError:
+            # if f != 0.0 and not float(f):
+            msg = f"The fitness value {f} is not a float in fitness setter of class Solution."
+            raise ValueError(msg)
+
+    @property
+    def objectives(self):
+        return self._objectives
+
+    @objectives.setter
+    def objectives(self, new_objectives: np.ndarray):
+        if len(new_objectives) != len(self._objectives):
+            raise ValueError(
+                "Updating the objectives of an Solution object with a different number of values. "
+                f"Solution have {len(self._objectives)} "
+                f"objectives and the new_objectives sequence have {len(new_objectives)}"
+            )
+        self._objectives = np.asarray(new_objectives)
+
+    @property
+    def constraints(self):
+        return self._constraints
+
+    @constraints.setter
+    def constraints(self, new_constraints: np.ndarray):
+        if len(new_constraints) != len(self._constraints):
+            raise ValueError(
+                "Updating the constraints of an Solution object with a different number of values. "
+                f"Solution have {len(self._constraints)} "
+                f"constraints and the new_constraints sequence have {len(new_constraints)}"
+            )
+        self._constraints = np.asarray(new_constraints)
+
     def clone(self) -> Self:
         """Returns a deep copy of the solution. It is more efficient than using the copy module.
 
@@ -66,10 +142,10 @@ class Solution:
             Self: Solution object
         """
         return type(self)(
-            variables=list(self.variables),
-            objectives=list(self.objectives),
-            constraints=list(self.constraints),
-            fitness=self.fitness,
+            variables=list(self._variables),
+            objectives=list(self._objectives),
+            constraints=list(self._constraints),
+            fitness=self._fitness,
             otype=self.otype,
         )
 
@@ -96,31 +172,44 @@ class Solution:
     def __iter__(self):
         return iter(self.variables)
 
-    def __bool__(self):
-        return len(self) != 0
-
-    def __eq__(self, other) -> bool:
-        if isinstance(other, Solution):
+    def __eq__(self, other: Self) -> bool:
+        if not isinstance(other, Solution):
+            raise TypeError(
+                "Other of type {other.__class__.__name__} can not be compared with a Solution."
+            )
+        else:
             try:
                 return all(a == b for a, b in zip(self, other, strict=True))
             except ValueError:
                 return False
-        else:
-            return NotImplemented
 
-    def __gt__(self, other):
+    def __gt__(self, other: Self) -> np.bool:
         if not isinstance(other, Solution):
-            msg = f"Other of type {other.__class__.__name__} can not be compared with with {self.__class__.__name__}"
-            print(msg)
-            return NotImplemented
+            raise TypeError(
+                "Other of type {other.__class__.__name__} can not be compared with a Solution."
+            )
+
         return self.fitness > other.fitness
 
-    def __getitem__(self, key):
+    @deprecated("Accessor by [] to be removed.")
+    def __getitem__(self, key: int | slice):
+        """Accessor to variables of the Solution
+
+        Args:
+            key (int | slice): index or slice to access a subset of variables
+
+        Returns:
+            Solution (Self) or np.ndarray: If accessed with a slice, a new Solution is created
+            using the subset of variables as the variables of the new Solution. Otherwise, it
+            returns variables[i]
+        """
         if isinstance(key, slice):
             cls = type(self)  # To facilitate subclassing
             return cls(self.variables[key])
-        index = operator.index(key)
-        return self.variables[index]
+        else:
+            index = operator.index(key)
+            return self.variables[index]
 
-    def __setitem__(self, key, value):
+    @deprecated("Accessor by [] to be removed.")
+    def __setitem__(self, key: int | slice, value):
         self.variables[key] = value

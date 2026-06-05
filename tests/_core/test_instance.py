@@ -145,7 +145,7 @@ def test_hash_instances(initialised_instance, default_instance):
 
 
 def test_instance_as_dict(initialised_instance):
-    data = initialised_instance.asdict()
+    data = initialised_instance.to_dict()
     assert isinstance(data, dict)
     assert "fitness" in data
     assert "s" in data

@@ -10,203 +10,584 @@
 @Desc    :   None
 """
 
-import copy
-
 import numpy as np
+import polars as pl
 import pytest
+from numpy.testing import assert_equal
 
-from digneapy import Instance
-
-
-@pytest.fixture
-def default_instance():
-    return Instance()
+from digneapy import Instance, Solution
 
 
-@pytest.fixture
-def initialised_instance():
-    _vars = list(range(100))
-    return Instance(variables=_vars)
+def test_instance_attrs():
+    dimension = 10
+    descriptor_dim = 4
+    portfolio_dim = 4
 
-
-def test_default_instance_attrs(default_instance):
-    assert default_instance.dtype == np.uint32
-    assert default_instance.otype == np.float64
-    assert np.isclose(default_instance.p, 0.0)
-    assert np.isclose(default_instance.s, 0.0)
-    assert np.isclose(default_instance.fitness, 0.0)
-    np.testing.assert_array_equal(default_instance.variables, np.zeros(0))
-    assert default_instance.descriptor.size == 0
-    assert default_instance.portfolio_scores.size == 0
-
-    default_instance.descriptor = list(range(3))
-    default_instance.portfolio_scores = [float(i) for i in range(3)]
-    default_instance.fitness = 100.0
-    default_instance.s = 10.0
-    default_instance.p = 5.0
-    assert (
-        default_instance.__repr__()
-        == "Instance<f=100.0,p=5.0,s=10.0,vars=0,features=0,descriptor=3,performance=3>"
-    )
-    assert (
-        format(default_instance, "p")
-        == "Instance(f=100.0,p=5.0, s=10.0, descriptor=(0.0,1.0,2.0))"
-    )
-    assert (
-        format(default_instance)
-        == "Instance(f=100.0,p=5.0, s=10.0, descriptor=(0,1,2))"
+    instance = Instance(
+        variables=list(range(dimension)),
+        fitness=100.0,
+        performance_bias=1.0,
+        novelty=1.0,
+        descriptor=tuple(range(descriptor_dim)),
+        portfolio_scores=tuple(range(portfolio_dim)),
     )
 
+    assert len(instance) == dimension
 
-def test_instance_raises(default_instance, initialised_instance):
-    # Setters work when using proper data types
-    default_instance.p = 100.0
-    default_instance.s = 50.0
-    default_instance.fitness = 500.0
-    assert np.isclose(default_instance.p, 100.0)
-    assert np.isclose(default_instance.s, 50.0)
-    assert np.isclose(default_instance.fitness, 500.0)
-
-    with pytest.raises(ValueError):
-        default_instance.p = "hello world"
-
-    with pytest.raises(ValueError):
-        default_instance.s = "hello world"
-
-    with pytest.raises(ValueError):
-        default_instance.fitness = "hello world"
-
-    with pytest.raises(ValueError):
-        _ = Instance(variables=list(range(100)), fitness="hello", p=100.0, s=100.0)
-
-    with pytest.raises(ValueError):
-        _ = Instance(variables=list(range(100)), fitness=100.0, p="hello", s=100.0)
-
-    with pytest.raises(ValueError):
-        _ = Instance(variables=list(range(100)), fitness=100.0, p=100.0, s="hello")
-    with pytest.raises(ValueError):
-        initialised_instance.variables = list(range(200))
+    assert_equal(instance.fitness, 100.0)
+    assert_equal(instance.novelty, 1.0)
+    assert_equal(instance.performance_bias, 1.0)
+    assert_equal(instance.descriptor, np.arange(descriptor_dim))
+    assert_equal(instance.portfolio_scores, np.arange(portfolio_dim))
+    assert_equal(instance.variables, np.arange(dimension))
+    assert instance.dtype == np.uint32
 
 
-def test_init_instance(initialised_instance):
-    assert np.isclose(initialised_instance.p, 0.0)
-    assert np.isclose(initialised_instance.s, 0.0)
-    assert np.isclose(initialised_instance.fitness, 0.0)
-    expected = np.asarray(list(range(100)))
-    np.testing.assert_array_equal(initialised_instance.variables, expected)
-    assert initialised_instance.descriptor.size == 0
-    assert initialised_instance.portfolio_scores.size == 0
+def test_instance_default_attrs():
+    dimension = 10
 
-
-def test_properties(initialised_instance):
-    assert initialised_instance.portfolio_scores.size == 0
-    performances = tuple(range(4))
-    initialised_instance.portfolio_scores = performances
-    assert np.array_equal(
-        initialised_instance.portfolio_scores, np.asarray(performances)
+    instance = Instance(
+        variables=list(range(dimension)),
     )
 
-    assert initialised_instance.descriptor.size == 0
-    f = list(range(10))
-    initialised_instance.descriptor = f
-    assert np.array_equal(initialised_instance.descriptor, np.asarray(f))
+    assert len(instance) == dimension
+
+    assert_equal(instance.fitness, 0.0)
+    assert_equal(instance.novelty, 0.0)
+    assert_equal(instance.performance_bias, 0.0)
+    assert_equal(instance.descriptor, np.empty(0))
+    assert_equal(instance.portfolio_scores, np.empty(0))
+    assert_equal(instance.variables, np.arange(dimension))
 
 
-def test_cmp_instances(initialised_instance, default_instance):
-    assert initialised_instance != default_instance
-    instance_2 = copy.copy(initialised_instance)
+@pytest.mark.parametrize("variables", argvalues=([], None))
+def test_instance_raises_init_wrong_variables(variables):
+    descriptor_dim = 4
+    portfolio_dim = 4
 
-    assert initialised_instance == instance_2
-
-    assert default_instance.__eq__(list()) == NotImplemented
-    assert default_instance.__ge__(list()) == NotImplemented
-    assert default_instance.__gt__(list()) == NotImplemented
-
-    instance_2.fitness = default_instance.fitness + 100.0
-    assert instance_2 >= default_instance
-    assert instance_2 > default_instance
-
-
-def test_boolean(initialised_instance, default_instance):
-    assert not default_instance
-    assert initialised_instance
+    with pytest.raises(ValueError):
+        _ = Instance(
+            variables=variables,
+            fitness=1.0,
+            performance_bias=1.0,
+            novelty=1.0,
+            descriptor=tuple(range(descriptor_dim)),
+            portfolio_scores=tuple(range(portfolio_dim)),
+        )
 
 
-def test_instance_iterable(initialised_instance):
-    expected = list(range(100))
-    assert all(a == b for a, b in zip(initialised_instance, expected))
+@pytest.mark.parametrize("fitness", argvalues=([], "abc"))
+def test_instance_raises_init_wrong_fitness(fitness):
+    dimension = 10
+    descriptor_dim = 4
+    portfolio_dim = 4
+
+    with pytest.raises(TypeError):
+        _ = Instance(
+            variables=list(range(dimension)),
+            fitness=fitness,
+            performance_bias=1.0,
+            novelty=1.0,
+            descriptor=tuple(range(descriptor_dim)),
+            portfolio_scores=tuple(range(portfolio_dim)),
+        )
 
 
-def test_hash_instances(initialised_instance, default_instance):
-    assert 0 == hash(default_instance)
-    assert hash(default_instance) != hash(initialised_instance)
-    instance_2 = Instance(variables=list(range(100)))
-    assert hash(initialised_instance) == hash(instance_2)
+@pytest.mark.parametrize("performance_bias", argvalues=([], "abc"))
+def test_instance_raises_init_wrong_perf_bias(performance_bias):
+    dimension = 10
+    descriptor_dim = 4
+    portfolio_dim = 4
+
+    with pytest.raises(TypeError):
+        _ = Instance(
+            variables=list(range(dimension)),
+            fitness=100.0,
+            performance_bias=performance_bias,
+            novelty=1.0,
+            descriptor=tuple(range(descriptor_dim)),
+            portfolio_scores=tuple(range(portfolio_dim)),
+        )
 
 
-def test_instance_as_dict(initialised_instance):
-    data = initialised_instance.to_dict()
-    assert isinstance(data, dict)
-    assert "fitness" in data
-    assert "s" in data
-    assert "p" in data
-    assert "portfolio_scores" in data
-    assert "variables" in data
-    assert len(list(data["portfolio_scores"].values())) == len(
-        initialised_instance.portfolio_scores
+@pytest.mark.parametrize("novelty", argvalues=([], "abc"))
+def test_instance_raises_init_wrong_novelty(novelty):
+    dimension = 10
+    descriptor_dim = 4
+    portfolio_dim = 4
+
+    with pytest.raises(TypeError):
+        _ = Instance(
+            variables=list(range(dimension)),
+            fitness=100.0,
+            performance_bias=1.0,
+            novelty=novelty,
+            descriptor=tuple(range(descriptor_dim)),
+            portfolio_scores=tuple(range(portfolio_dim)),
+        )
+
+
+def test_instance_raises_init_empty_descriptor():
+    dimension = 10
+    portfolio_dim = 4
+
+    with pytest.raises(ValueError):
+        _ = Instance(
+            variables=list(range(dimension)),
+            fitness=1.0,
+            performance_bias=1.0,
+            novelty=1.0,
+            descriptor=[],
+            portfolio_scores=tuple(range(portfolio_dim)),
+        )
+
+
+def test_instance_raises_init_empty_portfolio_scores():
+    dimension = 10
+    descriptor_dim = 4
+
+    with pytest.raises(ValueError):
+        _ = Instance(
+            variables=list(range(dimension)),
+            fitness=1.0,
+            performance_bias=1.0,
+            novelty=1.0,
+            descriptor=tuple(range(descriptor_dim)),
+            portfolio_scores=[],
+        )
+
+
+def test_instance_can_be_cloned():
+    dimension = 10
+    descriptor_dim = 4
+    portfolio_dim = 4
+
+    instance = Instance(
+        variables=list(range(dimension)),
+        fitness=100.0,
+        performance_bias=1.0,
+        novelty=1.0,
+        descriptor=tuple(range(descriptor_dim)),
+        portfolio_scores=tuple(range(portfolio_dim)),
     )
-    assert len(list(data["variables"].values())) == len(initialised_instance)
+    cloned = instance.clone()
+    assert len(cloned) == len(instance)
+
+    assert_equal(cloned.fitness, instance.fitness)
+    assert_equal(cloned.novelty, instance.novelty)
+    assert_equal(cloned.performance_bias, instance.performance_bias)
+    assert_equal(cloned.descriptor, instance.descriptor)
+    assert_equal(cloned.portfolio_scores, instance.portfolio_scores)
+    assert_equal(cloned.variables, instance.variables)
 
 
-def test_instance_as_lazy_frame(initialised_instance):
-    import polars as pl
+@pytest.mark.parametrize(
+    "keyword, value",
+    [
+        ("fitness", 10),
+        ("novelty", 2.0),
+        ("performance_bias", 100.0),
+        ("descriptor", (0.0, 1.0, 2.0)),
+        ("portfolio_scores", (100.0, 100.0, 0.0, 50.0)),
+    ],
+)
+def test_instance_can_be_cloned_with(keyword, value):
+    dimension = 10
+    descriptor_dim = 4
+    portfolio_dim = 4
 
-    data = initialised_instance.to_lazyframe()
-    assert isinstance(data, pl.LazyFrame)
-    df = data.collect()
-    assert "fitness" in df
-    assert "s" in df
-    assert "p" in df
-    for i in range(len(initialised_instance.portfolio_scores)):
-        assert f"solver_{i}" in df
-    for i in range(len(initialised_instance)):
-        assert f"v{i}" in df
-
-
-def test_instance_can_be_cloned(initialised_instance):
-    other = initialised_instance.clone()
-    assert isinstance(other, Instance)
-    assert other == initialised_instance
-
-    variables = np.empty_like(other.variables)
-    variables = np.random.default_rng().integers(low=0, high=100, size=len(variables))
-    second_clone = initialised_instance.clone_with(variables=variables)
-    assert second_clone != initialised_instance
-    assert second_clone != other
-
-
-def test_instance_getter(initialised_instance):
-    assert initialised_instance[0] == 0
-    assert initialised_instance[-1] == 99
-    expected = Instance(list(range(1, 10)))
-    sub_instance = initialised_instance[1:10]
-    assert len(expected) == len(sub_instance)
-    assert expected == sub_instance
-
-    # If out of bounds it should raise:
-    with pytest.raises(IndexError):
-        _ = initialised_instance[104]
+    instance = Instance(
+        variables=list(range(dimension)),
+        fitness=100.0,
+        performance_bias=1.0,
+        novelty=1.0,
+        descriptor=tuple(range(descriptor_dim)),
+        portfolio_scores=tuple(range(portfolio_dim)),
+    )
+    cloned = instance.clone_with(**{keyword: value})
+    # They share the same variables
+    assert len(cloned) == len(instance)
+    assert cloned is not instance
+    assert_equal(getattr(cloned, keyword), value)
 
 
-def test_instance_setter(initialised_instance):
-    new_vars = list(range(100, 200))
-    subset = new_vars[10:50]
-    initialised_instance[0] = new_vars[0]
-    initialised_instance[-1] = new_vars[-1]
-    initialised_instance[10:50] = subset
-    assert initialised_instance[0] == 100
-    assert initialised_instance[-1] == 199
-    assert initialised_instance[10:50] == Instance(subset)
-    # If out of bounds it should raise:
-    with pytest.raises(IndexError):
-        initialised_instance[104] = 1000
+def test_instance_can_be_iter():
+    dimension = 10
+    descriptor_dim = 4
+    portfolio_dim = 4
+
+    instance = Instance(
+        variables=list(range(dimension)),
+        fitness=100.0,
+        performance_bias=1.0,
+        novelty=1.0,
+        descriptor=tuple(range(descriptor_dim)),
+        portfolio_scores=tuple(range(portfolio_dim)),
+    )
+    assert_equal(list(instance), np.arange(dimension))
+
+
+@pytest.mark.parametrize(
+    "keyword, value",
+    [
+        ("fitness", 10),
+        ("descriptor", (2.0, 5.0)),
+        ("portfolio_scores", (0.5, 0.0)),
+        ("variables", np.zeros(10)),
+        ("novelty", 5.0),
+        ("performance_bias", 0.5),
+    ],
+)
+def test_instance_setters_work_as_expected(keyword, value):
+    dimension = 10
+    descriptor_dim = 4
+    portfolio_dim = 4
+
+    instance = Instance(
+        variables=list(range(dimension)),
+        fitness=100.0,
+        performance_bias=1.0,
+        novelty=1.0,
+        descriptor=tuple(range(descriptor_dim)),
+        portfolio_scores=tuple(range(portfolio_dim)),
+    )
+    previous_value = getattr(instance, keyword)
+    setattr(instance, keyword, value)
+    current_value = getattr(instance, keyword)
+    assert not np.array_equal(previous_value, current_value)
+    assert_equal(value, current_value)
+
+
+@pytest.mark.parametrize(
+    "keyword, value",
+    [
+        ("fitness", None),
+        ("fitness", "None"),
+        ("variables", np.zeros(4)),
+        ("variables", np.zeros(0)),
+        ("variables", None),
+        ("novelty", None),
+        ("novelty", "None"),
+        ("performance_bias", None),
+        ("performance_bias", "None"),
+    ],
+)
+def test_instance_setters_raises_if_wrong(keyword, value):
+    dimension = 10
+    descriptor_dim = 4
+    portfolio_dim = 4
+
+    instance = Instance(
+        variables=list(range(dimension)),
+        fitness=100.0,
+        performance_bias=1.0,
+        novelty=1.0,
+        descriptor=tuple(range(descriptor_dim)),
+        portfolio_scores=tuple(range(portfolio_dim)),
+    )
+    with pytest.raises(ValueError):
+        setattr(instance, keyword, value)
+
+
+def test_instances_can_be_compared_true():
+    dimension = 10
+    descriptor_dim = 4
+    portfolio_dim = 4
+
+    instance = Instance(
+        variables=list(range(dimension)),
+        fitness=100.0,
+        performance_bias=1.0,
+        novelty=1.0,
+        descriptor=tuple(range(descriptor_dim)),
+        portfolio_scores=tuple(range(portfolio_dim)),
+    )
+    cloned = instance.clone()
+    assert len(cloned) == len(instance)
+
+
+def test_instances_can_be_compared_false_diff_dim():
+    dimension = 10
+    descriptor_dim = 4
+    portfolio_dim = 4
+
+    instance = Instance(
+        variables=list(range(dimension)),
+        fitness=100.0,
+        performance_bias=1.0,
+        novelty=1.0,
+        descriptor=tuple(range(descriptor_dim)),
+        portfolio_scores=tuple(range(portfolio_dim)),
+    )
+    other = Instance(
+        variables=list(range(dimension // 2)),
+        fitness=100.0,
+        performance_bias=1.0,
+        novelty=1.0,
+        descriptor=tuple(range(descriptor_dim)),
+        portfolio_scores=tuple(range(portfolio_dim)),
+    )
+    assert other != instance
+
+
+def test_instances_can_be_compared_false_same_dim():
+    dimension = 10
+    descriptor_dim = 4
+    portfolio_dim = 4
+
+    instance = Instance(
+        variables=list(range(dimension)),
+        fitness=100.0,
+        performance_bias=1.0,
+        novelty=1.0,
+        descriptor=tuple(range(descriptor_dim)),
+        portfolio_scores=tuple(range(portfolio_dim)),
+    )
+    other = Instance(
+        variables=list(range(1, dimension + 1)),
+        fitness=100.0,
+        performance_bias=1.0,
+        novelty=1.0,
+        descriptor=tuple(range(descriptor_dim)),
+        portfolio_scores=tuple(range(portfolio_dim)),
+    )
+    assert other != instance
+
+
+def test_instances_can_be_compared_by_fitness():
+    dimension = 10
+    descriptor_dim = 4
+    portfolio_dim = 4
+
+    instance = Instance(
+        variables=list(range(dimension)),
+        fitness=100.0,
+        performance_bias=1.0,
+        novelty=1.0,
+        descriptor=tuple(range(descriptor_dim)),
+        portfolio_scores=tuple(range(portfolio_dim)),
+    )
+    cloned = instance.clone()
+    assert cloned == instance
+
+    cloned.fitness = instance.fitness + 1.0
+    assert cloned > instance
+    assert cloned >= instance
+
+    cloned.fitness = instance.fitness - 1.0
+    assert cloned < instance
+    assert cloned <= instance
+
+
+def test_instances_cannot_be_compared_other_types():
+    dimension = 10
+    descriptor_dim = 4
+    portfolio_dim = 4
+
+    instance = Instance(
+        variables=list(range(dimension)),
+        fitness=100.0,
+        performance_bias=1.0,
+        novelty=1.0,
+        descriptor=tuple(range(descriptor_dim)),
+        portfolio_scores=tuple(range(portfolio_dim)),
+    )
+    with pytest.raises(TypeError):
+        instance == None
+
+    with pytest.raises(TypeError):
+        instance == list()
+
+    with pytest.raises(TypeError):
+        instance == Solution()
+
+    # Greater than
+    with pytest.raises(TypeError):
+        instance > None
+
+    with pytest.raises(TypeError):
+        instance > list()
+
+    with pytest.raises(TypeError):
+        instance > Solution()
+
+    # Greater equal
+    with pytest.raises(TypeError):
+        instance >= None
+
+    with pytest.raises(TypeError):
+        instance >= list()
+
+    with pytest.raises(TypeError):
+        instance >= Solution()
+
+
+def test_instance_to_dict():
+    dimension = 10
+    descriptor_dim = 4
+    portfolio_dim = 4
+
+    instance = Instance(
+        variables=list(range(dimension)),
+        fitness=100.0,
+        performance_bias=1.0,
+        novelty=1.0,
+        descriptor=tuple(range(descriptor_dim)),
+        portfolio_scores=tuple(range(portfolio_dim)),
+    )
+    data = instance.to_dict()
+    expected_keys = (
+        "target",
+        "fitness",
+        "novelty",
+        "performance_bias",
+        "portfolio_scores",
+        "variables",
+        *(f"d{i}" for i in range(descriptor_dim)),
+    )
+    # I prefer the loop rather than all
+    # to check which key is failing is so
+    # assert all(key in data.keys() for key in expected_keys)
+    for key in expected_keys:
+        assert key in data.keys()
+
+    # Without custom solver names the default are solver_i
+    assert data["target"] == "alg0"
+    solvers_dict = {f"alg{i}": i for i in range(portfolio_dim)}
+    assert data["portfolio_scores"] == solvers_dict
+
+    # The same happers to the variables
+    # And descriptor which was tested before
+    variables_dict = {f"v{i}": i for i in range(dimension)}
+    assert data["variables"] == variables_dict
+
+    assert data["fitness"] == 100.0
+    assert data["performance_bias"] == 1.0
+    assert data["novelty"] == 1.0
+
+
+def test_instance_to_dict_custom_names():
+    dimension = 10
+    descriptor_dim = 4
+    portfolio_dim = 4
+
+    instance = Instance(
+        variables=list(range(dimension)),
+        fitness=100.0,
+        performance_bias=1.0,
+        novelty=1.0,
+        descriptor=tuple(range(descriptor_dim)),
+        portfolio_scores=tuple(range(portfolio_dim)),
+    )
+    descriptor_names = ("x0", "x1", "dx0", "dx1")
+    solvers_names = ("default", "greedy", "vlns", "sa")
+    variables_names = list(f"x{i}" for i in range(dimension))
+
+    expected_keys = (
+        "target",
+        "fitness",
+        "novelty",
+        "performance_bias",
+        "portfolio_scores",
+        "variables",
+        *descriptor_names,
+    )
+    data = instance.to_dict(
+        variables_names=variables_names,
+        descriptor_names=descriptor_names,
+        portfolio_names=solvers_names,
+    )
+
+    # I prefer the loop rather than all
+    # to check which key is failing is so
+    # assert all(key in data.keys() for key in expected_keys)
+    for key in expected_keys:
+        assert key in data.keys()
+
+    # Without custom solver names the default are solver_i
+    assert data["target"] == "default"
+    solvers_dict = {solvers_names[i]: i for i in range(len(solvers_names))}
+    assert data["portfolio_scores"] == solvers_dict
+
+    # The same happers to the variables
+    # And descriptor which was tested before
+    variables_dict = {variables_names[i]: i for i in range(len(variables_names))}
+    assert data["variables"] == variables_dict
+
+    assert data["fitness"] == 100.0
+    assert data["performance_bias"] == 1.0
+    assert data["novelty"] == 1.0
+
+
+def test_instance_to_df():
+    dimension = 10
+    descriptor_dim = 4
+    portfolio_dim = 4
+
+    instance = Instance(
+        variables=list(range(dimension)),
+        fitness=100.0,
+        performance_bias=1.0,
+        novelty=1.0,
+        descriptor=tuple(range(descriptor_dim)),
+        portfolio_scores=tuple(range(portfolio_dim)),
+    )
+    df = instance.to_df()
+    assert isinstance(df, pl.DataFrame)
+    expected_keys = (
+        "target",
+        "fitness",
+        "novelty",
+        "performance_bias",
+        # variables is flattened",
+        *(f"v{i}" for i in range(dimension)),
+        # Portfolio_scores is flattened "portfolio_scores",
+        *(f"alg{i}" for i in range(portfolio_dim)),
+        *(f"d{i}" for i in range(descriptor_dim)),
+    )
+    # I prefer the loop rather than all
+    # to check which key is failing is so
+    # assert all(key in data.keys() for key in expected_keys)
+    for key in expected_keys:
+        assert key in df.columns
+
+
+def test_instance_to_df_with_custom_names():
+    dimension = 10
+    descriptor_dim = 4
+    portfolio_dim = 4
+
+    instance = Instance(
+        variables=list(range(dimension)),
+        fitness=100.0,
+        performance_bias=1.0,
+        novelty=1.0,
+        descriptor=tuple(range(descriptor_dim)),
+        portfolio_scores=tuple(range(portfolio_dim)),
+    )
+    descriptor_names = ("x0", "x1", "dx0", "dx1")
+    solvers_names = ("default", "greedy", "vlns", "sa")
+    variables_names = list(f"x{i}" for i in range(dimension))
+
+    expected_keys = (
+        "target",
+        "fitness",
+        "novelty",
+        "performance_bias",
+        # variables is flattened",
+        *variables_names,
+        # Portfolio_scores is flattened "portfolio_scores",
+        *solvers_names,
+        *descriptor_names,
+    )
+    df = instance.to_df(
+        variables_names=variables_names,
+        descriptor_names=descriptor_names,
+        portfolio_names=solvers_names,
+    )
+    assert isinstance(df, pl.DataFrame)
+    # I prefer the loop rather than all
+    # to check which key is failing is so
+    # assert all(key in data.keys() for key in expected_keys)
+    for key in expected_keys:
+        assert key in df.columns

@@ -12,7 +12,7 @@
 
 from abc import ABC, abstractmethod
 from collections.abc import Sequence
-from typing import Dict, List, Optional
+from typing import Dict, Optional, Tuple
 
 import numpy as np
 
@@ -29,10 +29,10 @@ class Domain(ABC):
     def __init__(
         self,
         dimension: np.uint32,
-        bounds: Sequence[tuple],
+        bounds: Sequence[Tuple],
         dtype=np.float64,
-        name: str = "Domain",
-        feat_names: Optional[Sequence[str]] = None,
+        domain_name: str = "Domain",
+        features_names: Optional[Sequence[str]] = None,
         seed: Optional[int | np.random.SeedSequence] = None,
         *args,
         **kwargs,
@@ -43,14 +43,14 @@ class Domain(ABC):
             or dimension <= 0
         ):
             raise ValueError(
-                f"Cannot create a Domain({name}) with negative or equal to zero dimensions. Got {dimension}."
+                f"Cannot create a Domain({domain_name}) with negative or equal to zero dimensions. Got {dimension}."
             )
 
-        self.__name__ = name
+        self.__name__ = domain_name
         self._dimension = dimension
         self._bounds = bounds
         self._dtype = dtype
-        self.feat_names = feat_names if feat_names else list()
+        self.feat_names = features_names if features_names else list()
         if len(self._bounds) != 0:
             ranges = list(zip(*bounds))
             self._lbs = np.asarray(ranges[0], dtype=dtype)
@@ -60,7 +60,7 @@ class Domain(ABC):
         self._rng = np.random.default_rng(seed)
 
     @abstractmethod
-    def generate_instances(self, n: np.uint32 = np.uint32(1)) -> List[Instance]:
+    def generate_instances(self, n: np.uint32 = np.uint32(1)) -> Sequence[Instance]:
         """Generates N instances for the domain.
 
         Args:
@@ -76,7 +76,7 @@ class Domain(ABC):
     @abstractmethod
     def generate_problems_from_instances(
         self, instances: Sequence[Instance] | np.ndarray
-    ) -> List[Problem]:
+    ) -> Sequence[Problem]:
         msg = "generate_problems_from_instances is not implemented in Domain class."
         raise NotImplementedError(msg)
 
@@ -98,7 +98,7 @@ class Domain(ABC):
     @abstractmethod
     def extract_features_as_dict(
         self, instances: Sequence[Instance] | np.ndarray
-    ) -> List[Dict[str, np.float32]]:
+    ) -> Sequence[Dict]:
         """Creates a dictionary with the features of the instance.
         The key are the names of each feature and the values are
         the values extracted from instance.

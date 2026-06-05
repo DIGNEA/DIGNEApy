@@ -24,31 +24,33 @@ from ._solution import Solution
 class Problem(ABC):
     def __init__(
         self,
-        dimension: np.uint32,
-        bounds: Sequence[tuple],
-        name: str = "DefaultProblem",
+        dimension: np.uint32 | int,
+        bounds: Sequence[Tuple],
+        name: str = "Problem",
         dtype=np.float64,
         seed: Optional[int | np.random.SeedSequence] = None,
         *args,
         **kwargs,
     ):
-        """Creates a new problem instance.
+        """Creates a new Problem object.
+
         The problem is defined by its dimension and the bounds of each variable.
 
         Args:
             dimension (int): Number of variables in the problem
             bounds (Sequence[tuple]): Bounds of each variable in the problem
-            name (str, optional): Name of the problem for printing and logging purposes. Defaults to "DefaultProblem".
+            name (str, optional): Name of the problem for printing and logging purposes. Defaults to "Problem".
             dtype (_type_, optional): Type of the variables. Defaults to np.float64.
             seed (int, optional): Seed for the random number generation (_rng). Defaults to None.
         """
-        if (
-            not isinstance(dimension, (int, np.integer, np.unsignedinteger))
-            or dimension <= 0
-        ):
-            raise ValueError(
-                f"Cannot create a Problem({name}) with negative dimensions. It must be a positive integer. Got: {dimension}."
-            )
+        try:
+            self._dimension = int(dimension)
+            if dimension <= 0:
+                raise ValueError
+        except Exception as te:
+            te.add_note(f"Dimension must be a postive integer. Got: {dimension}")
+            raise te
+
         self.__name__ = name
         self._dimension = dimension
         self._bounds = bounds

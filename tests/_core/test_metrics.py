@@ -13,7 +13,6 @@
 import numpy as np
 import polars as pl
 import pytest
-from deap import tools as deap_tools
 
 from digneapy import Instance, Logbook, Statistics, qd_score, qd_score_auc
 
@@ -33,39 +32,136 @@ def test_qd_score_auc():
 
 def test_statistics_raises():
     with pytest.raises(ValueError):
-        Statistics()(population=[])
+        Statistics()(instances=[])
 
     with pytest.raises(TypeError):
-        population = np.zeros((10, 10))
-        Statistics()(population=population)
+        instances = np.zeros((10, 10))
+        Statistics()(instances=instances)
 
 
-def test_logbook():
+def test_logbook_creation():
+    logbook = Logbook()
+    assert len(logbook) == 0
+    df = logbook.to_df()
+    assert isinstance(df, pl.DataFrame)
+    assert df.height == 0
+
+
+def test_logbook_several_generations():
+    dimension = 10
+    n_generations = 10
+    n_instances = 10
+    rng = np.random.default_rng()
+
     log = Logbook()
-    N_INSTANCES = 10
-    DIMENSION = 10
-    variables = np.random.default_rng().integers(
-        0, 1_000, size=(N_INSTANCES, DIMENSION)
-    )
-    fitness = np.random.default_rng().random(N_INSTANCES)
-    novelties = np.random.default_rng().random(N_INSTANCES)
-    performances = np.random.default_rng().random(N_INSTANCES)
+    assert len(log) == 0
+
+    for i in range(n_generations):
+        variables = rng.integers(0, 1_000, size=(n_instances, dimension))
+        fitness = rng.uniform(low=0, high=100, size=n_instances)
+        novelties = rng.uniform(low=0, high=100, size=n_instances)
+        performances = rng.uniform(low=0, high=100, size=n_instances)
+        instances = [
+            Instance(
+                variables=variables[i],
+                fitness=fitness[i],
+                performance_bias=performances[i],
+                novelty=novelties[i],
+            )
+            for i in range(n_instances)
+        ]
+        log.update(generation=i, instances=instances, feedback=False)
+        assert len(log) == i + 1
+
+    assert "novelty" in log.chapters
+    assert "performance_bias" in log.chapters
+    assert "fitness" in log.chapters
+
+    assert len(log.chapters["novelty"]) == n_generations
+    assert len(log.chapters["performance_bias"]) == n_generations
+    assert len(log.chapters["fitness"]) == n_generations
+
+
+def test_logbook_to_df():
+    dimension = 10
+    n_generations = 10
+    n_instances = 10
+    rng = np.random.default_rng()
+
+    log = Logbook()
+    assert len(log) == 0
+
+    for i in range(n_generations):
+        variables = rng.integers(0, 1_000, size=(n_instances, dimension))
+        fitness = rng.uniform(low=0, high=100, size=n_instances)
+        novelties = rng.uniform(low=0, high=100, size=n_instances)
+        performances = rng.uniform(low=0, high=100, size=n_instances)
+        instances = [
+            Instance(
+                variables=variables[i],
+                fitness=fitness[i],
+                performance_bias=performances[i],
+                novelty=novelties[i],
+            )
+            for i in range(n_instances)
+        ]
+        log.update(generation=i, instances=instances, feedback=False)
+        assert len(log) == i + 1
+
+    df = log.to_df()
+    assert len(df) == n_generations
+    assert isinstance(df, pl.DataFrame)
+
+
+def test_logbook_raises_negative_generations():
+    log = Logbook()
+    dimension = 10
+    descriptor_dim = 4
+    portfolio_dim = 4
     instances = [
         Instance(
-            variables=variables[i],
-            fitness=fitness[i],
-            p=performances[i],
-            s=novelties[i],
+            variables=list(range(dimension)),
+            fitness=100.0,
+            performance_bias=1.0,
+            novelty=1.0,
+            descriptor=tuple(range(descriptor_dim)),
+            portfolio_scores=tuple(range(portfolio_dim)),
         )
-        for i in range(N_INSTANCES)
     ]
-    assert len(log) == 0
-    assert isinstance(log, deap_tools.Logbook)
-    log.update(generation=0, population=instances)
-    assert len(log) == 1
-    df = log.to_df()
-    assert len(df) == 1
-    assert isinstance(df, pl.DataFrame)
     # Logbook doesn't accept negative generations
     with pytest.raises(ValueError):
-        _ = log.update(-10, population=[])
+        _ = log.update(
+            -10,
+            instances,
+        )
+
+
+def test_logbook_raises_empty_population():
+    log = Logbook()
+    # Logbook doesn't accept negative generations
+    with pytest.raises(ValueError):
+        _ = log.update(1, instances=[])
+
+
+def test_logbook_raises_not_all_instances():
+    log = Logbook()
+    dimension = 10
+    descriptor_dim = 4
+    portfolio_dim = 4
+    instances = [
+        Instance(
+            variables=list(range(dimension)),
+            fitness=100.0,
+            performance_bias=1.0,
+            novelty=1.0,
+            descriptor=tuple(range(descriptor_dim)),
+            portfolio_scores=tuple(range(portfolio_dim)),
+        ),
+        list(range(dimension)),
+    ]
+    # Logbook doesn't accept negative generations
+    with pytest.raises(TypeError):
+        _ = log.update(
+            1,
+            instances,
+        )

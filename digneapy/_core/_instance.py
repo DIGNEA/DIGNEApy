@@ -12,100 +12,129 @@
 
 import operator
 from typing import Optional, Self, Sequence
+from warnings import deprecated
 
 import numpy as np
-import numpy.typing as npt
 import polars as pl
+
+
+def validate_column_names(
+    attribute: str,
+    names: None | Sequence[str],
+    expected_len: int,
+    fallback_keyword: str,
+) -> Sequence[str]:
+    if names is None:
+        # If None, fallback to the default keyword with index
+        names = tuple(f"{fallback_keyword}{i}" for i in range(expected_len))
+    if names is not None and len(names) != expected_len:
+        raise ValueError(
+            f"Failed to validate names for {attribute}. They must be either None or a sequence of str with {expected_len}. Got: {names} with {len(names)} elements."
+        )
+    else:
+        # names is not None and it has the proper length
+        # we still need to check that all items are string
+        if not all(type(key) is str for key in names):
+            raise TypeError(f"All the names for {attribute} must be str. Got: {names}.")
+        else:
+            return names
 
 
 class Instance:
     __slots__ = (
-        "_vars",
-        "_fit",
-        "_p",
-        "_s",
-        "_features",
-        "_desc",
-        "_pscores",
-        "_otype",
+        "_variables",
+        "_fitness",
+        "_performance_bias",
+        "_novelty",
+        "_descriptor",
+        "_portfolio_scores",
+        "_descriptor_dim",
+        "_portfolio_dim",
         "_dtype",
     )
 
     def __init__(
         self,
-        variables: Optional[npt.ArrayLike] = None,
-        fitness: np.float64 = np.float64(0.0),
-        p: np.float64 = np.float64(0.0),
-        s: np.float64 = np.float64(0.0),
-        features: Optional[tuple[np.float32]] = None,
-        descriptor: Optional[tuple[np.float32]] = None,
-        portfolio_scores: Optional[tuple[np.float64]] = None,
-        otype=np.float64,
+        variables: Sequence,
+        fitness: float | np.float64 = np.float64(0.0),
+        performance_bias: float | np.float64 = np.float64(0.0),
+        novelty: float | np.float64 = np.float64(0.0),
+        descriptor: Optional[Sequence[float | np.float64]] = None,
+        portfolio_scores: Optional[Sequence[float | np.float64]] = None,
         dtype=np.uint32,
     ):
-        """Creates an instance of a Instance (unstructured) for QD algorithms
+        """Creates an instance of a Instance for QD algorithms.
+
+
         This class is used to represent a solution in a QD algorithm. It contains the
-        variables, fitness, performance, novelty, features, descriptor and portfolio scores
-        of the solution.
-        The variables are stored as a numpy array, and the fitness, performance and novelty
-        are stored as floats. The features, descriptor and portfolio scores are stored as
-        numpy arrays.
+        variables, fitness, performance bias, novelty, descriptor and portfolio scores
+        of the instance.
+
+        The variables, descriptor and portfolio scores are stored as a numpy array.
+        The fitness, performance and novelty are stored as np.float64.
 
         Args:
-            variables (Optional[npt.ArrayLike], optional): Variables or genome of the instance. Defaults to None.
+            variables (Sequence): Variables or genome of the instance.
             fitness (float, optional): Fitness of the instance. Defaults to 0.0.
-            p (float, optional): Performance score. Defaults to 0.0.
-            s (float, optional): Novelty score. Defaults to 0.0.
-            features (Optional[tuple[float]], optional): Tuple of features extracted from the domain. Defaults to None.
-            descriptor (Optional[tuple[float]], optional): Tuple with the descriptor information of the instance. Defaults to None.
-            portfolio_scores (Optional[tuple[float]], optional): Scores of the solvers in the portfolio. Defaults to None.
+            performance_bias (float, optional): Performance score. Defaults to 0.0.
+            novelty (float, optional): Novelty score. Defaults to 0.0.
+            descriptor (Optional[Sequence[float | np.float64], optional): Tuple with the descriptor information of the instance. Defaults to None.
+            portfolio_scores (Optional[Sequence[float | np.float64], optional): Scores of the solvers in the portfolio. Defaults to None.
 
         Raises:
-            ValueError: If fitness, p or s are not convertible to float.
+            ValueError: If fitness, performance_bias or novelty are not convertible to float.
         """
-        self._otype = otype
         self._dtype = dtype
         try:
-            fitness = self._otype(fitness)
-            p = self._otype(p)
-            s = self._otype(s)
-        except ValueError:
-            raise ValueError(
-                "The fitness, p and s parameters must be convertible to float"
+            self._fitness = float(fitness)
+            self._performance_bias = float(performance_bias)
+            self._novelty = float(novelty)
+        except Exception:
+            raise TypeError(
+                "fitness, performance_bias and novelty parameters must be convertible to float."
             )
+        # Todo: Consider fixing the dimensions of the descriptor and portfolio
+        # if type(descriptor_dim) is not int or descriptor_dim <= 0:
+        #     raise ValueError(
+        #         f"descriptor_dim must be a positive integer. Got {descriptor_dim}."
+        #     )
+        # else:
+        #     self._descriptor_dim = int(descriptor_dim)
 
-        self._vars = (
-            np.asarray(variables, dtype=self._dtype, copy=True)
-            if variables is not None
-            else np.empty(0, dtype=self._dtype)
-        )
-        self._fit = fitness
-        self._p = p
-        self._s = s
-        self._features = (
-            np.asarray(features, dtype=np.float32)
-            if features is not None
-            else np.empty(0, dtype=np.float32)
-        )
-        self._pscores = (
-            np.asarray(portfolio_scores, dtype=self._otype)
-            if portfolio_scores is not None
-            else np.empty(0, dtype=self._otype)
-        )
+        # if type(portfolio_dim) is not int or portfolio_dim <= 0:
+        #     raise ValueError(
+        #         f"portfolio_dim must be a positive integer. Got {portfolio_dim}."
+        #     )
+        # else:
+        #     self._portfolio_dim = int(portfolio_dim)
+        if variables is None or len(variables) == 0:
+            raise ValueError(f"variables has to be a valid sequence. Got: {variables}")
+        else:
+            self._variables = np.asarray(variables, dtype=self._dtype, copy=True)
 
-        self._desc = (
-            np.asarray(descriptor, dtype=np.float32, copy=True)
-            if descriptor is not None
-            else np.empty(0, dtype=np.float32)
-        )
+        if descriptor is not None and len(descriptor) == 0:
+            raise ValueError(
+                f"descriptors must be either None or a sequence with at least one value. Got: {descriptor}"
+            )
+        else:
+            if descriptor is None:
+                self._descriptor = np.empty(0, dtype=np.float64)
+            else:
+                self._descriptor = np.asarray(descriptor, dtype=np.float64, copy=True)
+
+        if portfolio_scores is not None and len(portfolio_scores) == 0:
+            raise ValueError(
+                f"portfolio_scores must be either None or a sequence with at least one value. Got: {portfolio_scores}"
+            )
+        else:
+            if portfolio_scores is None:
+                self._portfolio_scores = np.empty((0), dtype=np.float64)
+            else:
+                self._portfolio_scores = np.asarray(portfolio_scores, dtype=np.float64)
 
     @property
     def dtype(self):
         return self._dtype
-
-    @property
-    def otype(self):
-        return self._otype
 
     def clone(self) -> Self:
         """Create a clone of the current instance. More efficient than using copy.deepcopy.
@@ -114,13 +143,14 @@ class Instance:
             Self: Instance object
         """
         return type(self)(
-            variables=list(self._vars),
-            fitness=self._fit,
-            p=self._p,
-            s=self._s,
-            features=tuple(self._features),
-            portfolio_scores=tuple(self._pscores),
-            descriptor=tuple(self._desc),
+            variables=list(self._variables),
+            # descriptor_dim=self._descriptor_dim,
+            # portfolio_dim=self._portfolio_dim,
+            fitness=self._fitness,
+            performance_bias=self._performance_bias,
+            novelty=self._novelty,
+            descriptor=tuple(self._descriptor),
+            portfolio_scores=tuple(self._portfolio_scores),
         )
 
     def clone_with(self, **overrides):
@@ -136,86 +166,77 @@ class Instance:
 
     @property
     def variables(self):
-        return self._vars
+        return self._variables
 
     @variables.setter
     def variables(self, new_variables: np.ndarray):
-        if len(new_variables) != len(self._vars):
+        if new_variables is None or len(new_variables) == 0:
+            raise ValueError(
+                f"new_variables cannot be None nor be empty. Got: {new_variables}."
+            )
+
+        elif len(new_variables) != len(self._variables):
             raise ValueError(
                 "Updating the variables of an Instance object with a different number of values. "
-                f"Instance have {len(self._vars)} "
-                f"variables and the new_variables sequence have {len(new_variables)}"
+                f"Instance have {len(self._variables)} variables "
+                f"and the new_variables sequence have {len(new_variables)}"
             )
-        self._vars = np.asarray(new_variables)
+        else:
+            self._variables = np.asarray(new_variables)
 
     @property
-    def p(self) -> np.float64:
-        return self._p
+    def performance_bias(self) -> float | np.float64:
+        return self._performance_bias
 
-    @p.setter
-    def p(self, performance: np.float64):
+    @performance_bias.setter
+    def performance_bias(self, performance: float | np.float64):
         try:
-            performance = np.float64(performance)
-        except ValueError:
-            # if performance != 0.0 and not float(performance):
-            msg = f"The performance value {performance} is not a float in 'p' setter of class {self.__class__.__name__}"
-            raise ValueError(msg)
-        self._p = performance
+            self._performance_bias = float(performance)
+        except Exception:
+            raise ValueError(
+                f"performance_bias value is not a float. Got: {performance}."
+            )
 
     @property
-    def s(self) -> np.float64:
-        return self._s
+    def novelty(self) -> float | np.float64:
+        return self._novelty
 
-    @s.setter
-    def s(self, novelty: np.float64):
+    @novelty.setter
+    def novelty(self, nov_score: float | np.float64):
         try:
-            novelty = np.float64(novelty)
-        except ValueError:
-            # if novelty != 0.0 and not float(novelty):
-            msg = f"The novelty value {novelty} is not a float in 's' setter of class {self.__class__.__name__}"
-            raise ValueError(msg)
-        self._s = novelty
+            self._novelty = float(nov_score)
+        except Exception:
+            raise ValueError(f"nov_score value is not a float. Got: {nov_score}.")
 
     @property
-    def fitness(self) -> np.float64:
-        return self._fit
+    def fitness(self) -> float | np.float64:
+        return self._fitness
 
     @fitness.setter
-    def fitness(self, f: np.float64):
+    def fitness(self, new_fitness: float | np.float64):
         try:
-            f = np.float64(f)
-        except ValueError:
-            # if f != 0.0 and not float(f):
-            msg = f"The fitness value {f} is not a float in fitness setter of class {self.__class__.__name__}"
-            raise ValueError(msg)
-        self._fit = f
-
-    @property
-    def features(self) -> np.ndarray:
-        return self._features
-
-    @features.setter
-    def features(self, features: npt.ArrayLike):
-        self._features = np.asarray(features)
+            self._fitness = float(new_fitness)
+        except Exception:
+            raise ValueError(f"new_fitness value is not a float. Got: {new_fitness}.")
 
     @property
     def descriptor(self) -> np.ndarray:
-        return self._desc
+        return self._descriptor
 
     @descriptor.setter
-    def descriptor(self, desc: npt.ArrayLike):
-        self._desc = np.asarray(desc)
+    def descriptor(self, descriptor: Sequence[float | np.float64] | np.ndarray):
+        self._descriptor = np.asarray(descriptor)
 
     @property
     def portfolio_scores(self):
-        return self._pscores
+        return self._portfolio_scores
 
     @portfolio_scores.setter
-    def portfolio_scores(self, p: npt.ArrayLike):
-        self._pscores = np.asarray(p)
+    def portfolio_scores(self, scores: Sequence[float | np.float64] | np.ndarray):
+        self._portfolio_scores = np.asarray(scores)
 
     def __repr__(self):
-        return f"Instance<f={self.fitness},p={self.p},s={self.s},vars={len(self._vars)},features={len(self.features)},descriptor={len(self.descriptor)},performance={len(self.portfolio_scores)}>"
+        return self.__str__()
 
     def __str__(self):
         import reprlib
@@ -223,30 +244,60 @@ class Instance:
         descriptor = reprlib.repr(self.descriptor)
         performance = reprlib.repr(self.portfolio_scores)
         performance = performance[performance.find("(") : performance.rfind(")") + 1]
-        return f"Instance(f={self.fitness},p={self.p},s={self.s},features={len(self.features)},descriptor={descriptor},performance={performance})"
+        return (
+            f"Instance:\n"
+            f"   - fitness = {self.fitness}\n"
+            f"   - performance_bias = {self.performance_bias}\n"
+            f"   - novelty = {self.novelty}\n"
+            f"   - descriptor = {descriptor}\n"
+            f"   - portfolio scores = {performance}\n"
+        )
 
     def __iter__(self):
-        return iter(self._vars)
+        return iter(self._variables)
 
     def __len__(self):
-        return len(self._vars)
+        return len(self._variables)
 
-    def __getitem__(self, key):
+    @deprecated("Accessor by [] to be removed.")
+    def __getitem__(self, key: int | slice) -> Self | np.ndarray:
+        """Accessor to variables of the Instance
+
+        Args:
+            key (index | slice): index or slice to access a subset of variables
+
+        Returns:
+            Instance (Self) or np.ndarray: If accessed with a slice, a new Instance is created
+            using the subset of variables as the variables of the new Instance. Otherwise, it
+            returns variables[i]
+        """
         if isinstance(key, slice):
             cls = type(self)  # To facilitate subclassing
-            return cls(self._vars[key])
-        index = operator.index(key)
-        return self._vars[index]
+            return cls(self._variables[key])
+        else:
+            index = operator.index(key)
+            return self._variables[index]
 
-    def __setitem__(self, key, value):
-        self._vars[key] = value
+    @deprecated("Accessor by [] to be removed.")
+    def __setitem__(self, key: int | slice, value):
+        raise NotImplementedError(self)
+        # todo
+        # self._variables[key] = value
 
-    def __eq__(self, other):
+    def __eq__(self, other: Self) -> bool:
+        """Compares two Instances based on their variables.
+
+        Args:
+            other (Self): Another instance to compare.
+
+        Returns:
+            bool: Returns True if the two instances have the same number of variables,
+            and all of them are equal. Returns False otherwise.
+        """
         if not isinstance(other, Instance):
-            print(
-                f"Other of type {other.__class__.__name__} can not be compared with with {self.__class__.__name__}"
+            raise TypeError(
+                f"Other of type {other.__class__.__name__} can not be compared with an Instance."
             )
-            return NotImplemented
 
         else:
             try:
@@ -254,122 +305,138 @@ class Instance:
             except ValueError:
                 return False
 
-    def __gt__(self, other):
+    def __gt__(self, other: Self) -> bool | np.bool:
+        """Compares two Instances based on their fitness.
+
+        Args:
+            other (Self): Another instance to compare.
+
+        Returns:
+            bool: Returns True if the self has a greater fitness
+            than the other. Returns False otherwise.
+        """
         if not isinstance(other, Instance):
-            print(
-                f"Other of type {other.__class__.__name__} can not be compared with with {self.__class__.__name__}"
+            raise TypeError(
+                f"Other of type {other.__class__.__name__} can not be compared with an Instance."
             )
-            return NotImplemented
+        else:
+            return self.fitness > other.fitness
 
-        return self.fitness > other.fitness
+    def __ge__(self, other: Self) -> bool | np.bool:
+        """Compares two Instances based on their fitness.
 
-    def __ge__(self, other):
+        Args:
+            other (Self): Another instance to compare.
+
+        Returns:
+            bool: Returns True if the self has a greater or equal fitness
+            than the other. Returns False otherwise.
+        """
         if not isinstance(other, Instance):
-            print(
-                f"Other of type {other.__class__.__name__} can not be compared with with {self.__class__.__name__}"
+            raise TypeError(
+                f"Other of type {other.__class__.__name__} can not be compared with an Instance."
             )
-            return NotImplemented
+        else:
+            return self.fitness >= other.fitness
 
-        return self.fitness >= other.fitness
-
+    @deprecated("To be removed")
     def __hash__(self):
         from functools import reduce
 
         hashes = (hash(x) for x in self)
         return reduce(operator.or_, hashes, 0)
 
-    def __bool__(self):
-        return self._vars.size != 0
-
-    def __format__(self, fmt_spec=""):
-        if fmt_spec.endswith("p"):
-            # We are showing only the performances
-            fmt_spec = fmt_spec[:-1]
-            components = self.portfolio_scores
-        else:
-            fmt_spec = fmt_spec[:-1]
-            components = self.descriptor
-
-        components = (format(c, fmt_spec) for c in components)
-        decriptor = "descriptor=({})".format(",".join(components))
-        msg = f"Instance(f={self.fitness},p={format(self.p, fmt_spec)}, s={format(self.s, fmt_spec)}, {decriptor})"
-
-        return msg
-
-    def asdict(
+    def to_dict(
         self,
         variables_names: Optional[Sequence[str]] = None,
+        descriptor_names: Optional[Sequence[str]] = None,
         portfolio_names: Optional[Sequence[str]] = None,
     ) -> dict:
-        """Convert the instance to a dictionary. The keys are the names of the attributes
-        and the values are the values of the attributes.
+        """Convert the instance to a dictionary.
+
+        The keys are the names of the attributes and the values are the values of the attributes.
 
         Args:
-            variables_names (Optional[Sequence[str]], optional): Names of the variables in the dictionary, otherwise v_i. Defaults to None.
-            portfolio_names (Optional[Sequence[str]], optional): Name of the solvers, otherwise solver_i. Defaults to None.
+            variables_names   (Optional[Sequence[str]], optional): Names of the variables in the dictionary, otherwise v_i. Defaults to None.
+            descriptor_names: (Optional[Sequence[str]], optional): Names of the components of the descriptor, otherwisde di. Default to None.
+            portfolio_names   (Optional[Sequence[str]], optional): Name of the solvers, otherwise solver_i. Defaults to None.
 
         Returns:
             dict: Dictionary with the attributes of the instance as keys and the values of the attributes as values.
         """
-        _data = {}
-        if variables_names is not None and len(variables_names) == len(self._vars):
-            _data["variables"] = {vk: v for vk, v in zip(variables_names, self._vars)}
-        else:
-            _data["variables"] = {f"v{i}": v for i, v in enumerate(self._vars)}
+        _instance_data = {}
 
-        if portfolio_names is not None and len(portfolio_names) == len(self._pscores):
-            _data["portfolio_scores"] = {
-                sk: v for sk, v in zip(portfolio_names, self._pscores)
-            }
-        else:
-            _data["portfolio_scores"] = {
-                f"solver_{i}": v
-                for i, v in zip(range(len(self._pscores)), self._pscores)
-            }
-
-        _data = {
-            "target": portfolio_names[0] if portfolio_names is not None else "solver_0",
-            "fitness": self._fit,
-            "s": self._s,
-            "p": self._p,
-            **{f"d{i}": v for i, v in enumerate(self._desc)},
-            **_data,
+        descriptor_names = validate_column_names(
+            "descriptor", descriptor_names, len(self._descriptor), fallback_keyword="d"
+        )
+        _instance_data = {
+            **{key: value for key, value in zip(descriptor_names, self._descriptor)}
         }
-        return _data
+
+        variables_names = validate_column_names(
+            "variables_names", variables_names, len(self), fallback_keyword="v"
+        )
+        _instance_data["variables"] = {
+            key: value for key, value in zip(variables_names, self._variables)
+        }
+
+        portfolio_names = validate_column_names(
+            "portfolio_names",
+            portfolio_names,
+            len(self.portfolio_scores),
+            fallback_keyword="alg",
+        )
+        _instance_data["portfolio_scores"] = {
+            key: value for key, value in zip(portfolio_names, self._portfolio_scores)
+        }
+
+        _instance_data = {
+            "target": portfolio_names[0],
+            "fitness": self._fitness,
+            "novelty": self._novelty,
+            "performance_bias": self._performance_bias,
+            **_instance_data,
+        }
+        return _instance_data
 
     def to_json(self) -> str:
-        """Convert the instance to a JSON string. The keys are the names of the attributes
-        and the values are the values of the attributes.
+        """Convert the instance to a JSON string.
+
+        The keys are the names of the attributes and the values are the values of the attributes.
 
         Returns:
             str: JSON string with the attributes of the instance as keys and the values of the attributes as values.
         """
         import json
 
-        return json.dumps(self.asdict(), sort_keys=True, indent=4)
+        # Todo: Need to change dtypes because np is not JSON serializable
+        return json.dumps(self.to_dict(), sort_keys=False, indent=2)
 
-    def to_lazyframe(
+    def to_df(
         self,
         variables_names: Optional[Sequence[str]] = None,
+        descriptor_names: Optional[Sequence[str]] = None,
         portfolio_names: Optional[Sequence[str]] = None,
-    ) -> pl.LazyFrame:
-        """Creates a Polars LazyFrame from the instance.
+    ) -> pl.DataFrame:
+        """Creates a Polars DataFrame from the instance.
 
         Args:
             variables_names (Optional[Sequence[str]], optional): Names of the variables in the dictionary, otherwise v_i. Defaults to None.
+            descriptor_names: (Optional[Sequence[str]], optional): Names of the components of the descriptor, otherwisde di. Default to None.
             portfolio_names (Optional[Sequence[str]], optional): Name of the solvers, otherwise solver_i. Defaults to None.
 
         Returns:
-            pl.Series: Polars LazyFrame with the attributes of the instance as keys and the values of the attributes as values.
+            DataFrame: Polars DataFrame with the attributes of the instance as keys and the values of the attributes as values.
         """
         _flatten_data = {}
-        for key, value in self.asdict(
+        for key, value in self.to_dict(
             variables_names=variables_names,
+            descriptor_names=descriptor_names,
             portfolio_names=portfolio_names,
         ).items():
             if isinstance(value, dict):  # Flatten nested dicts
                 for sub_key, sub_value in value.items():
-                    _flatten_data[f"{sub_key}"] = sub_value
+                    _flatten_data[sub_key] = sub_value
             else:
                 _flatten_data[key] = value
-        return pl.LazyFrame(_flatten_data)
+        return pl.DataFrame(_flatten_data)

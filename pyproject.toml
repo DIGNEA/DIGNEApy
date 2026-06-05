@@ -121,7 +121,6 @@ build = [
 ]
 
 test-skip = "*"
-#before-test = "python -m pip install -r requirements.txt && python -m pip install -r requirements_dev.txt"
 test-requires = "pytest"
 test-command = "pytest -W ignore::ImportWarning -W ignore::DeprecationWarning -W ignore::UserWarning {project}/tests"
 build-verbosity = 1
@@ -137,12 +136,16 @@ yum install -y gcc-c++ cmake python3-devel \
 repair-wheel-command = "auditwheel repair -w {dest_dir} {wheel}"
 
 
-[tool.pytest]
+[tool.pytest.ini_options]
 filterwarnings = [
     'ignore:.*U.*mode is deprecated:DeprecationWarning',
     'ignore:__array__ implementation doesn.*t accept a copy keyword:DeprecationWarning',
 ]
 pythonpath = ["."]
+python_files = "test_*.py"
+python_functions = "test_*"
+addopts = "-v --cov-report term-missing --cov=digneapy"
+markers = "style"
 
 [tool.ruff]
 # Exclude a variety of commonly ignored directories.
@@ -183,9 +186,7 @@ indent-width = 4
 target-version = "py314"
 
 [tool.ruff.lint]
-# Enable Pyflakes (`F`) and a subset of the pycodestyle (`E`)  codes by default.
-# Unlike Flake8, Ruff doesn't enable pycodestyle warnings (`W`) or
-# McCabe complexity (`C901`) by default.
+
 select = ["E4", "E7", "E9", "F", "I", "NPY201"]
 ignore = []
 
@@ -223,6 +224,12 @@ docstring-code-format = false
 # enabled.
 docstring-code-line-length = "dynamic"
 
+[tool.ruff.lint.isort]
+known-first-party = ["digneapy"]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
 [tool.coverage.run]
 omit = [
     "digneapy/transformers/*",
@@ -237,6 +244,7 @@ exclude_also = [
     'raise NotImplementedError',
     '@(abc\.)?abstractmethod',
     "class PlottedMapElites",
+    "@deprecated",
 ]
 
 [tool.pyrefly]

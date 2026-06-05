@@ -50,7 +50,7 @@ def sample_problem():
 
 
 def test_problem_methods(sample_problem):
-    assert sample_problem.__name__ == "DefaultProblem"
+    assert sample_problem.__name__ == "Problem"
     assert sample_problem.dimension == 100
     assert len(sample_problem) == 100
     expected_bounds = list((0, 10) for _ in range(100))

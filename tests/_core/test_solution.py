@@ -17,23 +17,6 @@ from numpy.testing import assert_equal
 from digneapy import Solution
 
 
-@pytest.fixture
-def default_solution():
-    rng = np.random.default_rng(42)
-    return Solution(
-        variables=rng.integers(low=0, high=100, size=100),
-        objectives=(
-            rng.uniform(low=0, high=10),
-            rng.uniform(low=0, high=10),
-        ),
-        constraints=(
-            rng.uniform(low=0, high=10),
-            rng.uniform(low=0, high=10),
-        ),
-        fitness=rng.uniform(low=0.0, high=100.0, dtype=np.float64),
-    )
-
-
 def test_solution_attrs():
     dimension = 10
     solution = Solution(

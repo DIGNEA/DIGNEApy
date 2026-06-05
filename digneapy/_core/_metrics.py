@@ -54,12 +54,14 @@ def qd_score_auc(qd_scores: np.ndarray, batch_size: int) -> np.float64:
 
 class Statistics:
     def __init__(self):
-        self._stats_s = tools.Statistics(key=attrgetter("s"))
-        self._stats_p = tools.Statistics(key=attrgetter("p"))
-        self._stats_f = tools.Statistics(key=attrgetter("fitness"))
+        self._stats_novelty = tools.Statistics(key=attrgetter("novelty"))
+        self._stats_perf_bias = tools.Statistics(key=attrgetter("performance_bias"))
+        self._stats_fitness = tools.Statistics(key=attrgetter("fitness"))
 
         self._stats = tools.MultiStatistics(
-            s=self._stats_s, p=self._stats_p, fitness=self._stats_f
+            novelty=self._stats_novelty,
+            performance_bias=self._stats_perf_bias,
+            fitness=self._stats_fitness,
         )
         self._stats.register("mean", np.mean)
         self._stats.register("std", np.std)
@@ -67,30 +69,33 @@ class Statistics:
         self._stats.register("max", np.max)
         self._stats.register("qd_score", np.sum)
 
-    def __call__(
-        self, population: Sequence[Instance] | Archive, as_dataframe: bool = False
-    ) -> Mapping | pl.DataFrame:
-        """Calculates the statistics of the population.
+    def __call__(self, instances: Sequence[Instance] | Archive) -> Mapping:
+        """Compiles the statistics of the population or Archive.
+
         Args:
-            as_dataframe (Sequence[Instance]): List of instances to calculate the statistics.
-            as_series (bool): Whether to build a Polars DataFrame or not. Default False.
+            instances (Sequence[Instance] | Archive): Instances to extract metrics.
+
+        Raises:
+            ValueError: If instances or archive are empty.
+            TypeError: If any object in instances/archive are not an Instance or subclass of Instance.
+
         Returns:
-            Mapping | pl.DataFrame: Statistics of the population.
+            Mapping: Dict with the metrics of the instances
         """
 
-        if len(population) == 0:
+        if instances is None or len(instances) == 0:
             raise ValueError(
-                "Error: Trying to calculate the metrics with an empty population"
+                f"Trying to calculate the metrics with an empty instances or None. Got: {instances}."
             )
-        if any(not isinstance(ind, Instance) for ind in population):
+        if any(not isinstance(ind, Instance) for ind in instances):
             raise TypeError(
-                f"Error: Population must be a sequence of Instance objects got: {population}\n{type(population[0])}"
+                f"Instances must be a sequence of Instance objects got: {instances}\n{type(instances[0])}."
             )
+        # ignore np.inf values which can occur in early steps
         with np.errstate(invalid="ignore"):
-            record = self._stats.compile(
-                population
-            )  # ignore np.inf values which can occur in early steps
-            if as_dataframe:
+            record = self._stats.compile(instances)
+            return record
+            """ if as_dataframe:
                 _flatten_record = {}
                 for key, value in record.items():
                     if isinstance(value, dict):  # Flatten nested dicts
@@ -100,7 +105,7 @@ class Statistics:
                         _flatten_record[key] = value
                 return pl.from_dict(_flatten_record)
             else:
-                return record
+                return record """
 
 
 class Logbook(tools.Logbook):
@@ -109,7 +114,7 @@ class Logbook(tools.Logbook):
     def __init__(self):
         super().__init__()
         self._statistics = Statistics()
-        self.header = "gen", "s", "p", "fitness"
+        self.header = "generation", "novelty", "performance bias", "fitness"
         self._chapters_headers = (
             "min",
             "mean",
@@ -117,42 +122,46 @@ class Logbook(tools.Logbook):
             "max",
             "qd_score",
         )
-        self.chapters["s"].header = self._chapters_headers[:-1]
-        self.chapters["p"].header = self._chapters_headers
+        self.chapters["novelty"].header = self._chapters_headers[:-1]
+        self.chapters["performance_bias"].header = self._chapters_headers
         self.chapters["fitness"].header = self._chapters_headers
 
     def update(
         self,
         generation: int,
-        population: Sequence[Instance] | Archive,
+        instances: Sequence[Instance] | Archive,
         feedback: bool = False,
     ):
         if generation < 0:
             raise ValueError(
-                f"generation value {generation} must be greater than zero in Logbook.update()"
+                f"generation value {generation} must be greater than zero in Logbook update."
             )
-        self.record(gen=generation, **self._statistics(population, as_dataframe=False))
+        # Checks for None, empty and not isinstance() delegated to Statistics
+        self.record(generation=generation, **self._statistics(instances))
         if feedback:  # pragma: no cover
             print(self.stream)
 
     def to_df(self) -> pl.DataFrame:
         fitness = pl.from_dicts(self.chapters["fitness"], schema=self._chapters_headers)
-        diversity = pl.from_dicts(self.chapters["s"], schema=self._chapters_headers)
-        performance = pl.from_dicts(self.chapters["p"], schema=self._chapters_headers)
-        generations = pl.Series("generation", self.select("gen"))
+        novelty = pl.from_dicts(self.chapters["novelty"], schema=self._chapters_headers)
+        performance = pl.from_dicts(
+            self.chapters["performance_bias"], schema=self._chapters_headers
+        )
+        generations = pl.Series("generation", self.select("generation"))
+
         df = (
             fitness
             .rename({h: f"{h}_fitness" for h in self._chapters_headers})
             .with_columns(generations)
             .join(
-                diversity.rename({
-                    h: f"{h}_diversity" for h in self._chapters_headers
+                novelty.rename({
+                    h: f"{h}_novelty" for h in self._chapters_headers
                 }).with_columns(generations),
                 on="generation",
             )
             .join(
                 performance.rename({
-                    h: f"{h}_performance" for h in self._chapters_headers
+                    h: f"{h}_performance_bias" for h in self._chapters_headers
                 }).with_columns(generations),
                 on="generation",
             )

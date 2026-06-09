@@ -22,7 +22,7 @@ from .._core import (
     Instance,
     Solver,
 )
-from .._core.scores import PerformanceFn, max_gap_target
+from .._core.scores import PerformanceFn, maximise_perf_gap_easy
 from ..archives import Archive
 from ..operators import (
     UCX,
@@ -48,7 +48,7 @@ class Evolutionary(BaseGenerator):
         pop_size: np.uint32,
         archive: Archive,
         solution_set: Optional[Archive] = None,
-        performance_function: PerformanceFn = max_gap_target,
+        performance_function: PerformanceFn = maximise_perf_gap_easy,
         generations: np.uint32 = np.uint32(1000),
         repetitions: np.uint16 = np.uint16(1),
         descriptor_pipe: DescriptorPipeline = DescriptorPipeline("features"),
@@ -164,20 +164,27 @@ class Evolutionary(BaseGenerator):
 
             # Only the feasible instances are considered to be included
             # in the archive and the solution set.
-            feasible_indices = np.where(perf_biases > 0)[0]
+            # feasible_indices = np.where(perf_biases > 0)[0]
+            # self._archive.extend(
+            #     instances=[offspring[i] for i in feasible_indices],
+            #     descriptors=descriptors[feasible_indices],
+            #     novelty_scores=novelty_scores[feasible_indices],
+            #     objectives=perf_biases[feasible_indices],
+            # )
             self._archive.extend(
-                instances=[offspring[i] for i in feasible_indices],
-                descriptors=descriptors[feasible_indices],
-                novelty_scores=novelty_scores[feasible_indices],
-                objectives=perf_biases[feasible_indices],
+                instances=offspring,
+                descriptors=descriptors,
+                novelty_scores=novelty_scores,
+                objectives=perf_biases,
             )
 
             if self._solution_set is not None:
                 novelty_solution_set = self._solution_set(descriptors=descriptors)
                 self._solution_set.extend(
-                    instances=[offspring[i] for i in feasible_indices],
-                    descriptors=descriptors[feasible_indices],
-                    novelty_scores=novelty_solution_set[feasible_indices],
+                    instances=offspring,
+                    descriptors=descriptors,
+                    novelty_scores=novelty_solution_set,
+                    objectives=perf_biases,
                 )
 
             # However the whole offspring population is used in the replacement operator
@@ -266,7 +273,7 @@ class ES(BaseGenerator):
         archives: Sequence[Archive],
         keep_only_feasible: bool = True,
         sigma: float = 0.5,
-        performance_function: PerformanceFn = max_gap_target,
+        performance_function: PerformanceFn = maximise_perf_gap_easy,
         generations: np.uint32 = np.uint32(1_000),
         repetitions: np.uint16 = np.uint16(1),
         descriptor_pipe: DescriptorPipeline = DescriptorPipeline("instance"),

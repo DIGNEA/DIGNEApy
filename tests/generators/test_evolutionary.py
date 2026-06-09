@@ -16,7 +16,12 @@ from pathlib import Path
 import numpy as np
 import pytest
 
-from digneapy import DescriptorPipeline, Domain, GridArchive, max_gap_target
+from digneapy import (
+    DescriptorPipeline,
+    Domain,
+    GridArchive,
+    maximise_perf_gap_easy,
+)
 from digneapy.archives import UnstructuredArchive
 from digneapy.domains import BPPDomain, KnapsackDomain, TSPDomain
 from digneapy.generators import ES, Evolutionary
@@ -70,7 +75,7 @@ def test_default_generator(descriptor):
         pop_size=100,
         domain=KnapsackDomain(),
         portfolio=[default_kp],
-        archive=UnstructuredArchive(k=15, threshold=1.0),
+        archive=UnstructuredArchive(k=15, novelty_threshold=1.0),
         descriptor_pipe=descriptor_pipeline,
     )
     assert eig._pop_size == 100
@@ -89,14 +94,14 @@ def test_default_generator(descriptor):
     assert isinstance(eig.replacement, Replacement)
     assert np.isclose(eig.phi, 0.85)
     assert eig._performance_fn is not None
-    assert eig._performance_fn == max_gap_target
+    assert eig._performance_fn == maximise_perf_gap_easy
 
     with pytest.raises(ValueError) as e:
         _ = Evolutionary(
             pop_size=100,
             domain=None,
             portfolio=[default_kp],
-            archive=UnstructuredArchive(k=15, threshold=1.0),
+            archive=UnstructuredArchive(k=15, novelty_threshold=1.0),
             descriptor_pipe=descriptor_pipeline,
         )
     assert e.value.args[0] == "BaseGenerator: Invalid domain. Got None."
@@ -106,7 +111,7 @@ def test_default_generator(descriptor):
             pop_size=100,
             domain=KnapsackDomain(),
             portfolio=tuple(),
-            archive=UnstructuredArchive(k=15, threshold=1.0),
+            archive=UnstructuredArchive(k=15, novelty_threshold=1.0),
             descriptor_pipe=descriptor_pipeline,
         )
     assert (
@@ -119,7 +124,7 @@ def test_default_generator(descriptor):
             pop_size=100,
             domain=KnapsackDomain(),
             portfolio=[default_kp],
-            archive=UnstructuredArchive(k=15, threshold=1.0),
+            archive=UnstructuredArchive(k=15, novelty_threshold=1.0),
             phi=-1.0,
         )
     assert (
@@ -131,7 +136,7 @@ def test_default_generator(descriptor):
             pop_size=100,
             domain=KnapsackDomain(),
             portfolio=[default_kp],
-            archive=UnstructuredArchive(k=15, threshold=1.0),
+            archive=UnstructuredArchive(k=15, novelty_threshold=1.0),
             phi="hello",
         )
     assert (
@@ -186,8 +191,8 @@ def test_evolutionary_generator(
         pop_size=32,
         generations=generations,
         domain=domain,
-        archive=UnstructuredArchive(k=k, threshold=3),
-        solution_set=UnstructuredArchive(k=k, threshold=3),
+        archive=UnstructuredArchive(k=k, novelty_threshold=3),
+        solution_set=UnstructuredArchive(k=k, novelty_threshold=3),
         portfolio=portfolio,
         repetitions=1,
         descriptor_pipe=descriptor_pipeline,
@@ -263,7 +268,7 @@ def test_evolutionary_strategy(
         portfolio=portfolio,
         lambda_=32,
         archives=[
-            UnstructuredArchive(k=k, threshold=1.0),
+            UnstructuredArchive(k=k, novelty_threshold=1.0),
             GridArchive(dimensions=(100,) * 2, ranges=[(-30.0, 10.0), (-30.0, 10.0)]),
         ],
         generations=generations,

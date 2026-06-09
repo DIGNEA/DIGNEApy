@@ -12,7 +12,6 @@
 
 import operator
 from typing import Optional, Self, Sequence
-from warnings import deprecated
 
 import numpy as np
 import polars as pl
@@ -259,26 +258,68 @@ class Instance:
     def __len__(self):
         return len(self._variables)
 
-    def __getitem__(self, key: int | slice) -> Self | np.ndarray:
+    def __getitem__(self, key: int | slice) -> Sequence | np.ndarray:
         """Accessor to variables of the Instance
 
         Args:
             key (index | slice): index or slice to access a subset of variables
 
         Returns:
-            Instance (Self) or np.ndarray: If accessed with a slice, a new Instance is created
-            using the subset of variables as the variables of the new Instance. Otherwise, it
-            returns variables[i]
+            Sequence or np.ndarray: If accessed with a slice the subset of variables
+                are returned. Otherwise, it returns a single scalar at variables[key].
         """
+        if not isinstance(key, (int, slice)):
+            raise TypeError(
+                f"Instance cannot be indexed with type: {type(key)}. Use slice or int."
+            )
         if isinstance(key, slice):
-            cls = type(self)  # To facilitate subclassing
-            return cls(self._variables[key])
+            return self._variables[key]
         else:
             index = operator.index(key)
-            return self._variables[index]
+            return self.variables[index]
 
     def __setitem__(self, key: int | slice, value):
-        # Todo: Need to update the tests of ths functions
+        """Setter to variables of the Instance
+
+        Args:
+            key (int | slice): index or slice to access a subset of variables
+            value: Value to set in the variables
+
+        """
+        if not isinstance(key, (int, slice)):
+            raise TypeError(
+                f"Instance cannot be update via __setitem__ with type: {type(key)}. Use slice or int."
+            )
+
+        if isinstance(key, slice):
+            # Compute how many positions this slice actually targets
+            start, stop, step = key.indices(len(self.variables))
+            target_count = len(range(start, stop, step))
+            # Accept any sequence; reject bare scalars for slice assignment
+            try:
+                expected_len = len(value)
+            except TypeError:
+                raise TypeError(
+                    f"[Instance] slice assignment requires a sequence, got scalar {value!r}. "
+                    f"Expected {target_count} value(s)."
+                )
+
+            if expected_len != target_count:
+                raise ValueError(
+                    f"[Instance] slice targets {target_count} element(s) but value has "
+                    f"{expected_len} element(s)."
+                )
+        else:
+            index = operator.index(key)
+            try:
+                if len(value) != 1:
+                    raise ValueError(
+                        f"[Instance] index {index!r} targets 1 element but value has "
+                        f"{len(value)} element(s). Use a slice to assign multiple values."
+                    )
+            except TypeError:
+                pass  # len() failed which means that we have a scalar value
+
         self._variables[key] = value
 
     def __eq__(self, other: Self) -> bool:
@@ -336,7 +377,6 @@ class Instance:
         else:
             return self.fitness >= other.fitness
 
-    @deprecated("To be removed")
     def __hash__(self):
         from functools import reduce
 

@@ -591,3 +591,167 @@ def test_instance_to_df_with_custom_names():
     # assert all(key in data.keys() for key in expected_keys)
     for key in expected_keys:
         assert key in df.columns
+
+
+def test_instance_can_be_accessed():
+    dimension = 10
+    descriptor_dim = 4
+    portfolio_dim = 4
+
+    instance = Instance(
+        variables=list(range(dimension)),
+        fitness=100.0,
+        performance_bias=1.0,
+        novelty=1.0,
+        descriptor=tuple(range(descriptor_dim)),
+        portfolio_scores=tuple(range(portfolio_dim)),
+    )
+    assert instance[0] == 0
+    assert instance[-1] == 9
+    assert_equal(instance[2:4], [2, 3])
+
+
+@pytest.mark.parametrize("index", (None, 2.5, "abc"))
+def test_instance_cannot_be_accessed_with_others(index):
+    dimension = 10
+    descriptor_dim = 4
+    portfolio_dim = 4
+
+    instance = Instance(
+        variables=list(range(dimension)),
+        fitness=100.0,
+        performance_bias=1.0,
+        novelty=1.0,
+        descriptor=tuple(range(descriptor_dim)),
+        portfolio_scores=tuple(range(portfolio_dim)),
+    )
+    with pytest.raises(TypeError):
+        _ = instance[index]
+
+
+def test_instance_can_be_accessed_and_raise():
+    dimension = 10
+    descriptor_dim = 4
+    portfolio_dim = 4
+
+    instance = Instance(
+        variables=list(range(dimension)),
+        fitness=100.0,
+        performance_bias=1.0,
+        novelty=1.0,
+        descriptor=tuple(range(descriptor_dim)),
+        portfolio_scores=tuple(range(portfolio_dim)),
+    )
+    with pytest.raises(IndexError):
+        _ = instance[1000]
+
+
+def test_instance_can_be_updated_setitem():
+    dimension = 10
+    descriptor_dim = 4
+    portfolio_dim = 4
+
+    instance = Instance(
+        variables=list(range(dimension)),
+        fitness=100.0,
+        performance_bias=1.0,
+        novelty=1.0,
+        descriptor=tuple(range(descriptor_dim)),
+        portfolio_scores=tuple(range(portfolio_dim)),
+    )
+    expected = 100
+    instance[0] = expected
+    assert instance[0] == expected
+
+    instance[-1] = expected
+    assert instance[-1] == expected
+
+    expected_slice = [100, 200, 300]
+    instance[2:5] = expected_slice
+    assert_equal(instance[2:5], expected_slice)
+
+
+@pytest.mark.parametrize("index", (None, 2.5, "abc"))
+def test_instance_cannot_be_updated_with_others(index):
+    dimension = 10
+    descriptor_dim = 4
+    portfolio_dim = 4
+
+    instance = Instance(
+        variables=list(range(dimension)),
+        fitness=100.0,
+        performance_bias=1.0,
+        novelty=1.0,
+        descriptor=tuple(range(descriptor_dim)),
+        portfolio_scores=tuple(range(portfolio_dim)),
+    )
+    with pytest.raises(TypeError):
+        instance[index] = 1
+
+
+def test_instance_can_be_updated_and_raise():
+    dimension = 10
+    descriptor_dim = 4
+    portfolio_dim = 4
+
+    instance = Instance(
+        variables=list(range(dimension)),
+        fitness=100.0,
+        performance_bias=1.0,
+        novelty=1.0,
+        descriptor=tuple(range(descriptor_dim)),
+        portfolio_scores=tuple(range(portfolio_dim)),
+    )
+    with pytest.raises(IndexError):
+        instance[1000] = 100
+
+
+def test_instance_setitem_raise_slice_mismatch():
+    dimension = 10
+    descriptor_dim = 4
+    portfolio_dim = 4
+
+    instance = Instance(
+        variables=list(range(dimension)),
+        fitness=100.0,
+        performance_bias=1.0,
+        novelty=1.0,
+        descriptor=tuple(range(descriptor_dim)),
+        portfolio_scores=tuple(range(portfolio_dim)),
+    )
+    with pytest.raises(ValueError):
+        instance[1:3] = [10, 20, 30]
+
+
+def test_instance_setitem_raise_slice_and_scalar_value():
+    dimension = 10
+    descriptor_dim = 4
+    portfolio_dim = 4
+
+    instance = Instance(
+        variables=list(range(dimension)),
+        fitness=100.0,
+        performance_bias=1.0,
+        novelty=1.0,
+        descriptor=tuple(range(descriptor_dim)),
+        portfolio_scores=tuple(range(portfolio_dim)),
+    )
+    with pytest.raises(TypeError):
+        instance[1:3] = 100
+
+
+def test_instance_setitem_raise_index_and_slice_value():
+    dimension = 10
+    descriptor_dim = 4
+    portfolio_dim = 4
+
+    instance = Instance(
+        variables=list(range(dimension)),
+        fitness=100.0,
+        performance_bias=1.0,
+        novelty=1.0,
+        descriptor=tuple(range(descriptor_dim)),
+        portfolio_scores=tuple(range(portfolio_dim)),
+    )
+    with pytest.raises(ValueError):
+        instance[1] = [100, 200, 300]

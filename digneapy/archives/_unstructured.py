@@ -28,11 +28,8 @@ class UnstructuredArchive(Archive):
     def __init__(
         self,
         k: np.uint32,
-        threshold: float,
+        novelty_threshold: float,
         instances: Optional[Sequence[Instance]] = None,
-        local_competition: bool = False,
-        iterations_without_improve: Optional[int] = None,
-        decay: Optional[float] = None,
         dtype=np.float64,
     ):
         """Creates an instance of a Archive (unstructured) for QD algorithms
@@ -41,9 +38,6 @@ class UnstructuredArchive(Archive):
             k (np.uint32): Number of neighbours for KNN.
             threshold (float): Minimum value of sparseness to include an Instance into the archive.
             instances (Optional[Sequence[Instance]], optional): Instances to initialise the archive. Defaults to None.
-            local_competition (bool, optional): Whether to enable Local Competition between instances in the archive. Defaults to False.
-            iterations_without_improve (Optional[int], optional): Number of iterations without updating the archive before decreasing the threshold. Defaults to None.
-            decay (Optional[float], optional): Threshold decay after X iterations without inserting instances. Defaults to None.
             dtype (_type_, optional): Defaults to np.float64.
 
         Raises:
@@ -54,35 +48,24 @@ class UnstructuredArchive(Archive):
             raise ValueError(
                 f"UnstructuredArchive expects k to be a positive integer. Got {k}"
             )
-        if type(threshold) not in (float, int) or threshold < 0.0:
+        if type(novelty_threshold) not in (float, int) or novelty_threshold < 0.0:
             raise ValueError(
-                f"UnstructuredArchive expects a floating point threshold >= 0. Got {threshold}"
+                f"UnstructuredArchive expects a floating point threshold >= 0. Got {novelty_threshold}"
             )
 
         super().__init__(None, dtype)
         self._k = k
-        self._threshold = float(threshold)
-        self._local_comp = local_competition
-        if iterations_without_improve is not None:
-            self._max_its_without_imp = int(iterations_without_improve)
-            self._it_without_improve = 0
-            try:
-                self._decay = float(decay)
-            except ValueError:
-                raise ValueError(
-                    "Decay must be a valid float if iterations_without_improve is not None"
-                )
+        self._threshold = float(novelty_threshold)
+        try:
+            self._obj_min_value = float(objective_min_value)
+        except ValueError:
+            raise ValueError("objective_min_value must be an integer or float value")
 
-        else:
-            self._max_its_without_imp = None
         if instances is not None and len(instances) > 0:
             descriptors = [instance.descriptor for instance in instances]
             self._tree = KDTree(np.asarray(descriptors), metric="euclidean")
             self._storage[Keys.instances].extend(instances)
             self._storage[Keys.descriptors].extend(descriptors)
-
-        else:
-            self._tree = KDTree(np.zeros((2, 2)), metric="euclidean")
 
     @property
     def k(self):
@@ -97,7 +80,7 @@ class UnstructuredArchive(Archive):
         if isinstance(key, slice):
             return UnstructuredArchive(
                 k=self._k,
-                threshold=self._threshold,
+                novelty_threshold=self._threshold,
                 instances=self._storage[Keys.instances][key],
             )
         index = operator.index(key)
@@ -125,30 +108,26 @@ class UnstructuredArchive(Archive):
         Returns:
             np.ndarray: novelty scores (s) of the instances descriptors
         """
-
         num_instances = len(descriptors)
         num_archive = len(self)
-        # We compute the distances between the descriptors in the current batch and those stored inside the archive
-        # If the archive is empty (num_archive == 0), then we compute the novelty within the batch only.
-        effective_k = min((num_archive + num_instances) - 1, self._k)
-        combined = (
-            np.vstack([descriptors, self._storage[Keys.descriptors]])
-            if num_archive > 0
-            else descriptors
-        )
-        distances = cdist(descriptors, combined)
-        # We set the diagonal to INF to avoid select d(i,i) = 0 in partition
-        np.fill_diagonal(distances, np.inf)
-        knn = np.partition(distances, effective_k - 1, axis=1)[:, :effective_k]
-        novelty_scores = np.mean(knn, axis=1)
-        return novelty_scores
+        if num_archive == 0:
+            return np.full(num_instances, fill_value=self._threshold)
+
+        else:
+            effective_k = min((num_archive + num_instances) - 1, self._k)
+            distances = cdist(
+                descriptors, np.vstack([descriptors, self._storage[Keys.descriptors]])
+            )
+            np.fill_diagonal(distances, np.inf)
+            knn = np.partition(distances, effective_k, axis=1)[:, : effective_k + 1]
+            novelty = np.mean(knn, axis=1)
+            return novelty
 
     def extend(
         self,
         instances: Sequence[Instance],
         novelty_scores: np.ndarray,
         descriptors: Optional[np.ndarray] = None,
-        objectives: Optional[np.ndarray] = None,
     ):
         """Extends the current archive with all the individuals inside iterable that have
         a sparseness value greater than the archive threshold.
@@ -157,77 +136,13 @@ class UnstructuredArchive(Archive):
             instances (Sequence[Instance]): Sequence of instances to be include in the archive.
             novelty_scores (Optional[np.ndarray], optional): Novelty scores of the instances. Defaults to None.
             descriptors (Optional[np.ndarray], optional): Descriptors of the instances. Defaults to None.
-            objectives (Optional[np.ndarray], optional): Objectives of the instances, used when local_competition is True. Defaults to None.
 
         """
-        if self._local_comp and objectives is None:
-            objectives = np.asarray([instance.p for instance in instances])
         if descriptors is None:
             descriptors = np.asarray([instance.descriptor for instance in instances])
-
+        
         novel_enough_mask = novelty_scores >= self._threshold
-        not_novel_mask = ~novel_enough_mask
-
-        novel_indices = np.where(novel_enough_mask)[0].astype(np.int32)
-        # The only invariant I need to maintain is:
-        # The KDTree is always built from np.array(self._descriptors), and _descriptors[i] always corresponds to _instances[i].
-        # This means two rules:
-        # Append to both lists together, atomically — never one without the other.
-        # Rebuild the tree immediately after any mutation — which you already do at the end of extend.
-        for idx in novel_indices:
+        valid_instances = np.where(novel_enough_mask)[0].astype(np.int32)
+        for idx in valid_instances:
             self._storage[Keys.instances].append(instances[idx])
             self._storage[Keys.descriptors].append(descriptors[idx])
-
-        if self._local_comp and np.any(not_novel_mask) and len(self) > 0:
-            not_novel_indices = np.where(not_novel_mask)[0].astype(np.int32)
-            not_novel_descriptors = descriptors[not_novel_mask]
-            not_novel_objectives = objectives[not_novel_mask]
-
-            # Find each candidate's nearest neighbour in the current archive
-            archive_objectives = np.array([
-                instance.p for instance in self._storage[Keys.instances]
-            ])
-
-            _, nn_positions = self._tree.query(not_novel_descriptors, k=1)
-            nn_positions = nn_positions[:, 0]  # position in tree == archive list index
-            current_objectives = archive_objectives[nn_positions]
-
-            # Keep only candidates that strictly improve their neighbours
-            improves = not_novel_objectives > current_objectives  # shape (n_not_novel,)
-            if np.any(improves):
-                improving_candidates = not_novel_indices[improves]
-                improving_descriptors = not_novel_descriptors[improves]
-                improving_objectives = not_novel_objectives[improves]
-                target_indices = nn_positions[improves]
-
-                # When multiple candidates target the same slot, keep the best one
-                # Build a dict: archive_key == best (candidate_idx, objective, descriptor)
-                best_per_slot: dict[int, tuple] = {}
-                for cand_idx, desc, obj, slot_key in zip(
-                    improving_candidates,
-                    improving_descriptors,
-                    improving_objectives,
-                    target_indices,
-                    strict=True,
-                ):
-                    if (
-                        slot_key not in best_per_slot
-                        or obj > best_per_slot[slot_key][2]
-                    ):
-                        best_per_slot[slot_key] = (cand_idx, desc, obj)
-                for slot_key, (cand_idx, desc, _) in best_per_slot.items():
-                    self._storage[Keys.instances][slot_key] = instances[cand_idx]
-                    self._storage[Keys.descriptors][slot_key] = desc
-        if len(self) > 0:
-            # The tree rebuild is what re-establishes the mapping after any mutation
-            self._tree = KDTree(
-                np.asarray(self._storage[Keys.descriptors]),
-                metric="euclidean",
-            )
-        if self._max_its_without_imp is not None:
-            self._it_without_improve = (
-                self._it_without_improve + 1 if len(novel_indices) == 0 else 0
-            )
-            if self._it_without_improve == self._max_its_without_imp:
-                self._it_without_improve = 0
-                self._threshold = max(0.01, self._threshold * self._decay)

@@ -34,13 +34,17 @@ def qd_score(instances_fitness: np.ndarray) -> np.float64:
 
 
 def qd_score_auc(qd_scores: np.ndarray, batch_size: int) -> np.float64:
-    """Calculates the Quantifying Efficiency in Quality Diversity Optimization
+    """Calculates the Quantifying Efficiency in Quality Diversity Optimization.
+
+
     In quality diversity (QD) optimization, the QD score is a holistic
     metric which sums the objective values of all cells in the archive.
-    Since the QD score only measures the performance of a QD algorithm at a single point in time, it fails to reflect algorithm efficiency.
-    Two algorithms may have the same QD score even though one
-    algorithm achieved that score with fewer evaluations. We propose
-    a metric called “QD score AUC” which quantifies this efficiency.
+
+    Since the QD score only measures the performance of a QD algorithm
+    at a single point in time, it fails to reflect algorithm efficiency.
+    Two algorithms may have the same QD score even though one algorithm
+    achieved that score with fewer evaluations.
+    We propose a metric called “QD score AUC” which quantifies this efficiency.
 
     Args:
         qd_scores (Sequence[float]): Sequence of QD scores.

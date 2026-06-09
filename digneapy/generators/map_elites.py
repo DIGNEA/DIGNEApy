@@ -22,7 +22,7 @@ from .._core import (
     Solver,
 )
 from .._core.descriptors import DescriptorPipeline
-from .._core.scores import PerformanceFn, max_gap_target
+from .._core.scores import PerformanceFn, maximise_perf_gap_easy
 from ..archives import CVTArchive, GridArchive
 from ..operators import (
     BatchUMut,
@@ -44,7 +44,7 @@ class MapElites(BaseGenerator):
         mutation: Mutation = BatchUMut(seed=None),
         repetitions: np.uint16 = np.uint16(1),
         describe_pipe: DescriptorPipeline = DescriptorPipeline("features"),
-        performance_function: PerformanceFn = max_gap_target,
+        performance_function: PerformanceFn = maximise_perf_gap_easy,
         generations: np.uint32 = np.uint32(1_000),
         seed: Optional[int | np.random.SeedSequence] = None,
     ):
@@ -115,7 +115,7 @@ class MapElites(BaseGenerator):
                 fitness=perf_biases[i],  # In MapElites fitness == performance_bias (p)
                 descriptor=descriptors[i],
                 portfolio_scores=portfolio_scores[i],
-                p=perf_biases[i],
+                performance_bias=perf_biases[i],
             )
             for i in range(len(offspring))
         ]
@@ -139,7 +139,7 @@ class MapElites(BaseGenerator):
                 fitness=perf_biases[i],
                 descriptor=descriptors[i],
                 portfolio_scores=portfolio_scores[i],
-                p=perf_biases[i],
+                performance_bias=perf_biases[i],
             )
             for i in range(len(instances))
         ]

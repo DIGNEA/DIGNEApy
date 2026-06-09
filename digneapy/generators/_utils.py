@@ -90,9 +90,9 @@ def cast_to_instances(
             variables=genotypes[i],
             fitness=fitness[i],
             descriptor=descriptors[i],
-            p=bias_score[i],
+            performance_bias=bias_score[i],
             portfolio_scores=portfolio_scores[i],
-            s=diversity_scores[i],
+            novelty=diversity_scores[i],
         )
         for i in range(expected)
     ]

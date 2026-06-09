@@ -11,9 +11,8 @@
 """
 
 import operator
-from collections.abc import Iterable
+from collections.abc import Iterable, Sequence
 from typing import Optional, Self
-from warnings import deprecated
 
 import numpy as np
 
@@ -191,25 +190,66 @@ class Solution:
 
         return self.fitness > other.fitness
 
-    @deprecated("Accessor by [] to be removed.")
-    def __getitem__(self, key: int | slice):
+    def __getitem__(self, key: int | slice) -> Sequence | np.ndarray:
         """Accessor to variables of the Solution
 
         Args:
             key (int | slice): index or slice to access a subset of variables
 
         Returns:
-            Solution (Self) or np.ndarray: If accessed with a slice, a new Solution is created
-            using the subset of variables as the variables of the new Solution. Otherwise, it
-            returns variables[i]
+            Sequence or np.ndarray: If accessed with a slice the subset of variables
+                are returned. Otherwise, it returns a single scalar at variables[key].
         """
+        if not isinstance(key, (int, slice)):
+            raise TypeError(
+                f"Solution cannot be indexed with type: {type(key)}. Use slice or int."
+            )
         if isinstance(key, slice):
-            cls = type(self)  # To facilitate subclassing
-            return cls(self.variables[key])
+            return self._variables[key]
         else:
             index = operator.index(key)
             return self.variables[index]
 
-    @deprecated("Accessor by [] to be removed.")
     def __setitem__(self, key: int | slice, value):
-        self.variables[key] = value
+        """Setter to variables of the Solution
+
+        Args:
+            key (int | slice): index or slice to access a subset of variables
+            value: Value to set in the variables
+
+        """
+        if not isinstance(key, (int, slice)):
+            raise TypeError(
+                f"Solution cannot be update via __setitem__ with type: {type(key)}. Use slice or int."
+            )
+
+        if isinstance(key, slice):
+            # Compute how many positions this slice actually targets
+            start, stop, step = key.indices(len(self.variables))
+            target_count = len(range(start, stop, step))
+            # Accept any sequence; reject bare scalars for slice assignment
+            try:
+                expected_len = len(value)
+            except TypeError:
+                raise TypeError(
+                    f"[Solution] slice assignment requires a sequence, got scalar {value!r}. "
+                    f"Expected {target_count} value(s)."
+                )
+
+            if expected_len != target_count:
+                raise ValueError(
+                    f"[Solution] slice targets {target_count} element(s) but value has "
+                    f"{expected_len} element(s)."
+                )
+        else:
+            index = operator.index(key)
+            try:
+                if len(value) != 1:
+                    raise ValueError(
+                        f"[Solution] index {index!r} targets 1 element but value has "
+                        f"{len(value)} element(s). Use a slice to assign multiple values."
+                    )
+            except TypeError:
+                pass  # len() failed which means that we have a scalar value
+
+        self._variables[key] = value

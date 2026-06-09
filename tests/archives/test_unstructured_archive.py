@@ -35,7 +35,7 @@ def random_population():
             descriptor=features[i],
             portfolio_scores=performances[i],
             fitness=performances[i][0],
-            p=performances[i][0],
+            performance_bias=performances[i][0],
         )
         for i in range(N_INSTANCES)
     ]
@@ -52,18 +52,18 @@ def default_archive():
         )
         for _ in range(N_INSTANCES)
     ]
-    return UnstructuredArchive(threshold=0.0, k=1, instances=instances)
+    return UnstructuredArchive(novelty_threshold=0.0, k=1, instances=instances)
 
 
 @pytest.fixture
 def empty_archive():
-    return UnstructuredArchive(threshold=0.0, k=1)
+    return UnstructuredArchive(novelty_threshold=0.0, k=1)
 
 
 @pytest.mark.parametrize("k", [3, 15, 30])
 @pytest.mark.parametrize("threshold", [0.01, 1.0, 5.0, 10.0])
 def test_default_empty_archive(k, threshold):
-    archive = UnstructuredArchive(threshold=threshold, k=k)
+    archive = UnstructuredArchive(novelty_threshold=threshold, k=k)
     assert archive.k == k
     assert len(archive) == 0
 
@@ -133,16 +133,16 @@ def test_archive_repr(default_archive):
 
 @pytest.mark.parametrize("threshold", [0.01, 1.0, 5.0, 10.0])
 def test_archive_extend(threshold):
-    empty_archive = UnstructuredArchive(k=1, threshold=threshold)
+    empty_archive = UnstructuredArchive(k=1, novelty_threshold=threshold)
     rng = np.random.default_rng()
     scores = rng.uniform(low=threshold - 0.5, high=threshold + 1.5, size=N_INSTANCES)
     instances = [
         Instance(
             variables=np.arange(DIMENSION),
             fitness=0.0,
-            p=0.0,
+            performance_bias=0.0,
             descriptor=np.arange(N_FEATURES),
-            s=scores[i],
+            novelty=scores[i],
         )
         for i in range(N_INSTANCES)
     ]
@@ -153,13 +153,13 @@ def test_archive_extend(threshold):
 
 def test_unstructured_archive_raises():
     with pytest.raises(ValueError) as k_error:
-        _ = UnstructuredArchive(k=-10, threshold=1.0)
+        _ = UnstructuredArchive(k=-10, novelty_threshold=1.0)
     assert "UnstructuredArchive expects k to be a positive integer. Got -10" in str(
         k_error.value
     )
 
     with pytest.raises(ValueError) as k_error:
-        _ = UnstructuredArchive(k=10, threshold=-1.0)
+        _ = UnstructuredArchive(k=10, novelty_threshold=-1.0)
     assert (
         "UnstructuredArchive expects a floating point threshold >= 0. Got -1.0"
         in str(k_error.value)
@@ -171,7 +171,7 @@ def test_unstructured_archive_raises():
 def test_unstructured_archive_random_instances_and_k_and_threshold(
     k, threshold, random_population
 ):
-    archive = UnstructuredArchive(threshold=threshold, k=k)
+    archive = UnstructuredArchive(novelty_threshold=threshold, k=k)
     descriptors = np.asarray([instance.descriptor for instance in random_population])
     assert descriptors.shape == (N_INSTANCES, N_FEATURES)
 
@@ -181,84 +181,9 @@ def test_unstructured_archive_random_instances_and_k_and_threshold(
     assert all(score != 0.0 for score in sparseness)
 
 
-def test_unstructured_archive_decreases_threshold():
-    def generate_population():
-        N_INSTANCES = 10
-        N_FEATURES = 2
-        DIMENSION = 100
-        rng = np.random.default_rng()
-        features = rng.uniform(low=0, high=100, size=(N_INSTANCES, N_FEATURES))
-        performances = rng.random(size=(N_INSTANCES, 4), dtype=np.float64)
-        variables = rng.integers(low=0, high=100, size=(N_INSTANCES, DIMENSION))
-        instances = [
-            Instance(
-                variables=variables[i],
-                features=features[i],
-                descriptor=features[i],
-                portfolio_scores=performances[i],
-                fitness=performances[i][0],
-                p=performances[i][0],
-            )
-            for i in range(N_INSTANCES)
-        ]
-        return instances, variables, features, performances
-
-    initial_threshold = 100.0
-    decay = 0.9
-    iterations = 10
-    MAX_ITERATIONS = 1000
-    archive = UnstructuredArchive(
-        threshold=initial_threshold,
-        k=np.uint32(15),
-        local_competition=False,
-        iterations_without_improve=iterations,
-        decay=decay,
-    )
-    for _ in range(MAX_ITERATIONS):
-        instances, _, descriptors, performances = generate_population()
-        scores = archive.compute_novelty(descriptors)
-        archive.extend(instances, scores, descriptors, performances[:, 0])
-
-    assert archive.threshold < initial_threshold
-    assert archive.threshold > 0.0
-    assert len(archive) != 0
-
-
-def test_unstructured_archive_local_competition(random_population):
-    archive = UnstructuredArchive(
-        threshold=100.0,
-        k=np.uint32(15),
-        local_competition=True,
-    )
-    descriptors = np.asarray([instance.descriptor for instance in random_population])
-    performances = np.asarray([instance.p for instance in random_population])
-    scores = archive.compute_novelty(descriptors)
-    archive.extend(
-        instances=random_population,
-        novelty_scores=scores,
-        descriptors=descriptors,
-        objectives=performances,
-    )
-
-    assert len(archive) <= len(random_population)
-    expected_len = len(archive)
-    updated_scores = archive.compute_novelty(descriptors)
-    np.testing.assert_array_equal(updated_scores, scores)
-    new_performances = np.asarray(performances, copy=True)
-    new_performances += 500.0
-    archive.extend(
-        instances=random_population,
-        novelty_scores=updated_scores,
-        descriptors=descriptors,
-        objectives=new_performances,
-    )
-    # Doesnt change, only udpates best niches
-    assert len(archive) == expected_len
-
-
 @pytest.mark.parametrize("k", [3, 15, 30])
 def test_unstructured_archive_computes_only_batch(k):
-    archive = UnstructuredArchive(threshold=1.0, k=k)
+    archive = UnstructuredArchive(novelty_threshold=1.0, k=k)
     scores = archive(np.ones((k, k)))
     assert not np.array_equal(scores, np.zeros(k // 2))
 
@@ -268,7 +193,7 @@ def test_unstructured_archive_computes_only_batch(k):
 def test_unstructured_archive_doesnt_returns_zeros_if_population_smaller_than_K(
     k, threshold, random_population
 ):
-    archive = UnstructuredArchive(threshold=threshold, k=k)
+    archive = UnstructuredArchive(novelty_threshold=threshold, k=k)
     descriptors = np.asarray([
         instance.descriptor for instance in random_population[:k]
     ])

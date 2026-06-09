@@ -90,10 +90,12 @@ def test_grid_archive_raises():
 def test_grid_archive_populated():
     instances = []
     rng = np.random.default_rng()
+    dimension = 100
     for _ in range(10):
-        instance = Instance()
-        instance.features = rng.integers(low=0, high=10, size=2)
-        instance.descriptor = tuple(instance.features)
+        instance = Instance(
+            variables=rng.integers(low=0, high=100, size=dimension),
+            descriptor=rng.integers(low=0, high=10, size=2),
+        )
         instances.append(instance)
     archive = GridArchive(
         dimensions=(2, 2),
@@ -145,6 +147,7 @@ def test_grid_5d(grid_5d):
 
 def test_grid_archive_5d_storage(grid_5d):
     n_instances = 10
+    dimension = 100
     rng = np.random.default_rng()
     domain = KnapsackDomain(dimension=100)
     instances = domain.generate_instances(n=n_instances)
@@ -157,7 +160,8 @@ def test_grid_archive_5d_storage(grid_5d):
     grid_5d.extend(instances, descriptors=descriptors)
     assert len(grid_5d) == len(instances)
 
-    instance = Instance()
+    instance = Instance(variables=rng.integers(low=0, high=100, size=dimension))
+
     instance.descriptor = rng.random(size=5)
     grid_5d.append(instance, descriptor=instance.descriptor)
     assert len(grid_5d) == len(instances) + 1
@@ -183,10 +187,16 @@ def test_grid_limits():
     instances = []
     max_allowed = 25
     n_instances = 1000
+    dimension = 100
+
     for _ in range(n_instances):
-        inst = Instance([], fitness=0.0, p=rng.integers(0, 100), s=rng.random())
-        inst.features = tuple(rng.integers(low=0, high=100, size=2))
-        inst.descriptor = inst.features
+        inst = Instance(
+            variables=rng.integers(low=0, high=100, size=dimension),
+            fitness=0.0,
+            performance_bias=rng.integers(0, 100),
+            novelty=rng.random(),
+            descriptor=rng.integers(low=0, high=10, size=2),
+        )
         instances.append(inst)
 
     assert len(archive) == 0
@@ -207,15 +217,15 @@ def test_grid_extend_outside_bounds():
     instances = []
     max_allowed = 25
     n_instances = 1000
+    dimension = 100
     for _ in range(n_instances):
         inst = Instance(
-            [],
+            variables=rng.integers(low=0, high=100, size=dimension),
             fitness=rng.integers(100, 1000),
-            p=rng.integers(100, 1000),
-            s=rng.random(),
+            performance_bias=rng.integers(100, 1000),
+            novelty=rng.random(),
+            descriptor=rng.integers(low=0, high=10, size=2),
         )
-        inst.features = tuple(rng.integers(low=1000, high=10000, size=2))
-        inst.descriptor = inst.features
         instances.append(inst)
 
     assert len(archive) == 0
@@ -238,15 +248,15 @@ def test_grid_extend_under_bounds():
     instances = []
     max_allowed = 25
     n_instances = 1000
+    dimension = 1000
     for _ in range(n_instances):
         inst = Instance(
-            [],
+            variables=rng.integers(low=0, high=100, size=dimension),
             fitness=rng.integers(100, 1000),
-            p=rng.integers(100, 1000),
-            s=rng.random(),
+            performance_bias=rng.integers(100, 1000),
+            novelty=rng.random(),
+            descriptor=rng.integers(low=0, high=10, size=2),
         )
-        inst.features = tuple(rng.integers(low=1, high=99, size=2))
-        inst.descriptor = inst.features
         instances.append(inst)
 
     assert len(archive) == 0
@@ -277,9 +287,7 @@ def test_grid_archive_with_KP_instances_and_features_descriptor():
     raw_instances = domain.generate_instances(n_instances)
     features = domain.extract_features(raw_instances)
     instances = [
-        Instance(
-            variables=raw_instances[i], features=features[i], descriptor=features[i]
-        )
+        Instance(variables=raw_instances[i], descriptor=features[i])
         for i in range(n_instances)
     ]
 
@@ -320,10 +328,12 @@ def test_grid_archive_getitem():
     rng = np.random.default_rng()
 
     instances = []
+    dimension = 100
     for _ in range(1000):
-        instance = Instance()
-        instance.features = rng.integers(low=0, high=10, size=2)
-        instance.descriptor = instance.features
+        instance = Instance(
+            variables=rng.integers(low=0, high=100, size=dimension),
+            descriptor=rng.integers(low=0, high=10, size=2),
+        )
         instances.append(instance)
 
     archive = GridArchive(

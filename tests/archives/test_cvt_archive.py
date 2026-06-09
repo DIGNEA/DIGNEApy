@@ -214,7 +214,7 @@ def test_cvt_archive_append():
     instance = Instance(
         variables=rng.integers(low=1, high=10, size=10),
         fitness=100,
-        s=100.0,
+        novelty=100.0,
         descriptor=rng.integers(low=0, high=10000, size=cvt.dimensions),
     )
     assert len(cvt) == 0
@@ -235,7 +235,7 @@ def test_cvt_archive_extend():
         Instance(
             variables=rng.integers(low=1, high=10, size=10),
             fitness=rng.integers(low=1, high=10000),
-            s=rng.random(),
+            novelty=rng.random(),
             descriptor=rng.integers(low=0, high=10000, size=cvt.dimensions),
         )
         for _ in range(10)
@@ -257,7 +257,7 @@ def test_cvt_archive_remove():
         Instance(
             variables=rng.integers(low=1, high=10, size=10),
             fitness=rng.integers(low=1, high=10000),
-            s=rng.random(),
+            novelty=rng.random(),
             descriptor=rng.integers(low=0, high=10000, size=cvt.dimensions),
         )
         for _ in range(10)

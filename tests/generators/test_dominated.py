@@ -72,7 +72,7 @@ def random_population():
             descriptor=features[i],
             portfolio_scores=performances[i],
             fitness=performances[i][0],
-            p=performances[i][0],
+            performance_bias=performances[i][0],
         )
         for i in range(N_INSTANCES)
     ]

@@ -25,7 +25,7 @@ from .._core import (
     Solver,
 )
 from .._core.descriptors import DescriptorPipeline
-from .._core.scores import PerformanceFn, max_gap_target
+from .._core.scores import PerformanceFn, maximise_perf_gap_easy
 from ..archives import UnstructuredArchive
 from ..operators import (
     UCX,
@@ -139,7 +139,7 @@ class Dominated(Evolutionary):
         domain: Domain,
         portfolio: Sequence[Solver],
         pop_size: np.uint32 = np.uint32(128),
-        performance_function: PerformanceFn = max_gap_target,
+        performance_function: PerformanceFn = maximise_perf_gap_easy,
         generations: np.uint32 = np.uint32(1000),
         repetitions: np.uint16 = np.uint16(1),
         k: np.uint32 = np.uint32(15),
@@ -183,7 +183,7 @@ class Dominated(Evolutionary):
             selection=selection,
             descriptor_pipe=descriptor_pipe,
             seed=seed,
-            archive=UnstructuredArchive(threshold=0.1, k=1),
+            archive=UnstructuredArchive(novelty_threshold=0.1, k=1),
         )
         self._k = k
         self.offspring_size = pop_size

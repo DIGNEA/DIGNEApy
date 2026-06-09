@@ -45,11 +45,12 @@ class UniformCrossover(Crossover):
             msg = f"Individual of different length in uniform_crossover. len(ind) = {len(individual)} != len(other) = {len(other)}"
             raise ValueError(msg)
 
+        cloned = individual.clone()
         probs = self._rng.random(size=len(individual))
         genotype = np.empty_like(individual)
         genotype = np.where(probs <= self._cxpb, individual, other)
-
-        return individual.__class__(genotype)
+        cloned.variables = genotype
+        return cloned
 
 
 class UCX(UniformCrossover):

@@ -276,3 +276,149 @@ def test_solution_cannot_be_comp_with_other_types():
 
     with pytest.raises(TypeError):
         solution > 1.0
+
+
+def test_solution_can_be_accessed():
+    dimension = 10
+    solution = Solution(
+        variables=list(range(dimension)),
+        objectives=(0.0, 1.0),
+        constraints=(
+            0.0,
+            0.0,
+        ),
+        fitness=100.0,
+    )
+    assert solution[0] == 0
+    assert solution[-1] == 9
+    assert_equal(solution[2:4], [2, 3])
+
+
+@pytest.mark.parametrize("index", (None, 2.5, "abc"))
+def test_solution_cannot_be_accessed_with_others(index):
+    dimension = 10
+    solution = Solution(
+        variables=list(range(dimension)),
+        objectives=(0.0, 1.0),
+        constraints=(
+            0.0,
+            0.0,
+        ),
+        fitness=100.0,
+    )
+    with pytest.raises(TypeError):
+        _ = solution[index]
+
+
+def test_solution_can_be_accessed_and_raise():
+    dimension = 10
+    solution = Solution(
+        variables=list(range(dimension)),
+        objectives=(0.0, 1.0),
+        constraints=(
+            0.0,
+            0.0,
+        ),
+        fitness=100.0,
+    )
+    with pytest.raises(IndexError):
+        _ = solution[1000]
+
+
+def test_solution_can_be_updated_setitem():
+    dimension = 10
+    solution = Solution(
+        variables=list(range(dimension)),
+        objectives=(0.0, 1.0),
+        constraints=(
+            0.0,
+            0.0,
+        ),
+        fitness=100.0,
+    )
+    expected = 100
+    solution[0] = expected
+    assert solution[0] == expected
+
+    solution[-1] = expected
+    assert solution[-1] == expected
+
+    expected_slice = [100, 200, 300]
+    solution[2:5] = expected_slice
+    assert_equal(solution[2:5], expected_slice)
+
+
+@pytest.mark.parametrize("index", (None, 2.5, "abc"))
+def test_solution_cannot_be_updated_with_others(index):
+    dimension = 10
+    solution = Solution(
+        variables=list(range(dimension)),
+        objectives=(0.0, 1.0),
+        constraints=(
+            0.0,
+            0.0,
+        ),
+        fitness=100.0,
+    )
+    with pytest.raises(TypeError):
+        solution[index] = 1
+
+
+def test_solution_can_be_updated_and_raise():
+    dimension = 10
+    solution = Solution(
+        variables=list(range(dimension)),
+        objectives=(0.0, 1.0),
+        constraints=(
+            0.0,
+            0.0,
+        ),
+        fitness=100.0,
+    )
+    with pytest.raises(IndexError):
+        solution[1000] = 100
+
+
+def test_solution_setitem_raise_slice_mismatch():
+    dimension = 10
+    solution = Solution(
+        variables=list(range(dimension)),
+        objectives=(0.0, 1.0),
+        constraints=(
+            0.0,
+            0.0,
+        ),
+        fitness=100.0,
+    )
+    with pytest.raises(ValueError):
+        solution[1:3] = [10, 20, 30]
+
+
+def test_solution_setitem_raise_slice_and_scalar_value():
+    dimension = 10
+    solution = Solution(
+        variables=list(range(dimension)),
+        objectives=(0.0, 1.0),
+        constraints=(
+            0.0,
+            0.0,
+        ),
+        fitness=100.0,
+    )
+    with pytest.raises(TypeError):
+        solution[1:3] = 100
+
+
+def test_solution_setitem_raise_index_and_slice_value():
+    dimension = 10
+    solution = Solution(
+        variables=list(range(dimension)),
+        objectives=(0.0, 1.0),
+        constraints=(
+            0.0,
+            0.0,
+        ),
+        fitness=100.0,
+    )
+    with pytest.raises(ValueError):
+        solution[1] = [100, 200, 300]

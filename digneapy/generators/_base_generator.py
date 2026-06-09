@@ -29,7 +29,7 @@ from .._core import (
     Solver,
     Statistics,
 )
-from .._core.scores import PerformanceFn, max_gap_target
+from .._core.scores import PerformanceFn, maximise_perf_gap_easy
 from ..archives import Archive
 
 
@@ -70,7 +70,7 @@ class BaseGenerator(ABC):
         domain: Domain,
         portfolio: Sequence[Solver],
         pop_size: np.uint32,
-        performance_function: PerformanceFn = max_gap_target,
+        performance_function: PerformanceFn = maximise_perf_gap_easy,
         descriptor_pipe: DescriptorPipeline = DescriptorPipeline("features"),
         generations: np.uint32 = np.uint32(1_000),
         repetitions: np.uint16 = np.uint16(1),

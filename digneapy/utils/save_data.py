@@ -39,7 +39,7 @@ def save_results_to_files(
 
     lz = pl.concat(
         [
-            instance.to_lazyframe(
+            instance.to_df(
                 variables_names=variables_names,
                 portfolio_names=result.solvers,
             )

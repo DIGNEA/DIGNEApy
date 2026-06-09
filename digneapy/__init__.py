@@ -20,7 +20,7 @@ from ._core import (
     scores,
 )
 from ._core._metrics import Logbook, Statistics, qd_score, qd_score_auc
-from ._core.scores import PerformanceFn, max_gap_target, runtime_score
+from ._core.scores import PerformanceFn, maximise_perf_gap_easy, maximise_runtime_gap
 from .archives import Archive, CVTArchive, GridArchive, UnstructuredArchive
 from .generators import ES, BaseGenerator, Dominated, Evolutionary, GenResult, MapElites
 from .transformers import Transformer

@@ -12,15 +12,14 @@
 
 import json
 from abc import ABC, abstractmethod
-from collections.abc import Iterable, Sequence
+from collections.abc import Iterator, Sequence
 from enum import Enum
 from typing import Optional
 
 import numpy as np
 
 from .._core import Instance
-
-type NestedDict = dict[int, Instance | np.ndarray]
+from ._utils import check_valid_instance_batch
 
 
 class Keys(Enum):
@@ -31,41 +30,59 @@ class Keys(Enum):
 
 
 class Archive(ABC):
-    """Class Archive Stores a collection of Instances"""
+    """Base Archive
+
+    Works as a foundation for all the types of archives allowed in Digneapy.
+    """
 
     def __init__(
         self,
         initial_instances: Optional[Sequence[Instance]] = None,
-        dtype=np.float64,
     ):
         """Creates an instance of a Archive (unstructured) for QD algorithms
 
         Args:
-            threshold (float): Minimum value of sparseness to include an Instance into the archive.
-            instances (Iterable[Instance], optional): Instances to initialise the archive. Defaults to None.
+            initial_instances (Sequence[Instance], optional): Instances to initialise the archive. Defaults to None.
         """
         self._storage: dict[Keys, list] = {
             Keys.instances: [],
             Keys.descriptors: [],
         }
         if initial_instances is not None and len(initial_instances) > 0:
-            for instance in enumerate(initial_instances):
-                if isinstance(instance, Instance):
+            if check_valid_instance_batch(initial_instances):
+                for instance in initial_instances:
                     self._storage[Keys.instances].append(instance)
                     self._storage[Keys.descriptors].append(instance.descriptor)
-                else:
-                    raise TypeError(
-                        f"Initial instances must be of type Instance. Got {instance}."
-                    )
+            else:
+                raise TypeError(
+                    "All objects of initial_instances must be of type Instance."
+                )
 
-        self._dtype = dtype
+    # def purge_unfeasible(self, attr: str = "p") -> None:
+    #     """Removes all the unfeasible instances from the grid"""
+    #     for i, instance in self._storage[Keys.instances]:
+    #         if getattr(instance, attr) < 0:
+    #             del self._storage[Keys.instances][i]
+    #             del self._storage[Keys.descriptors][i]
 
-    def purge_unfeasible(self, attr: str = "p") -> None:
-        """Removes all the unfeasible instances from the grid"""
-        for i, instance in self._storage[Keys.instances]:
-            if getattr(instance, attr) < 0:
-                del self._storage[Keys.instances][i]
-                del self._storage[Keys.descriptors][i]
+    @property
+    def instances(self) -> Sequence[Instance]:
+        """Instances of the archive
+
+        Returns:
+            Sequence[Instance]: Sequence of instances stored in the archive.
+        """
+        return self._storage[Keys.instances]
+
+    @property
+    def descriptors(self) -> np.ndarray:
+        """Descriptors of the instances
+
+        Returns:
+            np.ndarray: Returns a np.ndarray with the descriptors of
+                the instances stored in the archive
+        """
+        return np.asarray(self._storage[Keys.descriptors])
 
     @abstractmethod
     def extend(
@@ -74,69 +91,95 @@ class Archive(ABC):
         *args,
         **kwargs,
     ):
+        """Extends the archive with a collection of instances.
+
+        This method must be implemented by each subclass of Archive.
+        Args:
+            instances (Sequence[Instance]): Collection of instances to insert in the archive.
+
+        Raises:
+            NotImplementedError
+        """
         raise NotImplementedError("To be implemented in subclasses")
 
     @abstractmethod
     def __call__(self, *args, **kwargs):
         raise NotImplementedError("To be implemented in subclasses")
 
-    @property
-    def instances(self) -> Iterable[Instance]:
-        return self._storage[Keys.instances]
+    def __iter__(self) -> Iterator[Instance]:
+        """Iterator of the Archive.
 
-    @property
-    def descriptors(self) -> np.ndarray:
-        return np.asarray(self._storage[Keys.descriptors])
+        Allows users to iterate the instances of the archive
 
-    def __iter__(self):
+        Returns:
+            Iterator: Returns an Iterator of Instances stored
+        """
         return iter(self._storage[Keys.instances])
 
     def __str__(self):
         return f"Archive(|{len(self)}|)"
 
     def __repr__(self):
-        return f"Archive(|{len(self)}|)"
+        return self.__str__()
 
-    def __array__(self, dtype=None, copy=None) -> np.ndarray:
-        """Creates a ndarray with the instances"""
-        return np.asarray(self._storage[Keys.instances], dtype=dtype, copy=copy)
+    def __array__(self, dtype=object, copy: Optional[bool] = None) -> np.ndarray:
+        """Cast the Archive to an array
 
-    def __eq__(self, other):
-        """Compares whether to Archives are equal"""
+        Args:
+            dtype (optional): Data type of the resulting array. Defaults to object.
+            copy (bool, optional): Whether to copy the objects or reference them. Defaults to None.
+
+        Returns:
+            np.ndarray: Array with the instances stored in the archive
+        """
+        return np.asarray(self._storage[Keys.instances], dtype=object, copy=copy)
+
+    def __eq__(self, other: Archive) -> bool:
+        """Compares two archives
+
+        Args:
+            other (Archive): Other archive type to compare
+
+        Returns:
+            bool: Returns True if both archives have the same amount of instances
+                and all of those instances are the same when compared Inst_a == Inst_b.
+        """
+        if not isinstance(other, Archive):
+            raise TypeError(f"Archives cannot be compared with {other.__class__}.")
+        self_cls = self.__class__
+        other_cls = other.__class__
+        if self_cls != other_cls:
+            raise TypeError(
+                f"Cannot compared an Archive of class {self_cls} with another of class {other_cls}. Use the same classes."
+            )
+
         return len(self) == len(other) and all(
-            np.array_equal(a, b)
+            a == b
             for a, b in zip(
-                self._storage[Keys.descriptors], other._storage[Keys.descriptors]
+                self._storage[Keys.instances], other._storage[Keys.instances]
             )
         )
 
-    def __hash__(self):
-        from functools import reduce
+    def __len__(self) -> int:
+        """Length of the Archive
 
-        hashes = (hash(i) for i in self.instances)
-        return reduce(lambda a, b: a ^ b, hashes, 0)
-
-    def __bool__(self):
-        """Returns True if len(self) >= 1"""
-        return len(self) != 0
-
-    def __len__(self):
+        Returns:
+            int: Number of instances stored in the archive
+        """
         return len(self._storage[Keys.instances])
 
-    @abstractmethod
-    def __getitem__(self, key):
-        raise NotImplementedError("Must be implemented in the subclasses")
+    def to_dict(self) -> dict:
+        """Converts the archive into a dictionary
 
-    def __format__(self, fmt_spec=""):
-        variables = self
-        outer_fmt = "({})"
-        components = (format(c, fmt_spec) for c in variables)
-        return outer_fmt.format(", ".join(components))
+        This method could be extended in the subclasses to include
+        extra information. In this class, in only includes the instances.
 
-    def asdict(self) -> dict:
+        Returns:
+            dict: Dictionary with the instances stored in the archive
+        """
         return {
             "instances": {
-                i: instance.asdict()
+                i: instance.to_dict()
                 for i, instance in enumerate(self._storage[Keys.instances])
             }
         }
@@ -147,5 +190,5 @@ class Archive(ABC):
         Returns:
             str: JSON str of the archive content
         """
-
-        return json.dumps(self.asdict(), indent=4)
+        # Todo: Need to check the NumPy datatypes and JSON encoder
+        return json.dumps(self.to_dict(), indent=4)

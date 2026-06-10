@@ -10,24 +10,26 @@
 @Desc    :   None
 """
 
-from collections.abc import Iterable, Sequence
-from typing import Optional, Tuple, override
+from collections.abc import Iterable, Sequence, Set
+from typing import Iterator, Optional, Tuple, override
 
 import numpy as np
 
 from .._core import Instance
-from .base import Archive, Keys, NestedDict
+from .base import Archive, Keys
 
 
 class GridArchive(Archive):
-    """An archive that divides each dimension into a uniformly-sized cells.
-    The source code of this class is inspired by the GridArchive class of pyribs <https://github.com/icaros-usc/pyribs/blob/master/ribs/archives/_grid_archive.py>
-    This archive is the container described in `Mouret 2015
-    <https://arxiv.org/pdf/1504.04909.pdf>`_. It can be visualized as an
-    n-dimensional grid in the measure space that is divided into a certain
-    number of cells in each dimension. Each cell contains an elite, i.e. a
-    solution that `maximizes` the objective function for the measures in that
-    cell.
+    """Archive that divides each dimension into uniformly-sized cells.
+
+
+    The source code of this class is inspired by the GridArchive class of pyribs
+    <https://github.com/icaros-usc/pyribs/blob/master/ribs/archives/_grid_archive.py>
+
+    This archive is the container described in `Mouret 2015 <https://arxiv.org/pdf/1504.04909.pdf>`_.
+    It can be visualized as a n-dimensional grid in the measure space that is divided into a certain
+    number of cells in each dimension. Each cell contains an elite, i.e. a solution that `maximizes`
+    the objective function for the measures in that cell.
     """
 
     def __init__(
@@ -36,32 +38,25 @@ class GridArchive(Archive):
         ranges: Sequence[Tuple[float, float]],
         instances: Optional[Sequence[Instance]] = None,
         eps: float = 1e-6,
-        dtype=np.float64,
     ):
-        """Creates a GridArchive instance
+        """Creates a GridArchive object
 
         Args:
-            dimensions (Sequence[int]): (array-like of int): Number of cells in each dimension of the
-            measure space, e.g. ``[20, 30, 40]`` indicates there should be 3
-            dimensions with 20, 30, and 40 cells. (The number of dimensions is
-            implicitly defined in the length of this argument).
-            ranges (Sequence[Tuple[float]]): (array-like of (float, float)): Upper and lower bound of each
-            dimension of the measure space, e.g. ``[(-1, 1), (-2, 2)]``
-            indicates the first dimension should have bounds :math:`[-1,1]`
-            (inclusive), and the second dimension should have bounds
-            :math:`[-2,2]` (inclusive). ``ranges`` should be the same length as
-            ``dims``.
+            dimensions (Sequence[int]): (Sequence[int]): Number of cells in each dimension of the descriptor
+                space, e.g. ``[20, 30, 40]`` indicates there should be 3 dimensions with 20, 30, and 40 cells.
+                (The number of dimensions is implicitly defined in the length of this argument).
+            ranges (Sequence[Tuple[float, float]]): Lower and upper bound of each dimension of the descriptorç
+                space, e.g. ``[(-1, 1), (-2, 2)]`` indicates the first dimension should have bounds :math:`[-1,1]`
+                (inclusive), and the second dimension should have bounds :math:`[-2,2]` (inclusive).
+                ``ranges`` should be the same length as ``dims``.
             instances (Optional[Sequence[Instance]], optional): Instances to pre-initialise the archive. Defaults to None.
-            eps (float, optional): Due to floating point precision errors, we add a small
-            epsilon when computing the archive indices in the :meth:`index_of`
-            method -- refer to the implementation `here. Defaults to 1e-6.
-            dtype(str or data-type): Data type of the solutions, objectives,
-            and measures.
+            eps (float, optional): Due to floating point precision errors, we add a small epsilon when computing
+                the archive indices in the :meth:`index_of` method -- refer to the implementation `here. Defaults to 1e-6.
 
         Raises:
             ValueError: ``dimensions`` and ``ranges`` are not the same length
         """
-        super().__init__(None, dtype=dtype)
+        super().__init__(None)
         if len(ranges) == 0 or len(dimensions) == 0:
             raise ValueError("dimensions and ranges must have length >= 1")
         if len(ranges) != len(dimensions):
@@ -71,14 +66,15 @@ class GridArchive(Archive):
 
         self._dimensions = np.asarray(dimensions)
         ranges = list(zip(*ranges))
-        self._lower_bounds = np.asarray(ranges[0], dtype=dtype)
-        self._upper_bounds = np.asarray(ranges[1], dtype=dtype)
+        self._lower_bounds = np.asarray(ranges[0], dtype=np.float64)
+        self._upper_bounds = np.asarray(ranges[1], dtype=np.float64)
         self._interval = self._upper_bounds - self._lower_bounds
         self._eps = eps
         self._cells = np.prod(self._dimensions, dtype=object)
 
+        # We override the storage from Archive to build a dictionary of dictionaries and set
         del self._storage
-        self._storage: dict[Keys, NestedDict | set] = {
+        self._storage = {
             Keys.instances: {},
             Keys.descriptors: {},
             Keys.grid: set(),
@@ -101,7 +97,7 @@ class GridArchive(Archive):
 
     @property
     def bounds(self) -> np.ndarray:
-        """list of numpy.ndarray: The boundaries of the cells in each dimension.
+        """Boundaries of the cells in each dimension.
 
         Entry ``i`` in this list is an array that contains the boundaries of the
         cells in dimension ``i``. The array contains ``self.dims[i] + 1``
@@ -117,17 +113,66 @@ class GridArchive(Archive):
         """
         return self._boundaries
 
+    def lower_i(self, i: int) -> np.float64:
+        """Returns the lower bound of the ith dimension
+
+        Args:
+            i (int): Dimension to retrieve
+
+        Raises:
+            TypeError: If i is not an int
+            ValueError: If i is outside of the bounds
+
+        Returns:
+            np.float64: Lower bound of the ith dimension
+        """
+        if type(i) is not int:
+            raise TypeError(f"lower_i expects i to be an integer. Got: {type(i)}")
+
+        if i < 0 or i > len(self._lower_bounds):
+            msg = f"index {i} is out of bounds. Valid values are [0-{len(self._boundaries)}]"
+            raise ValueError(msg)
+
+        return self._lower_bounds[i]
+
+    def upper_i(self, i: int):
+        """Returns the upper bound of the ith dimension
+
+        Args:
+            i (int): Dimension to retrieve
+
+        Raises:
+            TypeError: If i is not an int
+            ValueError: If i is outside of the bounds
+
+        Returns:
+            np.float64: Upper bound of the ith dimension
+        """
+        if type(i) is not int:
+            raise TypeError(f"upper_i expects i to be an integer. Got: {type(i)}")
+        if i < 0 or i > len(self._upper_bounds):
+            msg = f"index {i} is out of bounds. Valid values are [0-{len(self._boundaries)}]"
+            raise ValueError(msg)
+
+        return self._upper_bounds[i]
+
     @property
-    def n_cells(self):
+    def n_cells(self) -> int:
+        """Number of cells of the Grid
+
+        Returns:
+            int
+        """
         return self._cells
 
     @property
     def coverage(self) -> np.float64:
         """Get the coverage of the hypercube space.
+
         The coverage is calculated has the number of cells filled over the total space available.
 
         Returns:
-            float: Filled cells over the total available.
+            np.float64: Filled cells over the total available.
         """
         if len(self._storage[Keys.grid]) == 0:
             return np.float64(0)
@@ -135,63 +180,45 @@ class GridArchive(Archive):
         return np.float64(len(self._storage[Keys.grid]) / self._cells)
 
     @property
-    def filled_cells(self):
+    def filled_cells(self) -> Set[int]:
+        """Filled cells of the grid
+
+        Returns:
+            Set[int]: Set with the indices of the filled cells
+        """
         return self._storage[Keys.grid]
 
     @property
     def instances(self) -> Iterable[Instance]:
+        """Instances of the GridArchive
+
+        Returns:
+            Iterable[Instance]: Returns a ValueView of the instances
+        """
         return self._storage[Keys.instances].values()
 
-    def __iter__(self):
+    def __iter__(self) -> Iterator[Instance]:
+        """Iterator of the GridArchive
+
+        Allows users to iterate the instances of the GridArchive
+
+        Returns:
+            Iterator[Instance]
+        """
         return iter(self._storage[Keys.instances].values())
 
     def __str__(self) -> str:
         return f"GridArchive(dim={self._dimensions},cells={self._cells:,},bounds={self._boundaries})"
 
-    def __repr__(self) -> str:
-        return f"GridArchive(dim={self._dimensions},cells={self._cells:,},bounds={self._boundaries})"
-
     def __len__(self) -> int:
-        return len(self._storage[Keys.grid])
+        """Length of the GridArchive
 
-    def __getitem__(self, key):
-        """Returns a dictionary with the descriptors as the keys. The values are the instances found.
-        Note that some of the given keys may not be in the archive.
-
-        Args:
-            key (array-like or descriptor): Descriptors of the instances that want to retrieve.
-            Valid examples are:
-            -   archive[[0,11], [0,5]] --> Get the instances with the descriptors (0,11) and (0, 5)
-            -   archive[0,11] --> Get the instances at indices 0 and 11
-
-        Raises:
-            TypeError: If the key is an slice. Not allowed.
-            ValueError: If the shape of the keys are not valid.
+        Number of instances stored in the archive
 
         Returns:
-            dict: Returns a dict with the found instances.
+            int: Number of instances stored
         """
-        if isinstance(key, slice):
-            raise TypeError(
-                "Slicing is not available in GridArchive. Use 1D index or descriptor-type indices"
-            )
-        descriptors = np.asarray(key)
-        if descriptors.ndim == 1:
-            indices = descriptors
-        elif descriptors.ndim == 2 and descriptors.shape[1] == len(self._dimensions):
-            indices = self.index_of(descriptors).tolist()
-        else:
-            raise ValueError(
-                f"Expected descriptors to be an array with shape "
-                f"(batch_size, dimensions) (i.e. shape "
-                f"(batch_size, {len(self._dimensions)})) but it had shape "
-                f"{descriptors.shape}"
-            )
-        if isinstance(indices, int):
-            indices = [indices]
-
-        instances = [self._storage[Keys.instances][idx] for idx in indices]
-        return instances
+        return len(self._storage[Keys.grid])
 
     @override
     def purge_unfeasible(self, attr: str = "p") -> None:
@@ -205,44 +232,6 @@ class GridArchive(Archive):
             self._storage[Keys.grid].remove(i)
             del self._storage[Keys.instances][i]
             del self._storage[Keys.descriptors][i]
-
-    def lower_i(self, i):
-        if i < 0 or i > len(self._lower_bounds):
-            msg = f"index {i} is out of bounds. Valid values are [0-{len(self._boundaries)}]"
-            raise ValueError(msg)
-        return self._lower_bounds[i]
-
-    def upper_i(self, i):
-        if i < 0 or i > len(self._upper_bounds):
-            msg = f"index {i} is out of bounds. Valid values are [0-{len(self._boundaries)}]"
-            raise ValueError(msg)
-        return self._upper_bounds[i]
-
-    def append(
-        self, instance: Instance, descriptor: Optional[np.ndarray] = None
-    ) -> None:
-        """Inserts an Instance into the Grid
-
-        Args:
-            instance (Instance): Instace to be inserted
-
-        Raises:
-            TypeError: ``instance`` is not a instance of the class Instance.
-        """
-        if not isinstance(instance, Instance):
-            msg = "Only objects of type Instance can be inserted into a GridArchive"
-            raise TypeError(msg)
-        descriptor = (
-            np.asarray(instance.descriptor) if descriptor is None else descriptor
-        )
-        index = self.index_of([descriptor])[0]
-        if (
-            index not in self._storage[Keys.grid]
-            or instance > self._storage[Keys.instances][index]
-        ):
-            self._storage[Keys.grid].add(index)
-            self._storage[Keys.instances][index] = instance.clone()
-            self._storage[Keys.descriptors][index] = descriptor
 
     def __call__(self, *args, **kwargs) -> np.ndarray:
         raise NotImplementedError("Not implemented in GridArchive")
@@ -364,11 +353,18 @@ class GridArchive(Archive):
             ).T.astype(int)
         return unravel_indices
 
-    def asdict(self) -> dict:
+    def to_dict(self) -> dict:
+        """Converts the GridArchive into a dictionary
+
+        Includes dimensions, lbs, ubs, n_cells and other information from Archive
+
+        Returns:
+            dict: Dictionary with the instances stored in the archive
+        """
         return {
             "dimensions": self._dimensions.tolist(),
             "lbs": self._lower_bounds.tolist(),
             "ubs": self._upper_bounds.tolist(),
             "n_cells": self._cells,
-            **super().asdict(),
+            **super().to_dict(),
         }

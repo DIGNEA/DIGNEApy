@@ -392,12 +392,6 @@ class Instance:
         else:
             return self.fitness >= other.fitness
 
-    def __hash__(self):
-        from functools import reduce
-
-        hashes = (hash(x) for x in self)
-        return reduce(operator.or_, hashes, 0)
-
     def to_dict(
         self,
         variables_names: Optional[Sequence[str]] = None,

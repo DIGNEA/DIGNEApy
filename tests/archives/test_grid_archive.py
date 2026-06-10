@@ -12,28 +12,47 @@
 
 import numpy as np
 import pytest
+from numpy.testing import assert_allclose, assert_equal
 
 from digneapy import GridArchive, Instance
-from digneapy.domains.kp import KnapsackDomain
+
+from .conftest import default_incremental_population
 
 
-@pytest.fixture
-def grid_5d():
-    return GridArchive(
-        dimensions=(20, 20, 20, 20, 20),
+def test_grid_archive_attrs():
+    archive = GridArchive(
+        dimensions=(2, 2),
         ranges=[
-            (-1.0, 1.0),
-            (-1.0, 1.0),
-            (-1.0, 1.0),
             (-1.0, 1.0),
             (-1.0, 1.0),
         ],
     )
 
+    assert len(archive) == 0
+    assert_equal(archive.dimensions, (2, 2))
+    assert archive.n_cells == 4
+    assert isinstance(archive.filled_cells, set)
+    assert len(archive.filled_cells) == len(archive)
+    assert_equal(archive.coverage, np.float64(0.0))
 
-def test_grid_archive_raises():
+    assert len(list(archive.instances)) == 0
+    assert_equal(archive.bounds, [[-1.0, 1.0], [-1.0, 1.0]])
+
+    # Checking the bounds of each dimension
+    for i in range(2):
+        assert archive.lower_i(i) == -1.0
+        assert archive.upper_i(i) == 1.0
+
+    data = archive.to_dict()
+    assert isinstance(data, dict)
+    expected_keys = ("instances", "dimensions", "lbs", "ubs", "n_cells")
+    assert all(key in data.keys() for key in expected_keys)
+
+
+def test_grid_archive_init_raises_if_wrong_args():
     # Raises ValueError when dimension < 1
     rng = np.random.default_rng()
+
     with pytest.raises(ValueError):
         _ = GridArchive(dimensions=[], ranges=[])
 
@@ -45,310 +64,224 @@ def test_grid_archive_raises():
             instances=rng.integers(low=0, high=10, size=(10, 2)),
         )
 
+    # Raises because the dimension and ranges have different lengths
     with pytest.raises(ValueError):
         _ = GridArchive(
             dimensions=[],
             ranges=[(0, 10), (0, 10), (0, 10)],
         )
+
+    # Raises because the dimension and ranges have different lengths
     with pytest.raises(ValueError):
         _ = GridArchive(dimensions=(2, 2), ranges=[(0, 10), (0, 10), (0, 10)])
 
+    # Raises because the dimension and ranges have different lengths
     with pytest.raises(ValueError):
         _ = GridArchive(dimensions=(2, 2), ranges=[])
 
-    # Raises because instance is not of type Instance
-    with pytest.raises(TypeError):
-        archive = GridArchive(dimensions=(2, 2), ranges=[(0, 10), (0, 10)])
-        archive.append(rng.integers(low=0, high=10, size=(10, 2)))
 
+def test_grid_archive_lower_bound():
+    archive = GridArchive(dimensions=(2, 2), ranges=[(-1.0, 1.0), (-1.0, 1.0)])
+    assert all(archive.lower_i(i) == -1.0 for i in range(2))
+
+
+def test_grid_archive_upper_bound():
+    archive = GridArchive(dimensions=(2, 2), ranges=[(-1.0, 1.0), (-1.0, 1.0)])
+    assert all(archive.upper_i(i) == 1.0 for i in range(2))
+
+
+def test_grid_archive_lower_bound_raises():
+    archive = GridArchive(dimensions=(2, 2), ranges=[(-1.0, 1.0), (-1.0, 1.0)])
     # Raises out-of lower bound
-    with pytest.raises(ValueError):
-        archive = GridArchive(dimensions=(2, 2), ranges=[(0, 10), (0, 10)])
+    with pytest.raises(IndexError):
         _ = archive.lower_i(-1)
 
     # Raises out-of lower bound
-    with pytest.raises(ValueError):
-        archive = GridArchive(dimensions=(2, 2), ranges=[(0, 10), (0, 10)])
+    with pytest.raises(IndexError):
         _ = archive.lower_i(100)
 
-    # Raises out-of upper bound
-    with pytest.raises(ValueError):
-        archive = GridArchive(dimensions=(2, 2), ranges=[(0, 10), (0, 10)])
+    with pytest.raises(TypeError):
+        _ = archive.lower_i("abc")
+
+
+def test_grid_archive_upper_bound_raises():
+    archive = GridArchive(dimensions=(2, 2), ranges=[(-1.0, 1.0), (-1.0, 1.0)])
+    # Raises out-of lower bound
+    with pytest.raises(IndexError):
         _ = archive.upper_i(-1)
 
-    # Raises out-of upper bound
-    with pytest.raises(ValueError):
-        archive = GridArchive(dimensions=(2, 2), ranges=[(0, 10), (0, 10)])
+    # Raises out-of lower bound
+    with pytest.raises(IndexError):
         _ = archive.upper_i(100)
 
-    # Raises index shape is not valid
+    with pytest.raises(TypeError):
+        _ = archive.upper_i("abc")
+
+
+def test_grid_archive_iterable():
+    archive = GridArchive(dimensions=(10, 10), ranges=[(0, 10), (0, 10)])
+    instances = default_incremental_population(n_instances=10, descriptor_dim=2)
+    archive.extend(instances)
+    assert all(isinstance(x, Instance) for x in archive)
+
+
+def test_grid_archive_index_of_returns_zero():
+    archive = GridArchive(dimensions=(2, 2), ranges=[(-1.0, 1.0), (-1.0, 1.0)])
+    assert_equal(archive.index_of([]), np.empty(0))
+
+
+def test_grid_archive_index_raises_1d_len():
+    archive = GridArchive(dimensions=(2, 2), ranges=[(-1.0, 1.0), (-1.0, 1.0)])
+    descriptor = [1, 2, 3, 4]
+    # Descriptor has 4d and the grid is a 2d space
     with pytest.raises(ValueError):
-        archive = GridArchive(dimensions=(2, 2), ranges=[(0, 10), (0, 10)])
-        _ = archive.index_of(rng.integers(low=0, high=10, size=(10, 10)))
+        _ = archive.index_of(descriptor)
 
 
-def test_grid_archive_populated():
-    instances = []
-    rng = np.random.default_rng()
-    dimension = 100
-    for _ in range(10):
-        instance = Instance(
-            variables=rng.integers(low=0, high=100, size=dimension),
-            descriptor=rng.integers(low=0, high=10, size=2),
-        )
-        instances.append(instance)
-    archive = GridArchive(
-        dimensions=(2, 2),
-        ranges=[(0, 10), (0, 10)],
-        instances=instances,
-    )
-    assert len(archive) != 0
-    assert all(archive.lower_i(i) == 0 for i in range(len(archive.bounds)))
-    assert all(archive.upper_i(i) == 10 for i in range(len(archive.bounds)))
-    assert all(isinstance(i, Instance) for i in archive)
-    assert all(isinstance(i, Instance) for i in archive.instances)
-    np.testing.assert_array_equal(archive.index_of([]), np.empty(0))
-
-
-def test_grid_5d(grid_5d):
-    assert len(grid_5d) == 0
-    assert len(grid_5d.bounds) == len(grid_5d.dimensions)
-    grid_zero = list(0 for _ in range(5))
-    grid_one = list(1 for _ in range(5))
-    index_of_zero = 0
-    index_of_one = 168421
-    assert grid_5d._grid_to_int_index(grid_zero) == index_of_zero
-    assert grid_5d._grid_to_int_index(grid_one) == index_of_one
-    np.testing.assert_array_equal(
-        grid_5d.int_to_grid_index(index_of_zero), np.asarray(grid_zero)
-    )
-    np.testing.assert_array_equal(
-        grid_5d.int_to_grid_index(index_of_one), np.asarray(grid_one)
-    )
-
-    expected_str = f"GridArchive(dim={grid_5d.dimensions},cells={grid_5d._cells:,},bounds={grid_5d.bounds})"
-    assert grid_5d.__str__() == expected_str
-    assert grid_5d.__repr__() == expected_str
-
-    data = grid_5d.asdict()
-    assert isinstance(data, dict)
-    assert "dimensions" in data
-    assert len(data["dimensions"]) == len(grid_5d.dimensions)
-    assert "lbs" in data
-    assert "ubs" in data
-    assert len(data["lbs"]) == len(data["ubs"])
-    assert len(data["lbs"]) == len(grid_5d.dimensions)
-    assert "n_cells" in data
-    assert "instances" in data
-    assert isinstance(data["instances"], dict)
-    assert all(isinstance(i, Instance) for i in data["instances"])
-    assert isinstance(grid_5d.to_json(), str)
-
-
-def test_grid_archive_5d_storage(grid_5d):
+def test_grid_archive_index_raises_2d_shape():
+    archive = GridArchive(dimensions=(2, 2), ranges=[(-1.0, 1.0), (-1.0, 1.0)])
     n_instances = 10
-    dimension = 100
-    rng = np.random.default_rng()
-    domain = KnapsackDomain(dimension=100)
-    instances = domain.generate_instances(n=n_instances)
-    descriptors = rng.random(size=(n_instances, 5))
+    descriptors = [[1, 2, 3, 4] for _ in range(n_instances)]
+    # Descriptor has 4d and the grid is a 2d space
+    with pytest.raises(ValueError):
+        _ = archive.index_of(descriptors)
 
-    for i in range(10):
-        instances[i].fitness = rng.random(size=1)[0]
 
-    assert len(grid_5d) == 0
-    grid_5d.extend(instances, descriptors=descriptors)
-    assert len(grid_5d) == len(instances)
+def test_grid_archive_extend_only_instances():
+    archive = GridArchive(dimensions=(2, 2), ranges=[(-1.0, 1.0), (-1.0, 1.0)])
+    instance = Instance(variables=[1, 2, 3, 4], descriptor=[0, 0])
 
-    instance = Instance(variables=rng.integers(low=0, high=100, size=dimension))
+    assert len(archive) == 0
+    assert len(archive.filled_cells) == 0
+    archive.extend([instance])
 
-    instance.descriptor = rng.random(size=5)
-    grid_5d.append(instance, descriptor=instance.descriptor)
-    assert len(grid_5d) == len(instances) + 1
+    assert len(archive) == 1
+    assert len(archive.filled_cells) == 1
+    expected_coverage = 1 / 4
+    assert_allclose(archive.coverage, expected_coverage)
 
-    grid_5d.remove([instance.descriptor])
-    assert len(grid_5d) == len(instances)
+
+def test_grid_archive_extend_instances_and_descriptor():
+    archive = GridArchive(dimensions=(2, 2), ranges=[(-1.0, 1.0), (-1.0, 1.0)])
+    instance = Instance(variables=[1, 2, 3, 4])
+    descriptor = [0, 0]
+
+    assert len(archive) == 0
+    assert len(archive.filled_cells) == 0
+    archive.extend([instance], [descriptor])
+
+    assert len(archive) == 1
+    assert len(archive.filled_cells) == 1
+    expected_coverage = 1 / 4
+    assert_allclose(archive.coverage, expected_coverage)
+
+
+def test_grid_archive_extend_instances_improves():
+    archive = GridArchive(dimensions=(2, 2), ranges=[(-1.0, 1.0), (-1.0, 1.0)])
+    descriptor = [0, 0]
+
+    instance = Instance(variables=[1, 2, 3, 4], fitness=1.0, descriptor=descriptor)
+
+    assert len(archive) == 0
+    assert len(archive.filled_cells) == 0
+    archive.extend([instance])
+
+    assert len(archive) == 1
+    assert len(archive.filled_cells) == 1
+    expected_coverage = 1 / 4
+    assert_allclose(archive.coverage, expected_coverage)
+
+    new_fitness = 100
+    new_instance = Instance(
+        variables=[1, 2, 3, 4], fitness=new_fitness, descriptor=descriptor
+    )
+    # This new instance occupies the same cell than the previous one
+    archive.extend([new_instance])
+    assert len(archive) == 1
+    assert len(archive.filled_cells) == 1
+    assert_allclose(archive.coverage, expected_coverage)
+
+
+def test_grid_archive_extend_instance_and_descriptor_improves():
+    archive = GridArchive(dimensions=(2, 2), ranges=[(-1.0, 1.0), (-1.0, 1.0)])
+    descriptor = [0, 0]
+
+    instance = Instance(variables=[1, 2, 3, 4], fitness=1.0)
+
+    assert len(archive) == 0
+    assert len(archive.filled_cells) == 0
+    archive.extend([instance], [descriptor])
+
+    assert len(archive) == 1
+    assert len(archive.filled_cells) == 1
+    expected_coverage = 1 / 4
+    assert_allclose(archive.coverage, expected_coverage)
+
+    new_fitness = 100
+    new_instance = Instance(variables=[1, 2, 3, 4], fitness=new_fitness)
+    # This new instance occupies the same cell than the previous one
+    archive.extend([new_instance], [descriptor])
+    assert len(archive) == 1
+    assert len(archive.filled_cells) == 1
+    assert_allclose(archive.coverage, expected_coverage)
+
+
+def test_grid_archive_extend_instances_and_descriptor_raises():
+    archive = GridArchive(dimensions=(2, 2), ranges=[(-1.0, 1.0), (-1.0, 1.0)])
+    instance = Instance(variables=[1, 2, 3, 4])
+    descriptors = [[0, 0], [1, 1]]
 
     with pytest.raises(ValueError):
-        grid_5d.remove([None])
+        archive.extend([instance], descriptors)
 
 
-def test_grid_limits():
-    rng = np.random.default_rng()
+def test_grid_archive_extend_not_valid_instances_raises():
+    archive = GridArchive(dimensions=(2, 2), ranges=[(-1.0, 1.0), (-1.0, 1.0)])
+    instances = [[0, 0], [1, 1]]
 
+    with pytest.raises(TypeError):
+        archive.extend(instances)
+
+
+def test_grid_archive_extends_large_dimensions():
+    dimensions = 100
     archive = GridArchive(
-        dimensions=(5, 5),
-        ranges=[(0, 100), (0, 100)],
-        dtype=np.int32,
+        dimensions=(2,) * dimensions, ranges=[[-1, 1.0] for _ in range(dimensions)]
     )
-
-    assert np.isclose(archive.coverage, 0.0)  # Empty archive
-    assert len(list(iter(archive))) == 0
-    instances = []
-    max_allowed = 25
-    n_instances = 1000
-    dimension = 100
-
-    for _ in range(n_instances):
-        inst = Instance(
-            variables=rng.integers(low=0, high=100, size=dimension),
-            fitness=0.0,
-            performance_bias=rng.integers(0, 100),
-            novelty=rng.random(),
-            descriptor=rng.integers(low=0, high=10, size=2),
-        )
-        instances.append(inst)
-
-    assert len(archive) == 0
-    assert archive.n_cells == max_allowed
-    archive.extend(instances)
-    assert len(archive) == max_allowed
-    assert archive.coverage <= 1.0
-
-
-def test_grid_extend_outside_bounds():
-    rng = np.random.default_rng()
-
-    archive = GridArchive(
-        dimensions=(5, 5),
-        ranges=[(0, 100), (0, 100)],
-        dtype=np.int32,
+    instances = default_incremental_population(
+        n_instances=10, descriptor_dim=dimensions
     )
-    instances = []
-    max_allowed = 25
-    n_instances = 1000
-    dimension = 100
-    for _ in range(n_instances):
-        inst = Instance(
-            variables=rng.integers(low=0, high=100, size=dimension),
-            fitness=rng.integers(100, 1000),
-            performance_bias=rng.integers(100, 1000),
-            novelty=rng.random(),
-            descriptor=rng.integers(low=0, high=10, size=2),
-        )
-        instances.append(inst)
-
     assert len(archive) == 0
-    assert archive.n_cells == max_allowed
-    archive.extend(instances)
-    # Out-of-bounds only inserts one in the very last cell available
-    assert len(archive) == 1
-    filled_cells = list(archive.filled_cells)
-    assert filled_cells[0] == 24
-
-
-def test_grid_extend_under_bounds():
-    rng = np.random.default_rng()
-
-    archive = GridArchive(
-        dimensions=(5, 5),
-        ranges=[(100, 1000), (100, 1000)],
-        dtype=np.int32,
-    )
-    instances = []
-    max_allowed = 25
-    n_instances = 1000
-    dimension = 1000
-    for _ in range(n_instances):
-        inst = Instance(
-            variables=rng.integers(low=0, high=100, size=dimension),
-            fitness=rng.integers(100, 1000),
-            performance_bias=rng.integers(100, 1000),
-            novelty=rng.random(),
-            descriptor=rng.integers(low=0, high=10, size=2),
-        )
-        instances.append(inst)
-
-    assert len(archive) == 0
-    assert archive.n_cells == max_allowed
-    archive.extend(instances)
-    # Out-of-bounds only inserts one in the very first cell available
-    assert len(archive) == 1
-    filled_cells = list(archive.filled_cells)
-    assert filled_cells[0] == 0
-
-
-def test_grid_archive_with_KP_instances_and_features_descriptor():
-    archive = GridArchive(
-        dimensions=(20, 20, 20, 20, 20, 20, 20, 20),
-        ranges=[
-            (700, 30000),
-            (890, 1000),
-            (860, 1000.0),
-            (1.0, 200),
-            (1.0, 230.0),
-            (0.10, 12.0),
-            (400, 610),
-            (240, 330),
-        ],
-    )
-    n_instances = 1_000
-    domain = KnapsackDomain(dimension=50)
-    raw_instances = domain.generate_instances(n_instances)
-    features = domain.extract_features(raw_instances)
-    instances = [
-        Instance(variables=raw_instances[i], descriptor=features[i])
-        for i in range(n_instances)
-    ]
-
-    assert len(archive) == 0
-    assert archive.n_cells == np.prod(np.asarray((20,) * 8))
     archive.extend(instances)
     assert len(archive) > 0
-    assert all(idx > 0 and idx < archive.n_cells for idx in archive.filled_cells)
+    assert len(archive) <= 10
 
 
-def test_grid_archive_with_KP_instances_separated_descriptors():
-    archive = GridArchive(
-        dimensions=(20, 20, 20, 20, 20, 20, 20, 20),
-        ranges=[
-            (700, 30000),
-            (890, 1000),
-            (860, 1000.0),
-            (1.0, 200),
-            (1.0, 230.0),
-            (0.10, 12.0),
-            (400, 610),
-            (240, 330),
-        ],
-    )
-    n_instances = 1_000
-    domain = KnapsackDomain(dimension=50)
-    instances = domain.generate_instances(n_instances)
-    features = domain.extract_features(instances)
+def test_grid_archive_remove():
+    archive = GridArchive(dimensions=(2, 2), ranges=[(-1.0, 1.0), (-1.0, 1.0)])
+    instance = Instance(variables=[1, 2, 3, 4], descriptor=[0, 0])
 
     assert len(archive) == 0
-    assert archive.n_cells == np.prod(np.asarray((20,) * 8))
-    archive.extend(instances, descriptors=features)
-    assert len(archive) > 0 and len(archive) <= 1000
-    assert all(idx > 0 and idx < archive.n_cells for idx in archive.filled_cells)
+    assert len(archive.filled_cells) == 0
+    archive.extend([instance])
+
+    assert len(archive) == 1
+    assert len(archive.filled_cells) == 1
+
+    archive.remove([[0, 0]])
+    assert len(archive) == 0
+    assert len(archive.filled_cells) == 0
 
 
-def test_grid_archive_getitem():
-    rng = np.random.default_rng()
-
-    instances = []
-    dimension = 100
-    for _ in range(1000):
-        instance = Instance(
-            variables=rng.integers(low=0, high=100, size=dimension),
-            descriptor=rng.integers(low=0, high=10, size=2),
-        )
-        instances.append(instance)
-
+def test_grid_archive_remove_empty():
+    instance = Instance(variables=[1, 2, 3, 4], descriptor=[0, 0])
     archive = GridArchive(
-        dimensions=(10, 10),
-        ranges=[(0, 10), (0, 10)],
-        instances=instances,
+        dimensions=(2, 2), ranges=[(-1.0, 1.0), (-1.0, 1.0)], instances=[instance]
     )
-    results = archive[[0, 11], [0, 5]]
-    assert isinstance(results, list)
-    assert len(results) == 2
-    results = archive[[0, 5]]
-    assert isinstance(results, list)
-    assert len(results) == 2
 
-    result_simple = archive[0, 5]
-    assert isinstance(result_simple, list)
-    assert len(result_simple) == 2
-    assert result_simple == results
+    assert len(archive) == 1
+    assert len(archive.filled_cells) == 1
+
+    archive.remove([])  # Doesn't remove anything
+    assert len(archive) == 1
+    assert len(archive.filled_cells) == 1

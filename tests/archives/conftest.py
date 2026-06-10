@@ -39,13 +39,16 @@ def default_incremental_population(
     dimension: int = 100,
     descriptor_dim: int = 4,
     portfolio_dim: int = 4,
+    fitness: int = 100,
+    novelty: float = 1.0,
+    performance_bias: float = 1.0,
 ):
     return [
         Instance(
             variables=list(range(dimension)),
-            fitness=100.0,
-            performance_bias=1.0,
-            novelty=1.0,
+            fitness=fitness,
+            performance_bias=performance_bias,
+            novelty=novelty,
             descriptor=tuple(range(descriptor_dim)),
             portfolio_scores=tuple(range(portfolio_dim)),
         )

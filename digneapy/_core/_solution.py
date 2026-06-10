@@ -218,7 +218,7 @@ class Solution:
             value: Value to set in the variables
 
         """
-        if not isinstance(key, (int, slice)):
+        if not isinstance(key, (int, np.integer, np.unsignedinteger, slice)):
             raise TypeError(
                 f"Solution cannot be update via __setitem__ with type: {type(key)}. Use slice or int."
             )

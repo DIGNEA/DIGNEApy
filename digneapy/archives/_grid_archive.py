@@ -11,11 +11,12 @@
 """
 
 from collections.abc import Iterable, Sequence, Set
-from typing import Iterator, Optional, Tuple, override
+from typing import Iterator, Optional, Tuple
 
 import numpy as np
 
 from .._core import Instance
+from ._utils import check_valid_instance_batch, check_valid_shapes
 from .base import Archive, Keys
 
 
@@ -131,7 +132,7 @@ class GridArchive(Archive):
 
         if i < 0 or i > len(self._lower_bounds):
             msg = f"index {i} is out of bounds. Valid values are [0-{len(self._boundaries)}]"
-            raise ValueError(msg)
+            raise IndexError(msg)
 
         return self._lower_bounds[i]
 
@@ -152,7 +153,7 @@ class GridArchive(Archive):
             raise TypeError(f"upper_i expects i to be an integer. Got: {type(i)}")
         if i < 0 or i > len(self._upper_bounds):
             msg = f"index {i} is out of bounds. Valid values are [0-{len(self._boundaries)}]"
-            raise ValueError(msg)
+            raise IndexError(msg)
 
         return self._upper_bounds[i]
 
@@ -220,19 +221,6 @@ class GridArchive(Archive):
         """
         return len(self._storage[Keys.grid])
 
-    @override
-    def purge_unfeasible(self, attr: str = "p") -> None:
-        """Removes all the unfeasible instances from the grid"""
-        idx_to_remove = list(
-            i
-            for (i, instance) in self._storage[Keys.instances].items()
-            if getattr(instance, attr) < 0
-        )
-        for i in idx_to_remove:
-            self._storage[Keys.grid].remove(i)
-            del self._storage[Keys.instances][i]
-            del self._storage[Keys.descriptors][i]
-
     def __call__(self, *args, **kwargs) -> np.ndarray:
         raise NotImplementedError("Not implemented in GridArchive")
 
@@ -243,50 +231,51 @@ class GridArchive(Archive):
         *args,
         **kwargs,
     ) -> None:
-        """Includes all the instances in iterable into the Grid
+        """Extends the archive with instances
 
         Args:
-            iterable (Iterable[Instance]): Iterable of instances
+            instances (Sequence[Instance]): Collection of instances to insert in the archive
+            descriptors (Optional[np.ndarray], optional): Descriptors of the instances.
+                If not given, they are extracted from the Instance objects inside the instances collection. Defaults to None.
+
+        Raises:
+            TypeError: If instances contains objects which class is not Instance
+            ValueError: If there is a mismatch in the shapes (lens) of the instances and descriptors.
         """
-        if not all(isinstance(i, Instance) for i in instances):
-            msg = "Only objects of type Instance can be inserted into a GridArchive"
-            raise TypeError(msg)
-        if descriptors is None:
-            try:
-                descriptors = np.asarray([i.descriptor for i in instances])
-            except AttributeError as e:
-                print(
-                    "Instances do not have a descriptor yet and the value descriptor is None"
+        if check_valid_instance_batch(instances):
+            if descriptors is None:
+                descriptors = np.asarray([
+                    instance.descriptor for instance in instances
+                ])
+            if check_valid_shapes(instances, descriptors):
+                indices = self.index_of(descriptors)
+                for index, instance, descriptor in zip(
+                    indices, instances, descriptors, strict=True
+                ):
+                    if (
+                        index not in self._storage[Keys.grid]
+                        or instance.fitness
+                        > self._storage[Keys.instances][index].fitness
+                    ):
+                        self._storage[Keys.grid].add(index)
+                        self._storage[Keys.instances][index] = instance.clone()
+                        self._storage[Keys.descriptors][index] = descriptor
+            else:
+                raise ValueError(
+                    "Shape mismatch between the instances, novelty_scores and descriptors."
+                    f"instances have {len(instances)} instances and "
+                    f"descriptors contains {len(descriptors)}."
                 )
-                raise (e)
+        else:
+            raise TypeError(
+                "All objects inside the instances sequence must be object of the Instance class."
+            )
 
-        indices = self.index_of(descriptors)
-        for idx, instance, descriptor in zip(
-            indices, instances, descriptors, strict=True
-        ):
-            if (
-                idx not in self._storage[Keys.grid]
-                or instance.fitness > self._storage[Keys.instances][idx].fitness
-            ):
-                self._storage[Keys.grid].add(idx)
-                self._storage[Keys.instances][idx] = instance.clone()
-                self._storage[Keys.descriptors][idx] = descriptor
-
-    def remove(self, descriptors: np.ndarray) -> None:
-        """Removes all the instances with the matching descriptors in iterable from the grid"""
-
-        indices_to_remove = self.index_of(descriptors)
-        for index in indices_to_remove:
-            if index in self._storage[Keys.grid]:
-                self._storage[Keys.grid].remove(index)
-                del self._storage[Keys.instances][index]
-                del self._storage[Keys.descriptors][index]
-
-    def index_of(self, descriptors) -> np.ndarray:
+    def index_of(self, descriptors: np.ndarray) -> np.ndarray:
         """Computes the indices of a batch of descriptors.
 
         Args:
-            descriptors (array-like): (batch_size, dimensions) array of descriptors for each instance
+            descriptors (np.ndarray): (batch_size, dimensions) array of descriptors for each instance
 
         Raises:
             ValueError: ``descriptors`` is not shape (batch_size, dimensions)
@@ -296,6 +285,7 @@ class GridArchive(Archive):
         """
         if len(descriptors) == 0:
             return np.empty(0)
+
         descriptors = np.asarray(descriptors)
         if (
             descriptors.ndim == 1
@@ -310,16 +300,17 @@ class GridArchive(Archive):
                 f"{descriptors.shape}"
             )
 
-        grid_indices = (
+        grid_indices = np.asarray(
             (self._dimensions * (descriptors - self._lower_bounds) + self._eps)
-            / self._interval
-        ).astype(int)
+            / self._interval,
+            dtype=int,
+        )
 
         # Clip the indexes to make sure they are in the expected range for each dimension
         clipped = np.clip(grid_indices, 0, self._dimensions - 1)
-        return self._grid_to_int_index(clipped)
+        return self.grid_to_int_index(clipped)
 
-    def _grid_to_int_index(self, grid_indices) -> np.ndarray:
+    def grid_to_int_index(self, grid_indices: np.ndarray) -> np.ndarray:
         grid_indices = np.asarray(grid_indices)
         if len(self._dimensions) > 64:
             strides = np.cumprod((1,) + tuple(self._dimensions[::-1][:-1]))[::-1]
@@ -332,7 +323,7 @@ class GridArchive(Archive):
             ).astype(int)
         return flattened_indices
 
-    def int_to_grid_index(self, int_indices) -> np.ndarray:
+    def int_to_grid_index(self, int_indices: np.array) -> np.ndarray:
         int_indices = np.asarray(int_indices)
         if len(self._dimensions) > 64:
             # Manually unravel the index for dimensions > 64

@@ -58,13 +58,6 @@ class Archive(ABC):
                     "All objects of initial_instances must be of type Instance."
                 )
 
-    # def purge_unfeasible(self, attr: str = "p") -> None:
-    #     """Removes all the unfeasible instances from the grid"""
-    #     for i, instance in self._storage[Keys.instances]:
-    #         if getattr(instance, attr) < 0:
-    #             del self._storage[Keys.instances][i]
-    #             del self._storage[Keys.descriptors][i]
-
     @property
     def instances(self) -> Sequence[Instance]:
         """Instances of the archive

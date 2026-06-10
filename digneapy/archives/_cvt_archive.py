@@ -20,12 +20,15 @@ import numpy.typing as npt
 from sklearn.cluster import KMeans
 from sklearn.neighbors import KDTree
 
+from .._core import Instance
 from ._grid_archive import GridArchive
 from .base import Keys
 
 
 class CVTArchive(GridArchive):
     """An Archive that divides a high-dimensional measure space into k homogeneous geometric regions.
+
+
     Based on the paper from Vassiliades et al (2018) <https://ieeexplore.ieee.org/document/8000667>
     > The computational complexity of the method we provide for constructing the CVT (in Algorithm 1) is O(ndki),
     > where n is the number of d-dimensional samples to be clustered, k is the number of clusters,
@@ -39,25 +42,28 @@ class CVTArchive(GridArchive):
         n_samples: int,
         centroids: Optional[npt.NDArray | str] = None,
         samples: Optional[npt.NDArray | str] = None,
-        dtype=np.float64,
+        instances: Optional[Sequence[Instance]] = None,
         seed: Optional[int | np.random.SeedSequence] = None,
     ):
         """Creates a CVTArchive object
 
         Args:
-            k (int): Number of centroids (regions) to create
+            k (int): Number of centroids (regions) to create. It must be a positive integer value.
             ranges (Sequence[Tuple[float, float]]): Ranges of the measure space. Upper and lower bound of each
-            dimension of the measure space, e.g. ``[(-1, 1), (-2, 2)]``
-            indicates the first dimension should have bounds :math:`[-1,1]`
-            (inclusive), and the second dimension should have bounds
-            :math:`[-2,2]` (inclusive). The legnth of ``ranges`` indicates the number of dimensions of the measure space.
-            n_samples (int): Number of samples to generate before calculating the centroids.
-            centroids (Optional[npt.NDArray  |  str], optional): Precalculated centroids for the archive.
-            The options are a np.ndarray with the values of ``k`` centroids or a .txt with the centroids to be loaded by Numpy. Defaults to None.
-            samples (Optional[npt.NDArray  |  str], optional): Precalculated samples for the archive.
-            The options are a np.ndarray with the values of ``n_samples`` samples or a .txt with the samples to be loaded by Numpy. Defaults to None.
+                dimension of the measure space, e.g. ``[(-1, 1), (-2, 2)]`` indicates the first dimension
+                should have bounds :math:`[-1,1]` (inclusive), and the second dimension should have bounds
+                :math:`[-2,2]` (inclusive). The legnth of ``ranges`` indicates the number of dimensions of the measure space.
+            n_samples (int): Number of samples to generate before calculating the centroids. This is expected to be
+                a positive integer.
+            centroids (Optional[npt.NDArray | str], optional): Precalculated centroids for the archive. The options are
+                a np.ndarray with the values of ``k`` centroids or a .txt with the centroids to be loaded by Numpy. Defaults to None.
+            samples (Optional[npt.NDArray  |  str], optional): Precalculated samples for the archive. The options
+                are a np.ndarray with the values of ``n_samples`` samples or a .txt with the samples to be loaded by Numpy. Defaults to None.
+            seed (Optional[int | np.random.SeedSequence]): Seed to start the random generation engine to compute the centroids. Defaults to None (takes entropy).
 
         Raises:
+            TypeError: If k is not a valid integer.
+            ValueError: If k <= 0.
             ValueError: If len(ranges) <= 0.
             ValueError: If the number of samples is less than zero or less than the number of regions (k).
             ValueError: If the number of regions is less than zero.
@@ -66,6 +72,7 @@ class CVTArchive(GridArchive):
             ValueError: If the centroids file cannot be loaded.
             ValueError: If given a centroids np.ndarray the number of centroids in the file is different from the number of regions (k).
         """
+
         if k <= 0:
             raise ValueError(f"The number of regions (k = {k}) must be >= 1")
 
@@ -82,7 +89,6 @@ class CVTArchive(GridArchive):
             self,
             dimensions=(1,) * len(ranges),
             ranges=ranges,
-            dtype=dtype,
         )
 
         self._dimensions = len(ranges)
@@ -193,10 +199,7 @@ class CVTArchive(GridArchive):
     def __str__(self):
         return f"CVArchive(dim={self._dimensions},regions={self._k},centroids={self._centroids})"
 
-    def __repr__(self):
-        return f"CVArchive(dim={self._dimensions},regions={self._k},centroids={self._centroids})"
-
-    def index_of(self, descriptors) -> np.ndarray:
+    def index_of(self, descriptors: np.ndarray) -> np.ndarray:
         """Computes the indeces of a batch of descriptors.
 
         Args:
@@ -299,7 +302,7 @@ class CVTArchive(GridArchive):
         except IOError as io:
             raise ValueError(f"Error opening file {filename}. Reason -> {io.strerror}")
 
-    def asdict(self) -> dict:
+    def to_dict(self) -> dict:
         return {
             "dimensions": self._dimensions,
             "n_samples": self._n_samples,

@@ -19,7 +19,7 @@ import numpy as np
 
 from digneapy.typing import IndType
 
-from .base import Replacement
+from ._base_replacement import Replacement
 
 
 class Elitist(Replacement):

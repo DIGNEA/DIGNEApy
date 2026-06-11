@@ -25,7 +25,7 @@ class BPP(Problem):
     def __init__(
         self,
         items: Iterable[int],
-        capacity: np.uint32,
+        capacity: np.uint32 | int,
         seed: Optional[int | np.random.SeedSequence] = None,
         *args,
         **kwargs,
@@ -42,6 +42,7 @@ class BPP(Problem):
 
     def evaluate(self, individual: Sequence | Solution | np.ndarray) -> tuple[float]:
         """Evaluates the candidate individual with the information of the Bin Packing.
+
         The fitness of the solution is the amount of unused space, as well as the
         number of bins for a specific solution. Falkenauer (1998) performance metric
         defined as:
@@ -87,7 +88,10 @@ class BPP(Problem):
 
     def create_solution(self) -> Solution:
         items = list(range(self._dimension))
-        return Solution(variables=items)
+        return Solution(
+            variables=items,
+            objectives=np.zeros(1),
+        )
 
     def to_file(self, filename: str = "instance.bpp"):
         with open(filename, "w") as file:

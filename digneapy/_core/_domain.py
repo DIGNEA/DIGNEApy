@@ -22,8 +22,8 @@ from ._problem import Problem
 
 class Domain(ABC):
     """Domain is a class that defines the domain of the problem.
-    The domain is defined by its dimension and the bounds of each variable.
 
+    The domain is defined by its dimension and the bounds of each variable.
     """
 
     def __init__(
@@ -32,7 +32,7 @@ class Domain(ABC):
         bounds: Sequence[Tuple],
         dtype=np.float64,
         domain_name: str = "Domain",
-        features_names: Optional[Sequence[str]] = None,
+        features_names: Optional[Sequence[str]] = [],
         seed: Optional[int | np.random.SeedSequence] = None,
         *args,
         **kwargs,
@@ -50,7 +50,8 @@ class Domain(ABC):
         self._dimension = dimension
         self._bounds = bounds
         self._dtype = dtype
-        self.feat_names = features_names if features_names else list()
+        self.features_names = features_names
+        print(self.features_names)
         if len(self._bounds) != 0:
             ranges = list(zip(*bounds))
             self._lbs = np.asarray(ranges[0], dtype=dtype)
@@ -100,6 +101,7 @@ class Domain(ABC):
         self, instances: Sequence[Instance] | np.ndarray
     ) -> Sequence[Dict]:
         """Creates a dictionary with the features of the instance.
+
         The key are the names of each feature and the values are
         the values extracted from instance.
 

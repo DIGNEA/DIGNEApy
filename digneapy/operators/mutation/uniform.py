@@ -16,7 +16,7 @@ import numpy as np
 
 from digneapy.typing import IndType
 
-from .base import Mutation
+from ._base_mutation import Mutation
 
 
 class UniformMutation(Mutation):

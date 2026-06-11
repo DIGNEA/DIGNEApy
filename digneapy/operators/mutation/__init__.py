@@ -10,7 +10,7 @@
 @Desc    :   None
 """
 
-from .base import Mutation
+from ._base_mutation import Mutation
 from .iso import ILMut, ISOLineMutation
 from .uniform import BatchUMut, BatchUniformMutation, UMut, UniformMutation
 

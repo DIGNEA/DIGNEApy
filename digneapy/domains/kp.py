@@ -37,7 +37,9 @@ class Knapsack(Problem):
                 f"The number of weights and profits is different in Knapsack. Got {len(weights)} weights and {len(profits)} profits"
             )
         if capacity <= 0:
-            raise ValueError(f"Cannot create a Knapsack Problem with negative capacity. Got {capacity}")
+            raise ValueError(
+                f"Cannot create a Knapsack Problem with negative capacity. Got {capacity}"
+            )
 
         super().__init__(dimension=len(profits), bounds=[], name="KP", seed=seed)
 
@@ -110,7 +112,10 @@ class Knapsack(Problem):
 
     def create_solution(self) -> Solution:
         chromosome = self._rng.integers(low=0, high=1, size=self._dimension)
-        return Solution(variables=chromosome)
+        return Solution(
+            variables=chromosome,
+            objectives=np.zeros(1),
+        )
 
     def to_file(self, filename: str = "instance.kp"):
         with open(filename, "w") as file:
@@ -155,7 +160,11 @@ class KnapsackDomain(Domain):
         self.max_w = max_w
         self.max_capacity = max_capacity
 
-        if type(capacity_ratio) not in (int, float) or capacity_ratio < 0.0 or capacity_ratio > 1.0:
+        if (
+            type(capacity_ratio) not in (int, float)
+            or capacity_ratio < 0.0
+            or capacity_ratio > 1.0
+        ):
             self.capacity_ratio = 0.8  # Default
             msg = "The capacity ratio must be a float number in the range [0.0-1.0]. Set as 0.8 as default."
             print(msg)
@@ -172,11 +181,12 @@ class KnapsackDomain(Domain):
             (min_w, max_w) if i % 2 == 0 else (min_p, max_p)
             for i in range(2 * dimension)
         ]
+        _features_names = "capacity,max_p,max_w,min_p,min_w,avg_eff,mean,std".split(",")
         super().__init__(
             dimension=dimension,
             bounds=bounds,
             name="KP",
-            feat_names="capacity,max_p,max_w,min_p,min_w,avg_eff,mean,std".split(","),
+            features_names=_features_names,
             seed=seed,
         )
 
@@ -243,7 +253,7 @@ class KnapsackDomain(Domain):
         if not isinstance(instances, np.ndarray):
             instances = np.asarray(instances, copy=True)
 
-        features = np.empty(shape=(len(instances), 8), dtype=np.float32)
+        features = np.empty(shape=(len(instances), 8), dtype=np.float64)
         weights = instances[:, 1::2]
         profits = instances[:, 2::2]
         features[:, 0] = instances[:, 0]  # Qs
@@ -259,8 +269,9 @@ class KnapsackDomain(Domain):
 
     def extract_features_as_dict(
         self, instances: Sequence[Instance] | np.ndarray
-    ) -> List[Dict[str, np.float32]]:
+    ) -> List[Dict[str, np.float64]]:
         """Creates a dictionary with the features of the instance.
+
         The key are the names of each feature and the values are
         the values extracted from instance.
 
@@ -271,9 +282,11 @@ class KnapsackDomain(Domain):
             Dict[str, float]: Dictionary with the names/values of each feature
         """
         features = self.extract_features(instances)
-        named_features: list[dict[str, np.float32]] = [{}] * len(features)
-        for i, feats in enumerate(features):
-            named_features[i] = {k: v for k, v in zip(self.feat_names, feats)}
+        named_features = []
+        for instance_features in features:
+            named_features.append({
+                k: v for k, v in zip(self.features_names, instance_features)
+            })
 
         return named_features
 

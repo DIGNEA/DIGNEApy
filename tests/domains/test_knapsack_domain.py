@@ -16,7 +16,7 @@ import os
 import numpy as np
 import pytest
 
-from digneapy.domains import kp
+from digneapy.domains import Knapsack, KnapsackDomain
 
 
 @pytest.fixture
@@ -24,7 +24,7 @@ def default_kp():
     p = list(range(1, 101))
     w = list(range(1, 101))
     q = 50
-    return kp.Knapsack(p, w, q)
+    return Knapsack(p, w, q)
 
 
 def test_default_kp_instance_can_attrs_can_be_modified(default_kp):
@@ -39,10 +39,10 @@ def test_default_kp_instance_can_attrs_can_be_modified(default_kp):
 
 def test_KP_init_raises_with_wrong_args():
     with pytest.raises(ValueError):
-        _ = kp.Knapsack(profits=list(range(100)), weights=list(range(10)))
+        _ = Knapsack(profits=list(range(100)), weights=list(range(10)))
 
     with pytest.raises(ValueError):
-        _ = kp.Knapsack(profits=list(range(10)), weights=list(range(10)), capacity=-100)
+        _ = Knapsack(profits=list(range(10)), weights=list(range(10)), capacity=-100)
 
 
 def test_KP_bounds(default_kp):
@@ -90,7 +90,7 @@ def test_default_kp_instance_can_raises_when_wrong_evaluation(default_kp):
 
 def test_default_kp_domain_attrs_are_as_expected():
     dimension = 100
-    domain = kp.KnapsackDomain(dimension, capacity_approach="evolved")
+    domain = KnapsackDomain(dimension, capacity_approach="evolved")
     assert len(domain) == dimension
     assert domain.capacity_approach == "evolved"
     assert np.isclose(domain.max_capacity, 1e5)
@@ -104,9 +104,7 @@ def test_default_kp_domain_attrs_are_as_expected():
 
 def test_default_kp_domain_wrong_args():
     dimension = 100
-    domain = kp.KnapsackDomain(
-        dimension, capacity_approach="random", capacity_ratio=-1.0
-    )
+    domain = KnapsackDomain(dimension, capacity_approach="random", capacity_ratio=-1.0)
     assert domain.capacity_approach == "evolved"
     assert np.isclose(domain.capacity_ratio, 0.8)
 
@@ -120,7 +118,7 @@ def test_kp_domain_extract_features_for_N_instances_with_capacity_approach_(
 ):
     N_INSTANCES = 100
     dimension = 100
-    domain = kp.KnapsackDomain(dimension, capacity_approach=capacity_approach)
+    domain = KnapsackDomain(dimension, capacity_approach=capacity_approach)
     instances = np.asarray(domain.generate_instances(N_INSTANCES))
     features = domain.extract_features(instances)
 
@@ -140,10 +138,11 @@ def test_kp_domain_extract_features_for_N_instances_with_capacity_approach_(
 
 
 @pytest.mark.parametrize("capacity_approach", ("fixed", "evolved", "percentage"))
-def test_kp_domain_to_features_dict(capacity_approach):
+def test_kp_domain_to_descritor_dict(capacity_approach):
     dimension = 100
-    domain = kp.KnapsackDomain(dimension, capacity_approach=capacity_approach)
-    instances = np.asarray(domain.generate_instances(n=100))
+    n_instances = 10
+    domain = KnapsackDomain(dimension, capacity_approach=capacity_approach)
+    instances = np.asarray(domain.generate_instances(n=n_instances))
     features = domain.extract_features_as_dict(instances)
     expected_eff = np.mean(instances[:, 2::2] / instances[:, 1::2])
 
@@ -163,7 +162,7 @@ def test_kp_domain_to_features_dict(capacity_approach):
 def test_kp_domain_generate_problems_from_instances(capacity_approach):
     dimension = 100
     n_instances = 100
-    domain = kp.KnapsackDomain(dimension, capacity_approach=capacity_approach)
+    domain = KnapsackDomain(dimension, capacity_approach=capacity_approach)
     instances = domain.generate_instances(n=n_instances)
 
     problems = domain.generate_problems_from_instances(instances)

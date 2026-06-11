@@ -10,7 +10,7 @@
 @Desc    :   None
 """
 
-from .base import Crossover
+from ._base_crossover import Crossover
 from .opoint import OPCX, OnePointCrossover
 from .uniform import UCX, UniformCrossover
 

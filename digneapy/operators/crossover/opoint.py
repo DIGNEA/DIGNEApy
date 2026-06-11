@@ -16,7 +16,7 @@ import numpy as np
 
 from digneapy.typing import IndType
 
-from .base import Crossover
+from ._base_crossover import Crossover
 
 
 class OnePointCrossover(Crossover):

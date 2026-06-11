@@ -10,7 +10,7 @@
 @Desc    :   None
 """
 
-from .base import Selection
+from ._base_selection import Selection
 from .binary import BinarySelection
 
 __all__ = ["Selection", "BinarySelection"]

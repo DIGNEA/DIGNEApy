@@ -10,7 +10,7 @@
 @Desc    :   None
 """
 
-from .base import Replacement
+from ._base_replacement import Replacement
 from .elitist import Elitist
 from .generational import Generational
 from .greedy import GreedyReplacement

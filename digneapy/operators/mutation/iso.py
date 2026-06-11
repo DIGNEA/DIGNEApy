@@ -14,7 +14,7 @@ from typing import Optional
 
 import numpy as np
 
-from .base import Mutation
+from ._base_mutation import Mutation
 
 
 class ISOLineMutation(Mutation):

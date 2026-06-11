@@ -18,7 +18,7 @@ import numpy as np
 
 from digneapy.typing import IndType
 
-from .base import Selection
+from ._base_selection import Selection
 
 
 class BinarySelection(Selection):

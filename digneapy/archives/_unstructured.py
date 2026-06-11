@@ -131,6 +131,8 @@ class UnstructuredArchive(Archive):
         instances: Sequence[Instance],
         novelty_scores: Optional[np.ndarray] = None,
         descriptors: Optional[np.ndarray] = None,
+        *args,
+        **kwargs,
     ):
         """Extends the archive with the new batch of instances.
 

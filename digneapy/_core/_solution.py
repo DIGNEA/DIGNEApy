@@ -38,7 +38,7 @@ class Solution:
         variables: Optional[Iterable] = [],
         objectives: Optional[Iterable] = [],
         constraints: Optional[Iterable] = [],
-        fitness: float | np.float64 = np.float64(0.0),
+        fitness: float | np.float64 = 0.0,
         dtype=np.uint32,
         otype=np.float64,
     ):
@@ -65,10 +65,10 @@ class Solution:
                 self._fitness = np.float64(0)
             else:
                 self._fitness = np.float64(fitness)
-        except ValueError:
+        except (TypeError, ValueError) as exc:
             raise ValueError(
-                "Fitness must be convertible to float in Solution.__init__()"
-            )
+                "Fitness must be convertible to float in Solution"
+            ) from exc
 
     @property
     def dtype(self):
@@ -93,18 +93,19 @@ class Solution:
         self._variables = np.asarray(new_variables)
 
     @property
-    def fitness(self) -> np.float64:
+    def fitness(self) -> np.float64 | float:
         return self._fitness
 
     @fitness.setter
-    def fitness(self, f: np.float64):
+    def fitness(self, f: np.float64 | float):
         try:
-            self._fitness = np.float64(f)
-            print(self._fitness)
-        except ValueError:
-            # if f != 0.0 and not float(f):
-            msg = f"The fitness value {f} is not a float in fitness setter of class Solution."
-            raise ValueError(msg)
+            self._fitness = float(f)
+        except (TypeError, ValueError) as exc:
+            raise ValueError(
+                f"The fitness value {f} is not a float in fitness setter of class Solution."
+            ) from exc
+        finally:
+            self._fitness = np.float64(self._fitness)
 
     @property
     def objectives(self):

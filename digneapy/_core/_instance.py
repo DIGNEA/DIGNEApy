@@ -103,10 +103,11 @@ class Instance:
             self._fitness = float(fitness)
             self._performance_bias = float(performance_bias)
             self._novelty = float(novelty)
-        except Exception:
-            raise TypeError(
-                "fitness, performance_bias and novelty parameters must be convertible to float."
-            )
+        except (TypeError, ValueError) as exception:
+            exception.add_note(f"fitness: {fitness}")
+            exception.add_note(f"performance_bias: {performance_bias}")
+            exception.add_note(f"novelty: {novelty}")
+            raise TypeError("Wrong parameters for Instance.") from exception
         # Todo: Consider fixing the dimensions of the descriptor and portfolio
         # if type(descriptor_dim) is not int or descriptor_dim <= 0:
         #     raise ValueError(
@@ -206,10 +207,10 @@ class Instance:
     def performance_bias(self, performance: float | np.float64):
         try:
             self._performance_bias = float(performance)
-        except Exception:
+        except (TypeError, ValueError) as exc:
             raise ValueError(
                 f"performance_bias value is not a float. Got: {performance}."
-            )
+            ) from exc
 
     @property
     def novelty(self) -> float | np.float64:
@@ -219,8 +220,10 @@ class Instance:
     def novelty(self, nov_score: float | np.float64):
         try:
             self._novelty = float(nov_score)
-        except Exception:
-            raise ValueError(f"nov_score value is not a float. Got: {nov_score}.")
+        except (TypeError, ValueError) as exc:
+            raise ValueError(
+                f"nov_score value is not a float. Got: {nov_score}."
+            ) from exc
 
     @property
     def fitness(self) -> float | np.float64:
@@ -230,8 +233,10 @@ class Instance:
     def fitness(self, new_fitness: float | np.float64):
         try:
             self._fitness = float(new_fitness)
-        except Exception:
-            raise ValueError(f"new_fitness value is not a float. Got: {new_fitness}.")
+        except (TypeError, ValueError) as exc:
+            raise ValueError(
+                f"new_fitness value is not a float. Got: {new_fitness}."
+            ) from exc
 
     @property
     def descriptor(self) -> np.ndarray:

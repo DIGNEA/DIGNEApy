@@ -56,6 +56,29 @@ def default_incremental_population(
     ]
 
 
+def population_with_custom_descriptors(
+    descriptors: np.ndarray,
+    n_instances: int = 10,
+    dimension: int = 100,
+    portfolio_dim: int = 4,
+    fitness: int = 100,
+    novelty: float = 1.0,
+    performance_bias: float = 1.0,
+):
+
+    return [
+        Instance(
+            variables=list(range(dimension)),
+            fitness=fitness,
+            performance_bias=performance_bias,
+            novelty=novelty,
+            descriptor=descriptors[i],
+            portfolio_scores=tuple(range(portfolio_dim)),
+        )
+        for i in range(n_instances)
+    ]
+
+
 ARCHIVE_NAMES = [
     "UnstructuredArchive",
     "GridArchive",

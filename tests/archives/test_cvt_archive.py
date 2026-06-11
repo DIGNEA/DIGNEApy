@@ -10,267 +10,301 @@
 @Desc    :   None
 """
 
-import os
+from pathlib import Path
 
 import numpy as np
 import pytest
+from numpy.testing import assert_equal
 
 from digneapy import CVTArchive, Instance
+from digneapy.archives._cvt_archive import compute_centroids
+
+from .conftest import population_with_custom_descriptors
 
 
-@pytest.fixture
-def setup_and_teardown_cvt():
-    def_filename = "default_cvt"
+def test_compute_centroids():
+    n_centroids = 10
+    descriptor_dimension = 100
+    n_samples = 10_000
+    lwi = 0
+    hwi = 100
+    lower_bounds = np.full(descriptor_dimension, fill_value=lwi)
+    upper_bounds = np.full(descriptor_dimension, fill_value=hwi)
 
-    cvt = CVTArchive(
-        k=100, ranges=[(0.0, 100.0), (0.0, 100.0), (0.0, 100.0)], n_samples=100
+    centroids, samples = compute_centroids(
+        n_centroids, descriptor_dimension, lower_bounds, upper_bounds, n_samples
     )
-    print("Creating all the .npy files")
-    # Creates all the files
-    cvt.to_file(def_filename)
-    _ = cvt.to_json(filename=def_filename)
 
-    yield cvt
-    # Cleaning all the files
-    print("Cleaning all the .npy files")
+    assert isinstance(centroids, np.ndarray)
+    assert_equal(centroids.shape, (n_centroids, descriptor_dimension))
 
-    os.remove(f"{def_filename}_centroids.npy")
-    os.remove(f"{def_filename}_samples.npy")
-    os.remove(f"{def_filename}.json")
+    assert isinstance(samples, np.ndarray)
+    assert_equal(samples.shape, (n_samples, descriptor_dimension))
+    for sample in samples:
+        # All samples are inside the expected bounds
+        assert all(lwi <= s_i <= hwi for s_i in sample)
 
 
-def test_cvt_archive_interface():
-    cvt = CVTArchive(
-        k=100, ranges=[(0.0, 100.0), (0.0, 100.0), (0.0, 100.0)], n_samples=100
-    )
-    assert cvt.dimensions == 3
-    assert cvt.regions == 100
-    assert cvt._n_samples == 100
-    assert len(cvt.samples) == 100
-    assert len(cvt.centroids) == 100
-    assert all(min(c_i) >= 0.0 for c_i in cvt.centroids)
-    assert all(max(c_i) <= 100.0 for c_i in cvt.centroids)
-    assert all(len(c_i) == 3 for c_i in cvt.centroids)
-    lbs, ubs = cvt.bounds
-    assert all(np.isclose(lbs_i, 0.0) for lbs_i in lbs)
-    assert all(np.isclose(ubs_i, 100.0) for ubs_i in ubs)
-    assert all(min(s_i) >= 0.0 for s_i in cvt.samples)
-    assert all(max(s_i) <= 100.0 for s_i in cvt.samples)
+def test_compute_centroids_raises_not_enough_centroids():
+    n_centroids = 1_000
+    descriptor_dimension = 100
+    n_samples = 100
+    lwi = 0
+    hwi = 100
+    lower_bounds = np.full(descriptor_dimension, fill_value=lwi)
+    upper_bounds = np.full(descriptor_dimension, fill_value=hwi)
 
-    def_filename = "default_cvt_1_use"
-    cvt.to_file(def_filename)
-    assert os.path.exists(f"{def_filename}_centroids.npy")
-    assert os.path.exists(f"{def_filename}_samples.npy")
-    os.remove(f"{def_filename}_centroids.npy")
-    os.remove(f"{def_filename}_samples.npy")
-
-    json_data = cvt.to_json(filename=def_filename)
-    assert isinstance(json_data, str)
-    assert os.path.exists(f"{def_filename}.json")
-    os.remove(f"{def_filename}.json")
-
-    expected_str = f"CVArchive(dim=3,regions=100,centroids={cvt.centroids})"
-    assert cvt.__str__() == expected_str
-    assert cvt.__repr__() == expected_str
-
-    np.testing.assert_array_equal(cvt.index_of([]), np.empty(0))
-
-
-def test_cvt_init_raises(setup_and_teardown_cvt):
-    with pytest.raises(ValueError) as e:
-        _ = CVTArchive(
-            k=-1, ranges=[(0.0, 100.0), (0.0, 100.0), (0.0, 100.0)], n_samples=100
+    with pytest.raises(RuntimeError):
+        # Not enough samples to compute 1,000 centroids
+        centroids, samples = compute_centroids(
+            n_centroids, descriptor_dimension, lower_bounds, upper_bounds, n_samples
         )
-    assert e.value.args[0] == "The number of regions (k = -1) must be >= 1"
 
-    with pytest.raises(ValueError) as e:
-        _ = CVTArchive(k=100, ranges=[], n_samples=100)
-    assert e.value.args[0] == "ranges must have length >= 1 and it has length 0"
 
-    with pytest.raises(ValueError) as e:
-        _ = CVTArchive(
-            k=100, ranges=[(0.0, 100.0), (0.0, 100.0), (0.0, 100.0)], n_samples=-1
-        )
-    assert (
-        e.value.args[0]
-        == "The number of samples (n_samples = -1) must be >= 1 and >= regions (k = 100)"
+def test_compute_centroids_with_samples_ndarray():
+    n_centroids = 10
+    descriptor_dimension = 100
+    n_samples = 10_000
+    lwi = 0
+    hwi = 100
+    lower_bounds = np.full(descriptor_dimension, fill_value=lwi)
+    upper_bounds = np.full(descriptor_dimension, fill_value=hwi)
+    expected_samples = np.random.uniform(
+        lwi, hwi, size=(n_samples, descriptor_dimension)
     )
 
-    with pytest.raises(ValueError) as e:
-        _ = CVTArchive(
-            k=100, ranges=[(0.0, 100.0), (0.0, 100.0), (0.0, 100.0)], n_samples=99
-        )
-    assert (
-        e.value.args[0]
-        == "The number of samples (n_samples = 99) must be >= 1 and >= regions (k = 100)"
+    centroids, samples = compute_centroids(
+        n_centroids, descriptor_dimension, lower_bounds, upper_bounds, expected_samples
     )
 
-    with pytest.raises(ValueError) as e:
-        _ = CVTArchive(
-            k=100,
-            ranges=[(0.0, 100.0), (0.0, 100.0), (0.0, 100.0)],
-            n_samples=100,
-            centroids="example_centroid_file.npy",
-        )
-    assert (
-        e.value.args[0]
-        == "Error in CVTArchive.__init__() loading the centroids file example_centroid_file.npy."
-    )
+    assert isinstance(centroids, np.ndarray)
+    assert_equal(centroids.shape, (n_centroids, descriptor_dimension))
 
-    with pytest.raises(ValueError) as e:
-        loaded_centroids = np.load("default_cvt_centroids.npy")
-        _ = CVTArchive(
-            k=10,
-            ranges=[(0.0, 100.0), (0.0, 100.0), (0.0, 100.0)],
-            n_samples=100,
-            centroids=loaded_centroids,
-        )
-    assert (
-        e.value.args[0]
-        == "The number of centroids 100 must be equal to the number of regions (k = 10)"
-    )
-
-    with pytest.raises(ValueError) as e:
-        _ = CVTArchive(
-            k=100,
-            ranges=[(0.0, 100.0), (0.0, 100.0), (0.0, 100.0)],
-            n_samples=100,
-            samples="example_samples_file.npy",
-        )
-    assert (
-        e.value.args[0]
-        == "Error in CVTArchive.__init__() loading the samples file example_samples_file.npy."
-    )
-
-    with pytest.raises(ValueError) as e:
-        loaded_samples = np.load("default_cvt_samples.npy")
-        _ = CVTArchive(
-            k=10,
-            ranges=[(0.0, 100.0), (0.0, 100.0), (0.0, 100.0)],
-            n_samples=1000,
-            samples=loaded_samples,
-        )
-    assert (
-        e.value.args[0]
-        == "The number of samples 100 must be equal to the number of expected samples (n_samples = 1000)"
-    )
+    assert_equal(samples, expected_samples)
+    assert samples is expected_samples
 
 
-def test_cvt_bounds():
-    cvt = CVTArchive(
-        k=100, ranges=[(0.0, 100.0), (0.0, 100.0), (0.0, 100.0)], n_samples=100
+def test_compute_centroids_with_samples_ndarray_raises_wrong_dim():
+    n_centroids = 10
+    descriptor_dimension = 100
+    n_samples = 10_000
+    lwi = 0
+    hwi = 100
+    lower_bounds = np.full(descriptor_dimension, fill_value=lwi)
+    upper_bounds = np.full(descriptor_dimension, fill_value=hwi)
+    expected_samples = np.random.uniform(
+        lwi, hwi, size=(n_samples, descriptor_dimension * 2)
     )
-    assert cvt.dimensions == 3
-    assert np.isclose(cvt.lower_i(0), 0.0)
-    assert np.isclose(cvt.upper_i(0), 100.0)
 
     with pytest.raises(ValueError):
-        cvt.lower_i(-1)
-
-    with pytest.raises(ValueError):
-        cvt.lower_i(100)
-
-    with pytest.raises(ValueError):
-        cvt.upper_i(-1)
-
-    with pytest.raises(ValueError):
-        cvt.upper_i(100)
-
-
-def test_cvt_loading_works(setup_and_teardown_cvt):
-    cvt = setup_and_teardown_cvt
-    loaded_samples = np.load("default_cvt_samples.npy")
-    loaded_centroids = np.load("default_cvt_centroids.npy")
-    cvt_from_data = CVTArchive(
-        k=100,
-        ranges=[(0.0, 100.0), (0.0, 100.0), (0.0, 100.0)],
-        n_samples=100,
-        samples=loaded_samples,
-        centroids=loaded_centroids,
-    )
-    cvt_from_file = CVTArchive(
-        k=100,
-        ranges=[(0.0, 100.0), (0.0, 100.0), (0.0, 100.0)],
-        n_samples=100,
-        samples="default_cvt_samples.npy",
-        centroids="default_cvt_centroids.npy",
-    )
-    np.testing.assert_array_equal(loaded_samples, cvt.samples)
-    np.testing.assert_array_equal(cvt_from_data.samples, loaded_samples)
-    np.testing.assert_array_equal(cvt_from_file.samples, loaded_samples)
-    np.testing.assert_array_equal(cvt_from_file.samples, cvt_from_data.samples)
-
-    np.testing.assert_array_equal(loaded_centroids, cvt.centroids)
-    np.testing.assert_array_equal(cvt_from_data.centroids, loaded_centroids)
-    np.testing.assert_array_equal(cvt_from_file.centroids, loaded_centroids)
-    np.testing.assert_array_equal(cvt_from_file.centroids, cvt_from_data.centroids)
-
-
-def test_cvt_archive_append():
-    cvt = CVTArchive(
-        k=100, ranges=[(0.0, 100.0), (0.0, 100.0), (0.0, 100.0)], n_samples=100
-    )
-    rng = np.random.default_rng()
-    instance = Instance(
-        variables=rng.integers(low=1, high=10, size=10),
-        fitness=100,
-        novelty=100.0,
-        descriptor=rng.integers(low=0, high=10000, size=cvt.dimensions),
-    )
-    assert len(cvt) == 0
-    cvt.append(instance)
-    assert len(cvt) == 1
-    assert all(isinstance(i, Instance) for i in cvt.instances)
-    with pytest.raises(TypeError):
-        cvt.append(None)
-
-
-def test_cvt_archive_extend():
-    dimension = 10
-    cvt = CVTArchive(
-        k=100, ranges=[(0.0, 10000.0) for _ in range(dimension)], n_samples=100
-    )
-    rng = np.random.default_rng()
-    instances = [
-        Instance(
-            variables=rng.integers(low=1, high=10, size=10),
-            fitness=rng.integers(low=1, high=10000),
-            novelty=rng.random(),
-            descriptor=rng.integers(low=0, high=10000, size=cvt.dimensions),
+        # Raises because the expected_samples has the double of dimensions
+        centroids, samples = compute_centroids(
+            n_centroids,
+            descriptor_dimension,
+            lower_bounds,
+            upper_bounds,
+            expected_samples,
         )
-        for _ in range(10)
-    ]
-    assert len(cvt) == 0
-    cvt.extend(instances)
-    assert len(cvt) > 0
-    with pytest.raises(TypeError):
-        cvt.extend([None])
 
 
-def test_cvt_archive_remove():
-    dimension = 10
-    cvt = CVTArchive(
-        k=100, ranges=[(0.0, 10000.0) for _ in range(dimension)], n_samples=100
+def test_cvt_archive_attrs():
+    dimensions = 100
+    n_centroids = 10
+    low_i = 0
+    high_i = 100
+    ranges = [(low_i, high_i) for _ in range(dimensions)]
+
+    archive = CVTArchive(dimensions=dimensions, centroids=n_centroids, ranges=ranges)
+
+    assert archive.dimensions == dimensions
+    assert len(archive) == 0
+    assert_equal(archive.lower_bounds, np.full(dimensions, fill_value=low_i))
+    assert_equal(archive.upper_bounds, np.full(dimensions, fill_value=high_i))
+
+    centroids = archive.centroids
+    assert isinstance(centroids, np.ndarray)
+    assert_equal(centroids.shape, (n_centroids, dimensions))
+
+    data = archive.to_dict()
+    assert isinstance(data, dict)
+    expected_keys = ("instances", "dimensions", "lbs", "ubs", "centroids")
+    assert all(key in data.keys() for key in expected_keys)
+
+
+def test_cvt_archive_with_initial_instances():
+    dimensions = 2
+    n_centroids = 10
+    low_i = 0
+    high_i = 100
+    n_instances = 3
+    ranges = [(low_i, high_i) for _ in range(dimensions)]
+
+    # All unique descriptors that must fall in differente cells
+    descriptors = np.asarray([[0, 0], [50, 50], [90, 90]])
+    instances = population_with_custom_descriptors(
+        descriptors,
+        n_instances=n_instances,
+        dimension=dimensions,
     )
-    rng = np.random.default_rng()
-    instances = [
-        Instance(
-            variables=rng.integers(low=1, high=10, size=10),
-            fitness=rng.integers(low=1, high=10000),
-            novelty=rng.random(),
-            descriptor=rng.integers(low=0, high=10000, size=cvt.dimensions),
-        )
-        for _ in range(10)
-    ]
-    assert len(cvt) == 0
-    cvt.extend(instances)
-    current_len = len(cvt)
-    assert current_len > 0
-    descriptors_to_remove = np.asarray([
-        instance.descriptor for instance in instances[:5]
-    ])
-    cvt.remove(descriptors_to_remove)
-    assert len(cvt) < current_len
+    archive = CVTArchive(
+        dimensions=dimensions, centroids=n_centroids, ranges=ranges, instances=instances
+    )
+    # The archive is preloaded with initial instances
+    assert len(archive) == n_instances
+    assert all(isinstance(x, Instance) for x in archive.instances)
+
+
+def test_cvt_archive_init_raises():
+    dimensions = 100
+    n_centroids = 10
+    low_i = 0
+    high_i = 100
+    ranges = [(low_i, high_i) for _ in range(dimensions)]
 
     with pytest.raises(ValueError):
-        cvt.remove([None])
+        # Raises because dimensions is negative
+        _ = CVTArchive(dimensions=-100, centroids=n_centroids, ranges=ranges)
+
+    with pytest.raises(ValueError):
+        # Raises because dimensions is not a valid integer
+        _ = CVTArchive(dimensions="abc", centroids=n_centroids, ranges=ranges)
+
+    with pytest.raises(ValueError):
+        # Raises because dimensions != len(ranges)
+        _ = CVTArchive(dimensions=dimensions * 2, centroids=n_centroids, ranges=ranges)
+
+
+def test_cvt_archive_can_save_centroids():
+    dimensions = 100
+    n_centroids = 10
+    low_i = 0
+    high_i = 100
+    ranges = [(low_i, high_i) for _ in range(dimensions)]
+
+    archive = CVTArchive(dimensions=dimensions, centroids=n_centroids, ranges=ranges)
+
+    filename = "sample_centroids.npy"
+    archive.to_file(filename)
+
+    expected_path = Path(filename)
+    assert expected_path.exists()
+    expected_path.unlink()
+
+
+def test_cvt_archive_centroids_load_from_file():
+    centroids = Path(__file__).parent / "testing_centroids_10_100_dimensions.npy"
+    dimensions = 100
+    n_centroids = 10
+    low_i = 0
+    high_i = 100
+    ranges = [(low_i, high_i) for _ in range(dimensions)]
+
+    archive = CVTArchive(dimensions=dimensions, centroids=centroids, ranges=ranges)
+    centroids = np.load(centroids)
+    assert_equal(archive.centroids, centroids)
+    assert_equal(archive.centroids.shape, (n_centroids, dimensions))
+    # They're not the same object
+    assert centroids is not archive.centroids
+
+
+def test_cvt_archive_centroids_load_from_file_wrong_dimensions():
+    centroids = Path(__file__).parent / "testing_centroids_10_100_dimensions.npy"
+    dimensions = 200
+    low_i = 0
+    high_i = 100
+    ranges = [(low_i, high_i) for _ in range(dimensions)]
+
+    with pytest.raises(ValueError):
+        # Raises because centroids have the 100d and CVT expected 200
+        _ = CVTArchive(dimensions=dimensions, centroids=centroids, ranges=ranges)
+
+
+def test_cvt_archive_centroids_load_from_ndarray():
+    centroids = np.load(
+        Path(__file__).parent / "testing_centroids_10_100_dimensions.npy"
+    )
+    dimensions = 100
+    n_centroids = 10
+    low_i = 0
+    high_i = 100
+    ranges = [(low_i, high_i) for _ in range(dimensions)]
+
+    archive = CVTArchive(dimensions=dimensions, centroids=centroids, ranges=ranges)
+    assert_equal(archive.centroids, centroids)
+    assert_equal(archive.centroids.shape, (n_centroids, dimensions))
+    # They're not the same object
+    assert centroids is not archive.centroids
+
+
+def test_cvt_archive_centroids_load_from_ndarray_raises():
+    centroids = np.load(
+        Path(__file__).parent / "testing_centroids_10_100_dimensions.npy"
+    )
+    dimensions = 200
+    low_i = 0
+    high_i = 100
+    ranges = [(low_i, high_i) for _ in range(dimensions)]
+
+    with pytest.raises(ValueError):
+        # Raises because centroids have the 100d and CVT expected 200
+        _ = CVTArchive(dimensions=dimensions, centroids=centroids, ranges=ranges)
+
+
+def test_cvt_archive_can_be_extended():
+    dimensions = 2
+    n_centroids = 10
+    low_i = 0
+    high_i = 1000
+    n_instances = 10
+    ranges = [(low_i, high_i) for _ in range(dimensions)]
+
+    archive = CVTArchive(dimensions=dimensions, centroids=n_centroids, ranges=ranges)
+
+    # New descriptors should be unique but that doesn't mean that they fall in empty cells with CVTArchive
+    descriptors = np.random.default_rng().integers(
+        low=low_i, high=high_i, size=(n_instances, dimensions)
+    )
+    instances = population_with_custom_descriptors(
+        descriptors,
+        n_instances=n_instances,
+        dimension=dimensions,
+    )
+
+    archive.extend(instances, descriptors)
+    # Expects archive not to be empty and to have less than n_instances
+    current_length = len(archive)
+    assert 0 < current_length <= n_instances
+    assert all(isinstance(x, Instance) for x in archive.instances)
+
+
+def test_cvt_archive_preloaded_can_be_extended():
+    dimensions = 2
+    n_centroids = 10
+    low_i = 0
+    high_i = 100
+    n_instances = 1
+    ranges = [(low_i, high_i) for _ in range(dimensions)]
+
+    descriptors = np.asarray([[0, 10]])
+    instances = population_with_custom_descriptors(
+        descriptors,
+        n_instances=n_instances,
+        dimension=dimensions,
+    )
+    archive = CVTArchive(
+        dimensions=dimensions, centroids=n_centroids, ranges=ranges, instances=instances
+    )
+
+    # New descriptors should be unique and fall in empty cells
+    descriptors = np.asarray([[50, 50], [90, 90]])
+    instances = population_with_custom_descriptors(
+        descriptors,
+        n_instances=2,
+        dimension=dimensions,
+    )
+
+    archive.extend(instances, descriptors)
+    # Expects to have 3 instances by now
+    expected_len = n_instances + 2
+    assert len(archive) == expected_len
+    assert all(isinstance(x, Instance) for x in archive.instances)

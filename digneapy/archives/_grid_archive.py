@@ -16,8 +16,8 @@ from typing import Iterator, Optional, Tuple
 import numpy as np
 
 from .._core import Instance
+from ._archive import Archive, Keys
 from ._utils import check_valid_instance_batch, check_valid_shapes
-from .base import Archive, Keys
 
 
 class GridArchive(Archive):
@@ -58,17 +58,22 @@ class GridArchive(Archive):
             ValueError: ``dimensions`` and ``ranges`` are not the same length
         """
         super().__init__(None)
+
         if len(ranges) == 0 or len(dimensions) == 0:
             raise ValueError("dimensions and ranges must have length >= 1")
+
         if len(ranges) != len(dimensions):
             raise ValueError(
-                f"len(dimensions) = {len(dimensions)} != len(ranges) = {len(ranges)} in GridArchive.__init__()"
+                f"len(dimensions) = {len(dimensions)} != len(ranges) = {len(ranges)} in GridArchive"
             )
 
         self._dimensions = np.asarray(dimensions)
+
         ranges = list(zip(*ranges))
-        self._lower_bounds = np.asarray(ranges[0], dtype=np.float64)
-        self._upper_bounds = np.asarray(ranges[1], dtype=np.float64)
+        self._lower_bounds = np.asarray(ranges[0], dtype=np.float64, copy=True)
+        self._upper_bounds = np.asarray(ranges[1], dtype=np.float64, copy=True)
+        del ranges
+
         self._interval = self._upper_bounds - self._lower_bounds
         self._eps = eps
         self._cells = np.prod(self._dimensions, dtype=object)
@@ -87,13 +92,21 @@ class GridArchive(Archive):
         ):
             _bounds.append(np.linspace(l_b, u_b, dimension))
 
-        self._boundaries = np.asarray(_bounds)
+        self._boundaries = np.asarray(_bounds, copy=True)
+        del _bounds
 
+        # Extend the archive with the initial instances
         if instances is not None:
             self.extend(instances)
 
     @property
     def dimensions(self) -> np.ndarray:
+        """Dimensions of the GridArchive
+
+        Returns:
+            np.ndarray: NumPy array with the dimensions of the Grid and
+                the number of cell of each dimension.
+        """
         return self._dimensions
 
     @property
@@ -221,9 +234,6 @@ class GridArchive(Archive):
         """
         return len(self._storage[Keys.grid])
 
-    def __call__(self, *args, **kwargs) -> np.ndarray:
-        raise NotImplementedError("Not implemented in GridArchive")
-
     def extend(
         self,
         instances: Sequence[Instance],
@@ -311,6 +321,14 @@ class GridArchive(Archive):
         return self.grid_to_int_index(clipped)
 
     def grid_to_int_index(self, grid_indices: np.ndarray) -> np.ndarray:
+        """Converts indices from the GridArchive to int
+
+        Args:
+            grid_indices (np.ndarray): Batch of indices from the GridArchive
+
+        Returns:
+            np.ndarray: NumPy array with the indices recasted
+        """
         grid_indices = np.asarray(grid_indices)
         if len(self._dimensions) > 64:
             strides = np.cumprod((1,) + tuple(self._dimensions[::-1][:-1]))[::-1]
@@ -323,7 +341,15 @@ class GridArchive(Archive):
             ).astype(int)
         return flattened_indices
 
-    def int_to_grid_index(self, int_indices: np.array) -> np.ndarray:
+    def int_to_grid_index(self, int_indices: np.ndarray) -> np.ndarray:
+        """Calculates the corresponding grid index for a given integer.
+
+        Args:
+            int_indices (np.ndarray): Batch of integer indices to convert to grid indices
+
+        Returns:
+            np.ndarray: NumPy array with the corresponding grid indices
+        """
         int_indices = np.asarray(int_indices)
         if len(self._dimensions) > 64:
             # Manually unravel the index for dimensions > 64

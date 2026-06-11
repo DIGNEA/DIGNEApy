@@ -95,9 +95,8 @@ class Archive(ABC):
         """
         raise NotImplementedError("To be implemented in subclasses")
 
-    @abstractmethod
     def __call__(self, *args, **kwargs):
-        raise NotImplementedError("To be implemented in subclasses")
+        raise NotImplementedError(f"Not implemented for {self.__class__.__name__}")
 
     def __iter__(self) -> Iterator[Instance]:
         """Iterator of the Archive.
@@ -139,6 +138,7 @@ class Archive(ABC):
         """
         if not isinstance(other, Archive):
             raise TypeError(f"Archives cannot be compared with {other.__class__}.")
+
         self_cls = self.__class__
         other_cls = other.__class__
         if self_cls != other_cls:

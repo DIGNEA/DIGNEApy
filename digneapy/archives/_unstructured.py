@@ -17,8 +17,8 @@ import numpy as np
 from scipy.spatial.distance import cdist
 
 from .._core import Instance
+from ._archive import Archive, Keys
 from ._utils import check_valid_instance_batch, check_valid_shapes
-from .base import Archive, Keys
 
 
 class UnstructuredArchive(Archive):
@@ -80,6 +80,20 @@ class UnstructuredArchive(Archive):
         return f"UnstructuredArchive(k={self._k},threshold={self._novelty_threshold},data=(|{len(self)}|))"
 
     def __call__(self, descriptors: np.ndarray) -> np.ndarray:
+        """Computes the Novelty Search of the instances
+
+
+        It uses the descriptors of the instances to calculate their novelty
+        with respect to the archive and the current batch of instances.
+        It uses the Euclidean distance to compute the sparseness.
+        If the archive is empty, it returns a NumPy array with the minimum threshold.
+
+        Args:
+            descriptors (np.ndarray): Numpy array with the descriptors of the instances
+
+        Returns:
+            np.ndarray: novelty scores (s) of the instances descriptors
+        """
         return self.compute_novelty(descriptors)
 
     def compute_novelty(self, descriptors: np.ndarray) -> np.ndarray:

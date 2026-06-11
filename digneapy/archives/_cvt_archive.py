@@ -11,145 +11,184 @@
 """
 
 import json
-import warnings
-from collections.abc import Sequence
+from collections.abc import Iterable, Sequence
+from pathlib import Path
 from typing import Optional, Tuple
 
 import numpy as np
-import numpy.typing as npt
-from sklearn.cluster import KMeans
+from sklearn.cluster import k_means
 from sklearn.neighbors import KDTree
 
+from digneapy.archives._utils import check_valid_instance_batch, check_valid_shapes
+
 from .._core import Instance
-from ._grid_archive import GridArchive
-from .base import Keys
+from ._archive import Archive, Keys
 
 
-class CVTArchive(GridArchive):
+def compute_centroids(
+    n_centroids: int,
+    descriptor_dimension: int,
+    lower_bounds: np.ndarray,
+    upper_bounds: np.ndarray,
+    samples: int | np.ndarray,
+    seed: int | np.random.SeedSequence | None = None,
+) -> Tuple[np.ndarray, np.ndarray]:
+    """Computes the centroid for a CVTArchive
+
+    Args:
+        n_centroids (int): Number of centroids to compute.
+        descriptor_dimension (int): Number of dimensions of the descriptor space.
+        lower_bounds (np.ndarray): Lower bounds for each dimension of the descriptor space.
+        upper_bounds (np.ndarray): Upper bounds for each dimension of the descriptor space.
+        samples (int | np.ndarray): Number of samples to calculate the centroids or a NumPy array
+            with the precalculated samples.
+        seed (int | np.random.SeedSequence | None): Seed to random number generator engine.
+
+    Raises:
+        ValueError: If samples is a np.ndarray and the shape doesn't match the expected dimensions.
+        RuntimeError: If the generated centroids are less than the required amount.
+
+    Returns:
+        Tuple[np.ndarray, np.ndarray]: centroids and samples calculated
+    """
+    if isinstance(samples, int):
+        rng = np.random.default_rng(seed)
+        samples = rng.uniform(
+            low=lower_bounds, high=upper_bounds, size=(samples, descriptor_dimension)
+        )
+    else:
+        samples = np.asarray(samples)
+        if samples.shape[1] != descriptor_dimension:
+            raise ValueError(
+                f"Loaded samples doesn't have the appropiated shape, expected a (batch_size, {descriptor_dimension}) array. "
+                f"Samples is {samples.shape}. "
+            )
+    try:
+        centroids_points = k_means(
+            samples,
+            n_clusters=n_centroids,
+            n_init=1,
+            init="random",
+            algorithm="lloyd",
+            random_state=seed,
+        )[0]
+        if centroids_points.shape[0] < n_centroids:
+            raise RuntimeError(
+                "While generating the CVT, k-means clustering found "
+                f"{centroids_points.shape[0]} centroids, but this "
+                f"archive needs {n_centroids} cells. This most "
+                "likely happened because there are too few samples "
+                "and/or too many cells."
+            )
+    except Exception as exc:
+        raise RuntimeError("Something went wrong when computing centroids") from exc
+
+    return centroids_points, samples
+
+
+class CVTArchive(Archive):
     """An Archive that divides a high-dimensional measure space into k homogeneous geometric regions.
 
 
     Based on the paper from Vassiliades et al (2018) <https://ieeexplore.ieee.org/document/8000667>
-    > The computational complexity of the method we provide for constructing the CVT (in Algorithm 1) is O(ndki),
-    > where n is the number of d-dimensional samples to be clustered, k is the number of clusters,
-    > and i is the number of iterations needed until convergence
+
+    The computational complexity of the method we provide for constructing the CVT (in Algorithm 1) is O(ndki),
+    where n is the number of d-dimensional samples to be clustered, k is the number of clusters,
+    and i is the number of iterations needed until convergence
     """
 
     def __init__(
         self,
-        k: int,
+        dimensions: int,
+        centroids: int | str | Path | np.ndarray,
         ranges: Sequence[Tuple[float, float]],
-        n_samples: int,
-        centroids: Optional[npt.NDArray | str] = None,
-        samples: Optional[npt.NDArray | str] = None,
+        samples: int | np.ndarray = 100_000,
         instances: Optional[Sequence[Instance]] = None,
         seed: Optional[int | np.random.SeedSequence] = None,
     ):
-        """Creates a CVTArchive object
+        """Creates a CVTArchive
 
         Args:
-            k (int): Number of centroids (regions) to create. It must be a positive integer value.
-            ranges (Sequence[Tuple[float, float]]): Ranges of the measure space. Upper and lower bound of each
-                dimension of the measure space, e.g. ``[(-1, 1), (-2, 2)]`` indicates the first dimension
-                should have bounds :math:`[-1,1]` (inclusive), and the second dimension should have bounds
-                :math:`[-2,2]` (inclusive). The legnth of ``ranges`` indicates the number of dimensions of the measure space.
-            n_samples (int): Number of samples to generate before calculating the centroids. This is expected to be
-                a positive integer.
-            centroids (Optional[npt.NDArray | str], optional): Precalculated centroids for the archive. The options are
-                a np.ndarray with the values of ``k`` centroids or a .txt with the centroids to be loaded by Numpy. Defaults to None.
-            samples (Optional[npt.NDArray  |  str], optional): Precalculated samples for the archive. The options
-                are a np.ndarray with the values of ``n_samples`` samples or a .txt with the samples to be loaded by Numpy. Defaults to None.
-            seed (Optional[int | np.random.SeedSequence]): Seed to start the random generation engine to compute the centroids. Defaults to None (takes entropy).
+            dimensions (int): Number of dimensions of the descriptor space.
+            centroids (int | str | Path | np.ndarray): This parameter may be an integer,
+                which indicates the number of centroids in the CVT.
+                In this case, the centroids will be automatically generated
+                with :func:`digneapy.archive.compute_centroids`. Alternatively, this
+                parameter can be a (num_centroids, descriptor_dimension) array with the descriptor space
+                coordinates of the centroids. Finally, this parameter can specify a file
+                holding the centroids; this file will be read with :func:`numpy.load`.
+            ranges (Sequence[Tuple[float, float]]): Upper and lower bound of each dimension
+                of the descriptor space, e.g. ``[(-1, 1), (-2, 2)]`` indicates the first dimension
+                should have bounds :math:`[-1,1]` (inclusive), and the second dimension
+                should have bounds :math:`[-2,2]` (inclusive). ``ranges``
+                should be the same length as ``descriptor_dimension``.
+            samples (int | np.ndarray, optional): This parameter is directly passed
+                to :func:`compute_centroids`. Defaults to 100_000.
+            instances (Optional[Sequence[Instance]], optional): Initial collection of instances
+                to populate the archive. Defaults to None.
+            seed (Optional[int | np.random.SeedSequence], optional): Seed for the random engine. Defaults to None.
 
         Raises:
-            TypeError: If k is not a valid integer.
-            ValueError: If k <= 0.
-            ValueError: If len(ranges) <= 0.
-            ValueError: If the number of samples is less than zero or less than the number of regions (k).
-            ValueError: If the number of regions is less than zero.
-            ValueError: If the samples file cannot be loaded.
-            ValueError: If given a samples np.ndarray the number of samples in the file is different from the number of expected samples (n_samples).
-            ValueError: If the centroids file cannot be loaded.
-            ValueError: If given a centroids np.ndarray the number of centroids in the file is different from the number of regions (k).
+            ValueError: If the dimension is not an integer or its value is less or equal to zero
+            RuntimeError: If the given centroids doesn't have the expected shape
         """
+        try:
+            self._dimensions = int(dimensions)
+            if self._dimensions <= 0:
+                raise ValueError("dimensions cannot be negative in CVTArchive")
+        except Exception as exc:
+            raise ValueError from exc
 
-        if k <= 0:
-            raise ValueError(f"The number of regions (k = {k}) must be >= 1")
-
-        if len(ranges) <= 0:
+        if len(ranges) != self._dimensions:
             raise ValueError(
-                f"ranges must have length >= 1 and it has length {len(ranges)}"
+                f"ranges must have {self._dimensions} in CVTArchive. Got: {len(ranges)}"
             )
 
-        if n_samples <= 0 or n_samples < k:
-            raise ValueError(
-                f"The number of samples (n_samples = {n_samples}) must be >= 1 and >= regions (k = {k})"
-            )
-        GridArchive.__init__(
-            self,
-            dimensions=(1,) * len(ranges),
-            ranges=ranges,
-        )
+        super().__init__(initial_instances=None)
 
-        self._dimensions = len(ranges)
-        ranges = list(zip(*ranges))
-        self._lower_bounds = np.asarray(ranges[0], dtype=self._dtype)
-        self._upper_bounds = np.asarray(ranges[1], dtype=self._dtype)
-        self._interval = self._upper_bounds - self._lower_bounds
-        self._k = k
-        self._n_samples = n_samples
-        self._samples = None
-        self._centroids = None
         self._seed = seed
         self._rng = np.random.default_rng(seed)
-        self._kmeans = KMeans(n_clusters=self._k, n_init=1, random_state=self._seed)
 
-        # Loading samples if given
-        if samples is not None:
-            if isinstance(samples, str):
-                try:
-                    self._samples = np.load(samples)
-                    self._n_samples = len(self._samples)
-                except Exception as _:
-                    raise ValueError(
-                        f"Error in CVTArchive.__init__() loading the samples file {samples}."
-                    )
-            elif isinstance(samples, np.ndarray) and len(samples) != n_samples:
-                raise ValueError(
-                    f"The number of samples {len(samples)} must be equal to the number of expected samples (n_samples = {n_samples})"
-                )
-            else:
-                self._samples = np.asarray(samples)
+        ranges = list(zip(*ranges))
+        self._lower_bounds = np.asarray(ranges[0], dtype=np.float64, copy=True)
+        self._upper_bounds = np.asarray(ranges[1], dtype=np.float64, copy=True)
+        del ranges
 
-        if centroids is not None:
-            if isinstance(centroids, str):
-                try:
-                    self._centroids = np.load(centroids)
-                    self._k = len(self._centroids)
-                except Exception as _:
-                    raise ValueError(
-                        f"Error in CVTArchive.__init__() loading the centroids file {centroids}."
-                    )
-            elif isinstance(centroids, np.ndarray) and len(centroids) != k:
-                raise ValueError(
-                    f"The number of centroids {len(centroids)} must be equal to the number of regions (k = {self._k})"
-                )
-            else:
-                self._centroids = np.asarray(centroids)
+        if isinstance(centroids, int):
+            self._centroids, _ = compute_centroids(
+                n_centroids=centroids,
+                descriptor_dimension=self._dimensions,
+                lower_bounds=self._lower_bounds,
+                upper_bounds=self._upper_bounds,
+                samples=samples,
+                seed=seed,
+            )
         else:
-            # Generate centroids
-            if self._samples is None:
-                # Generate uniform samples if not given
+            try:
+                if isinstance(centroids, (str, Path)):
+                    self._centroids = np.load(centroids).astype(np.float64)
+                else:
+                    # Asume is a np.ndarray
+                    self._centroids = np.asarray(centroids, copy=True, dtype=np.float64)
 
-                self._samples = self._rng.uniform(
-                    low=self._lower_bounds,
-                    high=self._upper_bounds,
-                    size=(self._n_samples, self._dimensions),
-                )
-            self._kmeans.fit(self._samples)
-            self._centroids = self._kmeans.cluster_centers_
+                if self._centroids.shape[1] != self._dimensions:
+                    raise RuntimeError(
+                        "Custom centroids doesn't have the appropiate shape "
+                        f"{self._centroids.shape[1]} centroids, but this "
+                        f"archive needs centroids of {self._dimensions} cells."
+                    )
+            except Exception as exc:
+                raise ValueError("Custom centroids are not valid.") from exc
 
-        self._kdtree = KDTree(self._centroids, metric="euclidean")
+        self._kdtree = KDTree(self._centroids)
+        del self._storage
+        self._storage = {
+            Keys.instances: {},
+            Keys.descriptors: {},
+            Keys.grid: set(),
+        }
+        if instances is not None:
+            self.extend(instances)
 
     @property
     def dimensions(self) -> int:
@@ -161,16 +200,7 @@ class CVTArchive(GridArchive):
         return self._dimensions
 
     @property
-    def samples(self) -> Optional[np.ndarray]:
-        """Returns the samples used to generate the centroids
-
-        Returns:
-            np.ndarray: Samples
-        """
-        return self._samples
-
-    @property
-    def centroids(self) -> Optional[np.ndarray]:
+    def centroids(self) -> np.ndarray:
         """Returns k centroids calculated from the samples
 
         Returns:
@@ -179,25 +209,46 @@ class CVTArchive(GridArchive):
         return self._centroids
 
     @property
-    def regions(self) -> int:
-        """Number of regions (k) of centroids in the CVTArchive
+    def lower_bounds(self) -> np.ndarray:
+        """Lower bounds of the descriptor space.
 
         Returns:
-            int: k
+            np.ndarray
         """
-        return self._k
+        return self._lower_bounds
 
     @property
-    def bounds(self) -> Tuple[np.ndarray, np.ndarray]:
-        """Tuple with the lower and upper bounds of the measure space
-        The first value is the lower bounds and the second value is the upper bounds.
-        Each value is a list with the corresponding lower/upper bound of the ith dimension
-        in the measure space
+    def upper_bounds(self) -> np.ndarray:
+        """Upper bounds of the descriptor space.
+
+        Returns:
+            np.ndarray
         """
-        return (self._lower_bounds, self._upper_bounds)
+        return self._upper_bounds
+
+    @property
+    def instances(self) -> Iterable[Instance]:
+        """Instances of the GridArchive
+
+        Returns:
+            Iterable[Instance]: Returns a ValueView of the instances
+        """
+        return self._storage[Keys.instances].values()
 
     def __str__(self):
-        return f"CVArchive(dim={self._dimensions},regions={self._k},centroids={self._centroids})"
+        return (
+            f"CVTArchive(dim={self._dimensions},centroids=|{self._centroids.shape[0]}|)"
+        )
+
+    def __len__(self) -> int:
+        """Length of the CVTArchive
+
+        Number of instances stored in the archive
+
+        Returns:
+            int: Number of instances stored
+        """
+        return len(self._storage[Keys.grid])
 
     def index_of(self, descriptors: np.ndarray) -> np.ndarray:
         """Computes the indeces of a batch of descriptors.
@@ -232,33 +283,94 @@ class CVTArchive(GridArchive):
         indices = indices[:, 0]
         return indices.astype(np.int32)
 
-    def to_file(self, file_pattern: str = "CVTArchive"):
-        """Saves the centroids and the samples of the CVTArchive to .npy files
-            Each attribute is saved in its own filename.
-            Therefore, file_pattern is expected not to contain any extension
+    def extend(
+        self,
+        instances: Sequence[Instance],
+        descriptors: Optional[np.ndarray] = None,
+        *args,
+        **kwargs,
+    ) -> None:
+
+        if check_valid_instance_batch(instances):
+            if descriptors is None:
+                descriptors = np.asarray([
+                    instance.descriptor for instance in instances
+                ])
+            if check_valid_shapes(instances, descriptors):
+                indices = self.index_of(descriptors)
+                for index, instance, descriptor in zip(
+                    indices, instances, descriptors, strict=True
+                ):
+                    if (
+                        index not in self._storage[Keys.grid]
+                        or instance.fitness
+                        > self._storage[Keys.instances][index].fitness
+                    ):
+                        self._storage[Keys.grid].add(index)
+                        self._storage[Keys.instances][index] = instance.clone()
+                        self._storage[Keys.descriptors][index] = descriptor
+            else:
+                raise ValueError(
+                    "Shape mismatch between the instances, novelty_scores and descriptors."
+                    f"instances have {len(instances)} instances and "
+                    f"descriptors contains {len(descriptors)}."
+                )
+
+        else:
+            raise TypeError(
+                "All objects inside the instances sequence must be object of the Instance class."
+            )
+
+    def to_file(self, filename: str | Path = "CVTArchive_centroids.npy"):
+        """Saves the centroids of the CVTArchive to .npy files
 
         Args:
-            file_pattern (str, optional): Pattern of the expected filenames. Defaults to "CVTArchive".
+            filename (str, optional): Filename. Defaults to "CVTArchive_centroids.npy".
         """
         if self._centroids is None:
-            warnings.warn(
-                "Skipping centroids since they're uninitialised.",
-                RuntimeWarning,
-                stacklevel=2,
+            raise AttributeError(
+                "Centroids are uninitialised.",
             )
         else:
-            np.save(f"{file_pattern}_centroids.npy", self._centroids)
-        if self._samples is None:
-            warnings.warn(
-                "Skipping samples since they're uninitialised.",
-                RuntimeWarning,
-                stacklevel=2,
-            )
-        else:
-            np.save(f"{file_pattern}_samples.npy", self._samples)
+            try:
+                np.save(filename, self._centroids)
+            except Exception as exc:
+                raise RuntimeError("Couldn't save the centroids in CVTArchive") from exc
 
-    @classmethod
-    def load_from_json(cls, filename: str):
+    def to_dict(self) -> dict:
+        """Converts the CVTArchive into a dictionary
+
+        Includes dimensions, lbs, ubs, centroids and other information from Archive
+
+        Returns:
+            dict: Dictionary with the instances stored in the archive
+        """
+        return {
+            "dimensions": self._dimensions,
+            "lbs": self._lower_bounds.tolist(),
+            "ubs": self._upper_bounds.tolist(),
+            "centroids": self._centroids.tolist(),
+            **super().to_dict(),
+        }
+
+    def to_json(self, filename: Optional[str] = None) -> str:
+        """Returns the content of the CVTArchive in JSON format.
+
+        Returns:
+            str: String in JSON format with the content of the CVTArchive
+        """
+        json_data = json.dumps(self.to_dict(), indent=4)
+        if filename is not None:
+            filename = (
+                f"{filename}.json" if not filename.endswith(".json") else filename
+            )
+            with open(filename, "w") as f:
+                f.write(json_data)
+
+        return json_data
+
+    @staticmethod
+    def load_from_json(filename: str):
         """Creates a CVTArchive object from the content of a previously created JSON file
 
         Args:
@@ -273,64 +385,27 @@ class CVTArchive(GridArchive):
         """
         expected_keys = {
             "dimensions",
-            "n_samples",
-            "regions",
             "lbs",
             "ubs",
             "centroids",
-            "samples",
         }
         try:
             with open(filename, "r") as file:
                 json_data = json.load(file)
                 if expected_keys != json_data.keys():
                     raise ValueError(
-                        f"The JSON file does not contain all the minimum expected keys. Expected keys are {expected_keys} and got {json_data.keys()}"
+                        f"The JSON file does not contain all the minimum expected keys. "
+                        f"Expected keys are {expected_keys} and got {json_data.keys()}"
                     )
                 _ranges = [
                     (l_i, u_i) for l_i, u_i in zip(json_data["lbs"], json_data["ubs"])
                 ]
-                new_archive = cls(
-                    k=json_data["regions"],
-                    ranges=_ranges,
-                    n_samples=json_data["n_samples"],
+                new_archive = CVTArchive(
+                    dimensions=json_data["dimensions"],
                     centroids=json_data["centroids"],
-                    samples=json_data["samples"],
+                    ranges=_ranges,
                 )
                 return new_archive
 
-        except IOError as io:
-            raise ValueError(f"Error opening file {filename}. Reason -> {io.strerror}")
-
-    def to_dict(self) -> dict:
-        return {
-            "dimensions": self._dimensions,
-            "n_samples": self._n_samples,
-            "regions": self._k,
-            "lbs": self._lower_bounds.tolist(),
-            "ubs": self._upper_bounds.tolist(),
-            "centroids": self._centroids.tolist()
-            if self._centroids is not None
-            else [],
-            "samples": self._samples.tolist() if self._samples is not None else [],
-            "instances": {
-                i: instance.asdict()
-                for i, instance in enumerate(self._storage[Keys.instances])
-            },
-        }
-
-    def to_json(self, filename: Optional[str] = None) -> str:
-        """Returns the content of the CVTArchive in JSON format.
-
-        Returns:
-            str: String in JSON format with the content of the CVTArchive
-        """
-        json_data = json.dumps(self.asdict(), indent=4)
-        if filename is not None:
-            filename = (
-                f"{filename}.json" if not filename.endswith(".json") else filename
-            )
-            with open(filename, "w") as f:
-                f.write(json_data)
-
-        return json_data
+        except Exception as exc:
+            raise ValueError(f"Error opening file {filename}.") from exc

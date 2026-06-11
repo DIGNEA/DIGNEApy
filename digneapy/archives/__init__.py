@@ -10,9 +10,9 @@
 @Desc    :   None
 """
 
+from ._archive import Archive
 from ._cvt_archive import CVTArchive
 from ._grid_archive import GridArchive
 from ._unstructured import UnstructuredArchive
-from .base import Archive
 
 __all__ = ["Archive", "GridArchive", "CVTArchive", "UnstructuredArchive"]

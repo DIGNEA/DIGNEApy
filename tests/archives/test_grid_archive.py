@@ -16,7 +16,7 @@ from numpy.testing import assert_allclose, assert_equal
 
 from digneapy import GridArchive, Instance
 
-from .conftest import default_incremental_population
+from .conftest import default_incremental_population, population_with_custom_descriptors
 
 
 def test_grid_archive_attrs():
@@ -47,6 +47,31 @@ def test_grid_archive_attrs():
     assert isinstance(data, dict)
     expected_keys = ("instances", "dimensions", "lbs", "ubs", "n_cells")
     assert all(key in data.keys() for key in expected_keys)
+
+
+def test_grid_archive_with_initial_instances():
+    dimensions = 2
+    n_instances = 10
+    # All unique descriptors
+    descriptors = np.random.choice(
+        np.arange(100, dtype=np.float64),
+        size=(n_instances, dimensions),
+        replace=False,
+    )
+    instances = population_with_custom_descriptors(
+        descriptors, n_instances=10, dimension=2
+    )
+    archive = GridArchive(
+        dimensions=(10, 10),
+        ranges=[
+            (0.0, 100.0),
+            (0.0, 100.0),
+        ],
+        instances=instances,
+    )
+
+    assert len(archive) == n_instances
+    assert all(isinstance(x, Instance) for x in archive.instances)
 
 
 def test_grid_archive_init_raises_if_wrong_args():
@@ -255,33 +280,3 @@ def test_grid_archive_extends_large_dimensions():
     archive.extend(instances)
     assert len(archive) > 0
     assert len(archive) <= 10
-
-
-def test_grid_archive_remove():
-    archive = GridArchive(dimensions=(2, 2), ranges=[(-1.0, 1.0), (-1.0, 1.0)])
-    instance = Instance(variables=[1, 2, 3, 4], descriptor=[0, 0])
-
-    assert len(archive) == 0
-    assert len(archive.filled_cells) == 0
-    archive.extend([instance])
-
-    assert len(archive) == 1
-    assert len(archive.filled_cells) == 1
-
-    archive.remove([[0, 0]])
-    assert len(archive) == 0
-    assert len(archive.filled_cells) == 0
-
-
-def test_grid_archive_remove_empty():
-    instance = Instance(variables=[1, 2, 3, 4], descriptor=[0, 0])
-    archive = GridArchive(
-        dimensions=(2, 2), ranges=[(-1.0, 1.0), (-1.0, 1.0)], instances=[instance]
-    )
-
-    assert len(archive) == 1
-    assert len(archive.filled_cells) == 1
-
-    archive.remove([])  # Doesn't remove anything
-    assert len(archive) == 1
-    assert len(archive.filled_cells) == 1

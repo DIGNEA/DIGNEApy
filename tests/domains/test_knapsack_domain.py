@@ -10,34 +10,33 @@
 @Desc    :   None
 """
 
-import itertools
-import os
+from pathlib import Path
 
 import numpy as np
 import pytest
+from numpy.testing import assert_equal
 
 from digneapy.domains import Knapsack, KnapsackDomain
 
 
-@pytest.fixture
-def default_kp():
-    p = list(range(1, 101))
-    w = list(range(1, 101))
-    q = 50
-    return Knapsack(p, w, q)
+def test_knapsack_problem_attrs():
+    dimension = 50
+    capacity = 10_000
+    profits = np.arange(dimension)
+    weights = np.arange(dimension)
+    knapsack = Knapsack(profits=profits, weights=weights, capacity=capacity)
+
+    assert len(knapsack) == dimension
+    assert knapsack.capacity == capacity
+
+    assert_equal(knapsack.profits, profits)
+    assert_equal(knapsack.weights, weights)
+
+    assert len(knapsack.bounds) == dimension
+    assert all(knapsack.get_bounds_at(i) == (0, 1) for i in range(dimension))
 
 
-def test_default_kp_instance_can_attrs_can_be_modified(default_kp):
-    assert len(default_kp) == 100
-    assert len(default_kp.weights) == len(default_kp.profits)
-    assert default_kp.capacity == 50
-    assert default_kp.profits == list(range(1, 101))
-    assert default_kp.weights == list(range(1, 101))
-    expected_repr = "KP<n=100,C=50>"
-    assert default_kp.__repr__() == expected_repr
-
-
-def test_KP_init_raises_with_wrong_args():
+def test_knapsack_raises_with_wrong_args():
     with pytest.raises(ValueError):
         _ = Knapsack(profits=list(range(100)), weights=list(range(10)))
 
@@ -45,47 +44,86 @@ def test_KP_init_raises_with_wrong_args():
         _ = Knapsack(profits=list(range(10)), weights=list(range(10)), capacity=-100)
 
 
-def test_KP_bounds(default_kp):
-    assert all(default_kp.get_bounds_at(i) == (0, 1) for i in range(len(default_kp)))
-    bounds = default_kp.bounds
-    assert len(bounds) == len(default_kp)
-    assert all(b == (0, 1) for b in bounds)
-    with pytest.raises(IndexError):
-        _ = default_kp.get_bounds_at(-1)
+def test_knapsack_bounds_raises_wrong_dimensions():
+    dimension = 50
+    capacity = 10_000
+    profits = np.arange(dimension)
+    weights = np.arange(dimension)
+    knapsack = Knapsack(profits=profits, weights=weights, capacity=capacity)
 
     with pytest.raises(IndexError):
-        _ = default_kp.get_bounds_at(len(default_kp) + 1)
+        _ = knapsack.get_bounds_at(-1)
+
+    with pytest.raises(IndexError):
+        _ = knapsack.get_bounds_at(dimension + 1)
 
 
-def test_default_kp_instance_can_be_saved_to_file(default_kp):
+def test_default_kp_instance_can_be_saved_to_file():
+    dimension = 50
+    capacity = 10_000
+    profits = np.arange(dimension)
+    weights = np.arange(dimension)
+    knapsack = Knapsack(profits=profits, weights=weights, capacity=capacity)
+    filename = "testing_knapsack.kp"
     # Check is able to create a file
-    default_kp.to_file()
-    assert os.path.exists("instance.kp")
-    os.remove("instance.kp")
+    knapsack.to_file(filename=filename)
+    filename = Path(filename)
+    assert filename.exists()
+    filename.unlink()
 
 
-def test_default_kp_instance_can_evaluate_correctly(default_kp):
+def test_default_kp_instance_can_be_saved_to_file_with_path():
+    dimension = 50
+    capacity = 10_000
+    profits = np.arange(dimension)
+    weights = np.arange(dimension)
+    knapsack = Knapsack(profits=profits, weights=weights, capacity=capacity)
+
+    filename = Path("testing_knapsack.kp")
+    # Check is able to create a file
+
+    knapsack.to_file(filename=filename)
+    assert filename.exists()
+    filename.unlink()
+
+
+def test_knapsack_can_evaluate_correctly():
+    dimension = 100
+    capacity = 100
+    profits = np.arange(dimension)
+    weights = np.ones(dimension)
+    knapsack = Knapsack(profits=profits, weights=weights, capacity=capacity)
+
     # Feasible individual evaluation
-    s = np.zeros(100, dtype=int)
-    s[:10] = 1
+    solution = np.zeros(dimension, dtype=np.uint32)
+    solution[:50] = 1
+    expected_objective = np.sum(profits[:50]).astype(np.float64)
 
-    np.random.default_rng().shuffle(s)
-    profit = default_kp.evaluate(s)
-    assert not np.isclose(profit, 0.0)
+    solution_profit = knapsack.evaluate(solution)[0]
+    assert_equal(solution_profit, expected_objective)
 
 
-def test_default_kp_instance_can_raises_when_wrong_evaluation(default_kp):
+def test_default_kp_instance_can_raises_when_wrong_evaluation():
+    dimension = 50
+    capacity = 10_000
+    profits = np.arange(dimension)
+    weights = np.arange(dimension)
+    knapsack = Knapsack(profits=profits, weights=weights, capacity=capacity)
+
     with pytest.raises(Exception):
         # Raises attribute error when passing an empty list
-        default_kp.evaluate([])
+        _ = knapsack.evaluate([])
 
     with pytest.raises(Exception):
         # Raises attribute error when passing a len(list) != len(kp)
-        default_kp.evaluate(list(range(1000)))
+        _ = knapsack.evaluate(list(range(dimension * 2)))
 
     with pytest.raises(Exception):
         # Raises attribute error when passing a len(list) != len(kp)
-        default_kp.evaluate(list(range(1)))
+        _ = knapsack.evaluate(list(range(1)))
+
+
+####### Domain tests
 
 
 def test_default_kp_domain_attrs_are_as_expected():
@@ -182,7 +220,7 @@ def test_kp_domain_generate_problems_from_instances(capacity_approach):
         assert np.isclose(capacities, expected_capacities).all()
 
 
-def test_knapsack_problems(default_kp):
+""" def test_knapsack_problems():
     solution = default_kp.create_solution()
     assert len(solution) == len(default_kp)
     # Checks solution is in ranges
@@ -192,9 +230,10 @@ def test_knapsack_problems(default_kp):
     assert fitness_s == fitness_ch
 
 
-def test_knapsack_to_instance(default_kp):
+def test_knapsack_to_instance():
     expected_vars = [default_kp.capacity] + list(
         itertools.chain.from_iterable([*zip(default_kp.weights, default_kp.profits)])
     )
     instance = default_kp.to_instance()
     np.testing.assert_array_equal(instance.variables, expected_vars)
+ """

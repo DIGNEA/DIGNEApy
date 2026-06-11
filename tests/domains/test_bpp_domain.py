@@ -73,13 +73,13 @@ def test_default_bpp_domain_raises_with_wrongs_parameters():
         BPPDomain(dimension=-1)
 
     with pytest.raises(ValueError):
-        BPPDomain(min_i=-1)
+        BPPDomain(minimum_weight=-1)
 
     with pytest.raises(ValueError):
-        BPPDomain(max_i=-1)
+        BPPDomain(maximum_weight=-1)
 
     with pytest.raises(ValueError):
-        BPPDomain(min_i=100, max_i=1)
+        BPPDomain(minimum_weight=100, maximum_weight=1)
 
 
 def test_default_bpp_domain_wrong_capacity_approach_fixed():

@@ -35,5 +35,5 @@ class Mutation(ABC):
         ub: np.ndarray,
         *args,
         **kwargs,
-    ):
+    ) -> IndType:
         raise NotImplementedError("Expected to be implemented in subclasses")

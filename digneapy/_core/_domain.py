@@ -28,7 +28,7 @@ class Domain(ABC):
 
     def __init__(
         self,
-        dimension: np.uint32,
+        dimension: np.uint32 | int,
         bounds: Sequence[Tuple],
         dtype=np.float64,
         domain_name: str = "Domain",
@@ -38,24 +38,30 @@ class Domain(ABC):
         **kwargs,
     ):
 
-        if (
-            not isinstance(dimension, (int, np.integer, np.unsignedinteger))
-            or dimension <= 0
-        ):
-            raise ValueError(
-                f"Cannot create a Domain({domain_name}) with negative or equal to zero dimensions. Got {dimension}."
-            )
+        try:
+            self._dimension = int(dimension)
+            if self._dimension <= 0:
+                raise ValueError(
+                    f"Cannot create a Domain({domain_name}) with negative "
+                    f"or equal to zero dimensions. Got {dimension}."
+                )
+        except (TypeError, ValueError) as exc:
+            raise ValueError("invalid dimension in Domain.") from exc
 
-        self.__name__ = domain_name
-        self._dimension = dimension
-        self._bounds = bounds
-        self._dtype = dtype
-        self.features_names = features_names
-        print(self.features_names)
-        if len(self._bounds) != 0:
+        if len(self._bounds) != self._dimension:
+            raise ValueError(
+                f"bounds mismatch in Domain({domain_name}). "
+                f"They were expected {self._dimension} bounds but got {len(bounds)}"
+            )
+        else:
             ranges = list(zip(*bounds))
             self._lbs = np.asarray(ranges[0], dtype=dtype)
             self._ubs = np.asarray(ranges[1], dtype=dtype)
+
+        self.__name__ = domain_name
+        self._bounds = bounds
+        self._dtype = dtype
+        self.features_names = features_names
 
         self._seed = seed
         self._rng = np.random.default_rng(seed)

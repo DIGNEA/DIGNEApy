@@ -153,7 +153,7 @@ class Knapsack(Problem):
         return self.evaluate(individual)
 
     def __array__(self, dtype=np.uint64, copy: Optional[bool] = None) -> np.ndarray:
-        """Return a NumPy array representation of the Knapsack Problme.
+        """Return a NumPy array representation of the Knapsack Problem.
 
         The representation stores the capacity first and then alternates weight/profit
         pairs for each item, which is convenient for serialization and downstream processing.

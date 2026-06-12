@@ -72,7 +72,7 @@ def default_bpp_instance():
         338,
     ]
     capacity = 400
-    return BPP(items=items, capacity=capacity)
+    return BPP(items=items, maximum_capacity=capacity)
 
 
 def test_best_fit_solves_sample(default_bpp_instance):

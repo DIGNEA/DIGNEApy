@@ -117,6 +117,25 @@ def test_knapsack_can_be_saved_to_file_with_path():
     filename.unlink()
 
 
+def test_knapsack_can_be_loaded_from_file():
+    expected_dimension = 50
+    expected_capacity = 10_000
+    expected_profits = np.arange(expected_dimension)
+    expected_weights = np.arange(expected_dimension)
+
+    filename = Path(__file__).parent / "data" / "testing_knapsack.kp"
+    knapsack = Knapsack.from_file(filename)
+
+    assert len(knapsack) == expected_dimension
+    assert knapsack.capacity == expected_capacity
+
+    assert_equal(knapsack.profits, expected_profits)
+    assert_equal(knapsack.weights, expected_weights)
+
+    assert len(knapsack.bounds) == expected_dimension
+    assert all(knapsack.get_bounds_at(i) == (0, 1) for i in range(expected_dimension))
+
+
 def test_knapsack_can_evaluate_correctly():
     dimension = 100
     capacity = 100
@@ -328,16 +347,16 @@ def test_kp_domain_can_extract_features_to_dict(capacity_approach):
     features = domain.extract_features_as_dict(instances)
     # We check that the keys of each instance corresponds to the expected ones
     expected_keys = set("capacity,max_p,max_w,min_p,min_w,avg_eff,mean,std".split(","))
+
+    assert isinstance(features, list)
+    assert all(isinstance(d, dict) for d in features)
     assert all(
         expected_keys == set(instance_features.keys()) for instance_features in features
     )
-
-    assert isinstance(features, list)
     # Now, check all the instances
     expected_eff = np.mean(
         instances[:, 2::2] / instances[:, 1::2], axis=1, dtype=np.float64
     )
-    print(expected_eff)
     expected_mean = np.mean(instances[:, 1:], axis=1, dtype=np.float64)
     expected_std = np.std(instances[:, 1:], axis=1, dtype=np.float64)
     for i, instance_features in enumerate(features):

@@ -29,7 +29,7 @@ class BPP(Problem):
     def __init__(
         self,
         items: Iterable[int],
-        capacity: np.uint32 | int,
+        maximum_capacity: np.uint32 | int,
         seed: Optional[int | np.random.SeedSequence] = None,
         *args,
         **kwargs,
@@ -37,28 +37,38 @@ class BPP(Problem):
         """Creates a new Bin Packing Problem (BPP) object
 
         Args:
-            items (Iterable[int]): Items to store.
-            capacity (np.uint32 | int): Maximum capacity of each bin.
+            items (Iterable[int]): Items to store. It must be any iterable with
+                integer values where each value is the weight of an item.
+            capacity (np.uint32 | int): Maximum capacity of each bin in the problem.
             seed (Optional[int  |  np.random.SeedSequence], optional): Seed for random number engine. Defaults to None.
 
         Raises:
-            ValueError: If the capacity is not an integer or it's negative
+            ValueError: If the capacity is not an integer or it's negative.
+            ValueError: If any item has a zero or negative weight.
         """
 
         try:
-            self._capacity = int(capacity)
-            if self._capacity <= 0:
-                raise ValueError("Capacity must be a positive integer in BPP.")
+            self._maximum_capacity = int(maximum_capacity)
+            if self._maximum_capacity <= 0:
+                raise ValueError("maximum_capacity must be a positive integer in BPP.")
 
         except (TypeError, ValueError) as exc:
-            raise ValueError("Invalid capacity value for a BPP object.") from exc
+            raise ValueError(
+                "Invalid maximum_capacity value for a BPP object."
+            ) from exc
 
         try:
-            self._items = tuple(items)
+            self._items = tuple(map(int, items))
             if len(self._items) == 0:
                 raise ValueError(
                     "Invalid items for a BPP object. "
                     f"Expected an iterable with a least one item. Got: {items}"
+                )
+            if any(item < 0 for item in self._items):
+                raise ValueError(
+                    "Invalid items for a BPP object. "
+                    "Expected all items to be positive integers. "
+                    f"Got: {items}"
                 )
         except Exception:
             raise
@@ -66,6 +76,14 @@ class BPP(Problem):
         dimension = len(self._items)
         bounds = [(0, dimension - 1)] * dimension
         super().__init__(dimension=dimension, bounds=bounds, name="BPP", seed=seed)
+
+    @property
+    def maximum_capacity(self) -> int:
+        return self._maximum_capacity
+
+    @property
+    def items(self) -> Tuple[int, ...]:
+        return self._items
 
     def evaluate(self, individual: Sequence | Solution | np.ndarray) -> Tuple[float]:
         """Evaluates the candidate individual with the information of the Bin Packing.
@@ -87,18 +105,25 @@ class BPP(Problem):
                 f"and problem dimension ({self._dimension}) in BPP."
             )
 
-        used_bins = np.max(individual).astype(int) + 1
-        fill_i = np.zeros(used_bins)
+        used_bins = np.max(individual).astype(np.int32) + 1
+        filled_bins = np.zeros(used_bins)
 
-        for item_idx, bin in enumerate(individual):
-            fill_i[bin] += self._items[item_idx]
+        # For each bin in the solution
+        # we set is weight as the sum of the items they store
+        # The individual is encoded as follows
+        # Each index, refers to the ith item in the instance
+        # The value of individual[i] refers to the bin where
+        # such item is store
+        for item_index, bin in enumerate(individual):
+            filled_bins[bin] += self._items[item_index]
 
-        fitness = (
-            sum(((f_i / self._capacity) * (f_i / self._capacity)) for f_i in fill_i)
-            / used_bins
-        )
+        ratio = filled_bins / self._maximum_capacity
+        fitness = np.sum(ratio * ratio) / used_bins
+
         try:
-            # isinstance(individual, Solution):
+            # We asume that individual is a Solution object
+            # Therefore, it must have a fitness and objective attributes
+            # Otherwise, we got sequence/ndarray and we just return the fitness
             individual.fitness = fitness
             individual.objectives = (fitness,)
         except Exception:
@@ -123,13 +148,22 @@ class BPP(Problem):
         return self.evaluate(individual)
 
     def __str__(self):
-        return f"BPP(n={self._dimension},C={self._capacity},I={self._items})"
+        return f"BPP(n={self._dimension},C={self._maximum_capacity},I={self._items})"
 
     def __len__(self):
         return self._dimension
 
-    def __array__(self, dtype=np.int32, copy: Optional[bool] = False) -> np.ndarray:
-        return np.asarray([self._capacity, *self._items], dtype=dtype, copy=copy)
+    def __array__(self, dtype=np.int32, copy: Optional[bool] = None) -> np.ndarray:
+        """Return a NumPy array representation of the Bin Packing Problem.
+
+        The representation stores the capacity first and then all the items.
+
+        Returns:
+            np.ndarray: A one-dimensional array describing the instance.
+        """
+        return np.asarray(
+            [self._maximum_capacity, *self._items], dtype=dtype, copy=copy
+        )
 
     def create_solution(self) -> Solution:
         """Creates a random BPP solution
@@ -141,7 +175,7 @@ class BPP(Problem):
         Returns:
             Solution: Initial valid solution.
         """
-        items = list(range(self._dimension))
+        items = np.arange(self._dimension)
         return Solution(
             variables=items,
             objectives=np.zeros(1),
@@ -159,7 +193,7 @@ class BPP(Problem):
         """
         try:
             with open(filename, "w") as file:
-                file.write(f"{len(self)}\t{self._capacity}\n\n")
+                file.write(f"{len(self)}\t{self._maximum_capacity}\n\n")
                 content = "\n".join(str(i) for i in self._items)
                 file.write(content)
 
@@ -188,7 +222,7 @@ class BPP(Problem):
             (_, capacity) = lines[0].split()
             items = list(int(i) for i in lines[2:])
 
-            return cls(items=items, capacity=int(capacity))
+            return cls(items=items, maximum_capacity=int(capacity))
         except Exception as exc:
             raise RuntimeError(
                 f"Failed to load BPP problem from file {filename}"
@@ -200,7 +234,7 @@ class BPP(Problem):
         Returns:
             Instance: New Instance object that defines this BPP
         """
-        _variables = [self._capacity, *self._items]
+        _variables = [self._maximum_capacity, *self._items]
         return Instance(variables=_variables)
 
 
@@ -209,11 +243,11 @@ class BPPDomain(Domain):
 
     def __init__(
         self,
-        dimension: np.uint32 | int = 50,
-        minimum_weight: np.uint32 | int = np.uint32(1),
+        number_of_items: np.uint32 | int = 50,
+        minimum_weight: np.uint32 = np.uint32(1),
         maximum_weight: np.uint32 = np.uint32(1_000),
+        maximum_capacity: np.uint32 = np.uint32(100),
         capacity_approach: capacity_approaches = "fixed",
-        max_capacity: np.uint32 = np.uint32(100),
         capacity_ratio: float = 0.8,
         seed: Optional[int | np.random.SeedSequence] = None,
     ):
@@ -222,18 +256,18 @@ class BPPDomain(Domain):
         Creates a new domain to generate instances for the Bin Packing Problem (BPP).
 
         Args:
-            dimension (np.uint32 | int, optional): Dimension of the instances. Namely, the number
-                of items that the instance must contain. Defaults to 50.
+            number_of_items (np.uint32 | int, optional): Number of items that the instance must contain. Defaults to 50.
             minimum_weight (np.uint32 | int, optional): Minimum value of each item. ç
                 This is the lowest weight that an item can have. Defaults to np.uint32(1).
             maximum_weight (np.uint32, optional): Maximum value of each item. This is the highest
                 weight that an item can have. Defaults to np.uint32(1_000).
+            maximum_capacity (np.uint32, optional): Maximum capacity of each bin in the instance.
+                Defaults to np.uint32(100).
             capacity_approach (capacity_approaches, optional): Literal to define how the capacities
                 of the instances will be computed. If fixed, the capacity is defined as the
                 maximum_capacity value. If evolved, the capacity can be updated during the evolution,
                 and finally if `percentage` the capacity is defined as capacity_ratio * capacity
                 during the evolution. Defaults to "fixed".
-            max_capacity (np.uint32, optional): Maximum capacity of each bin in the instance. Defaults to np.uint32(100).
             capacity_ratio (float, optional): Capacity ratio used when the capacity_approach is set
                 to percentage. It must be a float value in the range (0.0, 1.0]. Defaults to 0.8.
             seed (Optional[int | np.random.SeedSequence], optional): Seed for the random number engine. Defaults to None.
@@ -245,6 +279,17 @@ class BPPDomain(Domain):
             ValueError: If the capacity_approach is not available
             ValueError: If the capacity_ratio is not a float or it's outside the range (0.0, 1.0]
         """
+        try:
+            self.number_of_items = int(number_of_items)
+            if self.number_of_items <= 0:
+                raise ValueError(
+                    "number_of_items must be a "
+                    "postive integer in BPPDomain. "
+                    f"Got: {number_of_items}"
+                )
+        except (TypeError, ValueError) as exc:
+            raise ValueError from exc
+
         try:
             self._minimum_weight = int(minimum_weight)
             self._maximum_weight = int(maximum_weight)
@@ -264,9 +309,9 @@ class BPPDomain(Domain):
             ) from exc
 
         try:
-            self._max_capacity = int(max_capacity)
+            self._max_capacity = int(maximum_capacity)
             self._capacity_ratio = float(capacity_ratio)
-            if max_capacity <= 0:
+            if maximum_capacity <= 0:
                 raise ValueError("invalid max_capacity value")
             if self._capacity_ratio <= 0 or self._capacity_ratio > 1:
                 raise ValueError("invalid capacity_ratio value")
@@ -274,14 +319,14 @@ class BPPDomain(Domain):
         except (TypeError, ValueError) as exc:
             raise ValueError(
                 "Invalid maximum capacity and/or capacity ratio for BPPDomain. "
-                f"Capacity ({max_capacity}) was expected to be a positive integer, "
+                f"Capacity ({maximum_capacity}) was expected to be a positive integer, "
                 f"and capacity_ratio ({capacity_ratio}) must be a float in the range (0.0, 1.0]."
             ) from exc
 
-        if capacity_approach not in BPPDomain.capacity_approaches:
+        if capacity_approach not in self.capacity_approaches.__args__:
             invalid_approach_msg = (
                 f"The capacity approach {capacity_approach} is not available. "
-                f" Please, consider choosing between {BPPDomain.capacity_approaches}. "
+                f" Please, consider choosing between {self.capacity_approaches.__args__}. "
                 f" Set `evolved` approach set as fallback."
             )
             warnings.warn(invalid_approach_msg, RuntimeWarning)
@@ -290,14 +335,14 @@ class BPPDomain(Domain):
             self._capacity_approach = capacity_approach
 
         bounds = [(1.0, self._max_capacity)] + [
-            (self._minimum_weight, self._maximum_weight) for _ in range(dimension)
+            (self._minimum_weight, self._maximum_weight) for _ in range(number_of_items)
         ]
         features_names = "mean,std,median,max,min,tiny,small,medium,large,huge".split(
             ","
         )
 
         super().__init__(
-            dimension=dimension,
+            dimension=self.number_of_items + 1,
             bounds=bounds,
             domain_name="BPP",
             features_names=features_names,
@@ -308,7 +353,26 @@ class BPPDomain(Domain):
     def capacity_approach(self):
         return self._capacity_approach
 
-    def generate_instances(self, n: np.uint32 = np.uint32(1)) -> List[Instance]:
+    @property
+    def capacity_ratio(self):
+        if self._capacity_approach == "percentage":
+            return self._capacity_ratio
+        else:
+            return 1.0
+
+    @property
+    def maximum_capacity(self) -> int:
+        return self._max_capacity
+
+    @property
+    def minimum_weight(self) -> int:
+        return self._minimum_weight
+
+    @property
+    def maximum_weight(self) -> int:
+        return self._maximum_weight
+
+    def generate_instances(self, n: np.uint32 = np.uint32(1)) -> Sequence[Instance]:
         """Generates N new instances for the BPP domain.
 
         Args:
@@ -317,10 +381,12 @@ class BPPDomain(Domain):
         Returns:
             List[Instance]: A list of Instance objects created from the raw numpy generation
         """
+        # Dimension is set correctly to number_of_items + 1 to
+        # allow the random generation of capacities
         instances = self._rng.integers(
             low=self._minimum_weight,
             high=self._maximum_weight,
-            size=(n, self._dimension + 1),
+            size=(n, self._dimension),
             dtype=int,
         )
         # Sets the capacity according to the method
@@ -329,12 +395,13 @@ class BPPDomain(Domain):
                 instances[:, 0] = self._rng.integers(1, self._max_capacity, size=n)
             case "percentage":
                 instances[:, 0] = (
-                    np.sum(instances[:, 1:], axis=1, dtype=int) * self._capacity_ratio
+                    np.sum(instances[:, 1:], axis=1, dtype=np.int32)
+                    * self._capacity_ratio
                 )
             case "fixed":
                 instances[:, 0] = self._max_capacity
 
-        return list(Instance(i) for i in instances)
+        return list(Instance(variables=i) for i in instances)
 
     def extract_features(
         self, instances: Sequence[Instance] | np.ndarray
@@ -361,7 +428,7 @@ class BPPDomain(Domain):
         if not isinstance(instances, np.ndarray):
             instances = np.asarray(instances)
 
-        norm_variables = np.asarray(instances, copy=True, dtype=np.float32)
+        norm_variables = np.asarray(instances, copy=True, dtype=np.float64)
         norm_variables[:, 1:] = norm_variables[:, 1:] / norm_variables[:, 0:1]
         huge = 0.5
         medium = 0.33333
@@ -384,7 +451,7 @@ class BPPDomain(Domain):
 
     def extract_features_as_dict(
         self, instances: Sequence[Instance] | np.ndarray
-    ) -> List[Dict[str, np.float32]]:
+    ) -> List[Dict[str, np.float64]]:
         """Creates a dictionary with the features of the instances.
 
         The key are the names of each feature and the values are
@@ -404,7 +471,7 @@ class BPPDomain(Domain):
             instances (Sequence[Instance]): Instances to extract the features from.
 
         Returns:
-            Dict[str, np.float32]: Dictionary with the names/values of each feature
+            Dict[str, np.float64]: Dictionary with the names/values of each feature
         """
         features = self.extract_features(instances)
         named_features = []
@@ -446,8 +513,8 @@ class BPPDomain(Domain):
                 capacities[:] = self._max_capacity
                 instances[:, 0] = self._max_capacity
         # The first item of each valid BPP instance is the capacity
-
+        print(capacities)
         return list(
-            BPP(items=instances[i, 1:], capacity=capacities[i])
+            BPP(items=instances[i, 1:], maximum_capacity=capacities[i])
             for i in range(len(instances))
         )

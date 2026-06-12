@@ -37,7 +37,7 @@ class Elitist(Replacement):
         self,
         population: Sequence[IndType],
         offspring: Sequence[IndType],
-    ) -> list[IndType]:
+    ) -> Sequence[IndType]:
         """Returns a new population constructed using the Elitist approach.
         HoF number of individuals from the current + offspring populations are
         kept in the new population. The remaining individuals are selected from

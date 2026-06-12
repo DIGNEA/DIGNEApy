@@ -11,11 +11,21 @@
 """
 
 from abc import ABC, abstractmethod
-from typing import Optional
+from typing import Optional, Protocol
 
 import numpy as np
 
 from digneapy.typing import IndType
+
+
+class MutationFn(Protocol):
+    def __call__(
+        population: IndType | np.ndarray,
+        lb: np.ndarray,
+        ub: np.ndarray,
+        *args,
+        **kwargs,
+    ) -> IndType: ...
 
 
 class Mutation(ABC):

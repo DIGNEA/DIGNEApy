@@ -12,11 +12,20 @@
 
 from abc import ABC
 from collections.abc import Sequence
-from typing import Optional
+from typing import Optional, Protocol
 
 import numpy as np
 
 from digneapy.typing import IndType
+
+
+class SelectionFn(Protocol):
+    def __call__(
+        self,
+        population: Sequence[IndType] | np.ndarray,
+        *arg,
+        **kwargs,
+    ) -> Sequence[IndType]: ...
 
 
 class Selection(ABC):
@@ -33,5 +42,5 @@ class Selection(ABC):
         population: Sequence[IndType] | np.ndarray,
         *arg,
         **kwargs,
-    ):
+    ) -> IndType:
         raise NotImplementedError("Expected to be implemented in the subclasses")

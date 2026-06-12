@@ -10,13 +10,21 @@
 @Desc    :   None
 """
 
-from .crossover import OPCX, UCX, Crossover, OnePointCrossover, UniformCrossover
+from .crossover import (
+    OPCX,
+    UCX,
+    Crossover,
+    CrossoverFn,
+    OnePointCrossover,
+    UniformCrossover,
+)
 from .mutation import (
     BatchUMut,
     BatchUniformMutation,
     ILMut,
     ISOLineMutation,
     Mutation,
+    MutationFn,
     UMut,
     UniformMutation,
 )
@@ -27,9 +35,11 @@ from .replacement import (
     Replacement,
 )
 from .selection import BinarySelection, Selection
+from .typing import CrossoverLike, MutationLike, ReplacementLike, SelectionLike
 
 __all__ = [
     "Mutation",
+    "MutationFn",
     "UniformMutation",
     "UMut",
     "BatchUniformMutation",
@@ -39,6 +49,7 @@ __all__ = [
     "Selection",
     "BinarySelection",
     "Crossover",
+    "CrossoverFn",
     "OnePointCrossover",
     "OPCX",
     "UniformCrossover",

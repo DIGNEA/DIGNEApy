@@ -27,12 +27,13 @@ from ..archives import Archive
 from ..operators import (
     UCX,
     BinarySelection,
+    CrossoverLike,
     Generational,
-    Replacement,
-    Selection,
+    MutationLike,
+    ReplacementLike,
+    SelectionLike,
     UMut,
 )
-from ..typing import CrossoverLike, MutationLike
 from ._base_generator import BaseGenerator, GenResult
 from ._utils import cast_to_instances, extract_solvers_name
 
@@ -55,8 +56,8 @@ class Evolutionary(BaseGenerator):
         mutrate: float = 0.8,
         crossover: CrossoverLike = UCX(),
         mutation: MutationLike = UMut(),
-        selection: Selection = BinarySelection(),
-        replacement: Replacement = Generational(),
+        selection: SelectionLike = BinarySelection(),
+        replacement: ReplacementLike = Generational(),
         phi: float = 0.85,
         seed: Optional[int | np.random.SeedSequence] = None,
     ):

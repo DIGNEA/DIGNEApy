@@ -10,7 +10,7 @@
 @Desc    :   None
 """
 
-from ._base_selection import Selection
+from ._base_selection import Selection, SelectionFn
 from .binary import BinarySelection
 
-__all__ = ["Selection", "BinarySelection"]
+__all__ = ["Selection", "SelectionFn", "BinarySelection"]

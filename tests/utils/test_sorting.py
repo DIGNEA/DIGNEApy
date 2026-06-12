@@ -20,7 +20,7 @@ from digneapy.utils import sort_knapsack_instances
 @pytest.mark.parametrize("n_instances", [10, 50, 100])
 @pytest.mark.parametrize("dimension", [50, 100, 1000])
 def test_sorting_knapsack_instances_as_nparray(n_instances, dimension):
-    domain = KnapsackDomain(dimension=dimension)
+    domain = KnapsackDomain(number_of_items=dimension)
     instances = domain.generate_instances(n=n_instances)
     assert len(instances) == n_instances
     instances_array = np.asarray(instances, copy=True)
@@ -40,7 +40,7 @@ def test_sorting_knapsack_instances_as_nparray(n_instances, dimension):
 @pytest.mark.parametrize("n_instances", [10, 50, 100])
 @pytest.mark.parametrize("dimension", [50, 100, 1000])
 def test_sorting_knapsack_instances_as_objects(n_instances, dimension):
-    domain = KnapsackDomain(dimension=dimension)
+    domain = KnapsackDomain(number_of_items=dimension)
     instances = domain.generate_instances(n=n_instances)
     assert len(instances) == n_instances
     expected_capacities = [instance[0] for instance in instances]

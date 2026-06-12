@@ -10,8 +10,15 @@
 @Desc    :   None
 """
 
-from ._base_crossover import Crossover
+from ._base_crossover import Crossover, CrossoverFn
 from .opoint import OPCX, OnePointCrossover
 from .uniform import UCX, UniformCrossover
 
-__all__ = ["Crossover", "OnePointCrossover", "OPCX", "UniformCrossover", "UCX"]
+__all__ = [
+    "Crossover",
+    "CrossoverFn",
+    "OnePointCrossover",
+    "OPCX",
+    "UniformCrossover",
+    "UCX",
+]

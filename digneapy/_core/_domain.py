@@ -48,7 +48,7 @@ class Domain(ABC):
         except (TypeError, ValueError) as exc:
             raise ValueError("invalid dimension in Domain.") from exc
 
-        if len(self._bounds) != self._dimension:
+        if len(bounds) != self._dimension:
             raise ValueError(
                 f"bounds mismatch in Domain({domain_name}). "
                 f"They were expected {self._dimension} bounds but got {len(bounds)}"

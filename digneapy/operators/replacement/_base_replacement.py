@@ -12,11 +12,21 @@
 
 from abc import ABC
 from collections.abc import Sequence
-from typing import Optional
+from typing import Optional, Protocol
 
 import numpy as np
 
 from digneapy.typing import IndType
+
+
+class ReplacementFn(Protocol):
+    def __call__(
+        self,
+        population: Sequence[IndType],
+        offspring: Sequence[IndType],
+        *arg,
+        **kwargs,
+    ) -> Sequence[IndType]: ...
 
 
 class Replacement(ABC):
@@ -34,5 +44,5 @@ class Replacement(ABC):
         offspring: Sequence[IndType],
         *arg,
         **kwargs,
-    ):
+    ) -> Sequence[IndType]:
         raise NotImplementedError("Expected to be implemented in the subclasses")

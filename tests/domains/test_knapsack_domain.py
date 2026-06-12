@@ -14,8 +14,9 @@ from pathlib import Path
 
 import numpy as np
 import pytest
-from numpy.testing import assert_equal
+from numpy.testing import assert_allclose, assert_equal
 
+from digneapy import Instance
 from digneapy.domains import Knapsack, KnapsackDomain
 
 
@@ -38,10 +39,10 @@ def test_knapsack_problem_attrs():
 
 def test_knapsack_raises_with_wrong_args():
     with pytest.raises(ValueError):
-        _ = Knapsack(profits=list(range(100)), weights=list(range(10)))
+        _ = Knapsack(capacity=100, profits=list(range(100)), weights=list(range(10)))
 
     with pytest.raises(ValueError):
-        _ = Knapsack(profits=list(range(10)), weights=list(range(10)), capacity=-100)
+        _ = Knapsack(capacity=-100, profits=list(range(10)), weights=list(range(10)))
 
 
 def test_knapsack_bounds_raises_wrong_dimensions():
@@ -58,7 +59,36 @@ def test_knapsack_bounds_raises_wrong_dimensions():
         _ = knapsack.get_bounds_at(dimension + 1)
 
 
-def test_default_kp_instance_can_be_saved_to_file():
+def test_knapsack_can_be_cast_to_array():
+    dimension = 50
+    capacity = 10_000
+    profits = np.arange(dimension)
+    weights = np.arange(dimension)
+    knapsack = Knapsack(profits=profits, weights=weights, capacity=capacity)
+
+    knapsack_array = np.asarray(knapsack)
+    assert len(knapsack_array) == (dimension * 2) + 1
+    assert_equal(knapsack_array[0], capacity)
+
+    expected_items = np.empty(dimension * 2, dtype=np.uint64)
+    expected_items[::2] = np.arange(dimension)
+    expected_items[1::2] = np.arange(dimension)
+    assert_equal(knapsack_array[1:], expected_items)
+
+
+def test_knapsack_can_create_a_solution():
+    dimension = 50
+    capacity = 10_000
+    profits = np.arange(dimension)
+    weights = np.arange(dimension)
+    knapsack = Knapsack(profits=profits, weights=weights, capacity=capacity)
+
+    solution = knapsack.create_solution()
+    assert len(solution) == dimension
+    assert all(0 <= si <= 1 for si in solution)
+
+
+def test_knapsack_can_be_saved_to_file():
     dimension = 50
     capacity = 10_000
     profits = np.arange(dimension)
@@ -72,7 +102,7 @@ def test_default_kp_instance_can_be_saved_to_file():
     filename.unlink()
 
 
-def test_default_kp_instance_can_be_saved_to_file_with_path():
+def test_knapsack_can_be_saved_to_file_with_path():
     dimension = 50
     capacity = 10_000
     profits = np.arange(dimension)
@@ -103,7 +133,25 @@ def test_knapsack_can_evaluate_correctly():
     assert_equal(solution_profit, expected_objective)
 
 
-def test_default_kp_instance_can_raises_when_wrong_evaluation():
+def test_knapsack_call_returns_evaluate_correctly():
+    dimension = 100
+    capacity = 100
+    profits = np.arange(dimension)
+    weights = np.ones(dimension)
+    knapsack = Knapsack(profits=profits, weights=weights, capacity=capacity)
+
+    # Feasible individual evaluation
+    solution = np.zeros(dimension, dtype=np.uint32)
+    solution[:50] = 1
+    expected_objective = np.sum(profits[:50]).astype(np.float64)
+
+    call_profit = knapsack(solution)[0]
+    evaluate_profit = knapsack.evaluate(solution)[0]
+    assert_equal(call_profit, evaluate_profit)
+    assert_equal(call_profit, expected_objective)
+
+
+def test_knapsack_can_raises_when_wrong_evaluation():
     dimension = 50
     capacity = 10_000
     profits = np.arange(dimension)
@@ -123,87 +171,195 @@ def test_default_kp_instance_can_raises_when_wrong_evaluation():
         _ = knapsack.evaluate(list(range(1)))
 
 
+def test_knapsack_can_be_casted_to_instance():
+    dimension = 50
+    capacity = 10_000
+    profits = np.arange(dimension)
+    weights = np.arange(dimension)
+    knapsack = Knapsack(profits=profits, weights=weights, capacity=capacity)
+
+    instance = knapsack.to_instance()
+    assert isinstance(instance, Instance)
+    assert len(instance) == (dimension * 2) + 1
+    assert instance[0] == 10_000
+    assert_equal(instance[1::2], weights)
+    assert_equal(instance[2::2], profits)
+
+
 ####### Domain tests
 
 
-def test_default_kp_domain_attrs_are_as_expected():
+@pytest.mark.parametrize("capacity_approach", ("evolved", "percentage", "fixed"))
+def test_knapsack_domain_attrs(capacity_approach):
+    number_of_items = 100
+    expected_bounds = [(1.0, 1e5), *[(1, 1_000) for _ in range(number_of_items * 2)]]
+    domain = KnapsackDomain(number_of_items, capacity_approach=capacity_approach)
+
+    assert len(domain) == (number_of_items * 2) + 1
+    assert domain.capacity_approach == capacity_approach
+    assert domain.capacity_ratio == 0.8
+    assert_equal(domain.bounds, expected_bounds)
+    assert all(lbi == 1 for lbi in domain.lbs)
+
+    upper_bounds = domain.ubs
+    assert upper_bounds[0] == 1e5
+    assert all(ubi == 1_000 for ubi in upper_bounds[1:])
+
+
+def test_knapsack_domain_raises_negative_items():
+    with pytest.raises(ValueError):
+        number_of_items = -100
+        _ = KnapsackDomain(number_of_items)
+
+
+def test_knapsack_domain_raises_negative_capacity():
+    with pytest.raises(ValueError):
+        _ = KnapsackDomain(number_of_items=100, maximum_capacity=-100)
+
+
+def test_knapsack_domain_raises_negative_minimum_ranges():
+    with pytest.raises(ValueError):
+        number_of_items = 100
+        _ = KnapsackDomain(number_of_items, minimum_weight=-100)
+
+    with pytest.raises(ValueError):
+        number_of_items = 100
+        _ = KnapsackDomain(number_of_items, minimum_profit=-100)
+
+
+def test_knapsack_domain_raises_negative_maximum_ranges():
+    with pytest.raises(ValueError):
+        number_of_items = 100
+        _ = KnapsackDomain(number_of_items, maximum_weight=-100)
+
+    with pytest.raises(ValueError):
+        number_of_items = 100
+        _ = KnapsackDomain(number_of_items, maximum_profit=-100)
+
+
+def test_knapsack_domain_raises_ranges_overlap():
+    with pytest.raises(ValueError):
+        number_of_items = 100
+        _ = KnapsackDomain(number_of_items, minimum_weight=100, maximum_weight=50)
+
+    with pytest.raises(ValueError):
+        number_of_items = 100
+        _ = KnapsackDomain(number_of_items, minimum_profit=100, maximum_profit=50)
+
+
+def test_knapsack_domain_raises_wrong_capacity_ratio():
+    with pytest.raises(ValueError):
+        number_of_items = 100
+        _ = KnapsackDomain(number_of_items, capacity_ratio=-1.0)
+
+    with pytest.raises(ValueError):
+        number_of_items = 100
+        _ = KnapsackDomain(number_of_items, capacity_ratio=10.0)
+
+
+def test_knapsack_domain_fallback_wrong_capacity_approach():
     dimension = 100
-    domain = KnapsackDomain(dimension, capacity_approach="evolved")
-    assert len(domain) == dimension
-    assert domain.capacity_approach == "evolved"
-    assert np.isclose(domain.max_capacity, 1e5)
-    assert np.isclose(domain.capacity_ratio, 0.8)
-    assert domain.min_p == 1
-    assert domain.min_w == 1
-    assert domain.max_p == 1000
-    assert domain.max_w == 1000
-    assert domain.bounds == [(1.0, 1e5)] + [(1, 1000) for _ in range(2 * dimension)]
-
-
-def test_default_kp_domain_wrong_args():
-    dimension = 100
-    domain = KnapsackDomain(dimension, capacity_approach="random", capacity_ratio=-1.0)
-    assert domain.capacity_approach == "evolved"
-    assert np.isclose(domain.capacity_ratio, 0.8)
-
-    domain.capacity_approach = "random"
+    domain = KnapsackDomain(dimension, capacity_approach="random")
     assert domain.capacity_approach == "evolved"
 
 
 @pytest.mark.parametrize("capacity_approach", ("fixed", "evolved", "percentage"))
-def test_kp_domain_extract_features_for_N_instances_with_capacity_approach_(
-    capacity_approach,
-):
-    N_INSTANCES = 100
+def test_kp_domain_can_extract_features(capacity_approach):
+    n_instances = 10
     dimension = 100
     domain = KnapsackDomain(dimension, capacity_approach=capacity_approach)
-    instances = np.asarray(domain.generate_instances(N_INSTANCES))
+    instances = np.asarray(domain.generate_instances(n_instances))
     features = domain.extract_features(instances)
 
     assert isinstance(features, np.ndarray)
-    assert (features[:, 0] == instances[:, 0]).all()
+    assert_equal(features[:, 0], instances[:, 0])
     assert (features[:, 1] <= 1000).all()
     assert (features[:, 2] <= 1000).all()
     assert (features[:, 3] >= 1).all()
     assert (features[:, 4] >= 1).all()
 
-    expected_eff = np.mean(instances[:, 2::2] / instances[:, 1::2])
-    expected_mean = np.mean(instances[:, 1:], axis=1, dtype=np.float32)
-    expected_std = np.std(instances[:, 1:], axis=1, dtype=np.float32)
-    assert np.isclose(features[:, 5], expected_eff).all()
-    assert np.isclose(features[:, 6], expected_mean).all()
-    assert np.isclose(features[:, 7], expected_std).all()
+    expected_eff = np.mean(
+        instances[:, 2::2] / instances[:, 1::2], axis=1, dtype=np.float64
+    )
+    expected_mean = np.mean(instances[:, 1:], axis=1)
+    expected_std = np.std(instances[:, 1:], axis=1)
+
+    assert_allclose(features[:, 5], expected_eff)
+    assert_allclose(features[:, 6], expected_mean)
+    assert_allclose(features[:, 7], expected_std)
 
 
 @pytest.mark.parametrize("capacity_approach", ("fixed", "evolved", "percentage"))
-def test_kp_domain_to_descritor_dict(capacity_approach):
+def test_kp_domain_can_extract_features_from_instances(capacity_approach):
+    n_instances = 10
+    dimension = 100
+    domain = KnapsackDomain(dimension, capacity_approach=capacity_approach)
+    instances = domain.generate_instances(n_instances)
+    features = domain.extract_features(instances)
+
+    # Now we can cast to ndarray to facilitate the indexing
+    instances = np.asarray(instances)
+    assert isinstance(features, np.ndarray)
+    assert_equal(features[:, 0], instances[:, 0])
+    assert (features[:, 1] <= 1000).all()
+    assert (features[:, 2] <= 1000).all()
+    assert (features[:, 3] >= 1).all()
+    assert (features[:, 4] >= 1).all()
+
+    expected_eff = np.mean(
+        instances[:, 2::2] / instances[:, 1::2], axis=1, dtype=np.float64
+    )
+    expected_mean = np.mean(instances[:, 1:], axis=1)
+    expected_std = np.std(instances[:, 1:], axis=1)
+
+    assert_allclose(features[:, 5], expected_eff)
+    assert_allclose(features[:, 6], expected_mean)
+    assert_allclose(features[:, 7], expected_std)
+
+
+@pytest.mark.parametrize("capacity_approach", ("fixed", "evolved", "percentage"))
+def test_kp_domain_can_extract_features_to_dict(capacity_approach):
     dimension = 100
     n_instances = 10
+
     domain = KnapsackDomain(dimension, capacity_approach=capacity_approach)
     instances = np.asarray(domain.generate_instances(n=n_instances))
+
     features = domain.extract_features_as_dict(instances)
-    expected_eff = np.mean(instances[:, 2::2] / instances[:, 1::2])
+    # We check that the keys of each instance corresponds to the expected ones
+    expected_keys = set("capacity,max_p,max_w,min_p,min_w,avg_eff,mean,std".split(","))
+    assert all(
+        expected_keys == set(instance_features.keys()) for instance_features in features
+    )
 
     assert isinstance(features, list)
-    features = features[0]
-    assert np.isclose(features["capacity"], instances[0, 0])
-    assert features["max_p"] <= 1000
-    assert features["max_w"] <= 1000
-    assert features["min_w"] >= 1
-    assert features["min_p"] >= 1
-    assert np.isclose(features["avg_eff"], expected_eff)
-    assert np.isclose(features["mean"], np.mean(instances[0, 1:], dtype=np.float32))
-    assert np.isclose(features["std"], np.std(instances[0, 1:], dtype=np.float32))
+    # Now, check all the instances
+    expected_eff = np.mean(
+        instances[:, 2::2] / instances[:, 1::2], axis=1, dtype=np.float64
+    )
+    print(expected_eff)
+    expected_mean = np.mean(instances[:, 1:], axis=1, dtype=np.float64)
+    expected_std = np.std(instances[:, 1:], axis=1, dtype=np.float64)
+    for i, instance_features in enumerate(features):
+        assert_allclose(instance_features["capacity"], instances[i, 0])
+        assert instance_features["max_p"] <= 1000
+        assert instance_features["max_w"] <= 1000
+        assert instance_features["min_w"] >= 1
+        assert instance_features["min_p"] >= 1
+        assert_allclose(instance_features["avg_eff"], expected_eff[i])
+        assert_allclose(instance_features["mean"], expected_mean[i])
+        assert_allclose(instance_features["std"], expected_std[i])
 
 
 @pytest.mark.parametrize("capacity_approach", ("fixed", "evolved", "percentage"))
-def test_kp_domain_generate_problems_from_instances(capacity_approach):
+def test_kp_domain_can_generate_problems_from_instances(capacity_approach):
     dimension = 100
-    n_instances = 100
+    n_instances = 10
     domain = KnapsackDomain(dimension, capacity_approach=capacity_approach)
     instances = domain.generate_instances(n=n_instances)
 
     problems = domain.generate_problems_from_instances(instances)
+    assert all(isinstance(problem, Knapsack) for problem in problems)
     assert all(len(problem.weights) == dimension for problem in problems)
     assert all(len(problem.profits) == dimension for problem in problems)
 
@@ -218,22 +374,3 @@ def test_kp_domain_generate_problems_from_instances(capacity_approach):
 
         capacities = np.asarray([problem.capacity for problem in problems])
         assert np.isclose(capacities, expected_capacities).all()
-
-
-""" def test_knapsack_problems():
-    solution = default_kp.create_solution()
-    assert len(solution) == len(default_kp)
-    # Checks solution is in ranges
-    assert all(0 <= i <= 1 for i in solution)
-    fitness_s = default_kp(solution)
-    fitness_ch = default_kp(solution.variables)
-    assert fitness_s == fitness_ch
-
-
-def test_knapsack_to_instance():
-    expected_vars = [default_kp.capacity] + list(
-        itertools.chain.from_iterable([*zip(default_kp.weights, default_kp.profits)])
-    )
-    instance = default_kp.to_instance()
-    np.testing.assert_array_equal(instance.variables, expected_vars)
- """

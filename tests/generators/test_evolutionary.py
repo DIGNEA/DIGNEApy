@@ -260,7 +260,7 @@ def test_evolutionary_strategy(
     domain_dimension = 50
     k = 3
     descriptor_pipeline = DescriptorPipeline(descriptor, KPDecoder())
-    domain = KnapsackDomain(dimension=domain_dimension)
+    domain = KnapsackDomain(number_of_items=domain_dimension)
 
     strategy = ES(
         generator_dimension=generator_dimension,

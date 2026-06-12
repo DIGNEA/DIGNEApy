@@ -40,7 +40,8 @@ class Knapsack(Problem):
         profits: Sequence[np.uint32] | np.ndarray,
         weights: Sequence[np.uint32] | np.ndarray,
         seed: Optional[int | np.random.SeedSequence] = None,
-        penalty_factor: float = 100.0 * args,
+        penalty_factor: float = 100.0,
+        *args,
         **kwargs,
     ):
         """Create a new knapsack problem from the given profit/weight data.
@@ -124,7 +125,6 @@ class Knapsack(Problem):
                 f"Mismatch between individual dimension ({len(individual)}) "
                 f"and Knapsack problem ({self._dimension})"
             )
-
         profit = np.dot(individual, self.profits)
         packed = np.dot(individual, self.weights)
         difference = max(0, packed - self.capacity)
@@ -269,7 +269,7 @@ class KnapsackDomain(Domain):
 
     def __init__(
         self,
-        dimension: np.uint32 = np.uint32(50),
+        number_of_items: np.uint32 | int = np.uint32(50),
         minimum_weight: np.uint32 = np.uint32(1),
         maximum_weight: np.uint32 = np.uint32(1_000),
         minimum_profit: np.uint32 = np.uint32(1),
@@ -282,7 +282,8 @@ class KnapsackDomain(Domain):
         """Create a domain that can generate knapsack instances with configurable difficulty.
 
         Args:
-            dimension (np.uint32, optional): Number of items in each generated instance.
+            number_of_items (np.uint32, optional): Number of items in each generated instance. Note that
+                the dimension of the domain will be calculated as 2 * number_of_items + 1. Defaults to 50.
             minimum_weight (np.uint32, optional): Lower bound for the weight of each item. Defaults to 1.
             maximum_weight (np.uint32, optional): Upper bound for the weight of each item. Defaults to 1,000.
             minimum_profit (np.uint32, optional): Lower bound for the profit of each item. Defaults to 1.
@@ -293,46 +294,92 @@ class KnapsackDomain(Domain):
             capacity_ratio (float, optional): Ratio used to derive the capacity when the percentage strategy is selected. Defaults to 0.8.
             seed (Optional[int | np.random.SeedSequence], optional): Seed used to initialize the random generator. Default to None.
         """
-        self._minimum_profit = minimum_profit
-        self._minimum_weight = minimum_weight
-        self._maximum_profit = maximum_profit
-        self._maximum_weight = maximum_weight
-        self._maximum_capacity = maximum_capacity
+        try:
+            self._number_of_items = int(number_of_items)
 
-        if (
-            type(capacity_ratio) not in (int, float)
-            or capacity_ratio < 0.0
-            or capacity_ratio > 1.0
-        ):
-            self.capacity_ratio = 0.8  # Default
-            msg = "The capacity ratio must be a float number in the range [0.0-1.0]. Set as 0.8 as default."
-            print(msg)
-        else:
-            self.capacity_ratio = capacity_ratio
+            if number_of_items <= 0:
+                raise ValueError()
 
-        if capacity_approach not in self.capacity_approaches:
+        except (TypeError, ValueError) as exc:
+            raise ValueError(
+                f"invalid dimension for KnapsackDomain. Got: {number_of_items}"
+            ) from exc
+
+        try:
+            self._minimum_profit = int(minimum_profit)
+            self._minimum_weight = int(minimum_weight)
+            self._maximum_profit = int(maximum_profit)
+            self._maximum_weight = int(maximum_weight)
+            self._maximum_capacity = int(maximum_capacity)
+
+            if self._maximum_capacity <= 0:
+                raise ValueError(
+                    f"maximum_capacity cannot be negative: {self._maximum_capacity}"
+                )
+
+            if (
+                self._minimum_profit <= 0
+                or self._maximum_profit <= 0
+                or self._minimum_profit >= self._maximum_profit
+            ):
+                raise ValueError(
+                    f"error in profit ranges: ({self._minimum_profit}, {self._maximum_profit})"
+                )
+
+            if (
+                self._minimum_weight <= 0
+                or self._minimum_weight <= 0
+                or self._minimum_weight >= self._maximum_weight
+            ):
+                raise ValueError(
+                    f"error in weight ranges: ({self._minimum_weight}, {self._maximum_weight})"
+                )
+
+        except (TypeError, ValueError) as exc:
+            raise ValueError(
+                "capacity, minimum and maximum ranges must be valid positive integers. "
+                f"Expects capacity ({maximum_capacity}). "
+                f"Expects minimum_profit ({minimum_profit}) to be greater "
+                f"than zero and less than maximum_profit ({maximum_profit}).\n"
+                f"Expects minimum_weight ({minimum_weight}) to be greater "
+                f"than zero and less than maximum_weight ({maximum_weight}).\n"
+            ) from exc
+
+        try:
+            self._capacity_ratio = float(capacity_ratio)
+            if self._capacity_ratio <= 0 or self._capacity_ratio > 1:
+                raise ValueError(
+                    "capacity_ratio  must be a positive float in the range [0.0, 1.0]."
+                )
+
+        except (TypeError, ValueError) as exc:
+            raise ValueError from exc
+
+        if capacity_approach not in self.capacity_approaches.__args__:
             warnings.warn(
                 f"The capacity approach {capacity_approach} is not available. "
-                f"Please, consider choosing from {self.capacity_approaches}."
-                "Evolved approach set as fallback.",
+                f"Please, consider choosing from {self.capacity_approaches.__args__}. "
+                "Set evolved approach set as fallback.",
                 RuntimeWarning,
             )
             self._capacity_approach = "evolved"
         else:
             self._capacity_approach = capacity_approach
 
-        bounds = [(1.0, self._maximum_capacity)] + [
+        _bounds = [(1.0, self._maximum_capacity)] + [
             (minimum_weight, maximum_weight)
             if i % 2 == 0
             else (minimum_profit, maximum_profit)
-            for i in range(2 * dimension)
+            for i in range(number_of_items * 2)  # Remove the capacity dimension
         ]
-        features_names = "capacity,max_p,max_w,min_p,min_w,avg_eff,mean,std".split(",")
+        _features_names = "capacity,max_p,max_w,min_p,min_w,avg_eff,mean,std".split(",")
+        # The dimension of a KnapsackDomain is 2 times number of items plus the capacity
+        _dimension = (self._number_of_items * 2) + 1
         super().__init__(
-            dimension=dimension,
-            bounds=bounds,
-            domain_name="KP",
-            features_names=features_names,
+            dimension=_dimension,
+            bounds=_bounds,
+            domain_name="Knapsack",
+            features_names=_features_names,
             seed=seed,
         )
 
@@ -341,7 +388,12 @@ class KnapsackDomain(Domain):
         """Return the strategy currently used to assign capacities to generated instances."""
         return self._capacity_approach
 
-    def generate_instances(self, n: np.uint32 = np.uint32(1)) -> List[Instance]:
+    @property
+    def capacity_ratio(self):
+        """Returns the ratio to which the capacity is update when using percentage approach"""
+        return self._capacity_ratio
+
+    def generate_instances(self, n: np.uint32 | int = np.uint32(1)) -> List[Instance]:
         """Generate a batch of knapsack instances.
 
         The method samples item weights and profits for each instance and then assigns a
@@ -354,26 +406,30 @@ class KnapsackDomain(Domain):
         Returns:
             List[Instance]: A list of generated instance objects.
         """
-        weights_and_profits = np.empty(shape=(n, self.dimension * 2), dtype=np.uint32)
+        weights_and_profits = np.empty(
+            shape=(n, self._number_of_items * 2), dtype=np.uint32
+        )
         weights_and_profits[:, 0::2] = self._rng.integers(
             low=self._minimum_weight,
             high=self._maximum_weight,
-            size=(n, self.dimension),
+            size=(n, self._number_of_items),
         )
         weights_and_profits[:, 1::2] = self._rng.integers(
             low=self._minimum_profit,
             high=self._maximum_profit,
-            size=(n, self.dimension),
+            size=(n, self._number_of_items),
         )
         # Assume fixed
         capacities = np.full(n, fill_value=self._maximum_capacity, dtype=np.int32)
         match self.capacity_approach:
             case "evolved":
                 capacities[:] = self._rng.integers(1, self._maximum_capacity, size=n)
+
             case "percentage":
                 capacities[:] = (
                     np.sum(weights_and_profits[:, 1::2], axis=1) * self.capacity_ratio
                 ).astype(np.int32)
+
         return list(
             Instance(i) for i in np.column_stack((capacities, weights_and_profits))
         )
@@ -406,15 +462,15 @@ class KnapsackDomain(Domain):
         features = np.empty(shape=(len(instances), 8), dtype=np.float64)
         weights = instances[:, 1::2]
         profits = instances[:, 2::2]
+        efficiency = np.mean(profits / weights, axis=1, dtype=np.float64)
         features[:, 0] = instances[:, 0]  # Qs
         features[:, 1] = np.max(profits, axis=1)
         features[:, 2] = np.max(weights, axis=1)
         features[:, 3] = np.min(profits, axis=1)
         features[:, 4] = np.min(weights, axis=1)
-        features[:, 5] = np.mean(profits / weights)
+        features[:, 5] = efficiency
         features[:, 6] = np.mean(instances[:, 1:], axis=1)
         features[:, 7] = np.std(instances[:, 1:], axis=1)
-
         return features
 
     def extract_features_as_dict(

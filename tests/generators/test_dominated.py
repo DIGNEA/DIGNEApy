@@ -204,7 +204,7 @@ def test_dominated_evolutionary_generator_raises_if_wrong_args(descriptor):
         )
 
     with pytest.raises(ValueError):
-        kp_domain = KnapsackDomain(dimension=50)
+        kp_domain = KnapsackDomain(number_of_items=50)
         eig = Dominated(
             pop_size=10,
             generations=generations,

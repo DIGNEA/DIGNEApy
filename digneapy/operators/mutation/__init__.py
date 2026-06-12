@@ -10,12 +10,13 @@
 @Desc    :   None
 """
 
-from ._base_mutation import Mutation
+from ._base_mutation import Mutation, MutationFn
 from .iso import ILMut, ISOLineMutation
 from .uniform import BatchUMut, BatchUniformMutation, UMut, UniformMutation
 
 __all__ = [
     "Mutation",
+    "MutationFn",
     "UniformMutation",
     "UMut",
     "BatchUniformMutation",

@@ -11,11 +11,18 @@
 """
 
 from abc import ABC, abstractmethod
-from typing import Optional
+from typing import Optional, Protocol
 
 import numpy as np
 
 from digneapy.typing import IndType
+
+
+# Operators
+class CrossoverFn(Protocol):
+    def __call__(
+        self, individual: IndType, other: IndType, *args, **kwargs
+    ) -> IndType: ...
 
 
 class Crossover(ABC):

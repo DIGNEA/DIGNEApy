@@ -12,13 +12,15 @@
 
 from collections.abc import Callable
 from enum import IntEnum
-from typing import Protocol, TypeVar
+from typing import TypeVar
 
 import numpy as np
 
 from ._core._instance import Instance
 from ._core._solution import Solution
-from .operators import Crossover, Mutation
+
+Ind = int | np.integer
+Float = float | np.floating
 
 """
 Individual Type in Digneapy to represent Solution and Instances in methods that can be used with both
@@ -33,31 +35,8 @@ Returns:
 PerformanceFn = Callable[[np.ndarray], np.ndarray]
 
 
-# Operators
-class CrossoverFn(Protocol):
-    def __call__(
-        self, individual: IndType, other: IndType, *args, **kwargs
-    ) -> IndType: ...
-
-
-type CrossoverLike = Crossover | CrossoverFn
-
-
-class MutationFn(Protocol):
-    def __call__(
-        population: IndType | np.ndarray,
-        lb: np.ndarray,
-        ub: np.ndarray,
-        *args,
-        **kwargs,
-    ) -> IndType: ...
-
-
-type MutationLike = Mutation | MutationFn
-
-
 class Direction(IntEnum):
-    """Direction of the optimisation for Deap solvers."""
+    """Direction of the optimisation for Deap-based solvers."""
 
     MINIMISE = -1
     MAXIMISE = 1

@@ -10,9 +10,15 @@
 @Desc    :   None
 """
 
-from ._base_replacement import Replacement
+from ._base_replacement import Replacement, ReplacementFn
 from .elitist import Elitist
 from .generational import Generational
 from .greedy import GreedyReplacement
 
-__all__ = ["Replacement", "Generational", "GreedyReplacement", "Elitist"]
+__all__ = [
+    "Replacement",
+    "ReplacementFn",
+    "Generational",
+    "GreedyReplacement",
+    "Elitist",
+]

@@ -10,197 +10,517 @@
 @Desc    :   None
 """
 
-import os
-import random
+from pathlib import Path
 
 import numpy as np
 import pytest
+from numpy.testing import assert_equal
 
 from digneapy import Instance
 from digneapy.domains.tsp import TSP, TSPDomain
 
 
-@pytest.fixture
-def default_tsp():
-    N = 100
-    _coords = np.random.default_rng().integers(
-        low=(0),
-        high=(1000),
-        size=(N, 2),
-        dtype=int,
+@pytest.mark.parametrize("save_as_1d", (True, False))
+def test_tsp_problem_attrs(save_as_1d):
+    number_of_nodes = 100
+    low = 0.0
+    high = 1000.0
+    coordinates = np.random.default_rng().uniform(
+        low=low, high=high, size=(number_of_nodes, 2)
     )
-    return TSP(nodes=N, coords=_coords)
-
-
-def test_default_tsp_attrs(default_tsp):
-    assert len(default_tsp) == 100
-    assert default_tsp._nodes == 100
-    expected_repr = "TSP<n=100>"
-    assert default_tsp.__repr__() == expected_repr
-    # Check is able to create a file
-    default_tsp.to_file()
-    assert os.path.exists("instance.tsp")
-    os.remove("instance.tsp")
-
-    with pytest.raises(Exception):
-        # Raises attribute error when passing an empty list
-        default_tsp.evaluate([])
-
-    with pytest.raises(Exception):
-        # Raises attribute error when passing a len(list) != len(kp)
-        default_tsp.evaluate(list(range(1000)))
-
-    with pytest.raises(Exception):
-        # Raises attribute error when passing a len(list) != len(kp)
-        default_tsp.evaluate(list(range(1)))
-
-
-def test_tsp_problem_raises_if_invalid_coords():
-    _coords = np.random.default_rng().integers(
-        low=(0),
-        high=(1000),
-        size=(100, 4),
-        dtype=int,
-    )
-    with pytest.raises(ValueError):
-        _ = TSP(nodes=100, coords=_coords)
-
-
-def test_tsp_can_be_created_with_list():
-    N = 100
-    __coords = np.asarray([
-        [random.randint(0, 1_000), random.randint(0, 1_000)] for _ in range(N)
-    ])
-    problem = TSP(nodes=N, coords=__coords)
-    assert isinstance(problem, TSP)
-    assert len(problem) == N
-    assert isinstance(problem._coords, np.ndarray)
-    np.testing.assert_array_equal(problem._coords, np.asarray(__coords))
-    np.testing.assert_array_equal(np.asarray(problem), np.asarray(__coords))
-
-
-def test_tsp_solutions_is_cyclic(default_tsp):
-    solution = default_tsp.create_solution()
-    assert solution[0] == solution[-1]
-    assert solution[0] == 0
-    assert len(solution) == len(default_tsp) + 1
-
-
-def test_default_tsp_can_be_saved_to_disk(default_tsp):
-    default_tsp.to_file()
-    assert os.path.exists("instance.tsp")
-    os.remove("instance.tsp")
-
-
-def test_default_tsp_instance_evaluation(default_tsp):
-    individual = default_tsp.create_solution()
-    fitness = default_tsp.evaluate(individual)
-    assert not np.isclose(fitness, 0.0)
-    assert np.isclose(fitness, default_tsp(individual))
-    individual[0] = 100
-    assert np.isclose(
-        default_tsp.evaluate(individual), (1.0 / np.finfo(np.float64).max)
+    tsp = TSP(
+        number_of_nodes=number_of_nodes,
+        coords=coordinates,
+        save_distances_as_1d=save_as_1d,
     )
 
-    individual[0] = 0
-    individual[1] = 2
-    assert np.isclose(
-        default_tsp.evaluate(individual), (1.0 / np.finfo(np.float64).max)
+    assert len(tsp) == number_of_nodes
+    assert_equal(tsp.coordinates, coordinates)
+
+    # The computation of the distances was not delayed
+    assert tsp.distances is not None
+    assert isinstance(tsp.distances, np.ndarray)
+    # TSP stores the distance matrix as a flattened 1D
+    # array with only the upper diagonal elements
+    if save_as_1d:
+        n_expected_distances = ((number_of_nodes - 1) * (number_of_nodes)) // 2
+        assert len(tsp.distances) == n_expected_distances
+    else:
+        assert_equal(tsp.distances.shape, (number_of_nodes, number_of_nodes))
+
+
+@pytest.mark.parametrize("save_as_1d", (True, False))
+def test_tsp_problem_attrs_created_from_list(save_as_1d):
+    number_of_nodes = 100
+    low = 0.0
+    high = 1000.0
+    coordinates = (
+        np.random
+        .default_rng()
+        .uniform(low=low, high=high, size=(number_of_nodes, 2))
+        .tolist()
+    )
+    assert isinstance(coordinates, list)
+    assert not isinstance(coordinates, np.ndarray)
+    tsp = TSP(
+        number_of_nodes=number_of_nodes,
+        coords=coordinates,
+        save_distances_as_1d=save_as_1d,
     )
 
+    assert len(tsp) == number_of_nodes
+    assert_equal(tsp.coordinates, coordinates)
 
-def test_default_tsp_evaluation_raises_if_wrong_args(default_tsp):
-    with pytest.raises(Exception):
-        # Raises attribute error when passing an empty list
-        default_tsp.evaluate([])
-
-    with pytest.raises(Exception):
-        # Raises attribute error when passing a len(list) != len(kp)
-        default_tsp.evaluate(list(range(1000)))
-
-    with pytest.raises(Exception):
-        # Raises attribute error when passing a len(list) != len(kp)
-        default_tsp.evaluate(list(range(1)))
-
-
-def test_default_tsp_domain_attrs():
-    dimension = 100
-    domain = TSPDomain(dimension)
-    assert len(domain) == dimension
-    assert domain._x_range == (0, 1000)
-    assert domain._y_range == (0, 1000)
-    assert domain.bounds == [(0, 1000) for _ in range(dimension * 2)]
+    # The computation of the distances was not delayed
+    assert tsp.distances is not None
+    assert isinstance(tsp.distances, np.ndarray)
+    # TSP stores the distance matrix as a flattened 1D
+    # array with only the upper diagonal elements
+    if save_as_1d:
+        n_expected_distances = ((number_of_nodes - 1) * (number_of_nodes)) // 2
+        assert len(tsp.distances) == n_expected_distances
+    else:
+        assert_equal(tsp.distances.shape, (number_of_nodes, number_of_nodes))
 
 
-def test_default_tsp_domain_raises_if_wrong_args():
+def test_tsp_problem_attrs_with_postponed_dist_comp():
+    number_of_nodes = 100
+    low = 0.0
+    high = 1000.0
+    coordinates = np.random.default_rng().uniform(
+        low=low, high=high, size=(number_of_nodes, 2)
+    )
+    tsp = TSP(
+        number_of_nodes=number_of_nodes, coords=coordinates, postpone_dist_comp=True
+    )
+
+    assert len(tsp) == number_of_nodes
+    assert_equal(tsp.coordinates, coordinates)
+
+    # The computation of the distances was delayed
+    assert_equal(tsp.distances, np.empty(0))
+
+
+def test_tsp_problem_raises_with_wrong_args():
     with pytest.raises(ValueError):
-        TSPDomain(dimension=-1)
+        # Raises because we passed negative number_of_nodes
+        number_of_nodes = 100
+        low = 0.0
+        high = 1000.0
+        coordinates = np.random.default_rng().uniform(
+            low=low, high=high, size=(number_of_nodes, 2)
+        )
+        _ = TSP(
+            number_of_nodes=-number_of_nodes,
+            coords=coordinates,
+        )
 
     with pytest.raises(ValueError):
-        TSPDomain(dimension=-1)
+        # Raises because we passed negative penalty_factor
+        number_of_nodes = 100
+        low = 0.0
+        high = 1000.0
+        coordinates = np.random.default_rng().uniform(
+            low=low, high=high, size=(number_of_nodes, 2)
+        )
+        _ = TSP(
+            number_of_nodes=number_of_nodes, coords=coordinates, penalty_factor=-10.0
+        )
 
     with pytest.raises(ValueError):
-        TSPDomain(dimension=100, x_range=tuple(), y_range=(0, 1000))
+        # Raises because we passed invalid penalty_factor
+        number_of_nodes = 100
+        low = 0.0
+        high = 1000.0
+        coordinates = np.random.default_rng().uniform(
+            low=low, high=high, size=(number_of_nodes, 2)
+        )
+        _ = TSP(
+            number_of_nodes=number_of_nodes, coords=coordinates, penalty_factor="abc"
+        )
 
     with pytest.raises(ValueError):
-        TSPDomain(dimension=100, x_range=(0, 1000), y_range=tuple())
+        # Raises because we passed coords as 1D
+        number_of_nodes = 100
+        low = 0.0
+        high = 1000.0
+        coordinates = (
+            np.random
+            .default_rng()
+            .uniform(low=low, high=high, size=(number_of_nodes, 2))
+            .flatten()
+        )
+        _ = TSP(
+            number_of_nodes=number_of_nodes,
+            coords=coordinates,
+        )
 
     with pytest.raises(ValueError):
-        TSPDomain(dimension=100, x_range=(1000, 100), y_range=(0, 1000))
+        # Raises because we passed double number of coords
+        number_of_nodes = 100
+        low = 0.0
+        high = 1000.0
+        coordinates = np.random.default_rng().uniform(
+            low=low, high=high, size=(number_of_nodes * 2, 2)
+        )
+        _ = TSP(
+            number_of_nodes=number_of_nodes,
+            coords=coordinates,
+        )
 
+
+def test_tsp_problem_can_be_casted_to_array():
+    number_of_nodes = 100
+    low = 0.0
+    high = 1000.0
+    coordinates = np.random.default_rng().uniform(
+        low=low, high=high, size=(number_of_nodes, 2)
+    )
+    tsp = TSP(number_of_nodes=number_of_nodes, coords=coordinates)
+    tsp_as_array = np.asarray(tsp)
+    assert_equal(tsp_as_array, coordinates)
+
+
+def test_tsp_problem_can_create_solution():
+    number_of_nodes = 100
+    low = 0.0
+    high = 1000.0
+    coordinates = np.random.default_rng().uniform(
+        low=low, high=high, size=(number_of_nodes, 2)
+    )
+    tsp = TSP(number_of_nodes=number_of_nodes, coords=coordinates)
+    sample_solution = tsp.create_solution()
+    # TSP creates solutions with dimension N + 1
+    # because it creates a cyclic solution that returns to zero (start point)
+    assert len(sample_solution) == number_of_nodes + 1
+    assert sample_solution[0] == sample_solution[-1] == 0
+    assert_equal(sample_solution[1:-1], np.arange(1, number_of_nodes))
+    assert len(sample_solution.constraints) == 2
+    assert len(sample_solution.objectives) == 1
+
+
+def test_tsp_problem_can_be_saved_to_file():
+    number_of_nodes = 100
+    low = 0.0
+    high = 1000.0
+    coordinates = np.random.default_rng().uniform(
+        low=low, high=high, size=(number_of_nodes, 2)
+    )
+    tsp = TSP(number_of_nodes=number_of_nodes, coords=coordinates)
+    filename = "testing_tsp_problem.tsp"
+    tsp.to_file(filename=filename)
+    filename = Path(filename)
+    assert filename.exists()
+    filename.unlink()
+
+
+def test_tsp_problem_can_be_saved_with_Path():
+    number_of_nodes = 100
+    low = 0.0
+    high = 1000.0
+    coordinates = np.random.default_rng().uniform(
+        low=low, high=high, size=(number_of_nodes, 2)
+    )
+    tsp = TSP(number_of_nodes=number_of_nodes, coords=coordinates)
+    filename = Path("testing_tsp_problem.tsp")
+    tsp.to_file(filename=filename)
+    assert filename.exists()
+    filename.unlink()
+
+
+def test_tsp_problem_can_be_loaded_from_file():
+    number_of_nodes = 100
+    filename = Path(__file__).parent / "data" / "testing_tsp.tsp"
+    tsp = TSP.from_file(filename)
+    assert isinstance(tsp, TSP)
+    assert len(tsp) == number_of_nodes
+    assert isinstance(tsp.distances, np.ndarray)
+    assert_equal(tsp.coordinates.shape, (number_of_nodes, 2))
+
+
+def test_tsp_problem_can_be_casted_to_instance():
+    number_of_nodes = 100
+    low = 0.0
+    high = 1000.0
+    coordinates = np.random.default_rng().uniform(
+        low=low, high=high, size=(number_of_nodes, 2)
+    )
+    tsp = TSP(number_of_nodes=number_of_nodes, coords=coordinates)
+
+    instance = tsp.to_instance()
+    # TSP instance is a flattened version of the coordinates matrix
+    assert len(instance) == number_of_nodes * 2
+    assert_equal(instance.variables, coordinates.flatten())
+
+
+def test_tsp_problem_evaluates_correct_solution():
+    number_of_nodes = 100
+    low = 0.0
+    high = 1000.0
+    coordinates = np.random.default_rng().uniform(
+        low=low, high=high, size=(number_of_nodes, 2)
+    )
+    tsp = TSP(number_of_nodes=number_of_nodes, coords=coordinates)
+    solution = tsp.create_solution()
+    fitness, cycled, duplicated = tsp.evaluate(solution)
+    assert_equal(solution.fitness, fitness)
+    assert fitness >= 0.0
+    # No constraints should be violated with the sample solution
+    assert_equal((cycled, duplicated), (0, 0))
+    assert_equal(solution.constraints, (0, 0))
+
+
+def test_tsp_problem_evaluates_correct_solution_with_1d_matrix():
+    number_of_nodes = 100
+    low = 0.0
+    high = 1000.0
+    coordinates = np.random.default_rng().uniform(
+        low=low, high=high, size=(number_of_nodes, 2)
+    )
+    tsp = TSP(
+        number_of_nodes=number_of_nodes, coords=coordinates, save_distances_as_1d=True
+    )
+    solution = tsp.create_solution()
+    fitness, cycled, duplicated = tsp.evaluate(solution)
+    assert_equal(solution.fitness, fitness)
+    assert fitness >= 0.0
+    # No constraints should be violated with the sample solution
+    assert_equal((cycled, duplicated), (0, 0))
+    assert_equal(solution.constraints, (0, 0))
+
+
+def test_tsp_problem_evaluates_correct_solution_saved_as_1d_or_2d():
+    number_of_nodes = 100
+    low = 0.0
+    high = 1000.0
+    coordinates = np.random.default_rng().uniform(
+        low=low, high=high, size=(number_of_nodes, 2)
+    )
+    tsp_1d = TSP(
+        number_of_nodes=number_of_nodes, coords=coordinates, save_distances_as_1d=True
+    )
+    solution = tsp_1d.create_solution()
+    fitness, cycled, duplicated = tsp_1d.evaluate(solution)
+
+    tsp_2d = TSP(
+        number_of_nodes=number_of_nodes, coords=coordinates, save_distances_as_1d=False
+    )
+    solution_2d = tsp_2d.create_solution()
+    fitness_2d, cycled_2d, duplicated_2d = tsp_1d.evaluate(solution)
+
+    assert_equal(solution, solution_2d)
+    assert_equal(fitness, fitness_2d)
+    # No constraints should be violated with the sample solution
+    assert_equal((cycled, duplicated), (0, 0))
+    assert_equal((cycled_2d, duplicated_2d), (0, 0))
+
+
+def test_tsp_problem_evaluates_correct_solution_large_to_fit():
+    number_of_nodes = 100_000
+    low = 0.0
+    high = 1000.0
+    coordinates = np.random.default_rng().uniform(
+        low=low, high=high, size=(number_of_nodes, 2)
+    )
+    tsp = TSP(number_of_nodes=number_of_nodes, coords=coordinates)
+    solution = tsp.create_solution()
+    fitness, cycled, duplicated = tsp.evaluate(solution)
+    assert_equal(solution.fitness, fitness)
+    assert fitness >= 0.0
+    # No constraints should be violated with the sample solution
+    assert_equal((cycled, duplicated), (0, 0))
+    assert_equal(solution.constraints, (0, 0))
+
+
+def test_tsp_problem_evaluates_raises_if_len_mismatch():
+    number_of_nodes = 100
+    low = 0
+    high = 1000
+    coordinates = np.random.default_rng().uniform(
+        low=low, high=high, size=(number_of_nodes, 2)
+    )
+    tsp = TSP(number_of_nodes=number_of_nodes, coords=coordinates)
+    solution = np.random.default_rng().integers(
+        low=low, high=high, size=(number_of_nodes + 2)
+    )
     with pytest.raises(ValueError):
-        TSPDomain(dimension=100, x_range=(0, 1000), y_range=(1000, 100))
+        _ = tsp.evaluate(solution)
 
 
-def test_tsp_domain_to_extract_features_of_instances():
-    dimension = 100
+def test_tsp_problem_evaluates_no_cylic_solution():
+    number_of_nodes = 100
+    low = 0.0
+    high = 1000.0
+    coordinates = np.random.default_rng().uniform(
+        low=low, high=high, size=(number_of_nodes, 2)
+    )
+    tsp = TSP(number_of_nodes=number_of_nodes, coords=coordinates)
+    solution = tsp.create_solution()
+    solution[-1] = number_of_nodes - 1
+    fitness, cycled, duplicated = tsp.evaluate(solution)
+    assert_equal(solution.fitness, fitness)
+    assert fitness >= 0.0
+    # First constraint should violated with this updated sample solution
+    assert_equal((cycled, duplicated), (1, 0))
+    assert_equal(solution.constraints, (1, 0))
+
+
+def test_tsp_problem_evaluates_no_duplicated_nodes_solution():
+    number_of_nodes = 100
+    low = 0.0
+    high = 1000.0
+    coordinates = np.random.default_rng().uniform(
+        low=low, high=high, size=(number_of_nodes, 2)
+    )
+    tsp = TSP(number_of_nodes=number_of_nodes, coords=coordinates)
+    solution = tsp.create_solution()
+    # Node 1 is visited more than once
+    solution[2] = 1
+    fitness, cycled, duplicated = tsp.evaluate(solution)
+    assert_equal(solution.fitness, fitness)
+    assert fitness >= 0.0
+    # First constraint should violated with this updated sample solution
+    assert_equal((cycled, duplicated), (0, 1))
+    assert_equal(solution.constraints, (0, 1))
+
+
+def test_tsp_problem_call_evaluates_correct_solution():
+    number_of_nodes = 100
+    low = 0.0
+    high = 1000.0
+    coordinates = np.random.default_rng().uniform(
+        low=low, high=high, size=(number_of_nodes, 2)
+    )
+    tsp = TSP(number_of_nodes=number_of_nodes, coords=coordinates)
+    solution = tsp.create_solution()
+    fitness, cycled, duplicated = tsp(solution)
+    assert_equal(solution.fitness, fitness)
+    assert fitness >= 0.0
+    # No constraints should be violated with the sample solution
+    assert_equal((cycled, duplicated), (0, 0))
+    assert_equal(solution.constraints, (0, 0))
+
+
+def test_tsp_problem_evaluates_with_sequence():
+    number_of_nodes = 100
+    low = 0.0
+    high = 1000.0
+    coordinates = np.random.default_rng().uniform(
+        low=low, high=high, size=(number_of_nodes, 2)
+    )
+    tsp = TSP(number_of_nodes=number_of_nodes, coords=coordinates)
+    solution = tsp.create_solution().variables
+    fitness, cycled, duplicated = tsp.evaluate(solution)
+
+    assert fitness >= 0.0
+    assert_equal((cycled, duplicated), (0, 0))
+
+
+################ TSP Domain tests
+
+
+def test_tsp_domain_attrs():
+    number_of_nodes = 100
+    domain = TSPDomain(number_of_nodes)
+
+    assert len(domain) == number_of_nodes
+    assert domain.bounds == [(0, 1000) for _ in range(number_of_nodes)]
+
+
+def test_tsp_domain_raises_negative_non():
+    number_of_nodes = 100
+    with pytest.raises(ValueError):
+        _ = TSPDomain(number_of_nodes=-number_of_nodes)
+
+
+def test_tsp_domain_raises_x_range_dim_not_2():
+    number_of_nodes = 100
+    with pytest.raises(ValueError):
+        _ = TSPDomain(number_of_nodes=number_of_nodes, x_range=(0, 100, 1000))
+
+
+def test_tsp_domain_raises_y_range_dim_not_2():
+    number_of_nodes = 100
+    with pytest.raises(ValueError):
+        _ = TSPDomain(number_of_nodes=number_of_nodes, y_range=(0, 100, 1000))
+
+
+def test_tsp_domain_raises_overlapped_x_range():
+    number_of_nodes = 100
+    with pytest.raises(ValueError):
+        _ = TSPDomain(number_of_nodes=number_of_nodes, x_range=(100, 99))
+
+
+def test_tsp_domain_raises_overlapped_y_range():
+    number_of_nodes = 100
+    with pytest.raises(ValueError):
+        _ = TSPDomain(number_of_nodes=number_of_nodes, y_range=(100, 99))
+
+
+def test_tsp_domain_can_extract_features():
+    number_of_nodes = 100
     n_instances = 128
-    domain = TSPDomain(dimension)
+    n_features = 11
+    domain = TSPDomain(number_of_nodes=number_of_nodes)
+
     instances = domain.generate_instances(n=n_instances)
+    assert all(isinstance(x, Instance) for x in instances)
     features = domain.extract_features(instances)
+    # The extract_features method cast the instances to np.ndarray
+    # but it shouldn't alter the original
+    assert all(isinstance(x, Instance) for x in instances)
+
     assert isinstance(features, np.ndarray)
-    assert features.shape == (n_instances, 11)
+    assert_equal(features.shape, (n_instances, n_features))
     # The last two could be zero depending of the instance
     assert (features[:, :-2] != 0.0).all()
-    assert (features[:, 0] == dimension).all()
+    assert_equal(features[:, 0], number_of_nodes)
 
 
-def test_bpp_domain_to_features_dict():
-    dimension = 100
+def test_tsp_domain_can_extract_features_as_dict():
+    number_of_nodes = 100
     n_instances = 128
-    domain = TSPDomain(dimension=dimension)
-    instance = domain.generate_instances(n=n_instances)
-    features = domain.extract_features_as_dict(instance)
+    n_features = 11
+    domain = TSPDomain(number_of_nodes)
+
+    instances = domain.generate_instances(n=n_instances)
+    assert all(isinstance(x, Instance) for x in instances)
+    features = domain.extract_features_as_dict(instances)
+    expected_keys = "size,std_distances,centroid_x,centroid_y,radius,fraction_distances,area,variance_nnNds,variation_nnNds,cluster_ratio,mean_cluster_radius"
+    expected_keys = set(expected_keys.split(","))
+    # The extract_features method cast the instances to np.ndarray
+    # but it shouldn't alter the original
+    assert all(isinstance(x, Instance) for x in instances)
     assert isinstance(features, list)
-    assert all(len(f.keys()) == 11 for f in features)
-    assert all(f != 0.0 for feat_set in features for f in feat_set.values())
-    assert all(f["size"] == dimension for f in features)
+    assert all(
+        expected_keys == set(instance_features.keys()) for instance_features in features
+    )
+    assert all(len(f) == n_features for f in features)
 
 
-def test_tsp_domain_to_instance():
-    dimension = 100
-    variables = np.random.default_rng().integers(low=1, high=1000, size=(dimension, 2))
-    variables = variables.flatten()
-    instance = Instance(variables)
+def test_tsp_domain_can_generate_instances():
+    number_of_nodes = 100
+    n_instances = 128
+    domain = TSPDomain(number_of_nodes)
 
-    domain = TSPDomain(dimension)
-    tsp_problem = domain.generate_problem_from_instance(instance)
-    assert len(tsp_problem) == dimension
-    assert len(tsp_problem._coords) == dimension
-    assert len(instance) == dimension * 2  # Flattened (x, y) coords
+    instances = domain.generate_instances(n=n_instances)
+    assert all(isinstance(x, Instance) for x in instances)
+    assert all(len(x) == number_of_nodes * 2 for x in instances)
 
 
-def test_tsp_domain_creates_problems():
-    N = 100
-    DIMENSION = 100
-    instances = [
-        Instance(
-            np.random.default_rng().integers(low=1, high=1_000, size=(DIMENSION, 2))
-        )
-        for _ in range(N)
-    ]
+def test_tsp_domain_can_generate_problems_from_instances():
+    number_of_nodes = 100
+    n_instances = 128
+    domain = TSPDomain(number_of_nodes)
 
-    domain = TSPDomain(DIMENSION)
-    tsp_problems = domain.generate_problems_from_instances(instances)
-    assert len(tsp_problems) == N
-    assert all(len(p) == DIMENSION // 2 for p in tsp_problems)
+    instances = domain.generate_instances(n=n_instances)
+    assert all(isinstance(x, Instance) for x in instances)
+    assert all(len(x) == number_of_nodes * 2 for x in instances)
+
+    problems = domain.generate_problems_from_instances(instances)
+    assert all(isinstance(p, TSP) for p in problems)
+    assert all(len(p) == number_of_nodes for p in problems)
+    for i, problem in enumerate(problems):
+        expected_coordinates = np.asarray(instances[i]).reshape(number_of_nodes, 2)
+        assert_equal(problem.coordinates, expected_coordinates)
+        assert_equal(problem.coordinates.shape, (number_of_nodes, 2))

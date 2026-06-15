@@ -69,7 +69,7 @@ class Instance:
 
     def __init__(
         self,
-        variables: Sequence,
+        variables: Sequence | np.ndarray,
         fitness: float | np.float64 = np.float64(0.0),
         performance_bias: float | np.float64 = np.float64(0.0),
         novelty: float | np.float64 = np.float64(0.0),

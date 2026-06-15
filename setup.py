@@ -36,8 +36,8 @@ cython_extensions = [
         include_dirs=[str(get_numpy_include())],
     ),
     Extension(
-        "digneapy.solvers._tsp_opt",
-        sources=["digneapy/solvers/_tsp_opt.pyx"],
+        "digneapy.solvers._c_tsp_solvers",
+        sources=["digneapy/solvers/_c_tsp_solvers.pyx"],
         # libraries=["m"],
         include_dirs=[str(get_numpy_include())],
     ),

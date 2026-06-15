@@ -10,7 +10,7 @@
 @Desc    :   None
 """
 
-__all__ = ["nneighbour", "greedy"]
+__all__ = ["greedy", "nneighbour"]
 
 from collections import Counter
 
@@ -20,11 +20,14 @@ from digneapy import Solution
 from digneapy.domains.tsp import TSP
 
 
-def greedy(problem: TSP, *args, **kwargs) -> list[Solution]:
-    """The Greedy heuristic gradually constructs a tour by
-    repeatedly selecting the shortest edge and adding it to the tour as long as
-    it doesn’t create a cycle with less than N edges, or increases the degree of
-    any node to more than 2. We must not add the same edge twice of course.
+def greedy(problem: TSP) -> list[Solution]:
+    """The Greedy heuristic for TSP
+
+    It gradually constructs a tour by repeatedly selecting the
+    shortest edge and adding it to the tour as long as it doesn’t
+    create a cycle with less than N edges, or increases the degree of
+    any node to more than 2.
+    We must not add the same edge twice of course.
 
        Args:
            problem (TSP): Problem to solve
@@ -35,38 +38,48 @@ def greedy(problem: TSP, *args, **kwargs) -> list[Solution]:
        Returns:
            list[Solution]: Collection of solutions for the given problem
     """
-    if problem is None:
-        raise ValueError("No problem found in two_opt heuristic")
-    N = problem.dimension
-    distances = problem._distances
-    counter = Counter()
-    selected: set[tuple[int, int]] = set()
+    try:
+        N = problem.dimension
+        distances = problem._distances
+        counter = Counter()
+        selected: set[tuple[int, int]] = set()
 
-    ordered_edges = sorted(
-        [(distances[i][j], i, j) for i in range(N) for j in range(i + 1, N)]
-    )
+        ordered_edges = sorted([
+            (distances[i][j], i, j) for i in range(N) for j in range(i + 1, N)
+        ])
 
-    length = 0.0
-    for dist, i, j in ordered_edges:
-        if (i, j) in selected or (j, i) in selected:
-            continue
-        if counter[i] >= 2 or counter[j] >= 2:
-            continue
-        selected.add((i, j))
-        counter[i] += 1
-        counter[j] += 1
-        length += dist
-        if len(selected) == N:
-            break
+        length = 0.0
+        for dist, i, j in ordered_edges:
+            if (i, j) in selected or (j, i) in selected:
+                continue
+            if counter[i] >= 2 or counter[j] >= 2:
+                continue
 
-    _fitness = 1.0 / length
+            selected.add((i, j))
+            counter[i] += 1
+            counter[j] += 1
+            length += dist
 
-    return [
-        Solution(variables=list(range(N + 1)), objectives=(_fitness,), fitness=_fitness)
-    ]
+            if len(selected) == N:
+                break
+
+        _fitness = 1.0 / length
+
+        return [
+            Solution(
+                variables=list(range(N + 1)),
+                objectives=(_fitness,),
+                fitness=_fitness,
+                constraints=(0, 0),
+            )
+        ]
+    except Exception as e:
+        raise RuntimeError(
+            f"Cannot solve TSP in greedy because an exception was raised. Cause {e}"
+        )
 
 
-def nneighbour(problem: TSP, *args, **kwargs) -> list[Solution]:
+def nneighbour(problem: TSP) -> list[Solution]:
     """Nearest-Neighbour Heuristic for the Travelling Salesman Problem
 
     Args:
@@ -78,30 +91,36 @@ def nneighbour(problem: TSP, *args, **kwargs) -> list[Solution]:
     Returns:
         list[Solution]: Collection of solutions to the problem.
     """
-    if problem is None:
-        raise ValueError("No problem found in nneighbour heuristic")
+    try:
+        distances = problem._distances
+        current_node = 0
+        visited_nodes: set[int] = set([current_node])
+        tour = np.zeros(problem.dimension + 1)
+        length = np.float64(0)
+        idx = 1
+        while len(visited_nodes) != problem.dimension:
+            next_node = 0
+            min_distance = np.finfo(np.float64).max
 
-    distances = problem._distances
-    current_node = 0
-    visited_nodes: set[int] = set([current_node])
-    tour = np.zeros(problem.dimension + 1)
-    length = np.float32(0)
-    idx = 1
-    while len(visited_nodes) != problem.dimension:
-        next_node = 0
-        min_distance = np.finfo(np.float32).max
+            for j in range(problem.dimension):
+                if j not in visited_nodes and distances[current_node][j] < min_distance:
+                    min_distance = distances[current_node][j]
+                    next_node = j
 
-        for j in range(problem.dimension):
-            if j not in visited_nodes and distances[current_node][j] < min_distance:
-                min_distance = distances[current_node][j]
-                next_node = j
+            visited_nodes.add(next_node)
+            tour[idx] = next_node
+            idx += 1
+            length += min_distance
+            current_node = next_node
 
-        visited_nodes.add(next_node)
-        tour[idx] = next_node
-        idx += 1
-        length += min_distance
-        current_node = next_node
-
-    length += distances[current_node][0]
-    length = 1.0 / length
-    return [Solution(variables=tour, objectives=(length,), fitness=length)]
+        length += distances[current_node][0]
+        length = 1.0 / length
+        return [
+            Solution(
+                variables=tour, objectives=(length,), fitness=length, constraints=(0, 0)
+            )
+        ]
+    except Exception as e:
+        raise RuntimeError(
+            f"Cannot solve TSP in nneighbour because an exception was raised. Cause {e}"
+        )

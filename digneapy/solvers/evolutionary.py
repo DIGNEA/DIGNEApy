@@ -22,7 +22,9 @@ from digneapy._core import Problem, Solution, Solver
 from digneapy.typing import Direction
 
 
-def _gen_dignea_ind(icls, rng, size: int, min_value, max_value):
+def _gen_dignea_ind(
+    icls, rng, size: int, min_value, max_value, dtype: np.int32 | np.float64
+):
     """Auxiliar function to generate individual based on
     the Solution class of digneapy
     """
@@ -48,6 +50,7 @@ class EA(Solver):
         generations: np.uint32 = np.uint32(500),
         n_cores: np.uint8 = np.uint8(1),
         seed: Optional[int | np.random.SeedSequence] = None,
+        dtype: np.int32 | np.float64 = np.int32,
     ):
         """Creates a new EA instance with the given parameters.
         Args:
@@ -78,6 +81,7 @@ class EA(Solver):
         self._toolbox = base.Toolbox()
         self._seed = seed
         self._rng = np.random.default_rng(seed)
+        self._dtype = dtype
         if direction == Direction.MINIMISE:
             self._toolbox.register(
                 "individual",
@@ -87,6 +91,7 @@ class EA(Solver):
                 dim,
                 min_g,
                 max_g,
+                self._dtype,
             )
 
         else:
@@ -98,6 +103,7 @@ class EA(Solver):
                 dim,
                 min_g,
                 max_g,
+                self._dtype,
             )
 
         self._toolbox.register(

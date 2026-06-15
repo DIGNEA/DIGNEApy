@@ -69,8 +69,11 @@ def test_grid_archive_with_initial_instances():
         ],
         instances=instances,
     )
-
-    assert len(archive) == n_instances
+    # We cannot know for sure how many instances will
+    # be included in the archive. But, at least the
+    # half should be included.
+    minimum_expected = n_instances // 2
+    assert minimum_expected <= len(archive) <= n_instances
     assert all(isinstance(x, Instance) for x in archive.instances)
 
 

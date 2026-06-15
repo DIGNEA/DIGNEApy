@@ -10,12 +10,13 @@
 @Desc    :   None
 """
 
-from collections import Counter
+import warnings
 from collections.abc import Sequence
 from pathlib import Path
 from typing import Dict, List, Optional, Self, Tuple
 
 import numpy as np
+from scipy.spatial.distance import cdist
 from sklearn.cluster import DBSCAN
 
 from digneapy._core import Domain, Instance, Problem, Solution
@@ -35,15 +36,19 @@ class TSP(Problem):
     exactly once in between.
 
     The objective value is the reciprocal of the total tour length (1 / distance),
-    so higher values correspond to shorter, better tours. Infeasible tours—those
-    that violate the visit-once constraint or do not start and end at city 0—are
-    assigned the smallest positive float64 value as a penalty fitness.
+    so higher values correspond to shorter, better tours. Infeasible tours are
+    those that violate the cyclic constraint (meaning that the start and end of the
+    tour should be the node number 0) or those that visit a node more than once.
+
     """
 
     def __init__(
         self,
-        nodes: np.uint,
+        number_of_nodes: np.uint | int,
         coords: np.ndarray,
+        penalty_factor: float | np.float64 = 10.0,
+        postpone_dist_comp: bool = False,
+        save_distances_as_1d: bool = False,
         seed: Optional[int | np.random.SeedSequence] = None,
         *args,
         **kwargs,
@@ -55,10 +60,23 @@ class TSP(Problem):
         fast.
 
         Args:
-            nodes (int): Number of cities (nodes) in the instance.
+            number_of_nodes (int): Number of cities (nodes) in the instance. It must
+                be a positive integer.
             coords (np.ndarray): A two-dimensional array of shape (N, 2) containing
                 the x and y coordinates of each city. If a plain sequence is
                 supplied it is automatically converted to a NumPy array.
+            penalty_factor (np.float64 | float, optional): Penalisation factor used
+                to lower the fitness of unfeasible solutions. Defaults to 10.0.
+                matrix. Defaults to False.
+            postpone_dist_comp (bool, optional): Boolean flag used to indicate that the
+                distance matrix should not be precomputed. When True, distances
+                are calculated on-the-fly in evaluate, rather than computing all
+                the pairwise distances between nodes and creating a flattened 1D distance
+                matrix. Defaults to False.
+            save_distances_as_1d (bool, optional): Boolean flag to tell the problem
+                that the distance matrix must be stored as a flattened 1d array
+                using only the upper right triangular matrix. Defaults to False,
+                and stores it as a 2d (number_of_nodes x number_of_nodes) matrix.
             seed (Optional[int | np.random.SeedSequence], optional): Seed used to
                 initialise the internal random number generator, which is inherited
                 from the parent ``Problem`` class. Defaults to None.
@@ -67,28 +85,93 @@ class TSP(Problem):
             ValueError: If ``coords`` does not have exactly two columns, i.e., its
                 shape is not (N, 2).
         """
-        self._nodes = nodes
-        if not isinstance(coords, np.ndarray):
-            coords = np.asarray(coords)
 
-        if coords.shape[1] != 2:
+        try:
+            number_of_nodes = int(number_of_nodes)
+        except (TypeError, ValueError) as exc:
             raise ValueError(
-                "Expected coordinates shape to be (N, 2). "
-                f"Instead coords has the following shape: {coords.shape}"
+                f"invalid number_of_nodes in TSP. Got: {number_of_nodes}"
+            ) from exc
+
+        try:
+            if not isinstance(coords, np.ndarray):
+                coords = np.asarray(coords)
+
+            if coords.shape != (number_of_nodes, 2):
+                raise ValueError(
+                    f"Expected coordinates shape to be ({number_of_nodes}, 2). "
+                    f"Instead coords has the following shape: {coords.shape}."
+                )
+
+            self._coordinates = np.asarray(coords, dtype=np.float64)
+        except (TypeError, ValueError) as exc:
+            raise ValueError from exc
+
+        try:
+            self._penalty_factor = float(penalty_factor)
+            if self._penalty_factor <= 0.0:
+                raise ValueError()
+        except (TypeError, ValueError) as exc:
+            raise ValueError(
+                "penalty_factor must be a valid positive float value. "
+                f"Got {penalty_factor}. From: {exc}"
+            ) from exc
+
+        x_min, y_min = np.min(self._coordinates, axis=0)
+        x_max, y_max = np.max(self._coordinates, axis=0)
+        _bounds = list(((x_min, y_min), (x_max, y_max)) for _ in range(number_of_nodes))
+
+        super().__init__(
+            dimension=number_of_nodes, bounds=_bounds, name="TSP", seed=seed
+        )
+        self._distances = np.empty(1)
+        if postpone_dist_comp:
+            # If we postpone the computation of the distance
+            # matrix, we're essentially working the same as
+            # such matrix doesn't fit in memory
+            self._too_large_to_fit = True
+
+            self._saved_as_1d = False
+        else:
+            # This is a Symmetric TSP problem
+            # we can store only the upper right triangular matrix
+            try:
+                self._distances = cdist(self._coordinates, self._coordinates)
+                self._saved_as_1d = save_distances_as_1d
+                if save_distances_as_1d:
+                    self._saved_as_1d = True
+                    self._distances = self._distances[
+                        np.triu_indices(number_of_nodes, k=1)
+                    ]
+                self._too_large_to_fit = False
+            except Exception:
+                # The distance matrix is too large to fit in memory
+                # we keep the coordinates and compute the distances
+                # on the fly each time
+                self._too_large_to_fit = True
+                self._saved_as_1d = False
+
+    @property
+    def coordinates(self) -> np.ndarray:
+        return self._coordinates
+
+    @property
+    def distances(self) -> np.ndarray:
+        if self._too_large_to_fit or self._distances is None:
+            warnings.warn(
+                "Distance matrix no calculated in TSP "
+                f"for {self.dimension} nodes because it doesn't fit in memory or it was postponed."
+                "Returning np.empty()",
+                RuntimeWarning,
+                stacklevel=2,
             )
+            return np.empty(0)
+        else:
+            return self._distances
 
-        self._coords = coords
-        x_min, y_min = np.min(self._coords, axis=0)
-        x_max, y_max = np.max(self._coords, axis=0)
-        bounds = list(((x_min, y_min), (x_max, y_max)) for _ in range(self._nodes))
-
-        super().__init__(dimension=nodes, bounds=bounds, name="TSP", seed=seed)
-
-        self._distances = np.zeros((self._nodes, self._nodes))
-        differences = self._coords[:, np.newaxis, :] - self._coords[np.newaxis, :, :]
-        self._distances = np.sqrt(np.sum(differences**2, axis=-1))
-
-    def __evaluate_constraints(self, individual: Sequence | Solution) -> bool:
+    def _evaluate_constraints(
+        self, individual: Sequence | Solution | np.ndarray
+    ) -> Tuple[int, int]:
         """Check that a candidate tour satisfies the hard feasibility constraints.
 
         A tour is considered feasible if and only if:
@@ -100,17 +183,19 @@ class TSP(Problem):
             individual (Sequence | Solution): The candidate tour to validate.
 
         Returns:
-            bool: ``True`` if all constraints are satisfied
-                  ``False`` otherwise.
+            Tuple[int, int]: Where the first component says if the tour is cycled or not,
+                and the second component tells how many duplicated
+                cities are in the inner tour [1:-1].
         """
-        counter = Counter(individual)
-        if any(counter[c] != 1 for c in counter if c != 0) or (
-            individual[0] != 0 or individual[-1] != 0
-        ):
-            return False
-        return True
+        cycle_violation: int = 0 if individual[0] == individual[-1] == 0 else 1
+        inner_tour = individual[1:-1]
+        inner_cities = set(inner_tour)
+        duplicated_count = len(inner_tour) - len(inner_cities)
+        return (cycle_violation, duplicated_count)
 
-    def evaluate(self, individual: Sequence | Solution | np.ndarray) -> tuple[float]:
+    def evaluate(
+        self, individual: Sequence | Solution | np.ndarray
+    ) -> Tuple[float, ...]:
         """Evaluate a candidate tour and compute its objective value.
 
         The fitness of a feasible solution is the reciprocal of the total Euclidean
@@ -135,32 +220,66 @@ class TSP(Problem):
             ValueError: If the length of ``individual`` does not equal ``N + 1``.
 
         Returns:
-            Tuple[float]: A one-element tuple containing the objective value.
+            Tuple[float, float, float]: A three-element tuple containing the objective value,
+                cyclic violation counter (0 if everything is okay, 1 otherwise),
+                and the number of duplicated nodes in the inner tour. This third value
+                should be zero for a feasible solution, meaning that all nodes are only
+                visited once.
         """
-        if len(individual) != self._nodes + 1:
-            msg = f"Mismatch between individual variables ({len(individual)}) and instance variables ({self._nodes}) in {self.__class__.__name__}. A solution for the TSP must be a sequence of len {self._nodes + 1}"
-            raise ValueError(msg)
+        if len(individual) != self.dimension + 1:
+            raise ValueError(
+                f"Mismatch between individual variables ({len(individual)})"
+                f" and instance variables ({self.dimension}) in TSP. "
+                f"A solution for the TSP must be a sequence of len {self.dimension + 1} items. "
+                f"Instead got {len(individual)}."
+            )
 
-        penalty: np.float64 = np.float64(0)
+        cycle_violation, duplicate_count = self._evaluate_constraints(individual)
+        total_violations = cycle_violation + duplicate_count
 
-        if self.__evaluate_constraints(individual):
-            distance: float = 0.0
-            for i in range(len(individual) - 2):
-                distance += self._distances[individual[i]][individual[i + 1]]
+        from_node = np.asarray(individual[:-1])
+        to_node = np.asarray(individual[1:])
 
-            fitness = 1.0 / distance
+        if self._too_large_to_fit:
+            from_coords = self._coordinates[from_node]
+            to_coords = self._coordinates[to_node]
+            distance = np.sum(
+                np.linalg.norm(from_coords - to_coords, axis=1), dtype=np.float64
+            )
         else:
-            fitness = 2.938736e-39  # --> 1.0 / np.float.max
-            penalty = np.finfo(np.float64).max
+            if self._saved_as_1d:
+                # Now calculate from the flatted indices to extract
+                # the distances from the flattened 1D distance matrix
+                i = np.minimum(from_node, to_node)
+                j = np.maximum(from_node, to_node)
+                flat_indices = i * self.dimension - (i * (i + 1)) // 2 + (j - i - 1)
+                distance = np.sum(self._distances[flat_indices], dtype=np.float64)
+            else:
+                distance = np.sum(self._distances[from_node, to_node], dtype=np.float64)
 
-        if isinstance(individual, Solution):
+        if total_violations != 0:
+            penalty = np.float64(total_violations) * distance * self._penalty_factor
+            fitness = 1.0 / (distance + penalty)
+        else:
+            fitness = 1.0 / distance
+
+        try:
+            # We assume that individual is a Solution object
+            # and in that case we can update its attributes
             individual.fitness = fitness
             individual.objectives = (fitness,)
-            individual.constraints = (penalty,)
+            individual.constraints = (
+                cycle_violation,
+                duplicate_count,
+            )
+        except Exception:
+            pass
 
-        return (fitness,)
+        return (fitness, cycle_violation, duplicate_count)
 
-    def __call__(self, individual: Sequence | Solution | np.ndarray) -> Tuple[float]:
+    def __call__(
+        self, individual: Sequence | Solution | np.ndarray
+    ) -> Tuple[float, ...]:
         """Evaluate a candidate tour and compute its objective value.
 
         Delegates directly to :meth:`evaluate`. This makes the problem instance
@@ -172,17 +291,21 @@ class TSP(Problem):
                 evaluate. Must have length ``N + 1``.
 
         Returns:
-            Tuple[float]: A one-element tuple containing the objective value.
+            Tuple[float, float, float]: A three-element tuple containing the objective value,
+                cyclic violation counter (0 if everything is okay, 1 otherwise),
+                and the number of duplicated nodes in the inner tour. This third value
+                should be zero for a feasible solution, meaning that all nodes are only
+                visited once.
         """
         return self.evaluate(individual)
 
     def __str__(self):
-        return f"TSP(n={self._nodes})"
+        return f"TSP(n={self.dimension})"
 
     def __len__(self):
-        return self._nodes
+        return self.dimension
 
-    def __array__(self, dtype=np.float32, copy: Optional[bool] = True) -> np.ndarray:
+    def __array__(self, dtype=np.float64, copy: Optional[bool] = None) -> np.ndarray:
         """Return a NumPy array representation of the TSP instance.
 
         The returned array is the (N, 2) coordinate matrix, where each row stores
@@ -191,14 +314,14 @@ class TSP(Problem):
 
         Args:
             dtype: NumPy data type for the returned array. Defaults to
-                ``np.float32``.
+                ``np.float64``.
             copy (Optional[bool]): Whether to force a copy of the underlying data.
-                Defaults to ``True``.
+                Defaults to ``None``.
 
         Returns:
             npt.ndarray: The coordinate matrix of shape (N, 2).
         """
-        return np.asarray(self._coords, dtype=dtype, copy=copy)
+        return np.asarray(self._coordinates, dtype=dtype, copy=copy)
 
     def create_solution(self) -> Solution:
         """Create a trivial initial solution for the TSP.
@@ -211,11 +334,12 @@ class TSP(Problem):
             Solution: A ``Solution`` object whose ``variables`` encode the tour,
                 with zeroed ``objectives`` and ``constraints`` arrays.
         """
-        items = [0] + list(range(1, self._nodes)) + [0]
+        items = np.zeros(self.dimension + 1, dtype=np.uint32)
+        items[1:-1] = np.arange(1, self.dimension, dtype=np.uint32)
         return Solution(
             variables=items,
             objectives=np.zeros(1),
-            constraints=np.zeros(1),
+            constraints=np.zeros(2),
         )
 
     def to_file(self, filename: str | Path = "instance.tsp"):
@@ -224,7 +348,7 @@ class TSP(Problem):
         The file will follow this format:
         - Line 1: number of cities.
         - Line 2: blank separator.
-        - Lines 3+: one city per line as ``x<TAB>y``.
+        - Lines3+: one city per line as ``x<TAB>y``.
 
         Args:
             filename (str | Path, optional): Destination path for the serialised instance.
@@ -236,7 +360,7 @@ class TSP(Problem):
         try:
             with open(filename, "w") as file:
                 file.write(f"{len(self)}\n\n")
-                content = "\n".join(f"{x}\t{y}" for (x, y) in self._coords)
+                content = "\n".join(f"{x}\t{y}" for (x, y) in self._coordinates)
                 file.write(content)
 
         except Exception as exc:
@@ -262,22 +386,21 @@ class TSP(Problem):
         Returns:
             TSP: A new ``TSP`` object rebuilt from the stored city coordinates.
         """
-        # TODO: Improve using np.loadtxt
         try:
             with open(filename) as f:
                 lines = f.readlines()
                 lines = [line.rstrip() for line in lines]
 
             nodes = np.uint64(lines[0])
-            coords = np.zeros(shape=(nodes, 2), dtype=np.float32)
-            for i, line in enumerate(lines[2:]):
-                x, y = line.split()
-                coords[i] = [np.float32(x), np.float32(y)]
+            coordinates = [
+                [float(coord) for coord in node.split()] for node in lines[2:]
+            ]
+            coordinates = np.asarray(coordinates, dtype=np.float64)
 
-            return cls(nodes=nodes, coords=coords)
+            return cls(number_of_nodes=nodes, coords=coordinates)
         except Exception as exc:
             raise RuntimeError(
-                "Something went wrong when loading the TSP object"
+                f"Something went wrong when loading the TSP object: {exc}"
             ) from exc
 
     def to_instance(self) -> Instance:
@@ -290,7 +413,7 @@ class TSP(Problem):
             Instance: An instance object whose ``variables`` contain the
                 interleaved x/y coordinates of all cities.
         """
-        return Instance(variables=self._coords.flatten().tolist())
+        return Instance(variables=self._coordinates.flatten(), dtype=np.float64)
 
 
 class TSPDomain(Domain):
@@ -336,9 +459,13 @@ class TSPDomain(Domain):
     +-----+----------------------+-----------------------------------------------+
     """
 
+    features_names = "size,std_distances,centroid_x,centroid_y,radius,fraction_distances,area,variance_nnNds,variation_nnNds,cluster_ratio,mean_cluster_radius".split(
+        ","
+    )
+
     def __init__(
         self,
-        dimension: np.uint32 = np.uint32(100),
+        number_of_nodes: np.uint32 | int = np.uint32(100),
         x_range: Tuple[int, int] = (0, 1000),
         y_range: Tuple[int, int] = (0, 1000),
         seed: Optional[int | np.random.SeedSequence] = None,
@@ -346,7 +473,7 @@ class TSPDomain(Domain):
         """Create a new TSPDomain for generating Symmetric TSP instances.
 
         Args:
-            dimension (np.uint32, optional): Number of cities in each generated
+            number_of_nodes (np.uint32, optional): Number of cities/nodes in each generated
                 instance. Defaults to 100.
             x_range (Tuple[int, int], optional): Inclusive lower and upper bounds
                 for the x coordinates of sampled cities, expressed as
@@ -363,35 +490,39 @@ class TSPDomain(Domain):
             ValueError: If ``x_min < 0`` or ``x_max <= x_min``.
             ValueError: If ``y_min < 0`` or ``y_max <= y_min``.
         """
-        if len(x_range) != 2 or len(y_range) != 2:
-            raise ValueError(
-                f"Expected x_range and y_range to be a tuple with only to integers. Got: x_range = {x_range} and y_range = {y_range}"
-            )
-        x_min, x_max = x_range
-        y_min, y_max = y_range
-        if x_min < 0 or x_max <= x_min:
-            raise ValueError(
-                f"Expected x_range to be (x_min, x_max) where x_min >= 0 and x_max > x_min. Got: x_range {x_range}"
-            )
-        if y_min < 0 or y_max <= y_min:
-            raise ValueError(
-                f"Expected y_range to be (y_min, y_max) where y_min >= 0 and y_max > y_min. Got: y_range {y_range}"
-            )
+        try:
+            if len(x_range) != 2 or len(y_range) != 2:
+                raise ValueError(
+                    "x_range and y_range must be 2d sequences only to values. "
+                    f" Got: x_range = {x_range} and y_range = {y_range}."
+                )
+            x_min, x_max = x_range
+            y_min, y_max = y_range
+            if x_min >= x_max:
+                raise ValueError(
+                    "x_range  must be a 2d sequence (x_min, x_max) "
+                    f"where x_min < x_max. Got: x_range {x_range}."
+                )
+            if y_min >= y_max:
+                raise ValueError(
+                    "y_range  must be a 2d sequence (y_min, y_max) "
+                    f"where y_min < y_max. Got: y_range {y_range}."
+                )
+        except (TypeError, ValueError) as exc:
+            raise ValueError(exc) from exc
 
         self._x_range = x_range
         self._y_range = y_range
         _bounds = [
             (x_min, x_max) if i % 2 == 0 else (y_min, y_max)
-            for i in range(dimension * 2)
+            for i in range(number_of_nodes)
         ]
-        features_names = "size,std_distances,centroid_x,centroid_y,radius,fraction_distances,area,variance_nnNds,variation_nnNds,cluster_ratio,mean_cluster_radius".split(
-            ","
-        )
+
         super().__init__(
-            dimension=dimension,
+            dimension=number_of_nodes,
             bounds=_bounds,
             domain_name="TSP",
-            features_names=features_names,
+            features_names=self.features_names,
             seed=seed,
         )
 
@@ -400,8 +531,8 @@ class TSPDomain(Domain):
 
         City x-coordinates are drawn uniformly from ``x_range`` and y-coordinates
         from ``y_range``. Each instance stores the coordinates as a flat vector of
-        length ``2 * dimension`` in the interleaved form
-        ``[x_0, y_0, x_1, y_1, …, x_{N-1}, y_{N-1}]``.
+        length ``2 * number_of_nodes`` in the interleaved form
+            ``[x_0, y_0, x_1, y_1, …, x_{N-1}, y_{N-1}]``.
 
         Args:
             n (np.uint32, optional): Number of instances to generate. Defaults to 1.
@@ -410,7 +541,7 @@ class TSPDomain(Domain):
             List[Instance]: A list of ``n`` ``Instance`` objects, each encoding the
                 coordinates of ``dimension`` cities.
         """
-        instances = np.empty(shape=(n, self.dimension * 2), dtype=np.float32)
+        instances = np.empty(shape=(n, self.dimension * 2), dtype=np.float64)
         instances[:, 0::2] = self._rng.uniform(
             low=self._x_range[0],
             high=self._x_range[1],
@@ -422,6 +553,42 @@ class TSPDomain(Domain):
             size=(n, (self.dimension)),
         )
         return list(Instance(coords) for coords in instances)
+
+    def generate_problems_from_instances(
+        self, instances: Sequence[Instance] | np.ndarray
+    ) -> List[TSP]:
+        """Create ``TSP`` problem objects from a collection of raw instances.
+
+        Each instance is converted from its flat interleaved representation into
+        an (N, 2) coordinate array and wrapped in a ``TSP`` object.
+        The instances variables are expected to be in the interleaved format
+        ``[x_0, y_0, x_1, y_1, …]`` produced by :meth:`generate_instances`.
+        The number of cities is inferred as ``len(instance) // 2``.
+
+        Args:
+            instances (Sequence[Instance] | np.ndarray): Collection of instances
+                to transform. If not already a NumPy array, it is converted
+                automatically.
+
+        Returns:
+            List[Problem]: A list containing one ``TSP`` problem per input
+                instance, in the same order as the input.
+        """
+        _instances = np.asarray(instances)
+        _n_instances, _total_coordinates = _instances.shape
+        _n_nodes = _total_coordinates // 2
+        # The coordinates of the instances in the batch are reshaped into a 3d matrix
+        # (M, 2N) --> (M, N, 2)
+        # M = Number of instances
+        # N = Number of nodes per instance
+        _coordinates = _instances.reshape(_n_instances, _n_nodes, 2)
+        return [
+            TSP(
+                number_of_nodes=_n_nodes,
+                coords=coords,
+            )
+            for coords in _coordinates
+        ]
 
     def extract_features(
         self, instances: Sequence[Instance] | np.ndarray
@@ -472,11 +639,19 @@ class TSPDomain(Domain):
                 values for the corresponding instance. All values are cast to
                 ``np.float64``.
         """
-        _instances = np.asarray(instances, copy=True)
-        N_INSTANCES = len(_instances)
-        N_CITIES = len(_instances[0]) // 2  # self.dimension // 2
-        assert _instances is not instances
-        coords = np.asarray(_instances, copy=True).reshape((N_INSTANCES, N_CITIES, 2))
+        _instances = np.asarray(instances)
+        n_instances_batch = len(_instances)
+        n_nodes = len(_instances[0]) // 2
+
+        # The coordinates of the instances in the batch are reshaped into a 3d matrix
+        # (M, 2N) --> (M, N, 2)
+        # M = Number of instances
+        # N = Number of nodes per instance
+        coords = np.asarray(_instances).reshape((
+            n_instances_batch,
+            n_nodes,
+            2,
+        ))
         xs = coords[:, :, 0]
         ys = coords[:, :, 1]
         areas = (
@@ -485,10 +660,10 @@ class TSPDomain(Domain):
         ).astype(np.float64)
 
         # Compute distances for all instances
-        distances = np.zeros((N_INSTANCES, N_CITIES, N_CITIES))
+        distances = np.zeros((n_instances_batch, n_nodes, n_nodes))
         differences = coords[:, :, np.newaxis, :] - coords[:, np.newaxis, :, :]
         distances = np.sqrt(np.sum(differences**2, axis=-1))
-        mask = ~np.eye(N_CITIES, dtype=bool)
+        mask = ~np.eye(n_nodes, dtype=bool)
         std_distances = np.std(distances[:, mask], axis=1)
 
         centroids = np.mean(coords, axis=1)
@@ -498,7 +673,7 @@ class TSPDomain(Domain):
 
         fractions = np.asarray([
             np.unique(d[np.triu_indices_from(d, k=1)]).size
-            / (N_CITIES * (N_CITIES - 1) / 2)
+            / (n_nodes * (n_nodes - 1) / 2)
             for d in distances
         ])
         # Top five only
@@ -509,15 +684,15 @@ class TSPDomain(Domain):
         variance_nnds = np.var(norm_distances, axis=(1, 2))
         variation_nnds = variance_nnds / np.mean(norm_distances, axis=(1, 2))
 
-        cluster_ratio = np.empty(shape=N_INSTANCES, dtype=np.float64)
-        mean_cluster_radius = np.empty(shape=N_INSTANCES, dtype=np.float64)
+        cluster_ratio = np.empty(shape=n_instances_batch, dtype=np.float64)
+        mean_cluster_radius = np.empty(shape=n_instances_batch, dtype=np.float64)
 
-        for i in range(N_INSTANCES):
+        for i in range(n_instances_batch):
             scale = np.mean(np.std(coords[i], axis=0))
             dbscan = DBSCAN(eps=0.2 * scale, min_samples=1)
             labels = dbscan.fit_predict(coords[i])
             unique_labels = [label for label in set(labels) if label != -1]
-            cluster_ratio[i] = len(unique_labels) / N_CITIES
+            cluster_ratio[i] = len(unique_labels) / n_nodes
             # Cluster radius
             cluster_radius = np.empty(shape=len(unique_labels), dtype=np.float64)
             for j, label_id in enumerate(unique_labels):
@@ -532,7 +707,7 @@ class TSPDomain(Domain):
             )
 
         return np.column_stack([
-            np.full(shape=len(_instances), fill_value=N_CITIES),
+            np.full(shape=len(_instances), fill_value=n_nodes),
             std_distances,
             centroids[:, 0],
             centroids[:, 1],
@@ -547,7 +722,7 @@ class TSPDomain(Domain):
 
     def extract_features_as_dict(
         self, instances: Sequence[Instance] | np.ndarray
-    ) -> List[Dict[str, np.float32]]:
+    ) -> List[Dict[str, np.float64]]:
         """Return the extracted features as a list of named dictionaries.
 
         This is a convenience wrapper around :meth:`extract_features` that pairs
@@ -560,44 +735,12 @@ class TSPDomain(Domain):
                 should be extracted.
 
         Returns:
-            List[Dict[str, np.float32]]: One dictionary per instance mapping each
+            List[Dict[str, np.float64]]: One dictionary per instance mapping each
                 feature name (``size``, ``std_distances``, ``centroid_x``, etc.)
                 to its corresponding value.
         """
         features = self.extract_features(instances)
-        named_features: list[dict[str, np.float32]] = [{}] * len(features)
+        named_features: list[dict[str, np.float64]] = [{}] * len(features)
         for i, feats in enumerate(features):
             named_features[i] = {k: v for k, v in zip(self.features_names, feats)}
         return named_features
-
-    def generate_problems_from_instances(
-        self, instances: Sequence[Instance] | np.ndarray
-    ) -> List[Problem]:
-        """Create ``TSP`` problem objects from a collection of raw instances.
-
-        Each instance is converted from its flat interleaved representation into
-        an (N, 2) coordinate array and wrapped in a ``TSP`` object.
-        The instances variables are expected to be in the interleaved format
-        ``[x_0, y_0, x_1, y_1, …]`` produced by :meth:`generate_instances`.
-        The number of cities is inferred as ``len(instance) // 2``.
-
-        Args:
-            instances (Sequence[Instance] | np.ndarray): Collection of instances
-                to transform. If not already a NumPy array, it is converted
-                automatically.
-
-        Returns:
-            List[Problem]: A list containing one ``TSP`` problem per input
-                instance, in the same order as the input.
-        """
-        if not isinstance(instances, np.ndarray):
-            instances = np.asarray(instances)
-
-        dimension = instances.shape[1] // 2
-        return list(
-            TSP(
-                nodes=dimension,
-                coords=np.asarray([*zip(instance[0::2], instance[1::2])]),
-            )
-            for instance in instances
-        )

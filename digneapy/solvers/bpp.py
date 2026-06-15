@@ -21,10 +21,11 @@ from digneapy.domains.bpp import BPP
 def best_fit(problem: BPP, *args, **kwargs) -> list[Solution]:
     if problem is None:
         raise ValueError("No problem found in best_fit heuristic")
-    assignment = np.zeros(len(problem), dtype=int)
+
+    assignment = np.zeros(shape=len(problem), dtype=np.uint32)
     bin_capacities: list[int] = []
     items = problem._items
-    max_capacity = problem._capacity
+    max_capacity = problem.maximum_capacity
     # Starts the algorithm
     # It keeps a list of open bins, which is initially empty.
     for i, item in enumerate(items):
@@ -53,9 +54,9 @@ def best_fit(problem: BPP, *args, **kwargs) -> list[Solution]:
 def first_fit(problem: BPP, *args, **kwargs) -> list[Solution]:
     if problem is None:
         raise ValueError("No problem found in first_fit heuristic")
-    assignment = np.zeros(len(problem), dtype=int)
+    assignment = np.zeros(shape=len(problem), dtype=np.uint32)
     open_bins: list[int] = []
-    max_capacity = problem._capacity
+    max_capacity = problem.maximum_capacity
     items = problem._items
 
     for i, item in enumerate(items):
@@ -79,16 +80,16 @@ def next_fit(problem: BPP, *args, **kwargs) -> list[Solution]:
     if problem is None:
         raise ValueError("No problem found in next_fit heuristic")
 
-    assignment = np.zeros(len(problem), dtype=int)
+    assignment = np.zeros(shape=len(problem), dtype=np.uint32)
     items = problem._items
     bin_counter = 0
-    remaining_capacity = problem._capacity
+    remaining_capacity = problem.maximum_capacity
     for i, item in enumerate(items):
         if item <= remaining_capacity:
             remaining_capacity -= item
         else:
             bin_counter += 1
-            remaining_capacity = problem._capacity - item
+            remaining_capacity = problem.maximum_capacity - item
 
         assignment[i] = bin_counter
 
@@ -100,9 +101,9 @@ def worst_fit(problem: BPP, *args, **kwargs) -> list[Solution]:
     if problem is None:
         raise ValueError("No problem found in worst_fit heuristic")
 
-    assignment = np.zeros(len(problem), dtype=int)
+    assignment = np.zeros(shape=len(problem), dtype=np.uint32)
     bin_capacities: list[int] = []
-    max_capacity = problem._capacity
+    max_capacity = problem.maximum_capacity
     items = problem._items
     # Starts the algorithm
     # It keeps a list of open bins, which is initially empty.

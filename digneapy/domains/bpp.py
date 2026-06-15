@@ -127,9 +127,9 @@ class BPP(Problem):
             individual.fitness = fitness
             individual.objectives = (fitness,)
         except Exception:
-            pass
-        finally:
             return (fitness,)
+
+        return (fitness,)
 
     def __call__(self, individual: Sequence | Solution | np.ndarray) -> Tuple[float]:
         """Evaluates the candidate individual with the information of the Bin Packing.

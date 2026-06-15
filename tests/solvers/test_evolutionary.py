@@ -16,16 +16,8 @@ from deap import benchmarks
 
 from digneapy import Direction
 from digneapy._core import Solution
-from digneapy.domains import kp as knapsack
+from digneapy.domains import Knapsack
 from digneapy.solvers.evolutionary import EA
-
-
-@pytest.fixture
-def default_instance():
-    p = list(range(1, 101))
-    w = list(range(1, 101))
-    q = 50
-    return knapsack.Knapsack(p, w, q)
 
 
 @pytest.fixture
@@ -34,25 +26,31 @@ def default_large_knap():
     c = rng.integers(1e3, 1e5, dtype=np.uint64)
     w = rng.integers(1000, 5000, size=1000, dtype=np.int32)
     p = rng.integers(1000, 5000, size=1000, dtype=np.int32)
-    kp = knapsack.Knapsack(profits=p, weights=w, capacity=c)
+    kp = Knapsack(profits=p, weights=w, capacity=c)
     return kp
 
 
-def test_ea_with_def_kp(default_instance):
+def test_evolutionary_algorith_with_incremental_knapsack():
+    number_of_items = 100
+    profits = np.arange(1, number_of_items + 1, dtype=np.uint32)
+    weights = np.arange(1, number_of_items + 1, dtype=np.uint32)
+    capacity = 50
+    knapsack = Knapsack(capacity=capacity, profits=profits, weights=weights)
+
     generations = np.uint32(100)
     pop_size = np.uint32(10)
     ea = EA(
         direction=Direction.MAXIMISE,
-        dim=len(default_instance),
+        dim=number_of_items,
         min_g=0,
         max_g=1,
         generations=generations,
         pop_size=pop_size,
     )
-    population = ea(default_instance)
+    population = ea(knapsack)
     assert len(population) == 11
     assert len(ea._logbook) == generations + 1
-    assert len(ea._best_found) == len(default_instance)
+    assert len(ea._best_found) == number_of_items
     assert len(ea._population) == pop_size
 
     assert all(isinstance(i, Solution) for i in population)
@@ -107,7 +105,7 @@ def test_ea_supports_multiprocess():
     assert ea._n_cores == 4
 
 
-def test_ea_raises_problem():
+def test_evolutionary_algorithm_raises_if_not_problem():
     """
     Raises an exception because we did not
     set any problem to evaluate
@@ -126,16 +124,17 @@ def test_ea_raises_problem():
         ea(None)
 
 
-def test_ea_raises_direction(default_instance):
+def test_evolutionary_algorithm_raises_if_wrong_direction():
     """
     Raises an exception because the direction is not allowed
     """
     with pytest.raises(Exception):
+        dimension = 10
         generations = np.uint32(100)
         pop_size = np.uint32(10)
         _ = EA(
-            direction="ANY",
-            dim=len(default_instance),
+            direction="any_other_given_direction",
+            dim=dimension,
             min_g=0,
             max_g=1,
             generations=generations,

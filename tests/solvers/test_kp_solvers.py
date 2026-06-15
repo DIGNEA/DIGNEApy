@@ -13,16 +13,17 @@
 import numpy as np
 import pytest
 
-from digneapy.domains import kp as knapsack
+from digneapy.domains import Knapsack
 from digneapy.solvers import default_kp, map_kp, miw_kp, mpw_kp
 
 
 @pytest.fixture
 def default_instance():
-    p = np.asarray(list(range(1, 101)), dtype=np.uint32)
-    w = np.asarray(list(range(1, 101)), dtype=np.uint32)
-    q = np.uint64(50)
-    return knapsack.Knapsack(p, w, q)
+    number_of_items = 100
+    profits = np.arange(1, number_of_items + 1, dtype=np.uint32)
+    weights = np.arange(1, number_of_items + 1, dtype=np.uint32)
+    capacity = 50
+    return Knapsack(capacity=capacity, profits=profits, weights=weights)
 
 
 @pytest.fixture
@@ -31,7 +32,7 @@ def default_large_knap():
     c = rng.integers(1e3, 1e5)
     w = rng.integers(1000, 5000, size=1000, dtype=np.uint32)
     p = rng.integers(1000, 5000, size=1000, dtype=np.uint32)
-    kp = knapsack.Knapsack(profits=p, weights=w, capacity=c.astype(np.uint64))
+    kp = Knapsack(profits=p, weights=w, capacity=c.astype(np.uint64))
 
     return kp
 

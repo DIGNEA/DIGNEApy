@@ -139,8 +139,8 @@ def test_knapsack_can_be_loaded_from_file():
 def test_knapsack_can_evaluate_correctly():
     dimension = 100
     capacity = 100
-    profits = np.arange(dimension)
-    weights = np.ones(dimension)
+    profits = np.arange(1, dimension + 1, dtype=np.uint32)
+    weights = np.ones(dimension, dtype=np.uint32)
     knapsack = Knapsack(profits=profits, weights=weights, capacity=capacity)
 
     # Feasible individual evaluation
@@ -155,8 +155,8 @@ def test_knapsack_can_evaluate_correctly():
 def test_knapsack_call_returns_evaluate_correctly():
     dimension = 100
     capacity = 100
-    profits = np.arange(dimension)
-    weights = np.ones(dimension)
+    profits = np.arange(1, dimension + 1, dtype=np.uint32)
+    weights = np.ones(dimension, dtype=np.uint32)
     knapsack = Knapsack(profits=profits, weights=weights, capacity=capacity)
 
     # Feasible individual evaluation
@@ -337,7 +337,7 @@ def test_kp_domain_can_extract_features_from_instances(capacity_approach):
 
 
 @pytest.mark.parametrize("capacity_approach", ("fixed", "evolved", "percentage"))
-def test_kp_domain_can_extract_features_to_dict(capacity_approach):
+def test_kp_domain_can_extract_features_as_dict(capacity_approach):
     dimension = 100
     n_instances = 10
 

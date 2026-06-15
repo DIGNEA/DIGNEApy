@@ -62,7 +62,9 @@ class Knapsack(Problem):
                 raise ValueError("capacity cannot be negative")
 
         except (TypeError, ValueError) as exc:
-            raise ValueError("invalid capacity for Knapsack Problem") from exc
+            raise ValueError(
+                f"invalid capacity ({capacity}) for Knapsack Problem"
+            ) from exc
 
         if len(profits) != len(weights):
             raise ValueError(
@@ -70,8 +72,8 @@ class Knapsack(Problem):
                 f" Got {len(weights)} weights and {len(profits)} profits."
             )
 
-        self.weights = np.asarray(weights, dtype=np.int32)
-        self.profits = np.asarray(profits, dtype=np.int32)
+        self.weights = np.asarray(weights, dtype=np.uint32)
+        self.profits = np.asarray(profits, dtype=np.uint32)
         self._penalization_factor = float(penalty_factor)
 
         super().__init__(dimension=len(profits), bounds=[], name="KP", seed=seed)
@@ -125,8 +127,10 @@ class Knapsack(Problem):
                 f"Mismatch between individual dimension ({len(individual)}) "
                 f"and Knapsack problem ({self._dimension})"
             )
-        profit = np.dot(individual, self.profits)
-        packed = np.dot(individual, self.weights)
+
+        mask = np.asarray(individual, dtype=bool)
+        profit = np.sum(self.profits[mask], dtype=np.int32)
+        packed = np.sum(self.weights[mask], dtype=np.int32)
         difference = max(0, packed - self.capacity)
         penalty = self._penalization_factor * difference
         profit -= penalty
@@ -152,7 +156,7 @@ class Knapsack(Problem):
 
         return self.evaluate(individual)
 
-    def __array__(self, dtype=np.uint64, copy: Optional[bool] = None) -> np.ndarray:
+    def __array__(self, dtype=np.uint32, copy: Optional[bool] = None) -> np.ndarray:
         """Return a NumPy array representation of the Knapsack Problem.
 
         The representation stores the capacity first and then alternates weight/profit
@@ -274,7 +278,7 @@ class KnapsackDomain(Domain):
         maximum_weight: np.uint32 = np.uint32(1_000),
         minimum_profit: np.uint32 = np.uint32(1),
         maximum_profit: np.uint32 = np.uint32(1_000),
-        maximum_capacity: np.uint = np.uint(1e5),
+        maximum_capacity: np.uint32 = np.uint32(1e5),
         capacity_approach: str = "evolved",
         capacity_ratio: float = 0.8,
         seed: Optional[int | np.random.SeedSequence] = None,
@@ -288,7 +292,7 @@ class KnapsackDomain(Domain):
             maximum_weight (np.uint32, optional): Upper bound for the weight of each item. Defaults to 1,000.
             minimum_profit (np.uint32, optional): Lower bound for the profit of each item. Defaults to 1.
             maximum_profit (np.uint32, optional): Upper bound for the profit of each item. Defaults to 1,000.
-            maximum_capacity (np.uint, optional): Maximum capacity that can be assigned to a
+            maximum_capacity (np.uint32, optional): Maximum capacity that can be assigned to a
                 Knapsack instance when using the evolved or fixed strategy. Defaults to 100,000.
             capacity_approach (str, optional): Strategy used to assign capacities to generated instances. Defaults to evolved.
             capacity_ratio (float, optional): Ratio used to derive the capacity when the percentage strategy is selected. Defaults to 0.8.
@@ -456,21 +460,20 @@ class KnapsackDomain(Domain):
             np.ndarray: A two-dimensional array where each row contains the features of one instance.
         """
 
-        if not isinstance(instances, np.ndarray):
-            instances = np.asarray(instances, copy=True)
+        _instances = np.asarray(instances)
 
-        features = np.empty(shape=(len(instances), 8), dtype=np.float64)
-        weights = instances[:, 1::2]
-        profits = instances[:, 2::2]
+        features = np.empty(shape=(len(_instances), 8), dtype=np.float64)
+        weights = _instances[:, 1::2]
+        profits = _instances[:, 2::2]
         efficiency = np.mean(profits / weights, axis=1, dtype=np.float64)
-        features[:, 0] = instances[:, 0]  # Qs
+        features[:, 0] = _instances[:, 0]  # Qs
         features[:, 1] = np.max(profits, axis=1)
         features[:, 2] = np.max(weights, axis=1)
         features[:, 3] = np.min(profits, axis=1)
         features[:, 4] = np.min(weights, axis=1)
         features[:, 5] = efficiency
-        features[:, 6] = np.mean(instances[:, 1:], axis=1)
-        features[:, 7] = np.std(instances[:, 1:], axis=1)
+        features[:, 6] = np.mean(_instances[:, 1:], axis=1)
+        features[:, 7] = np.std(_instances[:, 1:], axis=1)
         return features
 
     def extract_features_as_dict(
@@ -517,23 +520,22 @@ class KnapsackDomain(Domain):
         Returns:
             List: A list containing one Knapsack problem per instance.
         """
-        if not isinstance(instances, np.ndarray):
-            instances = np.asarray(instances)
+        _instances = np.asarray(instances)
 
-        capacities = instances[:, 0].astype(np.int32)
-        weights = instances[:, 1::2].astype(np.uint32)
-        profits = instances[:, 2::2].astype(np.uint32)
+        capacities = _instances[:, 0].astype(np.int32)
+        weights = _instances[:, 1::2].astype(np.uint32)
+        profits = _instances[:, 2::2].astype(np.uint32)
         # Sets the capacity according to the method
         if self.capacity_approach == "percentage":
             capacities[:] = (np.sum(weights, axis=1) * self.capacity_ratio).astype(
                 np.int32
             )
-            instances[:, 0] = capacities[:]
+            _instances[:, 0] = capacities[:]
         elif self.capacity_approach == "fixed":
             capacities[:] = self._maximum_capacity
-            instances[:, 0] = capacities[:]
+            _instances[:, 0] = capacities[:]
 
         return list(
             Knapsack(profits=profits[i], weights=weights[i], capacity=capacities[i])
-            for i in range(len(instances))
+            for i in range(len(_instances))
         )

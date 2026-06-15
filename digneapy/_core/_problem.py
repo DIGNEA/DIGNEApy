@@ -105,7 +105,9 @@ class Problem(ABC):
         raise NotImplementedError(msg)
 
     @abstractmethod
-    def evaluate(self, individual: Sequence | Solution | np.ndarray) -> Tuple[float]:
+    def evaluate(
+        self, individual: Sequence | Solution | np.ndarray
+    ) -> Tuple[float, ...]:
         """Evaluates the candidate individual with the information of the problem
 
         Args:
@@ -118,7 +120,9 @@ class Problem(ABC):
         raise NotImplementedError(msg)
 
     @abstractmethod
-    def __call__(self, individual: Sequence | Solution | np.ndarray) -> Tuple[float]:
+    def __call__(
+        self, individual: Sequence | Solution | np.ndarray
+    ) -> Tuple[float, ...]:
         msg = "__call__ method not implemented in Problem"
         raise NotImplementedError(msg)
 

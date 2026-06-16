@@ -11,27 +11,8 @@
 """
 
 import numpy as np
-import pytest
 
 from digneapy import Instance
-
-
-@pytest.fixture
-def benchmark_data_10k():
-    """Provides a set of standardized benchmark data.
-
-    Includes:
-    - The number of values (10k)
-    - 10k random solutions in the range (-1,1) in each dim
-    - 10k random objective values drawn from the standard normal distribution
-    - 10k random measures in the range (-1,1) in each dim
-    """
-    rng = np.random.default_rng(42)
-    n_vals = 10_000
-    solution_batch = rng.uniform(-1, 1, (n_vals, 10))
-    objective_batch = rng.standard_normal(n_vals)
-    measures_batch = rng.uniform(-1, 1, (n_vals, 2))
-    return n_vals, solution_batch, objective_batch, measures_batch
 
 
 def default_incremental_population(

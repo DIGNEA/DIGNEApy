@@ -18,7 +18,10 @@ from typing import Optional
 import numpy as np
 from scipy.spatial.distance import cdist
 
-from digneapy.generators._utils import cast_to_instances, extract_solvers_name
+from digneapy.generators._utils import (
+    build_instances_from_attributes,
+    extract_solvers_name,
+)
 
 from .._core import (
     Domain,
@@ -35,23 +38,44 @@ from ..operators import (
     Selection,
     UMut,
 )
-from ._base_generator import GenResult
+from ._base_generator import GenerationResult
 from .evolutionary import Evolutionary
 
 
 @dataclass
 class DNSResult:
-    """Result of the Dominated Novelty Search computation. The attributes are sorted based on competition fitness."""
+    """Container for the outputs of a Dominated Novelty Search computation.
+
+    Bundles together the descriptors, performance values, and competition
+    fitness scores produced by ``dominated_novelty_search`` for a pooled set
+    of individuals (e.g. a population merged with its offspring). All three
+    arrays are aligned by index — that is, ``descriptors[i]``,
+    ``performances[i]``, and ``competition_fitness[i]`` all refer to the same
+    individual — and are sorted in descending order of ``competition_fitness``,
+    so the most competitive (highest-fitness) individual is always at index 0.
+    """
 
     descriptors: np.ndarray
+    """np.ndarray: Descriptor vectors of each individual, used to measure
+    novelty/diversity relative to its neighbours. Shape is
+    ``(n_individuals, descriptor_dim)``."""
+
     performances: np.ndarray
-    comp_f: np.ndarray
+    """np.ndarray: Performance bias (or raw solver performance score) of each
+    individual. Shape is ``(n_individuals,)``."""
+
+    competition_fitness: np.ndarray
+    """np.ndarray: Combined fitness score (``comp_f``) for each individual,
+    derived from both performance and local novelty against its ``k``
+    nearest neighbours in descriptor space. This is the value used to rank
+    and select individuals during survival/replacement. Shape is
+    ``(n_individuals,)``."""
 
 
 def dominated_novelty_search(
     descriptors: np.ndarray,
     performances: np.ndarray,
-    k: np.uint32,
+    k: np.uint32 | int,
 ) -> DNSResult:
     """
     Dominated Novelty Search (DNS)
@@ -124,25 +148,39 @@ def dominated_novelty_search(
     return DNSResult(
         descriptors=descriptors,
         performances=performances,
-        comp_f=means,
+        competition_fitness=means,
     )
 
 
 class Dominated(Evolutionary):
-    """
-    Object to generate instances based on a Evolutionary Algorithn
-    with a Dominated Novelty Search approach
+    """Quality-Diversity instance generator using Dominated Novelty Search.
+
+    ``Dominated`` is a variant of :class:`Evolutionary` that replaces the
+    archive-based novelty mechanism with Dominated Novelty Search (DNS): at
+    each generation, parents and offspring are pooled together and ranked
+    using a combined fitness (``comp_f``) computed by
+    ``dominated_novelty_search`` from each individual's descriptor and
+    performance bias relative to its ``k`` nearest neighbours in the pooled
+    set. The top ``pop_size`` individuals by combined fitness survive into
+    the next generation, acting simultaneously as both selection and
+    replacement.
+
+    Because DNS computes novelty directly from the pooled population/offspring
+    rather than from a persistent archive, this class does not maintain an
+    ``Archive`` for novelty purposes: the inherited ``self._archive`` is
+    explicitly deleted after initialisation, and no ``solution_set`` support
+    is exposed.
     """
 
     def __init__(
         self,
         domain: Domain,
         portfolio: Sequence[Solver],
-        pop_size: np.uint32 = np.uint32(128),
+        pop_size: np.uint32 | int = np.uint32(128),
         performance_function: PerformanceFn = maximise_perf_gap_easy,
-        generations: np.uint32 = np.uint32(1000),
-        repetitions: np.uint16 = np.uint16(1),
-        k: np.uint32 = np.uint32(15),
+        generations: np.uint32 | int = np.uint32(1000),
+        repetitions: np.uint16 | int = np.uint16(1),
+        k: np.uint32 | int = np.uint32(15),
         descriptor_pipe: DescriptorPipeline = DescriptorPipeline("features"),
         cxrate: float = 0.5,
         mutrate: float = 0.8,
@@ -152,6 +190,13 @@ class Dominated(Evolutionary):
         seed: Optional[int | np.random.SeedSequence] = None,
     ):
         """Creates a Evolutionary Instance Generator based on Novelty Search
+
+        Internally this delegates to ``Evolutionary.__init__`` with a
+        throwaway ``UnstructuredArchive`` (since the parent class requires
+        one), which is then discarded via ``del self._archive`` once
+        construction completes, as ``Dominated`` computes novelty directly
+        from the pooled population/offspring rather than from a persistent
+        archive.
 
         Args:
             domain (Domain): Domain for which the instances are generated for.
@@ -168,6 +213,13 @@ class Dominated(Evolutionary):
             mutation (Mutation, optional): Mutation operator. Defaults to uniform_one_mutation.
             selection (Selection, optional): Selection operator. Defaults to binary_tournament_selection.
             performance_function (PerformanceFn, optional): Performance function to calculate the performance score. Defaults to max_gap_target.
+
+        Raises:
+            ValueError: Propagated from ``Evolutionary.__init__`` if ``cxrate``,
+                ``mutrate``, or ``phi`` (fixed internally) are invalid.
+            TypeError: Propagated from ``Evolutionary.__init__`` if the
+                internally constructed placeholder archive is invalid (not
+                expected to occur under normal use).
         """
         super().__init__(
             domain=domain,
@@ -186,16 +238,53 @@ class Dominated(Evolutionary):
             archive=UnstructuredArchive(novelty_threshold=0.1, k=1),
         )
         self._k = k
-        self.offspring_size = pop_size
         del self._archive
 
-    def __call__(self, verbose: bool = False) -> GenResult:
-        if self._domain is None:
-            raise ValueError("You must specify a domain to run the generator.")
-        if len(self._portfolio) == 0:
-            raise ValueError(
-                "The portfolio is empty. To run the generator you must provide a valid portfolio of solvers"
-            )
+    def __call__(self, verbose: bool = False) -> GenerationResult:
+        """Run the Dominated Novelty Search evolutionary process.
+
+        The algorithm proceeds as follows:
+        1. Validates that a domain and a non-empty solver portfolio were
+           provided.
+        2. Samples an initial population of ``pop_size`` instances and
+           evaluates it against the portfolio to obtain performance biases
+           and per-solver scores, then computes descriptors for it.
+        3. For each of the ``self._generations`` generations:
+            - Generates an offspring population of size ``pop_size`` via
+              :meth:`Evolutionary.generate` (inherited selection + crossover
+              + mutation).
+            - Evaluates the offspring and computes its descriptors.
+            - Concatenates the current population and the offspring into a
+              single pool of descriptors, performance biases, portfolio
+              scores, and genotypes.
+            - Runs ``dominated_novelty_search`` over the pooled descriptors
+              and performances (using ``self._k`` neighbours) to obtain a
+              combined fitness (``comp_f``) for every pooled individual.
+            - Selects the indices of the top ``pop_size`` individuals by
+              combined fitness (via ``np.argpartition`` followed by a sort of
+              just that subset, for efficiency) to form the next generation.
+            - Rebuilds the survivors as ``Instance`` objects (with diversity
+              scores set to zero, since DNS folds novelty into ``comp_f``
+              rather than tracking it separately) and assigns them to
+              ``self._population``.
+            - Records progress for the generation in ``self._logbook``.
+        4. After all generations, returns a :class:`GenerationResult`
+           containing the solver names, the final surviving population, and
+           the evolutionary history.
+
+        Args:
+            verbose (bool, optional): Whether to print/log progress during the
+                run (forwarded to ``self._logbook.update``). Defaults to False.
+
+        Raises:
+            ValueError: If ``self._domain`` is ``None``.
+            ValueError: If ``self._portfolio`` is empty.
+
+        Returns:
+            GenerationResult: The final surviving population together with
+                solver names and the recorded evolutionary history.
+        """
+
         self._population = self._domain.generate_instances(n=self._pop_size)
         perf_biases, portfolio_scores = self._evaluate_population(self._population)
         descriptors = self._descriptor_pipe(
@@ -204,41 +293,56 @@ class Dominated(Evolutionary):
             domain=self._domain,
         )
 
-        for pgen in range(self._generations):
-            offspring = self.generate(self._pop_size)
-            off_perf_biases, off_portfolio_scores = self._evaluate_population(offspring)
+        for generation in range(self._generations):
+            offs_genotypes = self.generate(self.offspring_size)
+            off_perf_biases, off_portfolio_scores = self._evaluate_population(
+                offs_genotypes
+            )
 
             off_descriptors = self._descriptor_pipe(
-                population=offspring,
+                population=offs_genotypes,
                 scores=off_portfolio_scores,
                 domain=self._domain,
             )
+            # We need to combine the offspring and old population
+            # attributes to compute the dominated fitness score
             combined_descriptors = np.concatenate((descriptors, off_descriptors))
             combined_performances = np.concatenate((perf_biases, off_perf_biases))
-            combined_port_scores = np.concatenate((portfolio_scores, portfolio_scores))
-            genotypes = np.concatenate((np.asarray(self._population), offspring))
+            combined_port_scores = np.concatenate((
+                portfolio_scores,
+                off_portfolio_scores,
+            ))
+            combined_genotypes = np.concatenate((
+                np.asarray(self._population),
+                offs_genotypes,
+            ))
 
-            dns_result: DNSResult = dominated_novelty_search(
+            # Result of the computation of the DNS algorithm
+            dominated_result: DNSResult = dominated_novelty_search(
                 descriptors=combined_descriptors,
                 performances=combined_performances,
                 k=self._k,
             )
 
-            # Keep the top N for the next generation
-            sorted_indices = np.argpartition(-dns_result.comp_f, self._pop_size - 1)[
-                : self._pop_size
+            # We keep the top N best instances
+            # based on the competition fitness
+            # for the next generation
+            best_indices = np.argpartition(
+                -dominated_result.competition_fitness, self._pop_size - 1
+            )[: self._pop_size]
+            sorted_indices = best_indices[
+                np.argsort(-dominated_result.competition_fitness[best_indices])
             ]
-            sorted_indices = sorted_indices[
-                np.argsort(-dns_result.comp_f[sorted_indices])
-            ]
-            fitness = dns_result.comp_f[sorted_indices]
-            descriptors = dns_result.descriptors[sorted_indices]
-            perf_biases = dns_result.performances[sorted_indices]
+            # We now extract all the attributes of the best instances
+            # from both the offspring and population
+            fitness = dominated_result.competition_fitness[sorted_indices]
+            descriptors = dominated_result.descriptors[sorted_indices]
+            perf_biases = dominated_result.performances[sorted_indices]
             portfolio_scores = combined_port_scores[sorted_indices]
-            genotypes = genotypes[sorted_indices]
+            genotypes = combined_genotypes[sorted_indices]
             # Both population and offspring are used in the replacement
             # Record the stats and update the performed gens
-            self._population = cast_to_instances(
+            self._population = build_instances_from_attributes(
                 genotypes=genotypes,
                 descriptors=descriptors,
                 fitness=fitness,
@@ -248,7 +352,7 @@ class Dominated(Evolutionary):
             )
 
             self._logbook.update(
-                generation=pgen, population=self._population, feedback=verbose
+                generation=generation, instances=self._population, feedback=verbose
             )
 
         if verbose:  # pragma: no cover
@@ -256,7 +360,7 @@ class Dominated(Evolutionary):
             blank = " " * 80
             print(f"\r{blank}\r", end="")
 
-        return GenResult(
+        return GenerationResult(
             solvers=tuple(extract_solvers_name(self._portfolio)),
             instances=self._population,
             history=self._logbook,

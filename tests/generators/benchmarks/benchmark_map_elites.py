@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 # -*-coding:utf-8 -*-
 """
-@File    :   test_map_elites.py
-@Time    :   2026/04/21 14:04:19
+@File    :   benchmark_map_elites.py
+@Time    :   2026/06/16 11:53:39
 @Author  :   Alejandro Marrero (amarrerd@ull.edu.es)
 @Version :   1.0
 @Contact :   amarrerd@ull.edu.es
@@ -40,27 +40,6 @@ DOMAIN_CONTEXT = [
     (BPPDomain, [best_fit, first_fit, worst_fit, next_fit], 10),
     (TSPDomain, [nneighbour, greedy], 11),
 ]
-
-
-def test_map_elites_generator_attrs():
-    pass
-
-
-def test_map_elites_raises_if_wrong_archive():
-    with pytest.raises(TypeError) as e:
-        _ = MapElites(
-            KnapsackDomain(),
-            portfolio=[default_kp],
-            archive=tuple(),
-            pop_size=100,
-            mutation=BatchUMut(),
-            describe_pipe=DescriptorPipeline("features"),
-            repetitions=1,
-        )
-    assert (
-        "MapElites expects an archive of class GridArchive or CVTArchive and got tuple"
-        in str(e.value)
-    )
 
 
 @pytest.mark.parametrize("domain_cls, portfolio, feat_desc_n", DOMAIN_CONTEXT)
@@ -172,9 +151,7 @@ def test_map_elites_domain_cvt(domain_cls, portfolio, descriptor):
     generations = 10
     pop_size = 32
     ranges = build_ranges(domain_cls, descriptor, dimension, portfolio)
-    archive = CVTArchive(
-        dimensions=dimension, centroids=1000, ranges=ranges, samples=10_000
-    )
+    archive = CVTArchive(k=1000, ranges=ranges, n_samples=10_000)
     domain = domain_cls(number_of_items=dimension)
     assert domain.dimension == dimension
 

@@ -15,12 +15,12 @@ from typing import Literal, Optional
 
 import polars as pl
 
-from digneapy.generators import GenResult
+from digneapy.generators import GenerationResult
 
 
 def save_results_to_files(
     filename_pattern: str,
-    result: GenResult,
+    result: GenerationResult,
     variables_names: Optional[Sequence[str]] = None,
     only_instances: bool = False,
     files_format: Literal["csv", "parquet"] = "parquet",

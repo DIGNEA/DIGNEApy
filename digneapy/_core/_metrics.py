@@ -86,30 +86,17 @@ class Statistics:
         Returns:
             Mapping: Dict with the metrics of the instances
         """
+        try:
+            if len(instances) == 0:
+                raise ValueError("instances is empty in Statistics.")
 
-        if instances is None or len(instances) == 0:
-            raise ValueError(
-                f"Trying to calculate the metrics with an empty instances or None. Got: {instances}."
-            )
-        if any(not isinstance(ind, Instance) for ind in instances):
-            raise TypeError(
-                f"Instances must be a sequence of Instance objects got: {instances}\n{type(instances[0])}."
-            )
-        # ignore np.inf values which can occur in early steps
-        with np.errstate(invalid="ignore"):
-            record = self._stats.compile(instances)
-            return record
-            """ if as_dataframe:
-                _flatten_record = {}
-                for key, value in record.items():
-                    if isinstance(value, dict):  # Flatten nested dicts
-                        for sub_key, sub_value in value.items():
-                            _flatten_record[f"{key}_{sub_key}"] = sub_value
-                    else:
-                        _flatten_record[key] = value
-                return pl.from_dict(_flatten_record)
-            else:
-                return record """
+            # ignore np.inf values which can occur in early steps
+            with np.errstate(invalid="ignore"):
+                record = self._stats.compile(instances)
+                return record
+
+        except Exception as exc:
+            raise RuntimeError(f"unexpected error in Statistics {exc}")
 
 
 class Logbook(tools.Logbook):

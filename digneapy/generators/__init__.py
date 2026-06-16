@@ -10,8 +10,8 @@
 @Desc    :   None
 """
 
-from ._base_generator import BaseGenerator, GenResult
-from ._utils import InstanceBuilder, cast_to_instances
+from ._base_generator import BaseGenerator, GenerationResult
+from ._utils import InstanceBuilder, build_instances_from_attributes
 from .dominated import DNSResult, Dominated, dominated_novelty_search
 from .evolutionary import ES, Evolutionary
 from .map_elites import MapElites, PlottedMapElites

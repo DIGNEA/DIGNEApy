@@ -67,7 +67,9 @@ class Domain(ABC):
         self._rng = np.random.default_rng(seed)
 
     @abstractmethod
-    def generate_instances(self, n: np.uint32 = np.uint32(1)) -> Sequence[Instance]:
+    def generate_instances(
+        self, n: np.uint32 | int = np.uint32(1)
+    ) -> Sequence[Instance]:
         """Generates N instances for the domain.
 
         Args:

@@ -11,7 +11,7 @@
 """
 
 import json
-from collections.abc import Iterable, Sequence
+from collections.abc import Iterable, Sequence, Set
 from pathlib import Path
 from typing import Optional, Tuple
 
@@ -207,6 +207,15 @@ class CVTArchive(Archive):
             np.ndarray: K d-dimensional centroids
         """
         return self._centroids
+
+    @property
+    def filled_cells(self) -> Set[int]:
+        """Filled cells of the grid
+
+        Returns:
+            Set[int]: Set with the indices of the filled cells
+        """
+        return self._storage[Keys.grid]
 
     @property
     def lower_bounds(self) -> np.ndarray:

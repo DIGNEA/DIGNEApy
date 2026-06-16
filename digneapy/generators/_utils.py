@@ -21,6 +21,7 @@ from .._core._solver import Solver
 
 class InstanceBuilder:
     """Class to create Instances using the Builder Pattern
+
     - Call add_component with the key and value to include in the new Instance
     - Finally call build() to generate a new Instance
     - Calling build() flushes the given components and gets the builder object ready to start again
@@ -47,7 +48,7 @@ class InstanceBuilder:
         return instance
 
 
-def cast_to_instances(
+def build_instances_from_attributes(
     genotypes: np.ndarray,
     descriptors: np.ndarray,
     fitness: np.ndarray,

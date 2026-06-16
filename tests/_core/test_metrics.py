@@ -31,10 +31,10 @@ def test_qd_score_auc():
 
 
 def test_statistics_raises():
-    with pytest.raises(ValueError):
+    with pytest.raises(RuntimeError):
         Statistics()(instances=[])
 
-    with pytest.raises(TypeError):
+    with pytest.raises(RuntimeError):
         instances = np.zeros((10, 10))
         Statistics()(instances=instances)
 
@@ -139,7 +139,7 @@ def test_logbook_raises_negative_generations():
 def test_logbook_raises_empty_population():
     log = Logbook()
     # Logbook doesn't accept negative generations
-    with pytest.raises(ValueError):
+    with pytest.raises(RuntimeError):
         _ = log.update(1, instances=[])
 
 
@@ -160,7 +160,7 @@ def test_logbook_raises_not_all_instances():
         list(range(dimension)),
     ]
     # Logbook doesn't accept negative generations
-    with pytest.raises(TypeError):
+    with pytest.raises(RuntimeError):
         _ = log.update(
             1,
             instances,

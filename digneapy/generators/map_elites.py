@@ -14,11 +14,13 @@ from typing import Optional, Sequence
 
 import numpy as np
 
-from digneapy.generators._utils import extract_solvers_name
+from digneapy.generators._utils import (
+    build_instances_from_attributes,
+    extract_solvers_name,
+)
 
 from .._core import (
     Domain,
-    Instance,
     Solver,
 )
 from .._core.descriptors import DescriptorPipeline
@@ -29,11 +31,26 @@ from ..operators import (
     Mutation,
 )
 from ..visualize import ArchivePlotter
-from ._base_generator import BaseGenerator, GenResult
+from ._base_generator import BaseGenerator, GenerationResult
 
 
 class MapElites(BaseGenerator):
-    """Object to generate instances based on MAP-Elites algorithm."""
+    """Quality-Diversity instance generator based on the MAP-Elites algorithm.
+
+    MAP-Elites maintains a discretised archive (either a ``GridArchive`` or a
+    ``CVTArchive``) where each occupied cell holds the single best instance
+    found so far for that region of descriptor space. At every generation, a
+    batch of parents is sampled uniformly from the currently filled cells,
+    mutated to produce offspring, evaluated against the solver portfolio, and
+    inserted back into the archive — each offspring either claims an empty
+    cell, replaces the current occupant of its cell if it scores higher, or
+    is discarded if it does not improve on the existing elite.
+
+    Unlike :class:`Evolutionary`, fitness in MAP-Elites is simply the
+    performance bias of the instance (there is no separate novelty term),
+    since diversity is enforced structurally by the archive's discretisation
+    rather than by a blended fitness score.
+    """
 
     def __init__(
         self,
@@ -66,6 +83,11 @@ class MapElites(BaseGenerator):
 
         Raises:
             ValueError: If the archive is not a GridArchive or CVTArchive
+
+        Note:
+            Despite the docstring above, the actual implementation raises a
+            ``TypeError`` (not a ``ValueError``) when ``archive`` is not a
+            ``GridArchive`` or ``CVTArchive`` instance.
         """
         super().__init__(
             domain,
@@ -94,61 +116,129 @@ class MapElites(BaseGenerator):
 
     @property
     def archive(self):
+        """Return the archive backing this generator.
+
+        Returns:
+            GridArchive | CVTArchive: The discretised archive that stores the
+                current MAP-Elites population, one elite per occupied cell.
+        """
         return self._archive
 
     def _run_generation(self, generation: int, verbose: bool):
-        indices = self._rng.choice(
-            list(self._archive.filled_cells), size=self._pop_size
-        )
-        parents = np.asarray(self._archive[indices], copy=True)
-        offspring = self._mutation(
+        """Perform one MAP-Elites generation: sample, mutate, evaluate, insert.
+
+        A batch of ``pop_size`` parent indices is sampled uniformly (with
+        replacement) from the archive's currently filled cells. The
+        corresponding parent genotypes are mutated in a single batched call
+        via ``self._mutation``, respecting the domain's lower/upper bounds.
+        The resulting offspring are evaluated against the solver portfolio
+        and their descriptors are computed, then wrapped into ``Instance``
+        objects — note that for MAP-Elites, ``fitness`` is set equal to the
+        performance bias ``p``, since there is no separate novelty
+        component. Finally, the offspring are inserted into the archive,
+        where each one may replace its cell's current occupant, fill an
+        empty cell, or be rejected, depending on the archive's insertion
+        rules. Progress for this generation is recorded in ``self._logbook``.
+
+        Args:
+            generation (int): Index of the generation about to be recorded
+                (the logbook is updated with ``generation + 1``, since
+                generation 0 is reserved for the initial grid).
+            verbose (bool): Whether to forward progress feedback to
+                ``self._logbook.update``.
+        """
+        indices = self._rng.choice(self._archive.filled_cells, size=self._pop_size)
+        parents = np.asarray(self._archive[indices])
+        offs_genotypes = self._mutation(
             parents,
             self._domain._lbs,
             ub=self._domain._ubs,
         )
-        perf_biases, portfolio_scores = self._evaluate_population(offspring)
-        descriptors = self._descriptor_pipe(offspring, portfolio_scores, self._domain)
+        offs_perf_biases, offs_portfolio_scores = self._evaluate_population(
+            offs_genotypes
+        )
+        offs_descriptors = self._descriptor_pipe(
+            offs_genotypes, offs_portfolio_scores, self._domain
+        )
 
-        offspring_population = [
-            Instance(
-                variables=offspring[i],
-                fitness=perf_biases[i],  # In MapElites fitness == performance_bias (p)
-                descriptor=descriptors[i],
-                portfolio_scores=portfolio_scores[i],
-                performance_bias=perf_biases[i],
-            )
-            for i in range(len(offspring))
-        ]
+        offspring = build_instances_from_attributes(
+            genotypes=offs_genotypes,
+            descriptors=offs_descriptors,
+            fitness=offs_perf_biases,
+            portfolio_scores=offs_portfolio_scores,
+            diversity_scores=np.zeros_like(offs_perf_biases),
+            bias_score=offs_perf_biases,
+        )
         self._archive.extend(
-            instances=offspring_population,
-            descriptors=descriptors,
-            objectives=perf_biases,
+            instances=offspring,
+            descriptors=offs_descriptors,
+            objectives=offs_perf_biases,
         )
         # Record the stats and update the performed gens
         self._logbook.update(
-            generation=generation + 1, population=self._archive, feedback=verbose
+            generation=generation + 1, instances=self._archive, feedback=verbose
         )
 
     def _initialise_grid(self, verbose: bool):
-        instances = self._domain.generate_instances(n=self._pop_size)
-        perf_biases, portfolio_scores = self._evaluate_population(instances)
-        descriptors = self._descriptor_pipe(instances, portfolio_scores, self._domain)
-        initial_instances = [
-            Instance(
-                variables=instances[i].variables,
-                fitness=perf_biases[i],
-                descriptor=descriptors[i],
-                portfolio_scores=portfolio_scores[i],
-                performance_bias=perf_biases[i],
-            )
-            for i in range(len(instances))
-        ]
+        """Seed the archive with an initial batch of randomly generated instances.
+
+        Samples ``pop_size`` fresh instances directly from the domain (rather
+        than mutating existing archive members, since the archive starts
+        empty), evaluates them against the solver portfolio, computes their
+        descriptors, and inserts all of them into the archive unconditionally
+        — including infeasible ones, which are expected to be purged later
+        via ``self._archive.purge_unfeasible()``. Records generation 0 in
+        ``self._logbook``.
+
+        Args:
+            verbose (bool): Whether to forward progress feedback to
+                ``self._logbook.update``.
+        """
+        genotypes = np.asarray(self._domain.generate_instances(n=self._pop_size))
+        perf_biases, portfolio_scores = self._evaluate_population(genotypes)
+        descriptors = self._descriptor_pipe(genotypes, portfolio_scores, self._domain)
+
+        initial_instances = build_instances_from_attributes(
+            genotypes=genotypes,
+            descriptors=descriptors,
+            fitness=perf_biases,
+            portfolio_scores=portfolio_scores,
+            diversity_scores=np.zeros_like(perf_biases),
+            bias_score=perf_biases,
+        )
         # Here we do not care for p >= 0. We are starting the archive
         # Must be removed later on
         self._archive.extend(instances=initial_instances, descriptors=descriptors)
-        self._logbook.update(generation=0, population=instances, feedback=verbose)
+        self._logbook.update(
+            generation=0, instances=initial_instances, feedback=verbose
+        )
 
-    def __call__(self, verbose: bool = False) -> GenResult:
+    def __call__(self, verbose: bool = False) -> GenerationResult:
+        """Run the full MAP-Elites process and return the generated instances.
+
+        The algorithm proceeds as follows:
+        1. The archive is seeded with an initial batch of instances via
+           :meth:`_initialise_grid` (recorded as generation 0).
+        2. For each of the ``self._generations`` subsequent generations,
+           :meth:`_run_generation` samples parents from the filled archive
+           cells, mutates them, evaluates the offspring, and updates the
+           archive in place.
+        3. After all generations, any infeasible instances that slipped into
+           the archive during initialisation or evolution are removed via
+           ``self._archive.purge_unfeasible()``.
+        4. The final archive contents are packaged into a
+           :class:`GenerationResult` together with the solver names and the
+           recorded evolutionary history.
+
+        Args:
+            verbose (bool, optional): Whether to print/log progress during the
+                run (forwarded to ``self._logbook.update`` at every
+                generation). Defaults to False.
+
+        Returns:
+            GenerationResult: The final feasible archive contents together
+                with solver names and the recorded evolutionary history.
+        """
         # Here we do not care for p >= 0. We are starting the archive
         # Must be removed later on
         self._initialise_grid(verbose)
@@ -160,8 +250,7 @@ class MapElites(BaseGenerator):
             blank = " " * 80
             print(f"\r{blank}\r", end="")
 
-        self._archive.purge_unfeasible()
-        return GenResult(
+        return GenerationResult(
             solvers=tuple(extract_solvers_name(self._portfolio)),
             instances=self._archive,
             history=self._logbook,
@@ -174,6 +263,13 @@ class PlottedMapElites:
     It replaces the generator's internal loop with an equivalent one that calls
     ``plotter.update()`` every *refresh_every* generations.  Because it accesses
     the generator's internals (all prefixed ``_``), pin your digneapy version.
+
+    This class does not subclass ``BaseGenerator``: it is a thin orchestration
+    wrapper that drives an already-constructed (but not yet called)
+    ``MapElites`` instance through the same initialisation and generation
+    steps it would normally run on its own, interleaving calls to an
+    ``ArchivePlotter`` so that progress can be visualised as a live heatmap
+    while the search is running.
 
     Args:
         generator:       A ``MapElites`` instance (not yet called).
@@ -196,6 +292,33 @@ class PlottedMapElites:
         refresh_every: int = 1,
         save_final: Optional[str] = None,
     ):
+        """Store the wrapped generator and the plotting configuration.
+
+        No plotting or generation work happens here; everything is deferred
+        to :meth:`__call__`. ``refresh_every`` is clamped to a minimum of 1
+        to avoid division/modulo issues during the generation loop.
+
+        Args:
+            generator: A ``MapElites`` instance that has not yet been called.
+            feat_names (Optional[Sequence[str]], optional): Labels for the two
+                archive axes shown on the plot. Defaults to None (axes left
+                unlabelled or auto-labelled by ``ArchivePlotter``).
+            attr (str, optional): Name of the ``Instance`` attribute used to
+                colour each cell of the heatmap. Defaults to ``"p"``
+                (performance bias).
+            cmap (str, optional): Matplotlib colormap name used for the
+                heatmap. Defaults to ``"viridis"``.
+            vmin (Optional[float], optional): Fixed lower bound for the
+                colour scale. ``None`` lets the plotter infer it
+                automatically. Defaults to None.
+            vmax (Optional[float], optional): Fixed upper bound for the
+                colour scale. ``None`` lets the plotter infer it
+                automatically. Defaults to None.
+            refresh_every (int, optional): Redraw the plot every this many
+                generations. Clamped to at least 1. Defaults to 1.
+            save_final (Optional[str], optional): If provided, the final
+                plotted frame is saved to this path. Defaults to None.
+        """
         self._gen = generator
         self._feat_names = feat_names
         self._attr = attr
@@ -208,7 +331,27 @@ class PlottedMapElites:
     def __call__(self, verbose: bool = False):
         """Runs the full MAP-Elites loop and shows the live heatmap.
 
+        Mirrors the generation sequence performed by ``MapElites.__call__``
+        (initial grid seeding followed by the configured number of
+        generations), but additionally creates an ``ArchivePlotter`` bound to
+        the wrapped generator's archive and refreshes it: once immediately
+        after initialisation, every ``refresh_every`` generations during the
+        loop, and once more after the final generation. After the loop
+        completes, infeasible instances are purged from the archive (as in
+        the plain ``MapElites``), the final frame is optionally saved to
+        ``save_final``, and the plot window is shown interactively.
+
         Returns the same ``GenResult`` the underlying generator would return.
+
+        Args:
+            verbose (bool, optional): Whether to print/log progress during the
+                run (forwarded to the wrapped generator's internal logbook
+                updates). Defaults to False.
+
+        Returns:
+            GenerationResult: The final feasible archive contents from the
+                wrapped generator, together with solver names and the
+                recorded evolutionary history.
         """
         self._gen._initialise_grid(verbose)
         plotter = ArchivePlotter(
@@ -233,7 +376,7 @@ class PlottedMapElites:
             plotter.save(self._save_final)
 
         plotter.show()
-        return GenResult(
+        return GenerationResult(
             solvers=tuple(extract_solvers_name(self._gen._portfolio)),
             instances=self._gen._archive,
             history=self._gen._logbook,

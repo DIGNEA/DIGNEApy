@@ -10,11 +10,10 @@
 @Desc    :   None
 """
 
-import json
 from abc import ABC, abstractmethod
 from collections.abc import Iterator, Sequence
 from enum import Enum
-from typing import Optional
+from typing import Optional, Self
 
 import numpy as np
 
@@ -126,7 +125,7 @@ class Archive(ABC):
         """
         return np.asarray(self._storage[Keys.instances], dtype=object, copy=copy)
 
-    def __eq__(self, other: Archive) -> bool:
+    def __eq__(self, other: Self) -> bool:
         """Compares two archives
 
         Args:
@@ -176,12 +175,3 @@ class Archive(ABC):
                 for i, instance in enumerate(self._storage[Keys.instances])
             }
         }
-
-    def to_json(self) -> str:
-        """Converts the archive into a JSON object
-
-        Returns:
-            str: JSON str of the archive content
-        """
-        # Todo: Need to check the NumPy datatypes and JSON encoder
-        return json.dumps(self.to_dict(), indent=4)

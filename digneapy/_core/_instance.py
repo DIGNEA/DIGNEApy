@@ -108,7 +108,7 @@ class Instance:
             exception.add_note(f"performance_bias: {performance_bias}")
             exception.add_note(f"novelty: {novelty}")
             raise TypeError("Wrong parameters for Instance.") from exception
-        # Todo: Consider fixing the dimensions of the descriptor and portfolio
+        # Todo: Consider fix the dimensions of the descriptor and portfolio
         # if type(descriptor_dim) is not int or descriptor_dim <= 0:
         #     raise ValueError(
         #         f"descriptor_dim must be a positive integer. Got {descriptor_dim}."

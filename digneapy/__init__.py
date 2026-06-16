@@ -17,10 +17,9 @@ from ._core import (
     Solver,
     descriptors,
     descriptors_registry,
-    scores,
 )
 from ._core._metrics import Logbook, Statistics, qd_score, qd_score_auc
-from ._core.scores import PerformanceFn, maximise_perf_gap_easy, maximise_runtime_gap
+from ._core._scores import PerformanceFn, maximise_perf_gap_easy, maximise_runtime_gap
 from .archives import Archive, CVTArchive, GridArchive, UnstructuredArchive
 from .generators import (
     ES,
@@ -41,6 +40,5 @@ __all__ = list(
     | set(_core.__all__)
     | set(operators.__all__)
     | set(archives.__all__)
-    | set(scores.__all__)
     | set(domains.__all__)
 )

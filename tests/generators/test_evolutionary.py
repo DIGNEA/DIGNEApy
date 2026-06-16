@@ -10,6 +10,8 @@
 @Desc    :   None
 """
 
+from pathlib import Path
+
 import numpy as np
 import pytest
 from numpy.testing import assert_equal
@@ -41,6 +43,7 @@ from digneapy.solvers import (
     nneighbour,
     worst_fit,
 )
+from digneapy.visualize import ea_generator_evolution_plot
 
 DOMAIN_CONTEXT = [
     (KnapsackDomain, [default_kp, map_kp, miw_kp, mpw_kp], 8),
@@ -252,6 +255,13 @@ def test_evolutionary_generator_can_generate_instances(
     assert all(len(s.descriptor) > 0 for s in archive)
     assert all(len(s.portfolio_scores) == len(portfolio) for s in archive)
 
+    # Logbook can be plotted
+    logbook = generator.log
+    filename = Path("evolutionary_generator_logbook.png")
+    ea_generator_evolution_plot(logbook, filename)
+    assert filename.exists()
+    filename.unlink()
+
 
 @pytest.mark.parametrize("descriptor", ("features", "performance", "instance"))
 def test_evolutionary_generator_can_generate_instances_with_solution_set(
@@ -278,6 +288,13 @@ def test_evolutionary_generator_can_generate_instances_with_solution_set(
     )
 
     result = generator()
+    # Logbook can be plotted
+    logbook = generator.log
+    filename = Path("evolutionary_generator_logbook.png")
+    ea_generator_evolution_plot(logbook, filename)
+    assert filename.exists()
+    filename.unlink()
+
     solution_set = result.instances
     # The solution_set can  be empty
     # this archive does NOT allow unfeasible solutions

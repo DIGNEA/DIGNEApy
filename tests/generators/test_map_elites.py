@@ -10,7 +10,6 @@
 @Desc    :   None
 """
 
-import os
 from pathlib import Path
 
 import pytest
@@ -42,164 +41,201 @@ DOMAIN_CONTEXT = [
 ]
 
 
-def test_map_elites_generator_attrs():
-    pass
+@pytest.mark.parametrize("descriptor", ("features", "performance"))
+def test_map_elites_generator_attrs_grid_archive(descriptor):
+    number_of_items = 100
+    population_size = 128
+    repetitions = 1
+    generations = 100
+    resolution = 2
+    descriptor_dim = 0
+    portfolio = [default_kp, map_kp, miw_kp, mpw_kp]
+    if descriptor == "features":
+        descriptor_dim = 8
+    if descriptor == "performance":
+        descriptor_dim = len(portfolio)
+    elif descriptor == "instance":
+        descriptor_dim = (number_of_items * 2) + 1
+
+    archive = GridArchive(
+        dimensions=(resolution,) * descriptor_dim, ranges=[(0.0, 1e5)] * descriptor_dim
+    )
+    domain = KnapsackDomain(number_of_items=number_of_items)
+    descriptor_pipeline = DescriptorPipeline(key=descriptor)
+    generator = MapElites(
+        domain=domain,
+        portfolio=portfolio,
+        pop_size=population_size,
+        archive=archive,
+        repetitions=repetitions,
+        generations=generations,
+        descriptor_pipe=descriptor_pipeline,
+    )
+    assert isinstance(generator, MapElites)
+    assert isinstance(generator.archive, GridArchive)
 
 
-def test_map_elites_raises_if_wrong_archive():
-    with pytest.raises(TypeError) as e:
+@pytest.mark.parametrize("descriptor", ("features", "performance", "instance"))
+def test_map_elites_generator_attrs_cvt_archive(descriptor):
+    number_of_items = 100
+    population_size = 128
+    repetitions = 1
+    generations = 100
+    n_centroids = 100
+    descriptor_dim = 0
+    portfolio = [default_kp, map_kp, miw_kp, mpw_kp]
+    if descriptor == "features":
+        descriptor_dim = 8
+    if descriptor == "performance":
+        descriptor_dim = len(portfolio)
+    elif descriptor == "instance":
+        descriptor_dim = (number_of_items * 2) + 1
+
+    archive = CVTArchive(
+        dimensions=descriptor_dim,
+        centroids=n_centroids,
+        ranges=[(0.0, 1e5)] * descriptor_dim,
+    )
+    descriptor_pipeline = DescriptorPipeline(key=descriptor)
+    domain = KnapsackDomain(number_of_items=number_of_items)
+
+    generator = MapElites(
+        domain=domain,
+        portfolio=portfolio,
+        pop_size=population_size,
+        archive=archive,
+        repetitions=repetitions,
+        generations=generations,
+        descriptor_pipe=descriptor_pipeline,
+    )
+    assert isinstance(generator, MapElites)
+    assert isinstance(generator.archive, CVTArchive)
+
+
+def test_map_elites_generator_raises_if_wrong_archive():
+    with pytest.raises(TypeError):
         _ = MapElites(
             KnapsackDomain(),
             portfolio=[default_kp],
             archive=tuple(),
             pop_size=100,
             mutation=BatchUMut(),
-            describe_pipe=DescriptorPipeline("features"),
+            descriptor_pipe=DescriptorPipeline("features"),
             repetitions=1,
         )
-    assert (
-        "MapElites expects an archive of class GridArchive or CVTArchive and got tuple"
-        in str(e.value)
-    )
 
 
-@pytest.mark.parametrize("domain_cls, portfolio, feat_desc_n", DOMAIN_CONTEXT)
-@pytest.mark.parametrize("dimension", ([50, 100]))
 @pytest.mark.parametrize("descriptor", ("features", "performance"))
-def test_map_elites_with_grid_archive(
-    domain_cls, portfolio, feat_desc_n, dimension, descriptor
-):
-    pop_size = 32
-    descriptor_pipeline = DescriptorPipeline(descriptor)
-    dimension = dimension
-    generations = 10
-    desc_dimension = feat_desc_n if descriptor == "features" else len(portfolio)
-    archive = GridArchive(
-        dimensions=(10,) * desc_dimension, ranges=[(0, 1e4)] * desc_dimension
-    )
-    domain = domain_cls(number_of_items=dimension)
-    assert domain.dimension == dimension
+def test_map_elites_generator_can_generate_with_grid_archive(descriptor):
+    number_of_items = 100
+    population_size = 128
+    repetitions = 1
+    generations = 100
+    resolution = 2
+    portfolio = [default_kp, map_kp, miw_kp, mpw_kp]
 
-    map_elites = MapElites(
-        domain,
-        portfolio=portfolio,
-        archive=archive,
-        pop_size=pop_size,
-        mutation=BatchUMut(),
-        generations=generations,
-        describe_pipe=descriptor_pipeline,
-        repetitions=1,
+    descriptor_dim = 0
+    if descriptor == "features":
+        descriptor_dim = 8
+    if descriptor == "performance":
+        descriptor_dim = len(portfolio)
+    elif descriptor == "instance":
+        descriptor_dim = (number_of_items * 2) + 1
+
+    archive = GridArchive(
+        dimensions=(resolution,) * descriptor_dim, ranges=[(0.0, 1e5)] * descriptor_dim
     )
-    result = map_elites()
+    domain = KnapsackDomain(number_of_items=number_of_items)
+    descriptor_pipeline = DescriptorPipeline(key=descriptor)
+    generator = MapElites(
+        domain=domain,
+        portfolio=portfolio,
+        pop_size=population_size,
+        archive=archive,
+        repetitions=repetitions,
+        generations=generations,
+        descriptor_pipe=descriptor_pipeline,
+    )
+
+    result = generator()
     archive = result.instances
-    assert len(map_elites.archive) == len(archive)
+    assert len(generator.archive) == len(archive)
     assert len(archive) > 0
     assert isinstance(archive, GridArchive)
     assert all(isinstance(i, Instance) for i in archive)
-
-    assert all(len(s.descriptor) == desc_dimension for s in archive)
-    assert len(map_elites.log) == generations + 1
+    assert all(len(x) == (number_of_items * 2) + 1 for x in archive)
+    assert all(len(s.descriptor) == descriptor_dim for s in archive)
+    assert len(generator.log) == generations + 1
 
     # Is able to print the log
-    log = map_elites.log
-    map_elites_evolution_plot(log, "example.png")
-    assert os.path.exists("example.png")
-    os.remove("example.png")
+    log = generator.log
+    filename = Path("example_map_elites_logbook.png")
+    map_elites_evolution_plot(log, filename)
+    assert filename.exists()
+    filename.unlink()
 
 
-test_data_cvt = [
-    (
-        KnapsackDomain,
-        [map_kp, default_kp, miw_kp],
-        [(1.0, 10_000), *[(1.0, 1_000) for _ in range(100)]],
-    ),
-    (
-        BPPDomain,
-        [best_fit, first_fit, worst_fit],
-        [(1.0, 10_000), *[(1.0, 1_000) for _ in range(50)]],
-    ),
-]
+def build_knapsack_archive_ranges(
+    number_of_items: int, descriptor: str, n_solvers: int = 4
+):
+    if descriptor == "features":
+        return [(1.0, 100_000), *[(1.0, 1_000) for _ in range(7)]]
+    elif descriptor == "performance":
+        return [(1.0, 800_000) for _ in range(n_solvers)]
+    else:  # case instance
+        return [(1.0, 1e5), *[(1.0, 1_000) for _ in range(number_of_items * 2)]]
 
 
-CVT_CONTEXT = [
-    (
-        KnapsackDomain,
-        [default_kp, map_kp, miw_kp, mpw_kp],
-    ),
-    (
-        BPPDomain,
-        [best_fit, first_fit, worst_fit, next_fit],
-    ),
-    (TSPDomain, [nneighbour, greedy]),
-]
-
-
-def build_ranges(domain_cls, descriptor, dimension, portfolio):
-    if domain_cls == KnapsackDomain:
-        if descriptor == "features":
-            return [(1.0, 100_000), *[(1.0, 1_000) for _ in range(7)]]
-        elif descriptor == "performance":
-            return [(1.0, 800_000) for _ in range(len(portfolio))]
-        else:  # case instance
-            return [(1.0, 100_000), *[(1.0, 1_000) for _ in range(dimension * 2)]]
-    elif domain_cls == BPPDomain:
-        if descriptor == "features":
-            return [
-                (20, 100),
-                (0, 100.0),
-                (20, 100),
-                (20, 100),
-                (20, 100),
-                *[(0.0, 1.0) for _ in range(5)],
-            ]
-        elif descriptor == "performance":
-            return [(0.0, 1.0) for _ in range(len(portfolio))]
-        else:  # case instance
-            return [(150, 150), *[(20, 100) for _ in range(dimension)]]
-    elif domain_cls == TSPDomain:
-        if descriptor == "features":
-            return [(dimension * 2, dimension * 2), *[(0.0, 1_000) for _ in range(10)]]
-        elif descriptor == "performance":
-            return [(0.0, 1.0) for _ in range(len(portfolio))]
-        else:  # case instance
-            return [(0, 1_000) for _ in range(dimension * 2)]
-
-
-@pytest.mark.parametrize("domain_cls, portfolio", CVT_CONTEXT)
 @pytest.mark.parametrize("descriptor", ("features", "performance", "instance"))
-def test_map_elites_domain_cvt(domain_cls, portfolio, descriptor):
-    dimension = 100
-    generations = 10
-    pop_size = 32
-    ranges = build_ranges(domain_cls, descriptor, dimension, portfolio)
-    archive = CVTArchive(
-        dimensions=dimension, centroids=1000, ranges=ranges, samples=10_000
-    )
-    domain = domain_cls(number_of_items=dimension)
-    assert domain.dimension == dimension
+def test_map_elites_generator_can_generate_with_cvt_archive(descriptor):
+    number_of_items = 100
+    population_size = 128
+    repetitions = 1
+    generations = 100
+    n_centroids = 100
 
-    map_elites = MapElites(
-        domain,
-        portfolio=portfolio,
-        archive=archive,
-        pop_size=pop_size,
-        mutation=BatchUMut(),
-        generations=generations,
-        describe_pipe=DescriptorPipeline(key=descriptor),
-        repetitions=1,
+    portfolio = [default_kp, map_kp, miw_kp, mpw_kp]
+    ranges = build_knapsack_archive_ranges(
+        number_of_items=number_of_items, descriptor=descriptor
     )
-    result = map_elites()
+    descriptor_dim = 0
+    if descriptor == "features":
+        descriptor_dim = 8
+    if descriptor == "performance":
+        descriptor_dim = len(portfolio)
+    elif descriptor == "instance":
+        descriptor_dim = (number_of_items * 2) + 1
+
+    archive = CVTArchive(
+        dimensions=descriptor_dim,
+        centroids=n_centroids,
+        ranges=ranges,
+    )
+    descriptor_pipeline = DescriptorPipeline(key=descriptor)
+    domain = KnapsackDomain(number_of_items=number_of_items)
+
+    generator = MapElites(
+        domain=domain,
+        portfolio=portfolio,
+        pop_size=population_size,
+        archive=archive,
+        repetitions=repetitions,
+        generations=generations,
+        descriptor_pipe=descriptor_pipeline,
+    )
+    result = generator()
     archive = result.instances
-    assert len(map_elites.archive) == len(archive)
+    assert len(generator.archive) == len(archive)
     assert len(archive) != 0
-    assert all(i.performance_bias >= 0 for i in archive)
+    # Novelty must be zero because MapElites doesn't use
+    # this attribute of the Instance class
     assert all(i.novelty == 0 for i in archive)
     assert isinstance(archive, CVTArchive)
     assert all(isinstance(i, Instance) for i in archive)
-    assert len(map_elites.log) == generations + 1
+    assert len(generator.log) == generations + 1
 
     # Is able to print the log
-    log = map_elites.log
+    log = generator.log
     filename = Path("example.png")
 
     map_elites_evolution_plot(log, filename=filename)

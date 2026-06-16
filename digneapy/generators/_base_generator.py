@@ -26,10 +26,11 @@ from .._core import (
     Domain,
     Instance,
     Logbook,
+    PerformanceFn,
     Solver,
     Statistics,
+    maximise_perf_gap_easy,
 )
-from .._core.scores import PerformanceFn, maximise_perf_gap_easy
 from ..archives import Archive
 
 

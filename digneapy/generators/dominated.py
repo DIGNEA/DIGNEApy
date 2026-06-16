@@ -24,11 +24,12 @@ from digneapy.generators._utils import (
 )
 
 from .._core import (
+    DescriptorPipeline,
     Domain,
+    PerformanceFn,
     Solver,
+    maximise_perf_gap_easy,
 )
-from .._core.descriptors import DescriptorPipeline
-from .._core.scores import PerformanceFn, maximise_perf_gap_easy
 from ..archives import UnstructuredArchive
 from ..operators import (
     UCX,

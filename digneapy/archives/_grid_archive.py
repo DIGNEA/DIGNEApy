@@ -281,6 +281,65 @@ class GridArchive(Archive):
                 "All objects inside the instances sequence must be object of the Instance class."
             )
 
+    def retrieve(self, descriptors: np.ndarray) -> Sequence[Instance]:
+        """Returns a sequence of instances that match the given descriptors.
+
+        Args:
+            descriptors (array-like ): Descriptors of the instances that want to retrieve.
+            Valid examples are:
+            -   archive.retrieve([[0,11], [0,5]) --> Get the instances with the descriptors (0,11) and (0, 5)
+
+        Raises:
+            TypeError: If the key is an slice. Not allowed.
+            ValueError: If the shape of the keys are not valid.
+
+        Returns:
+            Sequence[Instance]: Returns a dict with the found instances.
+        """
+
+        descriptors = np.asarray(descriptors)
+        if descriptors.ndim != 2 or descriptors.shape[1] != len(self._dimensions):
+            raise ValueError(
+                f"Expected descriptors to be an array with shape "
+                f"(batch_size, dimensions) (i.e. shape "
+                f"(batch_size, {len(self._dimensions)})) but it had shape "
+                f"{descriptors.shape}"
+            )
+
+        else:
+            indices = self.index_of(descriptors).tolist()
+            instances = [self._storage[Keys.instances][idx] for idx in indices]
+            return instances
+
+    def retrieve_filled_cells(self, cells: np.ndarray) -> Sequence[Instance]:
+        """Returns instances stored in the requested cells.
+
+        Args:
+            cells (array-like ): Cells of the instances that want to retrieve.
+            Valid examples are:
+            -   archive.retrieve([0,11,5]) --> Get the instances in the cells 0, 11 and 5.
+
+        Raises:
+            ValueError: If the shape of the cells is not valid.
+
+        Returns:
+            Sequence[Instance]: Returns a collection of instances.
+        """
+
+        cells = np.asarray(cells)
+        if cells.ndim != 1:
+            raise ValueError(
+                f"Expected cells to be an 1d-array but it had shape {cells.shape}"
+            )
+        try:
+            instances = [self._storage[Keys.instances][idx] for idx in cells]
+        except Exception as exc:
+            raise RuntimeError(
+                f"requested an invalid cell in method retrieve_filled_cells. {exc}"
+            )
+
+        return instances
+
     def index_of(self, descriptors: np.ndarray) -> np.ndarray:
         """Computes the indices of a batch of descriptors.
 

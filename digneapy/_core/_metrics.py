@@ -96,7 +96,9 @@ class Statistics:
                 return record
 
         except Exception as exc:
-            raise RuntimeError(f"unexpected error in Statistics {exc}")
+            raise RuntimeError(
+                f"Unexpected error in Statistics: {exc} \nfor instances = {instances}"
+            ) from exc
 
 
 class Logbook(tools.Logbook):

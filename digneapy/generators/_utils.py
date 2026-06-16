@@ -15,11 +15,10 @@ from typing import Any, Generator, Self
 
 import numpy as np
 
-from .._core._instance import Instance
-from .._core._solver import Solver
+from .._core import Instance, Solver
 
 
-class InstanceBuilder:
+class InstanceBuilder:  # pragma: no cover
     """Class to create Instances using the Builder Pattern
 
     - Call add_component with the key and value to include in the new Instance

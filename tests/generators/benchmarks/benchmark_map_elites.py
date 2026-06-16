@@ -66,7 +66,7 @@ def test_map_elites_with_grid_archive(
         pop_size=pop_size,
         mutation=BatchUMut(),
         generations=generations,
-        describe_pipe=descriptor_pipeline,
+        descriptor_pipe=descriptor_pipeline,
         repetitions=1,
     )
     result = map_elites()
@@ -162,7 +162,7 @@ def test_map_elites_domain_cvt(domain_cls, portfolio, descriptor):
         pop_size=pop_size,
         mutation=BatchUMut(),
         generations=generations,
-        describe_pipe=DescriptorPipeline(key=descriptor),
+        descriptor_pipe=DescriptorPipeline(key=descriptor),
         repetitions=1,
     )
     result = map_elites()

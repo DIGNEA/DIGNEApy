@@ -131,6 +131,28 @@ def test_cvt_archive_attrs():
     assert all(key in data.keys() for key in expected_keys)
 
 
+def test_cvt_archive_can_be_iterated():
+    dimensions = 2
+    n_centroids = 10
+    low_i = 0
+    high_i = 100
+    n_instances = 3
+    ranges = [(low_i, high_i) for _ in range(dimensions)]
+
+    # All unique descriptors that must fall in differente cells
+    descriptors = np.asarray([[0, 0], [50, 50], [90, 90]])
+    instances = population_with_custom_descriptors(
+        descriptors,
+        n_instances=n_instances,
+        dimension=dimensions,
+    )
+    archive = CVTArchive(dimensions=dimensions, centroids=n_centroids, ranges=ranges)
+    archive.extend(instances)
+    # The archive is preloaded with initial instances
+    assert len(archive) == n_instances
+    assert all(isinstance(x, Instance) for x in archive)
+
+
 def test_cvt_archive_with_initial_instances():
     dimensions = 2
     n_centroids = 10
@@ -203,8 +225,6 @@ def test_cvt_archive_centroids_load_from_file():
     centroids = np.load(centroids)
     assert_equal(archive.centroids, centroids)
     assert_equal(archive.centroids.shape, (n_centroids, dimensions))
-    # They're not the same object
-    assert centroids is not archive.centroids
 
 
 def test_cvt_archive_centroids_load_from_file_wrong_dimensions():
@@ -232,8 +252,6 @@ def test_cvt_archive_centroids_load_from_ndarray():
     archive = CVTArchive(dimensions=dimensions, centroids=centroids, ranges=ranges)
     assert_equal(archive.centroids, centroids)
     assert_equal(archive.centroids.shape, (n_centroids, dimensions))
-    # They're not the same object
-    assert centroids is not archive.centroids
 
 
 def test_cvt_archive_centroids_load_from_ndarray_raises():
@@ -308,3 +326,62 @@ def test_cvt_archive_preloaded_can_be_extended():
     expected_len = n_instances + 2
     assert len(archive) == expected_len
     assert all(isinstance(x, Instance) for x in archive.instances)
+
+
+def test_cvt_archive_retrieve_from_descriptors():
+    dimensions = 2
+    n_centroids = 10
+    low_i = 0
+    high_i = 100
+    n_instances = 3
+    ranges = [(low_i, high_i) for _ in range(dimensions)]
+
+    # All unique descriptors that must fall in differente cells
+    descriptors = np.asarray([[0, 0], [50, 50], [90, 90]])
+    instances = population_with_custom_descriptors(
+        descriptors,
+        n_instances=n_instances,
+        dimension=dimensions,
+    )
+    archive = CVTArchive(
+        dimensions=dimensions, centroids=n_centroids, ranges=ranges, instances=instances
+    )
+
+    retrieve_instances = archive.retrieve(descriptors)
+    assert len(instances) == n_instances
+    assert all(isinstance(x, Instance) for x in instances)
+    assert_equal(retrieve_instances, instances)
+    retrieve_descriptors = [x.descriptor for x in instances]
+    assert_equal(retrieve_descriptors, descriptors)
+
+
+def test_cvt_archive_retrieve_from_filled_cells():
+    dimensions = 2
+    n_centroids = 10
+    low_i = 0
+    high_i = 100
+    n_instances = 3
+    ranges = [(low_i, high_i) for _ in range(dimensions)]
+
+    # All unique descriptors that must fall in differente cells
+    descriptors = np.asarray([[0, 0], [50, 50], [90, 90]])
+    instances = population_with_custom_descriptors(
+        descriptors,
+        n_instances=n_instances,
+        dimension=dimensions,
+    )
+    archive = CVTArchive(
+        dimensions=dimensions, centroids=n_centroids, ranges=ranges, instances=instances
+    )
+
+    filled_cells = archive.filled_cells
+    assert len(filled_cells) == n_instances
+
+    filled_cells = np.asarray(list(filled_cells))
+    retrieve_instances = archive.retrieve_filled_cells(filled_cells)
+
+    assert len(instances) == n_instances
+    assert all(isinstance(x, Instance) for x in instances)
+    assert_equal(retrieve_instances, instances)
+    retrieve_descriptors = [x.descriptor for x in instances]
+    assert_equal(retrieve_descriptors, descriptors)

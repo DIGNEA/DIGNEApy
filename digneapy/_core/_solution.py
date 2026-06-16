@@ -58,8 +58,8 @@ class Solution:
         self._otype = otype
         self._dtype = dtype
         self._variables = np.asarray(variables, dtype=self.dtype)
-        self._objectives = np.asarray(objectives, dtype=self.otype)
-        self._constraints = np.asarray(constraints, dtype=self.otype)
+        self._objectives = np.asarray(objectives, dtype=self._otype)
+        self._constraints = np.asarray(constraints, dtype=self._otype)
         try:
             if fitness is None:
                 self._fitness = np.float64(0)
@@ -73,10 +73,6 @@ class Solution:
     @property
     def dtype(self):
         return self._dtype
-
-    @property
-    def otype(self):
-        return self._otype
 
     @property
     def variables(self):
@@ -146,7 +142,7 @@ class Solution:
             objectives=list(self._objectives),
             constraints=list(self._constraints),
             fitness=self._fitness,
-            otype=self.otype,
+            otype=self._otype,
         )
 
     def clone_with(self, **overrides):
@@ -186,7 +182,7 @@ class Solution:
     def __gt__(self, other: Self) -> np.bool:
         if not isinstance(other, Solution):
             raise TypeError(
-                "Other of type {other.__class__.__name__} can not be compared with a Solution."
+                f"Other of type {other.__class__.__name__} can not be compared with a Solution."
             )
 
         return self.fitness > other.fitness

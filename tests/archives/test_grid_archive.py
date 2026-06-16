@@ -283,3 +283,61 @@ def test_grid_archive_extends_large_dimensions():
     archive.extend(instances)
     assert len(archive) > 0
     assert len(archive) <= 10
+
+
+def test_grid_archive_retrieve_from_descriptors():
+    dimensions = 2
+    n_instances = 10
+    # All unique descriptors
+    descriptors = np.random.choice(
+        np.arange(100, dtype=np.float64),
+        size=(n_instances, dimensions),
+        replace=False,
+    )
+    instances = population_with_custom_descriptors(
+        descriptors, n_instances=10, dimension=2
+    )
+    archive = GridArchive(
+        dimensions=(10, 10),
+        ranges=[
+            (0.0, 100.0),
+            (0.0, 100.0),
+        ],
+        instances=instances,
+    )
+    retrieve_instances = archive.retrieve(descriptors)
+    assert len(instances) == n_instances
+    assert all(isinstance(x, Instance) for x in instances)
+    assert_equal(retrieve_instances, instances)
+    retrieve_descriptors = [x.descriptor for x in instances]
+    assert_equal(retrieve_descriptors, descriptors)
+
+
+def test_grid_archive_retrieve_from_filled_cells():
+    dimensions = 2
+    n_instances = 10
+    # All unique descriptors
+    descriptors = np.random.choice(
+        np.arange(100, dtype=np.float64),
+        size=(n_instances, dimensions),
+        replace=False,
+    )
+    instances = population_with_custom_descriptors(
+        descriptors, n_instances=10, dimension=2
+    )
+    archive = GridArchive(
+        dimensions=(10, 10),
+        ranges=[
+            (0.0, 100.0),
+            (0.0, 100.0),
+        ],
+        instances=instances,
+    )
+    filled_cells = archive.filled_cells
+    filled_cells = np.asarray(list(filled_cells))
+    retrieve_instances = archive.retrieve_filled_cells(filled_cells)
+    assert len(instances) == n_instances
+    assert all(isinstance(x, Instance) for x in instances)
+    assert_equal(retrieve_instances, instances)
+    retrieve_descriptors = [x.descriptor for x in instances]
+    assert_equal(retrieve_descriptors, descriptors)

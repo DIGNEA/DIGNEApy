@@ -10,7 +10,12 @@
 @Desc    :   None
 """
 
-__all__ = ["PerformanceFn", "max_gap_target", "runtime_score"]
+__all__ = [
+    "PerformanceFn",
+    "maximise_perf_gap_easy",
+    "maximise_perf_gap_hard",
+    "maximise_runtime_gap",
+]
 
 
 from typing import Callable

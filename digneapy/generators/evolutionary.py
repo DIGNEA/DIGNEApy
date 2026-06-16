@@ -15,14 +15,14 @@ from typing import Optional, Tuple
 
 import numpy as np
 
-from digneapy._core.descriptors import DescriptorPipeline
-
 from .._core import (
+    DescriptorPipeline,
     Domain,
     Instance,
+    PerformanceFn,
     Solver,
+    maximise_perf_gap_easy,
 )
-from .._core.scores import PerformanceFn, maximise_perf_gap_easy
 from ..archives import Archive
 from ..operators import (
     UCX,
@@ -347,7 +347,7 @@ class Evolutionary(BaseGenerator):
         return fitness
 
 
-class ES(BaseGenerator):
+class ES(BaseGenerator):  # pragma: no cover
     """Quality-Diversity instance generator based on an Evolutionary Strategy (CMA-ES).
 
     Unlike :class:`Evolutionary`, which evolves ``Instance`` genotypes

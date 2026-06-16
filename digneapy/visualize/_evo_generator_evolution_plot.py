@@ -27,10 +27,15 @@ from digneapy import Logbook
 
 def ea_generator_evolution_plot(logbook: Logbook, filename: Optional[str | Path] = ""):
     generations = pl.Series("generation", values=logbook.select("gen"))
-    avg_s = pl.Series(name=r"$s$", values=logbook.chapters["s"].select("avg"))
-    avg_p = pl.Series(name=r"$p$", values=logbook.chapters["p"].select("avg"))
+    mean_novelty = pl.Series(
+        name="novelty", values=logbook.chapters["novelty"].select("avg")
+    )
+    mean_perf_bias = pl.Series(
+        name="performance_bias",
+        values=logbook.chapters["performance_bias"].select("avg"),
+    )
 
-    df = pl.DataFrame([generations, avg_s, avg_p])
+    df = pl.DataFrame([generations, mean_novelty, mean_perf_bias])
 
     # Plot configuration
     plt.rcParams["font.family"] = "serif"
@@ -45,7 +50,7 @@ def ea_generator_evolution_plot(logbook: Logbook, filename: Optional[str | Path]
     ax = sns.lineplot(
         data=df,
         x="generation",
-        y=r"$s$",
+        y="novelty",
         marker="o",
         color="blue",
         markersize=5,
@@ -56,7 +61,7 @@ def ea_generator_evolution_plot(logbook: Logbook, filename: Optional[str | Path]
     sns.lineplot(
         data=df,
         x="generation",
-        y=r"$p$",
+        y="performance_bias",
         marker="X",
         markersize=5,
         color="red",
@@ -65,13 +70,13 @@ def ea_generator_evolution_plot(logbook: Logbook, filename: Optional[str | Path]
     )
     ax.legend(
         handles=[
-            Line2D([], [], marker="o", color="blue", label=r"$s$"),
-            Line2D([], [], marker="X", color="red", label=r"$p$"),
+            Line2D([], [], marker="o", color="blue", label="novelty"),
+            Line2D([], [], marker="X", color="red", label="performance bias"),
         ],
         loc="center right",
     )
 
-    plt.title(r"Evolution of $s$ and $p$")
+    plt.title(r"Evolution of novelty and performance bias")
     if filename:
         plt.savefig(filename)
     else:  # pragma: no cover

@@ -20,11 +20,12 @@ from digneapy.generators._utils import (
 )
 
 from .._core import (
+    DescriptorPipeline,
     Domain,
+    PerformanceFn,
     Solver,
+    maximise_perf_gap_easy,
 )
-from .._core.descriptors import DescriptorPipeline
-from .._core.scores import PerformanceFn, maximise_perf_gap_easy
 from ..archives import CVTArchive, GridArchive
 from ..operators import (
     BatchUMut,
@@ -56,13 +57,13 @@ class MapElites(BaseGenerator):
         self,
         domain: Domain,
         portfolio: Sequence[Solver],
-        pop_size: np.uint32,
+        pop_size: np.uint32 | int,
         archive: GridArchive | CVTArchive,
         mutation: Mutation = BatchUMut(seed=None),
-        repetitions: np.uint16 = np.uint16(1),
-        describe_pipe: DescriptorPipeline = DescriptorPipeline("features"),
+        repetitions: np.uint16 | int = np.uint16(1),
+        descriptor_pipe: DescriptorPipeline = DescriptorPipeline("features"),
         performance_function: PerformanceFn = maximise_perf_gap_easy,
-        generations: np.uint32 = np.uint32(1_000),
+        generations: np.uint32 | int = np.uint32(1_000),
         seed: Optional[int | np.random.SeedSequence] = None,
     ):
         """Creates a MAP-Elites instance generator.
@@ -76,7 +77,7 @@ class MapElites(BaseGenerator):
             archive (GridArchive | CVTArchive): Archive to store the instances. It can be a GridArchive or a CVTArchive.
             mutation (Mutation): Mutation operator
             repetitions (int):  Number times a solver in the portfolio must be run over the same instance. Defaults to 1.
-            describe_pipe (str): Descriptor used to calculate the diversity. The options available are defined in the dictionary digneapy.qd.descriptor_strategies.
+            descriptor_pipe (str): Descriptor used to calculate the diversity. The options available are defined in the dictionary digneapy.qd.descriptor_strategies.
             performance_function (PerformanceFn, optional): Performance function to calculate the performance score. Defaults to max_gap_target.
             generations (int): Number of generations to perform. Defaults to 1000.
             seed (int, optional): Seed for the RNG protocol. Defaults to 42.
@@ -94,7 +95,7 @@ class MapElites(BaseGenerator):
             portfolio,
             pop_size,
             performance_function,
-            descriptor_pipe=describe_pipe,
+            descriptor_pipe=descriptor_pipe,
             generations=generations,
             repetitions=repetitions,
         )
@@ -147,11 +148,15 @@ class MapElites(BaseGenerator):
             verbose (bool): Whether to forward progress feedback to
                 ``self._logbook.update``.
         """
-        indices = self._rng.choice(self._archive.filled_cells, size=self._pop_size)
-        parents = np.asarray(self._archive[indices])
+        filled_cells_indices = self._rng.choice(
+            list(self._archive.filled_cells), size=self._pop_size
+        )
+        parents_genotypes = np.asarray(
+            self._archive.retrieve_filled_cells(filled_cells_indices)
+        )
         offs_genotypes = self._mutation(
-            parents,
-            self._domain._lbs,
+            population=parents_genotypes,
+            lb=self._domain._lbs,
             ub=self._domain._ubs,
         )
         offs_perf_biases, offs_portfolio_scores = self._evaluate_population(
@@ -176,7 +181,9 @@ class MapElites(BaseGenerator):
         )
         # Record the stats and update the performed gens
         self._logbook.update(
-            generation=generation + 1, instances=self._archive, feedback=verbose
+            generation=generation + 1,
+            instances=self._archive,
+            feedback=verbose,
         )
 
     def _initialise_grid(self, verbose: bool):
@@ -206,8 +213,7 @@ class MapElites(BaseGenerator):
             diversity_scores=np.zeros_like(perf_biases),
             bias_score=perf_biases,
         )
-        # Here we do not care for p >= 0. We are starting the archive
-        # Must be removed later on
+
         self._archive.extend(instances=initial_instances, descriptors=descriptors)
         self._logbook.update(
             generation=0, instances=initial_instances, feedback=verbose
@@ -239,16 +245,16 @@ class MapElites(BaseGenerator):
             GenerationResult: The final feasible archive contents together
                 with solver names and the recorded evolutionary history.
         """
-        # Here we do not care for p >= 0. We are starting the archive
-        # Must be removed later on
+
         self._initialise_grid(verbose)
         for generation in range(self._generations):
             # Refactored to use plotted version
             self._run_generation(generation, verbose)
-        if verbose:  # pragma: no cover
-            # Clear the terminal
-            blank = " " * 80
-            print(f"\r{blank}\r", end="")
+
+            if verbose:  # pragma: no cover
+                # Clear the terminal
+                blank = " " * 80
+                print(f"\r{blank}\r", end="")
 
         return GenerationResult(
             solvers=tuple(extract_solvers_name(self._portfolio)),

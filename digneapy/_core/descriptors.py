@@ -69,7 +69,7 @@ class DescriptorPipeline:
     """Pipeline to transform descriptors with several models"""
 
     def __init__(self, key: DescriptorKey, *transformers: Transformer):
-        if key not in descriptors_registry:
+        if not isinstance(key, str) or key not in descriptors_registry:
             raise KeyError(
                 f"Unknown descriptor key {key}. Registered keys are: {descriptors_registry.keys()}"
             )

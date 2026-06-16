@@ -10,8 +10,7 @@
 @Desc    :   None
 """
 
-import json
-from collections.abc import Iterable, Sequence, Set
+from collections.abc import Iterable, Iterator, Sequence, Set
 from pathlib import Path
 from typing import Optional, Tuple
 
@@ -150,8 +149,8 @@ class CVTArchive(Archive):
         self._rng = np.random.default_rng(seed)
 
         ranges = list(zip(*ranges))
-        self._lower_bounds = np.asarray(ranges[0], dtype=np.float64, copy=True)
-        self._upper_bounds = np.asarray(ranges[1], dtype=np.float64, copy=True)
+        self._lower_bounds = np.asarray(ranges[0], dtype=np.float64)
+        self._upper_bounds = np.asarray(ranges[1], dtype=np.float64)
         del ranges
 
         if isinstance(centroids, int):
@@ -169,7 +168,7 @@ class CVTArchive(Archive):
                     self._centroids = np.load(centroids).astype(np.float64)
                 else:
                     # Asume is a np.ndarray
-                    self._centroids = np.asarray(centroids, copy=True, dtype=np.float64)
+                    self._centroids = np.asarray(centroids, dtype=np.float64)
 
                 if self._centroids.shape[1] != self._dimensions:
                     raise RuntimeError(
@@ -243,6 +242,16 @@ class CVTArchive(Archive):
             Iterable[Instance]: Returns a ValueView of the instances
         """
         return self._storage[Keys.instances].values()
+
+    def __iter__(self) -> Iterator[Instance]:
+        """Iterator of the GridArchive
+
+        Allows users to iterate the instances of the GridArchive
+
+        Returns:
+            Iterator[Instance]
+        """
+        return iter(self._storage[Keys.instances].values())
 
     def __str__(self):
         return (
@@ -330,6 +339,65 @@ class CVTArchive(Archive):
                 "All objects inside the instances sequence must be object of the Instance class."
             )
 
+    def retrieve(self, descriptors: np.ndarray) -> Sequence[Instance]:
+        """Returns a sequence of instances that match the given descriptors.
+
+        Args:
+            descriptors (array-like ): Descriptors of the instances that want to retrieve.
+            Valid examples are:
+            -   archive.retrieve([[0,11], [0,5]) --> Get the instances with the descriptors (0,11) and (0, 5)
+
+        Raises:
+            TypeError: If the key is an slice. Not allowed.
+            ValueError: If the shape of the keys are not valid.
+
+        Returns:
+            Sequence[Instance]: Returns a dict with the found instances.
+        """
+
+        descriptors = np.asarray(descriptors)
+        if descriptors.ndim != 2 or descriptors.shape[1] != self.dimensions:
+            raise ValueError(
+                f"Expected descriptors to be an array with shape "
+                f"(batch_size, dimensions) (i.e. shape "
+                f"(batch_size, {self.dimensions})) but it had shape "
+                f"{descriptors.shape}"
+            )
+
+        else:
+            indices = self.index_of(descriptors).tolist()
+            instances = [self._storage[Keys.instances][idx] for idx in indices]
+            return instances
+
+    def retrieve_filled_cells(self, cells: np.ndarray) -> Sequence[Instance]:
+        """Returns instances stored in the requested cells.
+
+        Args:
+            cells (array-like ): Cells of the instances that want to retrieve.
+            Valid examples are:
+            -   archive.retrieve([0,11,5]) --> Get the instances in the cells 0, 11 and 5.
+
+        Raises:
+            ValueError: If the shape of the cells is not valid.
+
+        Returns:
+            Sequence[Instance]: Returns a collection of instances.
+        """
+
+        cells = np.asarray(cells)
+        if cells.ndim != 1:
+            raise ValueError(
+                f"Expected cells to be an 1d-array but it had shape {cells.shape}"
+            )
+        try:
+            instances = [self._storage[Keys.instances][idx] for idx in cells]
+        except Exception as exc:
+            raise RuntimeError(
+                f"requested an invalid cell in method retrieve_filled_cells. {exc}"
+            )
+
+        return instances
+
     def to_file(self, filename: str | Path = "CVTArchive_centroids.npy"):
         """Saves the centroids of the CVTArchive to .npy files
 
@@ -361,60 +429,3 @@ class CVTArchive(Archive):
             "centroids": self._centroids.tolist(),
             **super().to_dict(),
         }
-
-    def to_json(self, filename: Optional[str] = None) -> str:
-        """Returns the content of the CVTArchive in JSON format.
-
-        Returns:
-            str: String in JSON format with the content of the CVTArchive
-        """
-        json_data = json.dumps(self.to_dict(), indent=4)
-        if filename is not None:
-            filename = (
-                f"{filename}.json" if not filename.endswith(".json") else filename
-            )
-            with open(filename, "w") as f:
-                f.write(json_data)
-
-        return json_data
-
-    @staticmethod
-    def load_from_json(filename: str):
-        """Creates a CVTArchive object from the content of a previously created JSON file
-
-        Args:
-            filename (str): Filename of the JSON file with the CVTArchive information
-
-        Raises:
-            ValueError: If there's any error while loading the file. (IOError)
-            ValueError: If the JSON file does not contain all the expected keys
-
-        Returns:
-            Self: Returns a CVTArchive object
-        """
-        expected_keys = {
-            "dimensions",
-            "lbs",
-            "ubs",
-            "centroids",
-        }
-        try:
-            with open(filename, "r") as file:
-                json_data = json.load(file)
-                if expected_keys != json_data.keys():
-                    raise ValueError(
-                        f"The JSON file does not contain all the minimum expected keys. "
-                        f"Expected keys are {expected_keys} and got {json_data.keys()}"
-                    )
-                _ranges = [
-                    (l_i, u_i) for l_i, u_i in zip(json_data["lbs"], json_data["ubs"])
-                ]
-                new_archive = CVTArchive(
-                    dimensions=json_data["dimensions"],
-                    centroids=json_data["centroids"],
-                    ranges=_ranges,
-                )
-                return new_archive
-
-        except Exception as exc:
-            raise ValueError(f"Error opening file {filename}.") from exc

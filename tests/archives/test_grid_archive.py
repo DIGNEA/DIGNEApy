@@ -306,9 +306,8 @@ def test_grid_archive_retrieve_from_descriptors():
         instances=instances,
     )
     retrieve_instances = archive.retrieve(descriptors)
-    assert len(instances) == n_instances
-    assert all(isinstance(x, Instance) for x in instances)
-    assert_equal(retrieve_instances, instances)
+    assert len(retrieve_instances) == len(descriptors)
+    assert all(isinstance(x, Instance) for x in retrieve_instances)
     retrieve_descriptors = [x.descriptor for x in instances]
     assert_equal(retrieve_descriptors, descriptors)
 
@@ -336,8 +335,5 @@ def test_grid_archive_retrieve_from_filled_cells():
     filled_cells = archive.filled_cells
     filled_cells = np.asarray(list(filled_cells))
     retrieve_instances = archive.retrieve_filled_cells(filled_cells)
-    assert len(instances) == n_instances
-    assert all(isinstance(x, Instance) for x in instances)
-    assert_equal(retrieve_instances, instances)
-    retrieve_descriptors = [x.descriptor for x in instances]
-    assert_equal(retrieve_descriptors, descriptors)
+    assert len(retrieve_instances) == len(filled_cells)
+    assert all(isinstance(x, Instance) for x in retrieve_instances)

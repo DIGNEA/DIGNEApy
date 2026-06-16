@@ -107,7 +107,6 @@ ENV/
 gecco_env/
 scripts/
 site/
-*.npy
 *.keras
 *.pkl
 *.history

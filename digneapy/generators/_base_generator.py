@@ -14,7 +14,7 @@ from abc import ABC, abstractmethod
 from collections.abc import Sequence
 from dataclasses import dataclass, field
 from operator import attrgetter
-from typing import Mapping, Optional, Tuple
+from typing import Optional, Tuple
 
 import numpy as np
 import polars as pl
@@ -64,7 +64,7 @@ class GenerationResult:
     solvers: Sequence[str]
     instances: Archive | Sequence[Instance]
     history: Logbook
-    metrics: pl.DataFrame | Mapping = field(default_factory=pl.DataFrame)
+    metrics: pl.DataFrame = field(default_factory=pl.DataFrame)
 
     def __post_init__(self):
         """Compute descriptive statistics for the generated instances.
@@ -77,7 +77,8 @@ class GenerationResult:
         the public ``metrics`` field).
         """
         if len(self.instances) != 0:
-            self.metrics = Statistics()(instances=self.instances)
+            _metrics = Statistics()(instances=self.instances)
+            self.metrics = pl.DataFrame(_metrics)
         else:
             self._metrics = pl.Series()
 

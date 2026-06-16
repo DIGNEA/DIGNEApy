@@ -22,6 +22,7 @@ def save_results_to_files(
     filename_pattern: str,
     result: GenerationResult,
     variables_names: Optional[Sequence[str]] = None,
+    descriptor_names: Optional[Sequence[str]] = None,
     only_instances: bool = False,
     files_format: Literal["csv", "parquet"] = "parquet",
 ):
@@ -37,24 +38,24 @@ def save_results_to_files(
         print(f"Unrecognised file format: {files_format}. Selecting parquet.")
         files_format = "parquet"
 
-    lz = pl.concat(
+    df = pl.concat(
         [
             instance.to_df(
                 variables_names=variables_names,
+                descriptor_names=descriptor_names,
                 portfolio_names=result.solvers,
             )
             for instance in result.instances
         ],
         how="vertical_relaxed",
     )
-    height = lz.collect_schema().len()
-    if height > 0:
+    if df.height > 0:
         if files_format == "csv":
-            lz.sink_csv(
+            df.write_csv(
                 f"{filename_pattern}_instances.csv",
             )
         elif files_format == "parquet":
-            lz.sink_parquet(
+            df.write_parquet(
                 f"{filename_pattern}_instances.parquet", compression_level=22
             )
 

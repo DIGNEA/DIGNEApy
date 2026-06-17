@@ -86,10 +86,10 @@ def main():
     fitness = Evaluation(
         transformer=nn,
         domain=BPPDomain(
-            dimension=120,
-            min_i=20,
-            max_i=100,
-            max_capacity=150,
+            number_of_items=120,
+            minimum_weight=20,
+            maximum_weight=100,
+            maximum_capacity=150,
             capacity_approach="fixed",
         ),
         portfolios=[

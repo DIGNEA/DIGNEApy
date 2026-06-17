@@ -1,22 +1,23 @@
 #!/usr/bin/env python
 # -*-coding:utf-8 -*-
 """
-@File    :   novelty_search_knapsack.py
-@Time    :   2023/11/10 14:09:41
-@Author  :   Alejandro Marrero
+@File    :   single_rep_experiment_NS_knapsack_heuristics.py
+@Time    :   2026/06/17 13:11:58
+@Author  :   Alejandro Marrero (amarrerd@ull.edu.es)
 @Version :   1.0
 @Contact :   amarrerd@ull.edu.es
-@License :   (C)Copyright 2023, Alejandro Marrero
+@License :   (C)Copyright 2026, Alejandro Marrero
 @Desc    :   None
 """
 
 import argparse
 import concurrent.futures
 import itertools
+from typing import Sequence
 
 import numpy as np
 
-from digneapy import DescriptorKey, DescriptorPipeline, UnstructuredArchive
+from digneapy import DescriptorKey, DescriptorPipeline, Solver, UnstructuredArchive
 from digneapy.domains import KnapsackDomain
 from digneapy.generators import Evolutionary
 from digneapy.operators import UCX, BinarySelection, Generational, UMut
@@ -30,7 +31,7 @@ from digneapy.utils import save_results_to_files
 
 
 def generate_instances(
-    portfolio,
+    portfolio: Sequence[Solver],
     number_of_items: np.uint32,
     pop_size: np.uint32,
     generations: np.uint32,
@@ -40,7 +41,6 @@ def generate_instances(
     descriptor: DescriptorKey,
     seed: np.random.SeedSequence,
 ):
-
     # Seed here is the master seed for this job
     # We need to generate several need seeds for the
     # components of the experiment: domain, EA, operators, etc.
@@ -126,11 +126,26 @@ if __name__ == "__main__":
         help="Number of generations to perform.",
     )
     parser.add_argument(
-        "--seed",
+        "-r",
+        "--repetition",
         type=int,
-        default=13,
-        help="Seed for random number generation",
+        required=True,
+        help="Number of the ith repetition to run",
     )
+    parser.add_argument(
+        "-w",
+        "--workers",
+        type=int,
+        required=True,
+        help="Number of workers to launch at the same time.",
+    )
+    parser.add_argument(
+        "seed",
+        type=int,
+        default=None,
+        help="Master seed to generate others",
+    )
+
     args = parser.parse_args()
     descriptor = args.descriptor
     generations = args.generations
@@ -138,14 +153,24 @@ if __name__ == "__main__":
     archive_threshold = args.archive_threshold
     solution_set_threshold = args.solution_set_threshold
     number_of_items = args.n
-    k = args.k
+    k_neighbours = args.k
+    repetition = args.repetition
+    n_workers = args.workers
     master_seed = args.seed
-    portfolios = [
+
+    # The solvers are fixed to Knapsack Heuristics available
+    portfolios: list[list[Solver]] = [
         [default_kp, map_kp, miw_kp, mpw_kp],
         [map_kp, default_kp, miw_kp, mpw_kp],
         [miw_kp, default_kp, map_kp, mpw_kp],
         [mpw_kp, default_kp, map_kp, miw_kp],
     ]
+
+    # Combinations of solvers / repetitions to perform
+    # Here we only run one repetition for each porftolio
+    # Therefore we spawn only len(portfolios) seeds
+    master_seed = np.random.SeedSequence(entropy=[master_seed, repetition])
+    portfolio_seeds = master_seed.spawn(len(portfolios))
 
     features_names = (
         KnapsackDomain().features_names if descriptor == "features" else None
@@ -155,11 +180,12 @@ if __name__ == "__main__":
             (f"w_{i}", f"p_{i}") for i in range(number_of_items)
         ])
     )
-    max_workers = len(portfolios)
-    master_seed = np.random.SeedSequence(entropy=master_seed)
-    with concurrent.futures.ProcessPoolExecutor(max_workers=max_workers) as executor:
+    with concurrent.futures.ProcessPoolExecutor(max_workers=n_workers) as executor:
         futures = {}
-        for portfolio in portfolios:
+        for portfolio_idx, portfolio in enumerate(portfolios):
+            # Extract the seed for this portfolio
+
+            seed = portfolio_seeds[portfolio_idx]
             fut = executor.submit(
                 generate_instances,
                 portfolio=portfolio,
@@ -168,18 +194,19 @@ if __name__ == "__main__":
                 generations=generations,
                 archive_threshold=archive_threshold,
                 ss_threshold=solution_set_threshold,
-                k=k,
+                k=k_neighbours,
                 descriptor=descriptor,
-                seed=master_seed,
+                seed=seed,
             )
-            futures[fut] = portfolio[0].__name__
+            futures[fut] = (repetition, portfolio_idx)
+            print(f"Combination {portfolio[0].__name__}/{repetition} submitted.")
 
         for fut in concurrent.futures.as_completed(futures):
             try:
-                target = futures[fut]
+                repetition, portfolio_index = futures[fut]
                 result = fut.result()
                 save_results_to_files(
-                    f"novelty_search_{descriptor}_N_{number_of_items}_target_{target}_seed_{master_seed.entropy}",
+                    f"novelty_search_{descriptor}_N_{number_of_items}_target_{result.solvers[0]}_rep_{repetition}_master_seed_{master_seed.entropy}",
                     result=result,
                     variables_names=vars_names,
                     descriptor_names=features_names,

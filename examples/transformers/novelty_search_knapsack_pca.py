@@ -34,7 +34,7 @@ def generate_instances(
     k: int,
     verbose,
 ):
-    domain = KnapsackDomain(dimension=dimension, capacity_approach="percentage")
+    domain = KnapsackDomain(number_of_items=dimension, capacity_approach="percentage")
     eig = Evolutionary(
         pop_size=pop_size,
         generations=generations,

@@ -56,7 +56,7 @@ def repulsion_loss(y_true, y_pred, eps=1e-8):
     z = y_pred
     # pairwise squared distances (avoid zero diagonal)
     dist = (
-        torch.cdist(z, z, p=2) + torch.eye(len(z), device=z.device) * 1e9
+        torch.cdist(z, z, performance_bias=2) + torch.eye(len(z), device=z.device) * 1e9
     )  # large diag to ignore
 
     # Inverse distances to encourage points not to be too close (repel)

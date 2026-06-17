@@ -28,27 +28,30 @@ from digneapy.utils import save_results_to_files
 
 def generate_instances(
     portfolio,
-    dimension: int,
+    number_of_nodes: int,
     pop_size: int,
     generations: int,
     descriptor: DescriptorKey,
     seeds: list[np.random.SeedSequence],
     verbose: bool,
 ):
-    domain = TSPDomain(dimension=dimension)
+    domain = TSPDomain(number_of_nodes=number_of_nodes)
     seed = seeds[current_process()._identity[0]]
     # Create an empty archive with the previous centroids and samples
     ranges = []
     if descriptor == "features":
-        ranges = [(dimension * 2, dimension * 2), *[(0.0, 1_000) for _ in range(10)]]
+        ranges = [
+            (number_of_nodes * 2, number_of_nodes * 2),
+            *[(0.0, 1_000) for _ in range(10)],
+        ]
     elif descriptor == "performance":
         ranges = [(0.0, 1.0) for _ in range(len(portfolio))]
     else:  # case instance
-        ranges = [(0, 1_000) for _ in range(dimension * 2)]
+        ranges = [(0, 1_000) for _ in range(number_of_nodes * 2)]
     cvt_archive = CVTArchive(
-        k=1_000,
+        dimensions=len(ranges),
+        centroids=1_000,
         ranges=ranges,
-        n_samples=100_000,
         seed=seed,
     )
     map_elites = MapElites(
@@ -58,14 +61,13 @@ def generate_instances(
         pop_size=pop_size,
         mutation=BatchUMut(),
         generations=generations,
-        describe_pipe=DescriptorPipeline(descriptor),
+        descriptor_pipe=DescriptorPipeline(descriptor),
         repetitions=1,
         seed=seed,
     )
 
     result = map_elites(verbose=verbose)
-    if verbose:
-        print(f"Target: {result.target} completed.")
+
     return result
 
 
@@ -75,7 +77,7 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "-n",
-        "-number_of_items",
+        "-number_of_nodes",
         type=int,
         required=True,
         help="number of nodes.",
@@ -115,7 +117,7 @@ if __name__ == "__main__":
     descriptor = args.descriptor
     generations = args.generations
     population_size = args.population_size
-    dimension = args.n
+    number_of_nodes = args.n
     rep = args.repetition
     verbose = args.verbose
     portfolios = [
@@ -130,7 +132,7 @@ if __name__ == "__main__":
         results = pool.map(
             partial(
                 generate_instances,
-                dimension=dimension,
+                number_of_nodes=number_of_nodes,
                 pop_size=population_size,
                 generations=generations,
                 descriptor=descriptor,
@@ -143,18 +145,19 @@ if __name__ == "__main__":
     pool.close()
     pool.join()
     vars_names = list(
-        itertools.chain.from_iterable([(f"x_{i}", f"y_{i}") for i in range(dimension)])
+        itertools.chain.from_iterable([
+            (f"x_{i}", f"y_{i}") for i in range(number_of_nodes)
+        ])
     )
+    features_names = TSPDomain().features_names if descriptor == "features" else None
 
     for i, result in enumerate(results):
         solvers_names = [p.__name__ for p in portfolios[i]]
 
         save_results_to_files(
-            f"map_elites_cvt_{descriptor}_tsp_N_{dimension}_target_{result.target}_rep_{rep}",
-            result,
-            only_genotypes=True,
+            f"map_elites_cvt_{descriptor}_tsp_N_{number_of_nodes}_target_{result.target}_rep_{rep}",
+            result=result,
+            variables_names=vars_names,
+            descriptor_names=features_names,
             only_instances=True,
-            solvers_names=solvers_names,
-            vars_names=vars_names,
-            files_format="parquet",
         )

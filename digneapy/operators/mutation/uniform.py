@@ -63,7 +63,6 @@ class BatchUniformMutation(Mutation):
             ub (np.ndarray): Upper bound for each dimension
             seed (Optional[int  |  np.random.SeedSequence], optional): Seed for the random number generator. Defaults to None.
 
-
         Raises:
             ValueError: If the dimension of the individuals do not match the bounds
 
@@ -72,9 +71,11 @@ class BatchUniformMutation(Mutation):
         """
         dimension = len(population[0])
         n_individuals = len(population)
+
         if len(lb) != len(ub) or dimension != len(lb):
-            msg = f"The size of individuals ({dimension}) and bounds {len(lb)} is different in uniform_one_mutation"
+            msg = f"len of individuals ({dimension}) and bounds {len(lb)} differs in uniform_one_mutation"
             raise ValueError(msg)
+
         mutation_points = self._rng.integers(low=0, high=dimension, size=n_individuals)
         new_values = self._rng.uniform(
             low=lb[mutation_points], high=ub[mutation_points], size=n_individuals

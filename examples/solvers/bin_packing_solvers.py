@@ -51,7 +51,7 @@ def main(path: str):
     blank = " " * 80
     print(f"\r{blank}\r", end="")
     print(df.head())
-    df.to_csv("bpp_results.csv", index=False)
+    df.write_csv("bpp_results.csv")
     plt.figure(figsize=(12, 8))
     axes = sns.boxplot(data=df)
     axes.set_ylabel("Falkenauer Fitness")

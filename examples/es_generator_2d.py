@@ -42,8 +42,8 @@ def generate_instances(
         portfolio=portfolio,
         keep_only_feasible=False,
         archives=[
-            UnstructuredArchive(k=15, threshold=0.1),
-            UnstructuredArchive(k=1, threshold=0.01),
+            UnstructuredArchive(k=15, novelty_threshold=0.1),
+            UnstructuredArchive(k=1, novelty_threshold=0.01),
             GridArchive(
                 dimensions=(100,) * 2,
                 ranges=[(-30.0, 10.0), (-30.0, 10.0)],

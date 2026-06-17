@@ -26,7 +26,7 @@ from digneapy.utils import save_results_to_files
 
 def generate_instances(
     portfolio,
-    dimension: np.uint32,
+    number_of_items: np.uint32,
     pop_size: np.uint32,
     generations: np.uint32,
     k: np.uint32,
@@ -34,7 +34,9 @@ def generate_instances(
     seed: Optional[int | np.random.SeedSequence],
     verbose,
 ):
-    domain = KnapsackDomain(dimension, capacity_approach="evolved")
+    domain = KnapsackDomain(
+        number_of_items=number_of_items, capacity_approach="evolved"
+    )
     deig = Dominated(
         pop_size=pop_size,
         generations=generations,
@@ -102,7 +104,7 @@ if __name__ == "__main__":
     descriptor = args.descriptor
     generations = args.generations
     population_size = args.population_size
-    dimension = args.n
+    number_of_items = args.n
     k = args.k
     rep = args.repetition
     verbose = args.verbose
@@ -112,9 +114,13 @@ if __name__ == "__main__":
         [miw_kp, default_kp, map_kp, mpw_kp],
         [mpw_kp, default_kp, map_kp, miw_kp],
     ]
-    features_names = KnapsackDomain().feat_names if descriptor == "features" else None
+    features_names = (
+        KnapsackDomain().features_names if descriptor == "features" else None
+    )
     vars_names = ["Q"] + list(
-        itertools.chain.from_iterable([(f"w_{i}", f"p_{i}") for i in range(dimension)])
+        itertools.chain.from_iterable([
+            (f"w_{i}", f"p_{i}") for i in range(number_of_items)
+        ])
     )
 
     with concurrent.futures.ProcessPoolExecutor(max_workers=4) as executor:
@@ -124,7 +130,7 @@ if __name__ == "__main__":
                 executor.submit(
                     generate_instances,
                     portfolio=portfolio,
-                    dimension=dimension,
+                    number_of_items=number_of_items,
                     pop_size=population_size,
                     generations=generations,
                     k=k,
@@ -138,9 +144,11 @@ if __name__ == "__main__":
             try:
                 result = future.result()
                 save_results_to_files(
-                    f"dns_{descriptor}_N_{dimension}_target_{result.solvers[0]}_rep_{rep}",
-                    result,
+                    f"dns_{descriptor}_N_{number_of_items}_target_{result.solvers[0]}_rep_{rep}",
+                    result=result,
                     variables_names=vars_names,
+                    descriptor_names=features_names,
+                    only_instances=True,
                 )
             except Exception as exc:
                 print(f"Exception generated: {exc}")

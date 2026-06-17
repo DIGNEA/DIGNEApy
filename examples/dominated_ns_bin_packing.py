@@ -11,13 +11,13 @@
 """
 
 import argparse
+from collections.abc import Sequence
 from functools import partial
 from multiprocessing import Pool, current_process
 
 import numpy as np
 
-from digneapy import DescriptorPipeline
-from digneapy._core import DescriptorKey
+from digneapy import DescriptorKey, DescriptorPipeline, Solver
 from digneapy.domains import BPPDomain
 from digneapy.generators import Dominated
 from digneapy.solvers import best_fit, first_fit, next_fit, worst_fit
@@ -25,8 +25,8 @@ from digneapy.utils import save_results_to_files
 
 
 def generate_instances(
-    portfolio,
-    dimension: int,
+    portfolio: Sequence[Solver],
+    number_of_items: int,
     pop_size: int,
     generations: int,
     k: int,
@@ -37,10 +37,10 @@ def generate_instances(
     seed = seeds[current_process()._identity[0]]
 
     domain = BPPDomain(
-        dimension=dimension,
-        min_i=20,
-        max_i=100,
-        max_capacity=150,
+        number_of_items=number_of_items,
+        minimum_weight=20,
+        maximum_weight=100,
+        maximum_capacity=150,
         capacity_approach="fixed",
     )
     deig = Dominated(
@@ -49,15 +49,14 @@ def generate_instances(
         domain=domain,
         portfolio=portfolio,
         k=k,
-        mutrate=(1 / dimension),
+        mutrate=(1.0 / number_of_items),
         cxrate=0.8,
         repetitions=1,
         descriptor_pipe=DescriptorPipeline(descriptor),
         seed=seed,
     )
     result = deig(verbose=verbose)
-    if verbose:
-        print(f"Target: {result.target} completed.")
+
     return result
 
 
@@ -114,7 +113,7 @@ if __name__ == "__main__":
     descriptor = args.descriptor
     generations = args.generations
     population_size = args.population_size
-    dimension = args.n
+    number_of_items = args.n
     k = args.k
     rep = args.repetition
     verbose = args.verbose
@@ -130,7 +129,7 @@ if __name__ == "__main__":
         results = pool.map(
             partial(
                 generate_instances,
-                dimension=dimension,
+                number_of_items=number_of_items,
                 pop_size=population_size,
                 generations=generations,
                 k=k,
@@ -143,18 +142,16 @@ if __name__ == "__main__":
 
     pool.close()
     pool.join()
-    features_names = BPPDomain().feat_names if descriptor == "features" else None
-    vars_names = ["capacity", *[f"w_{i}" for i in range(dimension)]]
+    features_names = BPPDomain().features_names if descriptor == "features" else None
+    vars_names = ["capacity", *[f"w_{i}" for i in range(number_of_items)]]
 
     for i, result in enumerate(results):
         solvers_names = [p.__name__ for p in portfolios[i]]
 
         save_results_to_files(
-            f"dns_{descriptor}_N_{dimension}_target_{result.target}_rep_{rep}",
-            result,
+            f"dns_{descriptor}_N_{number_of_items}_target_{result.target}_rep_{rep}",
+            result=result,
+            variables_names=vars_names,
+            descriptor_names=features_names,
             only_instances=True,
-            only_genotypes=False,
-            solvers_names=solvers_names,
-            features_names=features_names,
-            vars_names=vars_names,
         )

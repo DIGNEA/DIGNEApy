@@ -28,7 +28,7 @@ from digneapy.utils import save_results_to_files
 
 def generate_instances(
     portfolio,
-    dimension: int,
+    number_of_nodes: int,
     pop_size: int,
     generations: int,
     archive_threshold: float,
@@ -39,14 +39,14 @@ def generate_instances(
     verbose,
 ):
     seed = seeds[current_process()._identity[0]]
-    domain = TSPDomain(dimension=dimension)
+    domain = TSPDomain(number_of_nodes=number_of_nodes)
     eig = Evolutionary(
         pop_size=pop_size,
         generations=generations,
         domain=domain,
         portfolio=portfolio,
-        archive=UnstructuredArchive(threshold=archive_threshold, k=k),
-        solution_set=UnstructuredArchive(threshold=ss_threshold, k=1),
+        archive=UnstructuredArchive(novelty_threshold=archive_threshold, k=k),
+        solution_set=UnstructuredArchive(novelty_threshold=ss_threshold, k=1),
         repetitions=1,
         descriptor_pipe=DescriptorPipeline(descriptor),
         seed=seed,
@@ -54,8 +54,7 @@ def generate_instances(
     )
 
     result = eig()
-    if verbose:
-        print(f"Target: {result.target} completed.")
+
     return result
 
 
@@ -65,7 +64,7 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "-n",
-        "-number_of_items",
+        "-number_of_nodes",
         type=int,
         required=True,
         help="number of nodes.",
@@ -127,7 +126,7 @@ if __name__ == "__main__":
     population_size = args.population_size
     archive_threshold = args.archive_threshold
     solution_set_threshold = args.solution_set_threshold
-    dimension = args.n
+    number_of_nodes = args.n
     k = args.k
     rep = args.repetition
     verbose = args.verbose
@@ -136,9 +135,7 @@ if __name__ == "__main__":
         [nneighbour, greedy, two_opt],
         [two_opt, greedy, nneighbour],
     ]
-    print(
-        f"Running with parameters:\ndimension={dimension}, k={k}, archive_threshold={archive_threshold}, solution_set_threshold={solution_set_threshold}, population_size={population_size}, generations={generations}, descriptor={descriptor}, verbose={verbose}"
-    )
+
     root_sequence = np.random.SeedSequence(1342)
     N_WORKERS = len(portfolios)
     workers_seeds = root_sequence.spawn(N_WORKERS + 1)
@@ -146,7 +143,7 @@ if __name__ == "__main__":
         results = pool.map(
             partial(
                 generate_instances,
-                dimension=dimension,
+                number_of_nodes=number_of_nodes,
                 pop_size=population_size,
                 generations=generations,
                 archive_threshold=archive_threshold,
@@ -161,18 +158,20 @@ if __name__ == "__main__":
 
     pool.close()
     pool.join()
-    features_names = TSPDomain().feat_names if descriptor == "features" else None
+    features_names = TSPDomain().features_names if descriptor == "features" else None
     vars_names = list(
-        itertools.chain.from_iterable([(f"x_{i}", f"y_{i}") for i in range(dimension)])
+        itertools.chain.from_iterable([
+            (f"x_{i}", f"y_{i}") for i in range(number_of_nodes)
+        ])
     )
 
     for i, result in enumerate(results):
         solvers_names = [p.__name__ for p in portfolios[i]]
 
         save_results_to_files(
-            f"ns_{descriptor}_N_{dimension}_target_{result.target}_rep_{rep}",
-            result,
-            solvers_names,
-            features_names,
-            vars_names,
+            f"ns_{descriptor}_N_{number_of_nodes}_target_{result.target}_rep_{rep}",
+            result=result,
+            variables_names=vars_names,
+            descriptor_names=features_names,
+            only_instances=True,
         )

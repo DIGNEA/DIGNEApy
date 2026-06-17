@@ -87,7 +87,7 @@ def generate_instances(
     ]
     nn.update_weights(best_weights)
 
-    domain = KnapsackDomain(dimension=dimension, capacity_approach="percentage")
+    domain = KnapsackDomain(number_of_items=dimension, capacity_approach="percentage")
     eig = Dominated(
         pop_size=pop_size,
         generations=generations,

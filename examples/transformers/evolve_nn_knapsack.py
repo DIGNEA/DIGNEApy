@@ -86,7 +86,7 @@ def main():
 
     fitness = Evaluation(
         transformer=nn,
-        domain=KnapsackDomain(dimension=50),
+        domain=KnapsackDomain(number_of_items=50),
         portfolios=[
             [default_kp, map_kp, miw_kp, mpw_kp],
             [map_kp, default_kp, miw_kp, mpw_kp],

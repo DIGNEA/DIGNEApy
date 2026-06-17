@@ -26,17 +26,19 @@ from digneapy.utils import save_results_to_files
 
 def generate_instances(
     portfolio,
-    dimension: int,
+    number_of_items: int,
     pop_size: int,
     generations: int,
     verbose,
 ):
     archive = GridArchive(
         dimensions=(10,) * 101,
-        ranges=[(0.0, 10000), *[(1.0, 1000) for _ in range(dimension * 2)]],
+        ranges=[(0.0, 10000), *[(1.0, 1000) for _ in range(number_of_items * 2)]],
     )
 
-    domain = KnapsackDomain(dimension=dimension, capacity_approach="evolved")
+    domain = KnapsackDomain(
+        number_of_items=number_of_items, capacity_approach="evolved"
+    )
     map_elites = MapElites(
         domain,
         portfolio=portfolio,
@@ -44,13 +46,12 @@ def generate_instances(
         pop_size=pop_size,
         mutation=BatchUMut(),
         generations=generations,
-        describe_pipe=DescriptorPipeline("instance"),
+        descriptor_pipe=DescriptorPipeline("instance"),
         repetitions=1,
     )
 
     result = map_elites(verbose=verbose)
-    if verbose:
-        print(f"Target: {result.target} completed.")
+
     return result
 
 
@@ -96,7 +97,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
     generations = args.generations
     population_size = args.population_size
-    dimension = args.n
+    number_of_items = args.n
     rep = args.repetition
     verbose = args.verbose
 
@@ -111,7 +112,7 @@ if __name__ == "__main__":
         results = pool.map(
             partial(
                 generate_instances,
-                dimension=dimension,
+                number_of_items=number_of_items,
                 pop_size=population_size,
                 generations=generations,
                 verbose=verbose,
@@ -122,16 +123,18 @@ if __name__ == "__main__":
     pool.close()
     pool.join()
     vars_names = ["Q"] + list(
-        itertools.chain.from_iterable([(f"w_{i}", f"p_{i}") for i in range(dimension)])
+        itertools.chain.from_iterable([
+            (f"w_{i}", f"p_{i}") for i in range(number_of_items)
+        ])
     )
 
     for i, result in enumerate(results):
         solvers_names = [p.__name__ for p in portfolios[i]]
 
         save_results_to_files(
-            f"mapelites_grid_N_{dimension}_target_{result.target}_rep_{rep}",
+            f"mapelites_grid_N_{number_of_items}_target_{result.target}_rep_{rep}",
             result=result,
-            solvers_names=solvers_names,
-            vars_names=vars_names,
-            features_names=None,
+            variables_names=vars_names,
+            descriptor_names=None,
+            only_instances=True,
         )

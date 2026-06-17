@@ -42,7 +42,7 @@ def generate_instances(
         pop_size=pop_size,
         mutation=BatchUMut(seed=32),
         generations=generations,
-        describe_pipe=DescriptorPipeline("instance"),
+        descriptor_pipe=DescriptorPipeline("instance"),
         repetitions=1,
     )
     plotted_map_elites = PlottedMapElites(map_elites)

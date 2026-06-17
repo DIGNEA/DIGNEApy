@@ -28,7 +28,7 @@ from digneapy.utils import save_results_to_files
 
 def generate_instances(
     portfolio: List,
-    dimension: int,
+    number_of_items: int,
     descriptor: DescriptorKey,
     generations: int = 1000,
     population_size: int = 128,
@@ -41,10 +41,10 @@ def generate_instances(
     seed = seeds[current_process()._identity[0]]
 
     domain = BPPDomain(
-        dimension=dimension,
-        min_i=20,
-        max_i=100,
-        max_capacity=150,
+        number_of_items=number_of_items,
+        minimum_weight=20,
+        maximum_weight=100,
+        maximum_capacity=150,
         capacity_approach="fixed",
     )
 
@@ -53,16 +53,15 @@ def generate_instances(
         generations=generations,
         domain=domain,
         portfolio=portfolio,
-        archive=UnstructuredArchive(threshold=archive_threshold, k=k),
-        solution_set=UnstructuredArchive(threshold=ss_threshold, k=1),
+        archive=UnstructuredArchive(novelty_threshold=archive_threshold, k=k),
+        solution_set=UnstructuredArchive(novelty_threshold=ss_threshold, k=1),
         repetitions=1,
         descriptor_pipe=DescriptorPipeline(descriptor),
         seed=seed,
         replacement=Generational(),
     )
     result = eig(verbose=verbose)
-    if verbose:
-        print(f"Target: {result.target} completed.")
+
     return result
 
 
@@ -138,7 +137,7 @@ if __name__ == "__main__":
     descriptor = args.descriptor
     generations = args.generations
     population_size = args.population_size
-    dimension = args.n
+    number_of_items = args.n
     k = args.k
     rep = args.repetition
     verbose = args.verbose
@@ -153,7 +152,7 @@ if __name__ == "__main__":
         results = pool.map(
             partial(
                 generate_instances,
-                dimension=dimension,
+                number_of_items=number_of_items,
                 descriptor=descriptor,
                 generations=generations,
                 population_size=population_size,
@@ -169,18 +168,16 @@ if __name__ == "__main__":
     pool.close()
     pool.join()
 
-    features_names = BPPDomain().feat_names if descriptor == "features" else None
-    vars_names = ["capacity", *[f"w_{i}" for i in range(dimension)]]
+    features_names = BPPDomain().features_names if descriptor == "features" else None
+    vars_names = ["capacity", *[f"w_{i}" for i in range(number_of_items)]]
     for i, result in enumerate(results):
         print(result)
         solvers_names = [p.__name__ for p in portfolios[i]]
 
         save_results_to_files(
-            f"ns_{descriptor}_bin_packing_N_{dimension}_target_{result.target}_rep_{rep}",
-            result,
+            f"ns_{descriptor}_bin_packing_N_{number_of_items}_target_{result.target}_rep_{rep}",
+            result=result,
+            variables_names=vars_names,
+            descriptor_names=features_names,
             only_instances=True,
-            only_genotypes=False,
-            solvers_names=solvers_names,
-            features_names=features_names,
-            vars_names=vars_names,
         )

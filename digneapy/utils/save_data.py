@@ -10,6 +10,7 @@
 @Desc    :   None
 """
 
+import warnings
 from collections.abc import Sequence
 from typing import Literal, Optional
 
@@ -31,35 +32,46 @@ def save_results_to_files(
         filename_pattern (str): Pattern for the filenames.
         result (GenResult): Result of the generation.
         variables_names (Sequence[str]): Names of the variables.
-        only_instances (bool): Generate only the files with the resulting instances. Default True. If False, it would generate an history and arhice_metrics files.
+        only_instances (bool): Generate only the files with the resulting instances.
+            Default True. If False, it would generate an history and arhice_metrics files.
         files_format (Literal[str] = "csv" or "parquet"): Format to store the resulting instances file. Parquet is the most efficient for large datasets.
     """
     if files_format not in ("csv", "parquet"):
-        print(f"Unrecognised file format: {files_format}. Selecting parquet.")
+        warnings.warn(
+            f"Unrecognised file format: {files_format}. Selecting parquet as fallback.",
+            category=RuntimeWarning,
+            stacklevel=2,
+        )
         files_format = "parquet"
+    if len(result.instances) != 0:
+        df = pl.concat(
+            [
+                instance.to_df(
+                    variables_names=variables_names,
+                    descriptor_names=descriptor_names,
+                    portfolio_names=result.solvers,
+                )
+                for instance in result.instances
+            ],
+            how="vertical_relaxed",
+        )
+        if df.height > 0:
+            if files_format == "csv":
+                df.write_csv(
+                    f"{filename_pattern}_instances.csv",
+                )
+            elif files_format == "parquet":
+                df.write_parquet(
+                    f"{filename_pattern}_instances.parquet", compression_level=22
+                )
 
-    df = pl.concat(
-        [
-            instance.to_df(
-                variables_names=variables_names,
-                descriptor_names=descriptor_names,
-                portfolio_names=result.solvers,
-            )
-            for instance in result.instances
-        ],
-        how="vertical_relaxed",
-    )
-    if df.height > 0:
-        if files_format == "csv":
-            df.write_csv(
-                f"{filename_pattern}_instances.csv",
-            )
-        elif files_format == "parquet":
-            df.write_parquet(
-                f"{filename_pattern}_instances.parquet", compression_level=22
-            )
-
-    if not only_instances:
-        result.history.to_df().write_csv(f"{filename_pattern}_history.csv")
-        if result.metrics is not None:
-            result.metrics.write_csv(f"{filename_pattern}_archive_metrics.csv")
+        if not only_instances:
+            result.history.to_df().write_csv(f"{filename_pattern}_history.csv")
+            if result.metrics is not None:
+                result.metrics.write_csv(f"{filename_pattern}_archive_metrics.csv")
+    else:
+        warnings.warn(
+            "Archive in Generation result is empty. Nothing to do in save_results_to_files.",
+            category=RuntimeWarning,
+            stacklevel=2,
+        )

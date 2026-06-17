@@ -19,27 +19,28 @@ from digneapy.utils import clock
 
 
 @clock
-def clocked_solving(solver, kp):
+def clocked_solving(solver: EA, kp: Knapsack):
     return solver(kp)
 
 
 def main():
-    N = 100
-    p = list(np.random.randint(1, 100 + 1, size=N, dtype=np.uint32))
-    w = list(np.random.randint(1, 100 + 1, size=N, dtype=np.uint32))
-    q = np.random.default_rng().integers(0, high=1_000, size=1, dtype=np.uint64)[0]
-    kp = Knapsack(profits=p, weights=w, capacity=q)
+    number_of_items = 100
+    rng = np.random.default_rng()
+    profits = rng.integers(low=1, high=1000, size=number_of_items, dtype=np.uint32)
+    weights = rng.integers(low=1, high=1000, size=number_of_items, dtype=np.uint32)
+    capacity = rng.integers(low=1, high=1e5, size=1, dtype=np.uint64)[0]
+    knapsack = Knapsack(profits=profits, weights=weights, capacity=capacity)
     solver = EA(
         direction=Direction.MAXIMISE,
-        dim=N,
+        dim=number_of_items,
         pop_size=32,
         cxpb=0.8,
-        mutpb=(1.0 / 100.0),
+        mutpb=(1.0 / number_of_items),
         generations=1000,
         min_g=0,
         max_g=1,
     )
-    _ = clocked_solving(solver, kp)
+    _ = clocked_solving(solver, knapsack)
 
 
 if __name__ == "__main__":

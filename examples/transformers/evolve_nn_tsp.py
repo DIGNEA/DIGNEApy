@@ -88,7 +88,7 @@ def main():
 
     fitness = Evaluation(
         transformer=nn,
-        domain=TSPDomain(dimension=50),
+        domain=TSPDomain(number_of_nodes=50),
         portfolios=[
             [greedy, nneighbour, two_opt],
             [nneighbour, greedy, two_opt],

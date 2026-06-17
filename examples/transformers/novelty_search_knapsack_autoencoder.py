@@ -34,7 +34,7 @@ def generate_instances(
     k: int,
     verbose,
 ):
-    domain = KnapsackDomain(dimension=dimension, capacity_approach="percentage")
+    domain = KnapsackDomain(number_of_items=dimension, capacity_approach="percentage")
     autoencoder = KPEncoder()
 
     eig = Evolutionary(
@@ -162,8 +162,8 @@ if __name__ == "__main__":
             features_names=None,
             vars_names=["Q"]
             + list(
-                itertools.chain.from_iterable(
-                    [(f"w_{i}", f"p_{i}") for i in range(dimension)]
-                )
+                itertools.chain.from_iterable([
+                    (f"w_{i}", f"p_{i}") for i in range(dimension)
+                ])
             ),
         )

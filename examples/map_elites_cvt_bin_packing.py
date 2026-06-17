@@ -26,7 +26,7 @@ from digneapy.utils import save_results_to_files
 
 def generate_instances(
     portfolio,
-    dimension: int,
+    number_of_items: int,
     pop_size: int,
     generations: int,
     descriptor: DescriptorKey,
@@ -35,10 +35,10 @@ def generate_instances(
 ):
     seed = seeds[current_process()._identity[0]]
     domain = BPPDomain(
-        dimension=dimension,
-        min_i=20,
-        max_i=100,
-        max_capacity=150,
+        number_of_items=number_of_items,
+        minimum_weight=20,
+        maximum_weight=100,
+        maximum_capacity=150,
         capacity_approach="fixed",
         seed=seed,
     )
@@ -55,14 +55,14 @@ def generate_instances(
     elif descriptor == "performance":
         ranges = [(0.0, 1.0) for _ in range(len(portfolio))]
     else:  # case instance
-        ranges = [(150, 150), *[(20, 100) for _ in range(dimension)]]
+        ranges = [(150, 150), *[(20, 100) for _ in range(number_of_items)]]
     # Create an empty archive with the previous centroids and samples
     # The genotype of the BPP is [capacity, w_i x N]
     # The ranges must be [150, (20, 100)]
     cvt_archive = CVTArchive(
-        k=1_000,
+        dimensions=len(ranges),
+        centroids=1_000,
         ranges=ranges,
-        n_samples=100_000,
     )
     map_elites = MapElites(
         domain,
@@ -71,13 +71,12 @@ def generate_instances(
         pop_size=pop_size,
         mutation=BatchUMut(),
         generations=generations,
-        describe_pipe=DescriptorPipeline(descriptor),
+        descriptor_pipe=DescriptorPipeline(descriptor),
         repetitions=1,
         seed=seed,
     )
     result = map_elites(verbose=verbose)
-    if verbose:
-        print(f"Target: {result.target} completed.")
+
     return result
 
 
@@ -131,7 +130,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
     generations = args.generations
     population_size = args.population_size
-    dimension = args.n
+    number_of_items = args.n
     rep = args.repetition
     descriptor = args.descriptor
     verbose = args.verbose
@@ -150,7 +149,7 @@ if __name__ == "__main__":
         results = pool.map(
             partial(
                 generate_instances,
-                dimension=dimension,
+                number_of_items=number_of_items,
                 pop_size=population_size,
                 generations=generations,
                 descriptor=descriptor,
@@ -162,15 +161,13 @@ if __name__ == "__main__":
 
     pool.close()
     pool.join()
+    features_names = BPPDomain().features_names if descriptor == "features" else None
+    vars_names = ["capacity", *[f"w_{i}" for i in range(number_of_items)]]
     for i, result in enumerate(results):
-        solvers_names = [p.__name__ for p in portfolios[i]]
-
         save_results_to_files(
-            f"map_elites_cvt_{descriptor}_bin_packing_N_{dimension}_target_{result.target}_rep_{rep}",
-            result,
-            only_genotypes=True,
+            f"map_elites_cvt_{descriptor}_bin_packing_N_{number_of_items}_target_{result.target}_rep_{rep}",
+            result=result,
+            variables_names=vars_names,
+            descriptor_names=features_names,
             only_instances=True,
-            solvers_names=solvers_names,
-            files_format="parquet",
-            vars_names=["capacity", *[f"w_{i}" for i in range(dimension)]],
         )

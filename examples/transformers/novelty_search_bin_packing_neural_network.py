@@ -50,10 +50,10 @@ def generate_instances(
     nn.update_weights(best_weights)
 
     domain = BPPDomain(
-        dimension=dimension,
-        min_i=20,
-        max_i=100,
-        max_capacity=150,
+        number_of_items=dimension,
+        minimum_weight=20,
+        maximum_weight=100,
+        maximum_capacity=150,
         capacity_approach="fixed",
     )
     eig = Evolutionary(

@@ -43,7 +43,7 @@ def generate_instances(
     )
     best_weights = np.load(Path(__file__).with_name("tsp_NN_weights_N_50_2D_best.npy"))
     nn.update_weights(best_weights)
-    domain = TSPDomain(dimension=dimension)
+    domain = TSPDomain(number_of_nodes=dimension)
     eig = Dominated(
         pop_size=pop_size,
         generations=generations,

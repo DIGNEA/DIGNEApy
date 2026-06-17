@@ -231,7 +231,7 @@ def test_evolutionary_generator_can_generate_instances(
     generations = 64
     neighbours = 3
     threshold = 0.5
-    portfolio = [default_kp, map_kp, miw_kp, mpw_kp]
+    portfolio = [map_kp, miw_kp, default_kp]
     domain = KnapsackDomain(number_of_items=number_of_items)
 
     descriptor_pipeline = DescriptorPipeline(descriptor)
@@ -273,7 +273,7 @@ def test_evolutionary_generator_can_generate_instances_with_solution_set(
     generations = 100
     neighbours = 3
     threshold = 0.5
-    portfolio = [mpw_kp, map_kp, miw_kp, default_kp]
+    portfolio = [map_kp, miw_kp, default_kp]
     descriptor_pipeline = DescriptorPipeline(descriptor)
     domain = KnapsackDomain(number_of_items=number_of_items)
     generator = Evolutionary(

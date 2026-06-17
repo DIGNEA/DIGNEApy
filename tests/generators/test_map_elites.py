@@ -15,30 +15,18 @@ from pathlib import Path
 import pytest
 
 from digneapy import CVTArchive, DescriptorPipeline, GridArchive, Instance
-from digneapy.domains import BPPDomain, KnapsackDomain, TSPDomain
+from digneapy.domains import KnapsackDomain
 from digneapy.generators import (
     MapElites,
 )
 from digneapy.operators import BatchUMut
 from digneapy.solvers import (
-    best_fit,
     default_kp,
-    first_fit,
-    greedy,
     map_kp,
     miw_kp,
     mpw_kp,
-    next_fit,
-    nneighbour,
-    worst_fit,
 )
 from digneapy.visualize import map_elites_evolution_plot
-
-DOMAIN_CONTEXT = [
-    (KnapsackDomain, [default_kp, map_kp, miw_kp, mpw_kp], 8),
-    (BPPDomain, [best_fit, first_fit, worst_fit, next_fit], 10),
-    (TSPDomain, [nneighbour, greedy], 11),
-]
 
 
 @pytest.mark.parametrize("descriptor", ("features", "performance"))
@@ -132,7 +120,7 @@ def test_map_elites_generator_can_generate_with_grid_archive(descriptor):
     repetitions = 1
     generations = 100
     resolution = 2
-    portfolio = [default_kp, map_kp, miw_kp, mpw_kp]
+    portfolio = [map_kp, miw_kp, default_kp]
 
     descriptor_dim = 0
     if descriptor == "features":
@@ -194,7 +182,7 @@ def test_map_elites_generator_can_generate_with_cvt_archive(descriptor):
     generations = 100
     n_centroids = 100
 
-    portfolio = [default_kp, map_kp, miw_kp, mpw_kp]
+    portfolio = [map_kp, miw_kp, default_kp]
     ranges = build_knapsack_archive_ranges(
         number_of_items=number_of_items, descriptor=descriptor
     )

@@ -184,7 +184,7 @@ def test_map_elites_generator_can_generate_with_cvt_archive(descriptor):
 
     portfolio = [map_kp, miw_kp, default_kp]
     ranges = build_knapsack_archive_ranges(
-        number_of_items=number_of_items, descriptor=descriptor
+        number_of_items=number_of_items, descriptor=descriptor, n_solvers=len(portfolio)
     )
     descriptor_dim = 0
     if descriptor == "features":

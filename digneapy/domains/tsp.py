@@ -425,7 +425,7 @@ class TSPDomain(Domain):
     generated instances and for converting raw instance data back into
     ``TSP`` problem objects ready for a solver.
 
-    Each generated ``Instance`` contains ``2 * dimension`` variables arranged as
+    Each generated ``Instance`` contains ``2 * number_of_nodes`` variables arranged as
     interleaved x/y coordinates: ``x_0, y_0, x_1, y_1, …, x_{N-1}, y_{N-1}``.
 
     The eleven descriptive features extracted by this domain are:
@@ -433,7 +433,7 @@ class TSPDomain(Domain):
     +-----+----------------------+-----------------------------------------------+
     | #   | Name                 | Description                                   |
     +=====+======================+===============================================+
-    | 0   | size                 | Number of cities (always equals ``dimension``)|
+    | 0   | size                 | Number of cities (eq. ``number_of_nodes * 2``)|
     +-----+----------------------+-----------------------------------------------+
     | 1   | std_distances        | Standard deviation of all pairwise distances  |
     +-----+----------------------+-----------------------------------------------+
@@ -515,11 +515,11 @@ class TSPDomain(Domain):
         self._y_range = y_range
         _bounds = [
             (x_min, x_max) if i % 2 == 0 else (y_min, y_max)
-            for i in range(number_of_nodes)
+            for i in range(number_of_nodes * 2)
         ]
 
         super().__init__(
-            dimension=number_of_nodes,
+            dimension=number_of_nodes * 2,
             bounds=_bounds,
             domain_name="TSP",
             features_names=self.features_names,
@@ -541,16 +541,16 @@ class TSPDomain(Domain):
             List[Instance]: A list of ``n`` ``Instance`` objects, each encoding the
                 coordinates of ``dimension`` cities.
         """
-        instances = np.empty(shape=(n, self.dimension * 2), dtype=np.float64)
+        instances = np.empty(shape=(n, self.dimension), dtype=np.float64)
         instances[:, 0::2] = self._rng.uniform(
             low=self._x_range[0],
             high=self._x_range[1],
-            size=(n, (self.dimension)),
+            size=(n, (self.dimension // 2)),
         )
         instances[:, 1::2] = self._rng.uniform(
             low=self._y_range[0],
             high=self._y_range[1],
-            size=(n, (self.dimension)),
+            size=(n, (self.dimension // 2)),
         )
         return list(Instance(coords) for coords in instances)
 

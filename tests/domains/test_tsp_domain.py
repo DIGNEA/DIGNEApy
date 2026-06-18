@@ -426,9 +426,10 @@ def test_tsp_problem_evaluates_with_sequence():
 def test_tsp_domain_attrs():
     number_of_nodes = 100
     domain = TSPDomain(number_of_nodes)
+    expected_dimension = number_of_nodes * 2
 
-    assert len(domain) == number_of_nodes
-    assert domain.bounds == [(0, 1000) for _ in range(number_of_nodes)]
+    assert len(domain) == expected_dimension
+    assert domain.bounds == [(0, 1000) for _ in range(expected_dimension)]
 
 
 def test_tsp_domain_raises_negative_non():

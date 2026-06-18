@@ -108,6 +108,7 @@ dev = [
     "sphinx-toolbox>=4.1.2",
     "sphinx-codeautolink>=0.18.1",
     "myst-parser>=5.0.0",
+    "pytest-benchmark>=5.2.3",
 ]
 
 [tool.cibuildwheel]

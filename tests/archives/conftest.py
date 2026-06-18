@@ -58,10 +58,3 @@ def population_with_custom_descriptors(
         )
         for i in range(n_instances)
     ]
-
-
-ARCHIVE_NAMES = [
-    "UnstructuredArchive",
-    "GridArchive",
-    "CVTArchive",
-]

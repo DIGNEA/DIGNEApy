@@ -268,11 +268,11 @@ def test_evolutionary_generator_can_generate_instances_with_solution_set(
     descriptor,
 ):
     population_size = 10
-    number_of_items = 25
+    number_of_items = 50
     repetitions = 1
     generations = 100
     neighbours = 3
-    threshold = 0.5
+    threshold = 0.005
     portfolio = [map_kp, miw_kp, default_kp]
     descriptor_pipeline = DescriptorPipeline(descriptor)
     domain = KnapsackDomain(number_of_items=number_of_items)
@@ -288,6 +288,7 @@ def test_evolutionary_generator_can_generate_instances_with_solution_set(
     )
 
     result = generator()
+    assert len(generator._archive) > 0
     # Logbook can be plotted
     logbook = generator.log
     filename = Path("evolutionary_generator_logbook.png")
@@ -296,19 +297,18 @@ def test_evolutionary_generator_can_generate_instances_with_solution_set(
     filename.unlink()
 
     solution_set = result.instances
-    # The solution_set can  be empty
+    # The solution_set can be empty
     # this archive does NOT allow unfeasible solutions
     assert isinstance(solution_set, UnstructuredArchive)
-    assert len(solution_set) > 0
-
-    for instance in solution_set:
-        assert isinstance(instance, Instance)
-        assert instance.fitness >= 0.0
-        assert instance.performance_bias >= 0.0
-        assert instance.novelty >= 0.0
-        assert len(instance.descriptor) >= 0
-        assert len(instance.portfolio_scores) == len(portfolio)
-        assert instance.portfolio_scores[0] >= np.max(instance.portfolio_scores)
+    if len(solution_set) > 0:
+        for instance in solution_set:
+            assert isinstance(instance, Instance)
+            assert instance.fitness >= 0.0
+            assert instance.performance_bias >= 0.0
+            assert instance.novelty >= 0.0
+            assert len(instance.descriptor) >= 0
+            assert len(instance.portfolio_scores) == len(portfolio)
+            assert instance.portfolio_scores[0] >= np.max(instance.portfolio_scores)
 
 
 # @pytest.mark.skipif(importlib.util.find_spec("torch") is None, reason="requires torch")

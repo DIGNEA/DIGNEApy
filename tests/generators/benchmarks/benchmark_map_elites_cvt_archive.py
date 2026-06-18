@@ -19,13 +19,16 @@ from digneapy.generators import (
 )
 from digneapy.operators import BatchUMut
 from digneapy.solvers import (
+    best_fit,
     default_kp,
+    first_fit,
     greedy,
     map_kp,
     miw_kp,
     mpw_kp,
+    next_fit,
     nneighbour,
-    two_opt,
+    worst_fit,
 )
 
 
@@ -69,7 +72,7 @@ def benchmark_map_elites_domain_cvt_for_knapsack(descriptor, benchmark):
         ranges = build_ranges(KnapsackDomain, descriptor, number_of_items, 4)
         archive = CVTArchive(dimensions=len(ranges), centroids=1000, ranges=ranges)
         domain = KnapsackDomain(number_of_items=number_of_items)
-        portfolio = [default_kp, map_kp, miw_kp, mpw_kp]
+        portfolio = [map_kp, default_kp, miw_kp, mpw_kp]
         map_elites = MapElites(
             domain,
             portfolio=portfolio,
@@ -94,10 +97,10 @@ def benchmark_map_elites_domain_cvt_for_tsp(descriptor, benchmark):
         number_of_nodes = 50
         generations = 1000
         pop_size = 32
-        ranges = build_ranges(KnapsackDomain, descriptor, number_of_nodes, 4)
+        ranges = build_ranges(TSPDomain, descriptor, number_of_nodes, 2)
         archive = CVTArchive(dimensions=len(ranges), centroids=1000, ranges=ranges)
         domain = TSPDomain(number_of_nodes=number_of_nodes)
-        portfolio = [two_opt, nneighbour, greedy]
+        portfolio = [nneighbour, greedy]
         map_elites = MapElites(
             domain,
             portfolio=portfolio,
@@ -122,10 +125,10 @@ def benchmark_map_elites_domain_cvt_for_bin_packing(descriptor, benchmark):
         number_of_items = 120
         generations = 1000
         pop_size = 32
-        ranges = build_ranges(KnapsackDomain, descriptor, number_of_items, 4)
+        ranges = build_ranges(BPPDomain, descriptor, number_of_items, 4)
         archive = CVTArchive(dimensions=len(ranges), centroids=1000, ranges=ranges)
         domain = BPPDomain(number_of_items=number_of_items)
-        portfolio = [two_opt, nneighbour, greedy]
+        portfolio = [best_fit, first_fit, worst_fit, next_fit]
         map_elites = MapElites(
             domain,
             portfolio=portfolio,

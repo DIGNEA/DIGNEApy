@@ -19,13 +19,16 @@ from digneapy.generators import (
 )
 from digneapy.operators import BatchUMut
 from digneapy.solvers import (
+    best_fit,
     default_kp,
+    first_fit,
     greedy,
     map_kp,
     miw_kp,
     mpw_kp,
+    next_fit,
     nneighbour,
-    two_opt,
+    worst_fit,
 )
 
 
@@ -36,7 +39,7 @@ def benchmark_map_elites_with_grid_archive_for_knapsack(descriptor, benchmark):
         descriptor_pipeline = DescriptorPipeline(descriptor)
         number_of_items = 50
         generations = 1000
-        portfolio = [default_kp, map_kp, miw_kp, mpw_kp]
+        portfolio = [map_kp, default_kp, miw_kp, mpw_kp]
 
         desc_dimension = 8 if descriptor == "features" else len(portfolio)
         archive = GridArchive(
@@ -68,7 +71,7 @@ def benchmark_map_elites_with_grid_archive_for_tsp(descriptor, benchmark):
         descriptor_pipeline = DescriptorPipeline(descriptor)
         number_of_nodes = 50
         generations = 1000
-        portfolio = [two_opt, nneighbour, greedy]
+        portfolio = [nneighbour, greedy]
 
         desc_dimension = 11 if descriptor == "features" else len(portfolio)
         archive = GridArchive(
@@ -100,7 +103,7 @@ def benchmark_map_elites_with_grid_archive_for_bin_packing(descriptor, benchmark
         descriptor_pipeline = DescriptorPipeline(descriptor)
         number_of_items = 120
         generations = 1000
-        portfolio = [two_opt, nneighbour, greedy]
+        portfolio = [best_fit, first_fit, worst_fit, next_fit]
 
         desc_dimension = 10 if descriptor == "features" else len(portfolio)
         archive = GridArchive(

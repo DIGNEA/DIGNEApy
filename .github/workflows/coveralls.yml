@@ -35,4 +35,4 @@ jobs:
                   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
               run: |
                   uv run coverage run --source=digneapy -m pytest tests/
-                  coveralls --service=github
+                  uv run coveralls --service=github

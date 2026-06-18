@@ -10,6 +10,7 @@
 @Desc    :   None
 """
 
+import platform
 from pathlib import Path
 
 import numpy as np
@@ -315,6 +316,9 @@ def test_tsp_problem_evaluates_correct_solution_saved_as_1d_or_2d():
     assert_equal((cycled_2d, duplicated_2d), (0, 0))
 
 
+@pytest.mark.skipif(
+    platform.system() == "Darwin", reason="Test not supported on macOS runners"
+)
 def test_tsp_problem_evaluates_correct_solution_large_to_fit():
     number_of_nodes = 100_000
     low = 0.0

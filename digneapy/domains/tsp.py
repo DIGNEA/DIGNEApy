@@ -16,8 +16,9 @@ from pathlib import Path
 from typing import Dict, List, Optional, Self, Tuple
 
 import numpy as np
+from scipy.sparse import csr_matrix
+from scipy.sparse.csgraph import connected_components
 from scipy.spatial.distance import cdist
-from sklearn.cluster import DBSCAN
 
 from digneapy._core import Domain, Instance, Problem, Solution
 
@@ -689,22 +690,32 @@ class TSPDomain(Domain):
 
         for i in range(n_instances_batch):
             scale = np.mean(np.std(coords[i], axis=0))
-            dbscan = DBSCAN(eps=0.2 * scale, min_samples=1)
-            labels = dbscan.fit_predict(coords[i])
-            unique_labels = [label for label in set(labels) if label != -1]
-            cluster_ratio[i] = len(unique_labels) / n_nodes
-            # Cluster radius
-            cluster_radius = np.empty(shape=len(unique_labels), dtype=np.float64)
-            for j, label_id in enumerate(unique_labels):
-                points_in_cluster = coords[i][labels == label_id]
-                cluster_centroid = np.mean(points_in_cluster, axis=0)
-                cluster_radius[j] = np.mean(
-                    np.linalg.norm(points_in_cluster - cluster_centroid, axis=1)
-                )
-
-            mean_cluster_radius[i] = (
-                np.mean(cluster_radius) if cluster_radius.size > 0 else 0.0
+            eps = 0.2 * scale
+            adjacent = distances[i] <= eps
+            n_components, labels = connected_components(
+                csr_matrix(adjacent), directed=False
             )
+            cluster_ratio[i] = n_components / n_nodes
+
+            counts = np.bincount(labels, minlength=n_components)
+            cluster_centroids = np.zeros((n_components, 2))
+            for dimension in range(2):
+                cluster_centroids[:, dimension] = (
+                    np.bincount(
+                        labels, weights=coords[i][:, dimension], minlength=n_components
+                    )
+                    / counts
+                )
+            distances_to_centroid = np.linalg.norm(
+                coords[i] - cluster_centroids[labels], axis=1
+            )
+            radii = (
+                np.bincount(
+                    labels, weights=distances_to_centroid, minlength=n_components
+                )
+                / counts
+            )
+            mean_cluster_radius[i] = np.mean(radii) if radii.size > 0 else 0.0
 
         return np.column_stack([
             np.full(shape=len(_instances), fill_value=n_nodes),

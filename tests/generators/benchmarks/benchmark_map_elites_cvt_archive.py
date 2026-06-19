@@ -66,8 +66,8 @@ def build_ranges(domain_cls, descriptor, dimension, n_solvers: int):
 @pytest.mark.parametrize("descriptor", ("features", "performance", "instance"))
 def benchmark_map_elites_domain_cvt_for_knapsack(descriptor, benchmark):
     def setup():
-        number_of_items = 100
-        generations = 1000
+        number_of_items = 50
+        generations = 100
         pop_size = 32
         ranges = build_ranges(KnapsackDomain, descriptor, number_of_items, 4)
         archive = CVTArchive(dimensions=len(ranges), centroids=1000, ranges=ranges)
@@ -83,7 +83,7 @@ def benchmark_map_elites_domain_cvt_for_knapsack(descriptor, benchmark):
             descriptor_pipe=DescriptorPipeline(key=descriptor),
             repetitions=1,
         )
-        return map_elites()
+        return (map_elites,), {}
 
     def generate_for_knapsack(generator):
         result = generator()
@@ -95,7 +95,7 @@ def benchmark_map_elites_domain_cvt_for_knapsack(descriptor, benchmark):
 def benchmark_map_elites_domain_cvt_for_tsp(descriptor, benchmark):
     def setup():
         number_of_nodes = 50
-        generations = 1000
+        generations = 100
         pop_size = 32
         ranges = build_ranges(TSPDomain, descriptor, number_of_nodes, 2)
         archive = CVTArchive(dimensions=len(ranges), centroids=1000, ranges=ranges)
@@ -111,7 +111,7 @@ def benchmark_map_elites_domain_cvt_for_tsp(descriptor, benchmark):
             descriptor_pipe=DescriptorPipeline(key=descriptor),
             repetitions=1,
         )
-        return map_elites()
+        return (map_elites,), {}
 
     def generate_for_tsp(generator):
         result = generator()
@@ -122,8 +122,8 @@ def benchmark_map_elites_domain_cvt_for_tsp(descriptor, benchmark):
 @pytest.mark.parametrize("descriptor", ("features", "performance", "instance"))
 def benchmark_map_elites_domain_cvt_for_bin_packing(descriptor, benchmark):
     def setup():
-        number_of_items = 120
-        generations = 1000
+        number_of_items = 50
+        generations = 100
         pop_size = 32
         ranges = build_ranges(BPPDomain, descriptor, number_of_items, 4)
         archive = CVTArchive(dimensions=len(ranges), centroids=1000, ranges=ranges)
@@ -139,7 +139,7 @@ def benchmark_map_elites_domain_cvt_for_bin_packing(descriptor, benchmark):
             descriptor_pipe=DescriptorPipeline(key=descriptor),
             repetitions=1,
         )
-        return map_elites()
+        return (map_elites,), {}
 
     def generate_for_bin_packing(generator):
         result = generator()

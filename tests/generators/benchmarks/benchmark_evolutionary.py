@@ -15,7 +15,7 @@ import pytest
 from digneapy import DescriptorPipeline
 from digneapy.archives import UnstructuredArchive
 from digneapy.domains import BPPDomain, KnapsackDomain, TSPDomain
-from digneapy.generators import BaseGenerator, Evolutionary
+from digneapy.generators import Evolutionary
 from digneapy.operators import (
     OPCX,
     UCX,
@@ -45,11 +45,11 @@ from digneapy.solvers import (
 def benchmark_evolutionary_generator_for_knapsack(
     descriptor, crossover, replacement, benchmark
 ):
-    def setup() -> BaseGenerator:
+    def setup():
         population_size = 32
-        number_of_items = 100
+        number_of_items = 50
         repetitions = 1
-        generations = 1000
+        generations = 100
         neighbours = 3
         threshold = 0.05
 
@@ -71,7 +71,7 @@ def benchmark_evolutionary_generator_for_knapsack(
             selection=selection,
             replacement=replacement(),
         )
-        return generator
+        return (generator,), {}
 
     def generate_for_knapsack(generator):
         result = generator()
@@ -82,11 +82,11 @@ def benchmark_evolutionary_generator_for_knapsack(
 
 @pytest.mark.parametrize("descriptor", ("features", "performance", "instance"))
 def benchmark_evolutionary_generator_for_tsp(descriptor, benchmark):
-    def setup() -> BaseGenerator:
+    def setup():
         population_size = 32
         number_of_nodes = 50
         repetitions = 1
-        generations = 1000
+        generations = 100
         neighbours = 3
         threshold = 0.05
 
@@ -108,7 +108,7 @@ def benchmark_evolutionary_generator_for_tsp(descriptor, benchmark):
             selection=selection,
             replacement=Generational(),
         )
-        return generator
+        return (generator,), {}
 
     def generate_for_tsp(generator):
         result = generator()
@@ -120,11 +120,11 @@ def benchmark_evolutionary_generator_for_tsp(descriptor, benchmark):
 @pytest.mark.parametrize("descriptor", ("features", "performance", "instance"))
 @pytest.mark.parametrize("crossover", (UCX, OPCX))
 def benchmark_evolutionary_generator_for_bin_packing(descriptor, crossover, benchmark):
-    def setup() -> BaseGenerator:
+    def setup():
         population_size = 32
-        number_of_items = 120
+        number_of_items = 50
         repetitions = 1
-        generations = 1000
+        generations = 100
         neighbours = 3
         threshold = 0.05
 
@@ -146,7 +146,7 @@ def benchmark_evolutionary_generator_for_bin_packing(descriptor, crossover, benc
             selection=selection,
             replacement=Generational(),
         )
-        return generator
+        return (generator,), {}
 
     def generate_for_bin_packing(generator):
         result = generator()

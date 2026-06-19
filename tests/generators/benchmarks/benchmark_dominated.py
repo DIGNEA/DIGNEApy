@@ -41,9 +41,9 @@ def benchmark_dominated_generator_knapsack(descriptor, cx_cls, benchmark):
     def setup():
         pop_size = 32
         k = 3
-        number_of_items = 100
+        number_of_items = 50
         domain = KnapsackDomain(number_of_items=number_of_items)
-        generations = 1000
+        generations = 100
         selection = BinarySelection()
         mutation = UMut()
         crossover = cx_cls()
@@ -80,9 +80,9 @@ def benchmark_dominated_generator_bin_packing(descriptor, cx_cls, benchmark):
     def setup():
         pop_size = 32
         k = 3
-        number_of_items = 120
+        number_of_items = 50
         domain = BPPDomain(number_of_items=number_of_items)
-        generations = 1000
+        generations = 100
         selection = BinarySelection()
         mutation = UMut()
         crossover = cx_cls()
@@ -121,7 +121,7 @@ def benchmark_dominated_generator_tsp(descriptor, cx_cls, benchmark):
         k = 3
         number_of_nodes = 50
         domain = TSPDomain(number_of_nodes=number_of_nodes)
-        generations = 1000
+        generations = 100
         selection = BinarySelection()
         mutation = UMut()
         crossover = cx_cls()

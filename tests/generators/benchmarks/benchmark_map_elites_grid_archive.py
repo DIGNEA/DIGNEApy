@@ -38,7 +38,7 @@ def benchmark_map_elites_with_grid_archive_for_knapsack(descriptor, benchmark):
         pop_size = 32
         descriptor_pipeline = DescriptorPipeline(descriptor)
         number_of_items = 50
-        generations = 1000
+        generations = 100
         portfolio = [map_kp, default_kp, miw_kp, mpw_kp]
 
         desc_dimension = 8 if descriptor == "features" else len(portfolio)
@@ -56,7 +56,7 @@ def benchmark_map_elites_with_grid_archive_for_knapsack(descriptor, benchmark):
             descriptor_pipe=descriptor_pipeline,
             repetitions=1,
         )
-        return map_elites
+        return (map_elites,), {}
 
     def generate_for_knapsack(generator):
         _ = generator()
@@ -70,7 +70,7 @@ def benchmark_map_elites_with_grid_archive_for_tsp(descriptor, benchmark):
         pop_size = 32
         descriptor_pipeline = DescriptorPipeline(descriptor)
         number_of_nodes = 50
-        generations = 1000
+        generations = 100
         portfolio = [nneighbour, greedy]
 
         desc_dimension = 11 if descriptor == "features" else len(portfolio)
@@ -88,7 +88,7 @@ def benchmark_map_elites_with_grid_archive_for_tsp(descriptor, benchmark):
             descriptor_pipe=descriptor_pipeline,
             repetitions=1,
         )
-        return map_elites
+        return (map_elites,), {}
 
     def generate_for_tsp(generator):
         _ = generator()
@@ -101,8 +101,8 @@ def benchmark_map_elites_with_grid_archive_for_bin_packing(descriptor, benchmark
     def setup():
         pop_size = 32
         descriptor_pipeline = DescriptorPipeline(descriptor)
-        number_of_items = 120
-        generations = 1000
+        number_of_items = 50
+        generations = 100
         portfolio = [best_fit, first_fit, worst_fit, next_fit]
 
         desc_dimension = 10 if descriptor == "features" else len(portfolio)
@@ -120,7 +120,7 @@ def benchmark_map_elites_with_grid_archive_for_bin_packing(descriptor, benchmark
             descriptor_pipe=descriptor_pipeline,
             repetitions=1,
         )
-        return map_elites
+        return (map_elites,), {}
 
     def generate_for_bin_packing(generator):
         _ = generator()

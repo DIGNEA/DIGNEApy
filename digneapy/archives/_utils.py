@@ -12,7 +12,7 @@
 
 from collections.abc import Sequence
 
-from digneapy._core import Instance
+from digneapy.core import Instance
 
 
 def check_valid_instance_batch(instances: Sequence[Instance]) -> bool:

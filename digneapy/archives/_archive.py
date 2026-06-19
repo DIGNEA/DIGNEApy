@@ -17,7 +17,8 @@ from typing import Optional, Self
 
 import numpy as np
 
-from .._core import Instance
+from digneapy.core import Instance
+
 from ._utils import check_valid_instance_batch
 
 

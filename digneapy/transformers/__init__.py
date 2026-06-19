@@ -10,26 +10,25 @@
 @Desc    :   None
 """
 
+from ._base_transformer import Transformer
 from .pca import PCAEncoder
-from .protocol import Transformer
-
-__transformer_submodules = {"neural", "autoencoders", "tuner"}
-
-__all__ = ["Transformer", "PCAEncoder"]
-
-_TORCH_AVAILABLE = False
-try:
-    import torch
-
-    _TORCH_AVAILABLE = True
-except ImportError:
-    _TORCH_AVAILABLE = False
 
 
 # Lazy import function
 def __getattr__(attr_name):
+    __transformer_submodules = {"neural", "autoencoders", "tuner"}
+
     import importlib
     import sys
+
+    _TORCH_AVAILABLE = False
+
+    try:
+        import torch
+
+        _TORCH_AVAILABLE = True
+    except ImportError:
+        _TORCH_AVAILABLE = False
 
     if _TORCH_AVAILABLE:
         if attr_name in __transformer_submodules:

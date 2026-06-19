@@ -16,7 +16,7 @@ from collections import Counter
 
 import numpy as np
 
-from digneapy import Solution
+from digneapy.core import Solution
 from digneapy.domains.tsp import TSP
 
 

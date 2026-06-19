@@ -15,7 +15,7 @@ from typing import Callable, List
 
 import numpy as np
 
-from digneapy import Solution, Solver
+from digneapy.core import Solution, Solver
 from digneapy.domains import Knapsack
 
 __all__ = ["shuffle_and_run_for_knapsack"]

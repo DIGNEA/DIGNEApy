@@ -20,7 +20,7 @@ from typing import Dict, List, Literal, Optional, Self, Tuple
 
 import numpy as np
 
-from digneapy._core import Domain, Instance, Problem, Solution
+from digneapy.core import Domain, Instance, Problem, Solution
 
 
 class BPP(Problem):

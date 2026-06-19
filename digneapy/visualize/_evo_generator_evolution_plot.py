@@ -22,7 +22,7 @@ import polars as pl
 import seaborn as sns
 from matplotlib.lines import Line2D
 
-from digneapy import Logbook
+from digneapy.core import Logbook
 
 
 def ea_generator_evolution_plot(logbook: Logbook, filename: Optional[str | Path] = ""):

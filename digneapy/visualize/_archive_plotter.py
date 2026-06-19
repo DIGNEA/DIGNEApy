@@ -16,7 +16,7 @@ import matplotlib.colors as mcolors
 import matplotlib.pyplot as plt
 import numpy as np
 
-from digneapy import GridArchive
+from digneapy.archives import GridArchive
 
 
 def _archive_to_matrix(archive: GridArchive, attr: str = "p") -> np.ndarray:

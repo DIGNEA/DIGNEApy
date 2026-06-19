@@ -14,7 +14,7 @@ from collections.abc import Sequence
 
 import numpy as np
 
-from digneapy import Instance
+from digneapy.core import Instance
 
 
 def generate_random_population(

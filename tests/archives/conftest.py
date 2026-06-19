@@ -12,7 +12,7 @@
 
 import numpy as np
 
-from digneapy import Instance
+from digneapy.core import Instance
 
 
 def default_incremental_population(

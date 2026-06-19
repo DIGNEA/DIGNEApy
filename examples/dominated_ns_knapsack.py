@@ -17,7 +17,7 @@ from typing import Optional
 
 import numpy as np
 
-from digneapy import DescriptorKey, DescriptorPipeline
+from digneapy.core import DescriptorKey, DescriptorPipeline
 from digneapy.domains import KnapsackDomain
 from digneapy.generators import Dominated
 from digneapy.solvers import default_kp, map_kp, miw_kp, mpw_kp

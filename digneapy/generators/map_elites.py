@@ -14,18 +14,18 @@ from typing import Optional, Sequence
 
 import numpy as np
 
+from digneapy.core import (
+    DescriptorPipeline,
+    Domain,
+    Solver,
+    maximise_perf_gap_easy,
+)
 from digneapy.generators._utils import (
     build_instances_from_attributes,
     extract_solvers_name,
 )
+from digneapy.typing import PerformanceFn
 
-from .._core import (
-    DescriptorPipeline,
-    Domain,
-    PerformanceFn,
-    Solver,
-    maximise_perf_gap_easy,
-)
 from ..archives import CVTArchive, GridArchive
 from ..operators import (
     BatchUMut,

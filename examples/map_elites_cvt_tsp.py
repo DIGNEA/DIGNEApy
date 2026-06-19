@@ -17,8 +17,8 @@ from multiprocessing import Pool, current_process
 
 import numpy as np
 
-from digneapy import DescriptorKey, DescriptorPipeline
 from digneapy.archives import CVTArchive
+from digneapy.core import DescriptorKey, DescriptorPipeline
 from digneapy.domains import TSPDomain
 from digneapy.generators import MapElites
 from digneapy.operators import BatchUMut

@@ -15,7 +15,7 @@ from typing import Any, Generator, Self
 
 import numpy as np
 
-from .._core import Instance, Solver
+from digneapy.core import Instance, Solver
 
 
 class InstanceBuilder:  # pragma: no cover

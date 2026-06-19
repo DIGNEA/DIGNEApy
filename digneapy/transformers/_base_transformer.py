@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*-coding:utf-8 -*-
 """
-@File    :   protocol.py
+@File    :   _base_transformer.py
 @Time    :   2026/05/18 10:57:45
 @Author  :   Alejandro Marrero (amarrerd@ull.edu.es)
 @Version :   1.0

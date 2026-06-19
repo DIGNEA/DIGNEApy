@@ -12,7 +12,7 @@
 
 import pytest
 
-from digneapy import DescriptorPipeline
+from digneapy.core import DescriptorPipeline
 
 
 @pytest.mark.parametrize("descriptor", ("features", "performance", "instance"))

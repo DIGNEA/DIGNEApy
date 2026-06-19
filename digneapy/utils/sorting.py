@@ -14,7 +14,8 @@ from typing import List, Sequence, overload
 
 import numpy as np
 
-from digneapy import Archive, CVTArchive, GridArchive, Instance
+from digneapy.archives import Archive, CVTArchive, GridArchive
+from digneapy.core import Instance
 
 
 @overload

@@ -18,10 +18,8 @@ from typing import Callable, Optional
 
 import keras
 import numpy as np
-import numpy.typing as npt
-from sklearn.preprocessing import StandardScaler
 
-from .protocol import Transformer
+from ._base_transformer import Transformer
 
 
 class NNEncoder(Transformer):
@@ -50,6 +48,7 @@ class NNEncoder(Transformer):
             raise ValueError(msg)
         if not name.endswith(".keras"):
             name = name + ".keras"
+        from sklearn.preprocessing import StandardScaler
 
         super().__init__(name)
         self.scaler = StandardScaler()
@@ -101,7 +100,7 @@ class NNEncoder(Transformer):
         self._model.set_weights(new_weights)
         return True
 
-    def predict(self, x: npt.NDArray, batch_size: int = 1024) -> np.ndarray:
+    def predict(self, x: np.ndarray, batch_size: int = 1024) -> np.ndarray:
         if x is None or len(x) == 0:
             msg = "x cannot be None in KerasNN predict"
             raise RuntimeError(msg)
@@ -112,5 +111,5 @@ class NNEncoder(Transformer):
         x_scaled = self.scaler.fit_transform(x)
         return self._model.predict(x_scaled, batch_size=batch_size, verbose=0)
 
-    def __call__(self, x: npt.NDArray) -> np.ndarray:
+    def __call__(self, x: np.ndarray) -> np.ndarray:
         return self.predict(x)

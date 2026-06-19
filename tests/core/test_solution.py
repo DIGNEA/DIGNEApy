@@ -14,7 +14,7 @@ import numpy as np
 import pytest
 from numpy.testing import assert_equal
 
-from digneapy import Solution
+from digneapy.core import Solution
 
 
 def test_solution_attrs():

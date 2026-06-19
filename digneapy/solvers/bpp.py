@@ -14,7 +14,7 @@ __all__ = ["best_fit", "next_fit", "worst_fit", "first_fit"]
 
 import numpy as np
 
-from digneapy._core import Solution
+from digneapy.core import Solution
 from digneapy.domains.bpp import BPP
 
 

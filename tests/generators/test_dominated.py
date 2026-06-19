@@ -16,7 +16,7 @@ import numpy as np
 import pytest
 from numpy.testing import assert_equal
 
-from digneapy import DescriptorPipeline, maximise_perf_gap_easy
+from digneapy.core import DescriptorPipeline, maximise_perf_gap_easy
 from digneapy.domains import BPPDomain, KnapsackDomain, TSPDomain
 from digneapy.generators import DNSResult, Dominated, dominated_novelty_search
 from digneapy.operators import (

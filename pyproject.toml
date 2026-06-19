@@ -23,7 +23,7 @@ ext-modules = [
 
 [project]
 name = "digneapy"
-version = "0.3.0"
+version = "0.3.1"
 description = "Python version of the DIGNEA code for instance generation"
 authors = [{ name = "Alejandro Marrero", email = "amarrerd@ull.edu.es" }]
 readme = "README.md"
@@ -49,6 +49,7 @@ classifiers = [
     'Topic :: Scientific/Engineering',
     'Typing :: Typed',
     'Operating System :: Unix',
+    'Operating System :: Windows',
     'Operating System :: MacOS',
 ]
 dependencies = [

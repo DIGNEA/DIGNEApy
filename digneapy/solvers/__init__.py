@@ -10,19 +10,23 @@
 @Desc    :   None
 """
 
-from . import _c_tsp_solvers, _kp, bpp, evolutionary, tsp, utils
 from ._c_tsp_solvers import ctwo_opt as two_opt
 from ._kp import default_kp, map_kp, miw_kp, mpw_kp
 from .bpp import best_fit, first_fit, next_fit, worst_fit
 from .evolutionary import EA
-from .random import random_solver
 from .tsp import greedy, nneighbour
 from .utils import shuffle_and_run_for_knapsack
 
-__all__ = list(
-    set(bpp.__all__)
-    | set(_kp.__all__)
-    | set(tsp.__all__)
-    | set(evolutionary.__all__)
-    | set(utils.__all__)
-)
+__all__ = [
+    "EA",
+    "ctwo_opt",
+    "greedynneighbour",
+    "default_kp",
+    "map_kp",
+    "miw_kp",
+    "mpw_kp",
+    "best_fit",
+    "first_fit",
+    "next_fit",
+    "worst_fit",
+]

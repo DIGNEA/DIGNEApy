@@ -14,7 +14,7 @@ from typing import Dict, List, Optional, Sequence
 
 import numpy as np
 
-from digneapy._core import Domain, Instance, Problem, Solution
+from digneapy.core import Domain, Instance, Problem, Solution
 
 
 class Sphere(Problem):
@@ -29,7 +29,7 @@ class Sphere(Problem):
         dimension: np.uint32,
         seed: Optional[int | np.random.SeedSequence] = None,
     ):
-        
+
         bounds = [(-5.12, 5.12)] * dimension
         super().__init__(
             dimension=dimension,

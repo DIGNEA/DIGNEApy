@@ -10,8 +10,8 @@
 @Desc    :   None
 """
 
-from digneapy import DescriptorPipeline
 from digneapy.archives import GridArchive, UnstructuredArchive
+from digneapy.core import DescriptorPipeline
 from digneapy.domains import KnapsackDomain
 from digneapy.generators import ES
 from digneapy.solvers import (

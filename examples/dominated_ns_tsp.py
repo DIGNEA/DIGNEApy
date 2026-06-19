@@ -17,7 +17,7 @@ from multiprocessing import Pool, current_process
 
 import numpy as np
 
-from digneapy import DescriptorKey, DescriptorPipeline
+from digneapy.core import DescriptorKey, DescriptorPipeline
 from digneapy.domains import TSPDomain
 from digneapy.generators import Dominated
 from digneapy.solvers import greedy, nneighbour, two_opt

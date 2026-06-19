@@ -11,18 +11,20 @@
 """
 
 from collections.abc import Sequence
-from typing import Optional, Tuple
+from typing import Optional, Protocol, Tuple
 
 import numpy as np
+from cma.evolution_strategy import CMAEvolutionStrategy
 
-from .._core import (
+from digneapy.core import (
     DescriptorPipeline,
     Domain,
     Instance,
-    PerformanceFn,
     Solver,
     maximise_perf_gap_easy,
 )
+from digneapy.typing import PerformanceFn
+
 from ..archives import Archive
 from ..operators import (
     UCX,
@@ -347,6 +349,53 @@ class Evolutionary(BaseGenerator):
         return fitness
 
 
+##
+class AskFn(Protocol):
+    def __call__(
+        self,
+        strategy: CMAEvolutionStrategy,
+        descriptor_pipeline: DescriptorPipeline,
+        domain: Domain,
+    ) -> Tuple[np.ndarray, np.ndarray]: ...
+
+
+class CMAAsker:
+    def __init__(
+        self,
+        strategy: CMAEvolutionStrategy,
+        descriptor_pipeline: DescriptorPipeline,
+        domain: Domain,
+        ask_fn: AskFn,
+    ):
+        self.strategy = strategy
+        self.descriptor_pipeline = descriptor_pipeline
+        self.domain = domain
+        self.ask_fn = ask_fn
+
+    def ask(self):
+        return self.ask_fn(self.strategy, self.descriptor_pipeline, self.domain)
+
+
+def ask_for_descriptors(
+    strategy: CMAEvolutionStrategy,
+    descriptor_pipeline: DescriptorPipeline,
+    domain: Domain,
+):
+    descriptors = np.asarray(strategy.ask())
+    instances = descriptor_pipeline(descriptors, domain=domain)
+    return instances, descriptors
+
+
+def ask_for_instances(
+    strategy: CMAEvolutionStrategy,
+    descriptor_pipeline: DescriptorPipeline,
+    domain: Domain,
+):
+    instances = np.asarray(strategy.ask())
+    descriptors = descriptor_pipeline(instances, domain=domain)
+    return instances, descriptors
+
+
 class ES(BaseGenerator):  # pragma: no cover
     """Quality-Diversity instance generator based on an Evolutionary Strategy (CMA-ES).
 
@@ -371,7 +420,8 @@ class ES(BaseGenerator):  # pragma: no cover
 
     def __init__(
         self,
-        generator_dimension: int,
+        ask_fn: AskFn,
+        dimension: int,
         domain: Domain,
         portfolio: Sequence[Solver],
         lambda_: np.uint32 | int,
@@ -379,8 +429,8 @@ class ES(BaseGenerator):  # pragma: no cover
         keep_only_feasible: bool = True,
         sigma: float = 0.5,
         performance_function: PerformanceFn = maximise_perf_gap_easy,
-        generations: np.uint32 | int = np.uint32(1_000),
-        repetitions: np.uint16 | int = np.uint16(1),
+        generations: np.uint32 | int = 1_000,
+        repetitions: np.uint16 | int = 1,
         descriptor_pipe: DescriptorPipeline = DescriptorPipeline("instance"),
         seed: Optional[int | np.random.SeedSequence] = None,
         phi: float | np.float64 = 0.85,
@@ -430,14 +480,15 @@ class ES(BaseGenerator):  # pragma: no cover
             generations=generations,
             repetitions=repetitions,
         )
-        if any(param < 0 for param in (workers,)):
+        if any(param < 0 for param in (workers, dimension)):
             raise ValueError(
-                f"These parameters cannot be negative:\n\t- workers. Got {workers}"
+                f"dimension ({dimension}) and workers ({workers}) cannot be negative"
             )
         if any(not isinstance(archive, Archive) for archive in archives):
             raise TypeError("archives must be a subclass of Archive")
 
-        self._generator_dimension = generator_dimension
+        self._ask_fn = ask_fn
+        self._generator_dimension = dimension
         self._archives = archives
         self._sigma = sigma
         self._phi = float(phi)
@@ -590,12 +641,22 @@ class ES(BaseGenerator):  # pragma: no cover
                 "popsize": self._pop_size,
             },
         )
+        _cma_asker = CMAAsker(
+            strategy=strategy,
+            descriptor_pipeline=self._descriptor_pipe,
+            domain=self._domain,
+            ask_fn=self._ask_fn,
+        )
+
         _current_generation = 0
         mn, mx = np.asarray(self._domain.bounds).T
         while _current_generation < self._generations:
+            # With this new strategy pattern we have genotypes and descriptors at the same time
+            genotypes, descriptors = _cma_asker.ask()
+
             # Here descriptors have shape (lambda_, generator_dimension)
-            descriptors = np.asarray(strategy.ask())
-            genotypes = self._descriptor_pipe(descriptors, domain=self._domain)
+            # descriptors = np.asarray(strategy.ask())
+            # genotypes = self._descriptor_pipe(descriptors, domain=self._domain)
             # Some genotypes may be outside of the bounds of the domain
             # For instance, KPDecoder could generate negative Qs and items
             valid_mask = ((genotypes >= mn) & (genotypes <= mx)).all(axis=1)
@@ -624,6 +685,9 @@ class ES(BaseGenerator):  # pragma: no cover
                     else np.arange(len(valid_descriptors))
                 )
                 if len(_valid_indices) > 1:
+                    # If we have more than one archive
+                    # we only store the feasible instances
+                    # in those result sets.
                     feasible_descriptors = descriptors[_valid_indices]
                     feasible_performances = perf_biases[_valid_indices]
                     feasible_scores = portfolio_scores[_valid_indices]
@@ -651,7 +715,7 @@ class ES(BaseGenerator):  # pragma: no cover
                 generation=_current_generation, instances=instances, feedback=verbose
             )
             # Tell the descriptors and their corresponding fitness
-            full_fitness = np.full(len(descriptors), -np.inf)  # Invalid ones get -INF
+            full_fitness = np.full(len(instances), -np.inf)  # Invalid ones get -INF
             full_fitness[valid_mask] = fitness
             # CMA-ES minimises, so -INF becomes large unfeasible individuals
             strategy.tell(descriptors, -full_fitness)

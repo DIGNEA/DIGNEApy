@@ -14,7 +14,8 @@ import numpy as np
 import pytest
 from numpy.testing import assert_allclose, assert_equal
 
-from digneapy import GridArchive, Instance, UnstructuredArchive
+from digneapy.archives import GridArchive, UnstructuredArchive
+from digneapy.core import Instance
 
 from .conftest import default_incremental_population
 

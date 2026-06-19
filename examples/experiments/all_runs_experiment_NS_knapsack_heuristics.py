@@ -18,7 +18,8 @@ from typing import Sequence
 import numpy as np
 from utils import make_seed_sequences
 
-from digneapy import DescriptorKey, DescriptorPipeline, Solver, UnstructuredArchive
+from digneapy.archives import UnstructuredArchive
+from digneapy.core import DescriptorKey, DescriptorPipeline, Solver
 from digneapy.domains import KnapsackDomain
 from digneapy.generators import Evolutionary
 from digneapy.operators import UCX, BinarySelection, Generational, UMut

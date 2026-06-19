@@ -19,19 +19,20 @@ from typing import Optional, Tuple
 import numpy as np
 import polars as pl
 
-from digneapy._core.descriptors import DescriptorPipeline
-from digneapy.generators._utils import extract_solvers_name
-
-from .._core import (
+from digneapy.archives import Archive
+from digneapy.core import (
+    DescriptorPipeline,
     Domain,
     Instance,
-    Logbook,
-    PerformanceFn,
     Solver,
-    Statistics,
     maximise_perf_gap_easy,
 )
-from ..archives import Archive
+from digneapy.core._metrics import (
+    Logbook,
+    Statistics,
+)
+from digneapy.generators._utils import extract_solvers_name
+from digneapy.typing import PerformanceFn
 
 
 @dataclass

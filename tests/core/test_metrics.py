@@ -14,7 +14,7 @@ import numpy as np
 import polars as pl
 import pytest
 
-from digneapy import Instance, Logbook, Statistics, qd_score, qd_score_auc
+from digneapy.core import Instance, Logbook, Statistics, qd_score, qd_score_auc
 
 
 def test_qd_score():

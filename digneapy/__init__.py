@@ -2,43 +2,26 @@
 
 __author__ = """Alejandro Marrero"""
 __email__ = "amarrerd@ull.edu.es"
-__version__ = "0.2.5"
+__version__ = "0.3.1"
 
 
-from . import _core, archives, domains, operators
-from ._core import (
-    DescriptorFn,
-    DescriptorKey,
-    DescriptorPipeline,
-    Domain,
-    Instance,
-    Problem,
-    Solution,
-    Solver,
-    descriptors,
-    descriptors_registry,
-)
-from ._core._metrics import Logbook, Statistics, qd_score, qd_score_auc
-from ._core._scores import PerformanceFn, maximise_perf_gap_easy, maximise_runtime_gap
-from .archives import Archive, CVTArchive, GridArchive, UnstructuredArchive
-from .generators import (
-    ES,
-    BaseGenerator,
-    Dominated,
-    Evolutionary,
-    GenerationResult,
-    MapElites,
-)
-from .transformers import Transformer
-from .typing import Direction, IndType
+from digneapy import core, domains, generators, solvers
 
-__dignea_submodules = {"utils", "generators", "solvers", "visualize"}
+__all__ = ["core", "domains", "generators", "solvers"]
 
 
-__all__ = list(
-    __dignea_submodules
-    | set(_core.__all__)
-    | set(operators.__all__)
-    | set(archives.__all__)
-    | set(domains.__all__)
-)
+# Lazy import function
+def __getattr__(attr_name):
+    _submodules = {"visualize", "utils", "transformers"}
+
+    import importlib
+    import sys
+
+    if attr_name in _submodules:
+        full_name = f"digneapy.{attr_name}"
+        submodule = importlib.import_module(full_name)
+        sys.modules[full_name] = submodule
+        return submodule
+
+    else:
+        raise ImportError(f"module digneapy has no attribute {attr_name}")

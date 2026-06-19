@@ -15,7 +15,6 @@ from collections.abc import Sequence
 from typing import Any, Optional, Tuple
 
 import numpy as np
-from numpy import typing as npt
 
 from ._instance import Instance
 from ._solution import Solution
@@ -98,9 +97,7 @@ class Problem(ABC):
         raise NotImplementedError(msg)
 
     @abstractmethod
-    def __array__(
-        self, dtype: Any = None, copy: Optional[bool] = None
-    ) -> npt.ArrayLike:
+    def __array__(self, dtype: Any = None, copy: Optional[bool] = None) -> np.ndarray:
         msg = "__array__ method not implemented in Problem"
         raise NotImplementedError(msg)
 

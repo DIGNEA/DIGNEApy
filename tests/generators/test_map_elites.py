@@ -14,7 +14,8 @@ from pathlib import Path
 
 import pytest
 
-from digneapy import CVTArchive, DescriptorPipeline, GridArchive, Instance
+from digneapy.archives import CVTArchive, GridArchive
+from digneapy.core import DescriptorPipeline, Instance
 from digneapy.domains import KnapsackDomain
 from digneapy.generators import (
     MapElites,

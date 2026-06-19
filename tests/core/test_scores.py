@@ -13,7 +13,7 @@
 import numpy as np
 import pytest
 
-from digneapy import maximise_perf_gap_easy, maximise_runtime_gap
+from digneapy.core import maximise_perf_gap_easy, maximise_runtime_gap
 
 
 def test_max_gap_target():

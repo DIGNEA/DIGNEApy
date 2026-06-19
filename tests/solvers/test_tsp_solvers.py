@@ -14,7 +14,7 @@ import numpy as np
 import pytest
 from numpy.testing import assert_equal
 
-from digneapy._core import Solution
+from digneapy.core import Solution
 from digneapy.domains.tsp import TSP
 from digneapy.solvers import greedy, nneighbour, two_opt
 

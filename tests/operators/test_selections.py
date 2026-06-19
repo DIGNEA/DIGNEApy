@@ -13,7 +13,7 @@
 import numpy as np
 import pytest
 
-from digneapy import Instance, Solution
+from digneapy.core import Instance, Solution
 from digneapy.operators import BinarySelection
 
 

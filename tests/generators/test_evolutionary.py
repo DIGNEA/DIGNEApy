@@ -16,13 +16,13 @@ import numpy as np
 import pytest
 from numpy.testing import assert_equal
 
-from digneapy import (
+from digneapy.archives import UnstructuredArchive
+from digneapy.core import (
     DescriptorPipeline,
     Domain,
     Instance,
     maximise_perf_gap_easy,
 )
-from digneapy.archives import UnstructuredArchive
 from digneapy.domains import BPPDomain, KnapsackDomain, TSPDomain
 from digneapy.generators import Evolutionary
 from digneapy.operators import (

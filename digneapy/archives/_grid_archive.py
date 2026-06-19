@@ -15,7 +15,8 @@ from typing import Iterator, Optional, Tuple
 
 import numpy as np
 
-from .._core import Instance
+from digneapy.core import Instance
+
 from ._archive import Archive, Keys
 from ._utils import check_valid_instance_batch, check_valid_shapes
 

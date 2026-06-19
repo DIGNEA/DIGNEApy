@@ -16,7 +16,7 @@ from typing import Dict
 import numpy as np
 import pytest
 
-from digneapy import Domain, Instance, Problem
+from digneapy.core import Domain, Instance, Problem
 
 
 class FixturedDomain(Domain):

@@ -19,7 +19,7 @@ cimport numpy as cnp
 cnp.import_array() 
 
 
-from digneapy._core import Solution
+from digneapy.core import Solution
 from digneapy.domains.kp import Knapsack
 
 

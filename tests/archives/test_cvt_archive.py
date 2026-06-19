@@ -16,8 +16,8 @@ import numpy as np
 import pytest
 from numpy.testing import assert_equal
 
-from digneapy import CVTArchive, Instance
-from digneapy.archives._cvt_archive import compute_centroids
+from digneapy.archives._cvt_archive import CVTArchive, compute_centroids
+from digneapy.core import Instance
 
 from .conftest import population_with_custom_descriptors
 

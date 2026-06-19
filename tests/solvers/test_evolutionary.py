@@ -14,10 +14,9 @@ import numpy as np
 import pytest
 from deap import benchmarks
 
-from digneapy import Direction
-from digneapy._core import Solution
+from digneapy.core import Solution
 from digneapy.domains import Knapsack
-from digneapy.solvers.evolutionary import EA
+from digneapy.solvers.evolutionary import EA, Direction
 
 
 @pytest.fixture

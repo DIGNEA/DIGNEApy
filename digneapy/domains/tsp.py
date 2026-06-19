@@ -20,7 +20,7 @@ from scipy.sparse import csr_matrix
 from scipy.sparse.csgraph import connected_components
 from scipy.spatial.distance import cdist
 
-from digneapy._core import Domain, Instance, Problem, Solution
+from digneapy.core import Domain, Instance, Problem, Solution
 
 
 class TSP(Problem):

@@ -15,7 +15,7 @@ import polars as pl
 import pytest
 from numpy.testing import assert_equal
 
-from digneapy import Instance, Solution
+from digneapy.core import Instance, Solution
 
 
 def test_instance_attrs():

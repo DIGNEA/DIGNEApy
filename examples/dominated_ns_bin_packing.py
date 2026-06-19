@@ -17,7 +17,7 @@ from multiprocessing import Pool, current_process
 
 import numpy as np
 
-from digneapy import DescriptorKey, DescriptorPipeline, Solver
+from digneapy.core import DescriptorKey, DescriptorPipeline, Solver
 from digneapy.domains import BPPDomain
 from digneapy.generators import Dominated
 from digneapy.solvers import best_fit, first_fit, next_fit, worst_fit

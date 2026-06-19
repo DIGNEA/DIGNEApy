@@ -21,7 +21,7 @@ import matplotlib.pyplot as plt
 import polars as pl
 import seaborn as sns
 
-from digneapy import Logbook
+from digneapy.core import Logbook
 
 
 def map_elites_evolution_plot(logbook: Logbook, filename: Optional[str | Path] = ""):

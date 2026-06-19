@@ -15,8 +15,8 @@ import itertools
 from functools import partial
 from multiprocessing.pool import Pool
 
-from digneapy import GridArchive
-from digneapy._core import DescriptorPipeline
+from digneapy.archives import GridArchive
+from digneapy.core import DescriptorPipeline
 from digneapy.domains import KnapsackDomain
 from digneapy.generators import MapElites
 from digneapy.operators import BatchUMut

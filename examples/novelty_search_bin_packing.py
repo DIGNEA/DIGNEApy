@@ -17,8 +17,8 @@ from typing import List
 
 import numpy as np
 
-from digneapy import DescriptorKey, DescriptorPipeline
 from digneapy.archives import UnstructuredArchive
+from digneapy.core import DescriptorKey, DescriptorPipeline
 from digneapy.domains import BPPDomain
 from digneapy.generators import Evolutionary
 from digneapy.operators import Generational

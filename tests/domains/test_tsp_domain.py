@@ -17,7 +17,7 @@ import numpy as np
 import pytest
 from numpy.testing import assert_equal
 
-from digneapy import Instance
+from digneapy.core import Instance
 from digneapy.domains.tsp import TSP, TSPDomain
 
 

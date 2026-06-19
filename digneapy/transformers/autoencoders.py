@@ -24,7 +24,7 @@ import torch.nn as nn
 from scipy.stats import lognorm
 
 from ..typing import IndType
-from .protocol import Transformer
+from ._base_transformer import Transformer
 
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 MODELS_PATH = Path(__file__).parent / "models/"

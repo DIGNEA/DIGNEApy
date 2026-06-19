@@ -17,7 +17,7 @@ from pathlib import Path
 import numpy as np
 import numpy.typing as npt
 
-from .protocol import Transformer
+from ._base_transformer import Transformer
 
 warnings.filterwarnings("ignore")
 

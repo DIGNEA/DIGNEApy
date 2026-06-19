@@ -16,7 +16,7 @@ from typing import Optional
 
 import numpy as np
 
-from digneapy._core import Problem, Solution
+from digneapy.core import Problem, Solution
 
 
 def random_solver(

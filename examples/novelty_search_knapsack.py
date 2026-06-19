@@ -16,7 +16,8 @@ import itertools
 
 import numpy as np
 
-from digneapy import DescriptorKey, DescriptorPipeline, UnstructuredArchive
+from digneapy.archives import UnstructuredArchive
+from digneapy.core import DescriptorKey, DescriptorPipeline
 from digneapy.domains import KnapsackDomain
 from digneapy.generators import Evolutionary
 from digneapy.operators import UCX, BinarySelection, Generational, UMut

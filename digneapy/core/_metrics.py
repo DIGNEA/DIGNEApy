@@ -17,7 +17,6 @@ import numpy as np
 import polars as pl
 from deap import tools
 
-from ..archives import Archive
 from ._instance import Instance
 
 
@@ -73,7 +72,7 @@ class Statistics:
         self._stats.register("max", np.max)
         self._stats.register("qd_score", np.sum)
 
-    def __call__(self, instances: Sequence[Instance] | Archive) -> Mapping:
+    def __call__(self, instances: Sequence[Instance]) -> Mapping:
         """Compiles the statistics of the population or Archive.
 
         Args:
@@ -122,7 +121,7 @@ class Logbook(tools.Logbook):
     def update(
         self,
         generation: int,
-        instances: Sequence[Instance] | Archive,
+        instances: Sequence[Instance],
         feedback: bool = False,
     ):
         if generation < 0:

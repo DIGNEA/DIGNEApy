@@ -10,10 +10,10 @@
 @Desc    :   None
 """
 
-from .bpp import BPP, BPPDomain
-from .kp import Knapsack, KnapsackDomain
-from .sphere import Sphere, SphereDomain
-from .tsp import TSP, TSPDomain
+from digneapy.domains.bpp import BPP, BPPDomain
+from digneapy.domains.kp import Knapsack, KnapsackDomain
+from digneapy.domains.sphere import Sphere, SphereDomain
+from digneapy.domains.tsp import TSP, TSPDomain
 
 __all__ = [
     "BPP",

@@ -33,3 +33,9 @@ def test_import_visualize():
     import digneapy.visualize as visualize
 
     assert visualize is not None
+
+
+def test_import_archives():
+    import digneapy.archives as archives
+
+    assert archives is not None

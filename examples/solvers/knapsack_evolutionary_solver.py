@@ -12,9 +12,8 @@
 
 import numpy as np
 
-from digneapy import Direction
 from digneapy.domains import Knapsack
-from digneapy.solvers.evolutionary import EA
+from digneapy.solvers.evolutionary import EA, Direction
 from digneapy.utils import clock
 
 

@@ -19,7 +19,7 @@ cimport numpy as cnp
 
 cnp.import_array()  # add this line
 
-from digneapy._core import Solution
+from digneapy.core import Solution
 
 ctypedef long int li
 ctypedef unsigned short ushort

@@ -18,18 +18,14 @@ from typing import Optional
 import numpy as np
 from scipy.spatial.distance import cdist
 
-from digneapy.generators._utils import (
-    build_instances_from_attributes,
-    extract_solvers_name,
-)
-
-from .._core import (
+from digneapy.core import (
     DescriptorPipeline,
     Domain,
-    PerformanceFn,
     Solver,
     maximise_perf_gap_easy,
 )
+from digneapy.typing import PerformanceFn
+
 from ..archives import UnstructuredArchive
 from ..operators import (
     UCX,
@@ -40,6 +36,10 @@ from ..operators import (
     UMut,
 )
 from ._base_generator import GenerationResult
+from ._utils import (
+    build_instances_from_attributes,
+    extract_solvers_name,
+)
 from .evolutionary import Evolutionary
 
 

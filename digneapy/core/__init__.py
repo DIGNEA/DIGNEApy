@@ -10,24 +10,18 @@
 @Desc    :   None
 """
 
-from ._domain import Domain
-from ._instance import Instance
-from ._metrics import Logbook, Statistics, qd_score, qd_score_auc
-from ._problem import Problem
-from ._scores import (
-    PerformanceFn,
+from digneapy.core._descriptors import DescriptorFn, DescriptorKey, DescriptorPipeline
+from digneapy.core._domain import Domain
+from digneapy.core._instance import Instance
+from digneapy.core._metrics import Logbook, Statistics, qd_score, qd_score_auc
+from digneapy.core._problem import Problem
+from digneapy.core._scores import (
     maximise_perf_gap_easy,
     maximise_perf_gap_hard,
     maximise_runtime_gap,
 )
-from ._solution import Solution
-from ._solver import Solver
-from .descriptors import (
-    DescriptorFn,
-    DescriptorKey,
-    DescriptorPipeline,
-    descriptors_registry,
-)
+from digneapy.core._solution import Solution
+from digneapy.core._solver import Solver
 
 __all__ = [
     "Domain",
@@ -35,12 +29,9 @@ __all__ = [
     "Problem",
     "Solution",
     "Solver",
-    "qd_score",
-    "qd_score_auc",
-    "Statistics",
     "Logbook",
+    "Statistics",
     "DescriptorKey",
     "DescriptorFn",
     "DescriptorPipeline",
-    "descriptors_registry",
 ]

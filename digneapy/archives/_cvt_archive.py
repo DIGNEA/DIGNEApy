@@ -15,12 +15,10 @@ from pathlib import Path
 from typing import Optional, Tuple
 
 import numpy as np
-from sklearn.cluster import k_means
-from sklearn.neighbors import KDTree
 
 from digneapy.archives._utils import check_valid_instance_batch, check_valid_shapes
+from digneapy.core import Instance
 
-from .._core import Instance
 from ._archive import Archive, Keys
 
 
@@ -32,6 +30,8 @@ def compute_centroids(
     samples: int | np.ndarray,
     seed: int | np.random.SeedSequence | None = None,
 ) -> Tuple[np.ndarray, np.ndarray]:
+    from sklearn.cluster import k_means
+
     """Computes the centroid for a CVTArchive
 
     Args:
@@ -144,6 +144,7 @@ class CVTArchive(Archive):
             )
 
         super().__init__(initial_instances=None)
+        from sklearn.neighbors import KDTree
 
         self._seed = seed
         self._rng = np.random.default_rng(seed)

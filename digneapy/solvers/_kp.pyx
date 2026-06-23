@@ -10,8 +10,6 @@
 @Desc    :   None
 """
 
-__all__ = ["default_kp", "map_kp", "miw_kp", "mpw_kp"]
-
 
 cimport cython
 import numpy as np

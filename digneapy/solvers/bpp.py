@@ -10,7 +10,6 @@
 # @Desc    :   None
 # """
 
-__all__ = ["best_fit", "next_fit", "worst_fit", "first_fit"]
 
 import numpy as np
 

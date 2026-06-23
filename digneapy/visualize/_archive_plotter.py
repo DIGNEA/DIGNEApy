@@ -20,7 +20,7 @@ from digneapy.archives import GridArchive
 
 
 def _archive_to_matrix(archive: GridArchive, attr: str = "p") -> np.ndarray:
-    """Converts a 2-D GridArchive to a (rows × cols) float matrix.
+    """Converts a 2d GridArchive to a (rows × cols) float matrix.
 
     Empty cells are filled with NaN so they render as a neutral colour.
 
@@ -29,7 +29,7 @@ def _archive_to_matrix(archive: GridArchive, attr: str = "p") -> np.ndarray:
         attr:    Instance attribute to use as cell value. Defaults to ``"p"``.
 
     Returns:
-        2-D numpy array of shape ``(dims[0], dims[1])``.
+        2d numpy array of shape ``(dims[0], dims[1])``.
     """
     rows, cols = int(archive.dimensions[0]), int(archive.dimensions[1])
     matrix = np.full((rows, cols), np.nan, dtype=np.float64)
@@ -37,10 +37,11 @@ def _archive_to_matrix(archive: GridArchive, attr: str = "p") -> np.ndarray:
     if len(archive) == 0:
         return matrix
 
-    flat_indices = np.array(list(archive._storage.keys()), dtype=int)
+    flat_indices = np.array(list(archive.filled_cells))
+    _instances = archive.retrieve_filled_cells(flat_indices)
     grid_indices = archive.int_to_grid_index(flat_indices)  # (n, 2)
-    values = np.array(
-        [getattr(archive._storage[idx], attr) for idx in flat_indices],
+    values = np.asarray(
+        [getattr(instance, attr) for instance in _instances],
         dtype=np.float64,
     )
     matrix[grid_indices[:, 0], grid_indices[:, 1]] = values
@@ -93,7 +94,7 @@ class ArchivePlotter:
     ):
         if len(archive.dimensions) != 2:
             raise ValueError(
-                "ArchivePlotter only supports 2-D GridArchives. "
+                "ArchivePlotter only supports 2d GridArchives. "
                 f"Got dimensions={archive.dimensions}"
             )
 

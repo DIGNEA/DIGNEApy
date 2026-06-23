@@ -22,7 +22,7 @@ from digneapy.core import DescriptorKey, DescriptorPipeline
 from digneapy.domains import TSPDomain
 from digneapy.generators import Evolutionary
 from digneapy.operators import Generational
-from digneapy.solvers import greedy, nneighbour, two_opt
+from digneapy.solvers import nearest_neighbour, shortest_edge, two_opt
 from digneapy.utils import save_results_to_files
 
 
@@ -131,9 +131,9 @@ if __name__ == "__main__":
     rep = args.repetition
     verbose = args.verbose
     portfolios = [
-        [greedy, nneighbour, two_opt],
-        [nneighbour, greedy, two_opt],
-        [two_opt, greedy, nneighbour],
+        [shortest_edge, nearest_neighbour, two_opt],
+        [nearest_neighbour, shortest_edge, two_opt],
+        [two_opt, shortest_edge, nearest_neighbour],
     ]
 
     root_sequence = np.random.SeedSequence(1342)

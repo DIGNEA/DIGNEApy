@@ -22,12 +22,12 @@ from digneapy.solvers import (
     best_fit,
     default_kp,
     first_fit,
-    greedy,
     map_kp,
     miw_kp,
     mpw_kp,
+    nearest_neighbour,
     next_fit,
-    nneighbour,
+    shortest_edge,
     worst_fit,
 )
 
@@ -100,7 +100,7 @@ def benchmark_map_elites_domain_cvt_for_tsp(descriptor, benchmark):
         ranges = build_ranges(TSPDomain, descriptor, number_of_nodes, 2)
         archive = CVTArchive(dimensions=len(ranges), centroids=1000, ranges=ranges)
         domain = TSPDomain(number_of_nodes=number_of_nodes)
-        portfolio = [nneighbour, greedy]
+        portfolio = [nearest_neighbour, shortest_edge]
         map_elites = MapElites(
             domain,
             portfolio=portfolio,

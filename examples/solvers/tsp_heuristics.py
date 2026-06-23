@@ -6,7 +6,7 @@ import seaborn as sns
 import tqdm
 
 from digneapy.domains import TSPDomain
-from digneapy.solvers import greedy, nneighbour, two_opt
+from digneapy.solvers import nearest_neighbour, shortest_edge, two_opt
 
 sns.set_style("whitegrid")
 plt.rcParams["font.family"] = "serif"
@@ -23,19 +23,19 @@ def main(number_of_nodes: int, amount: int):
     results = {}
     results.setdefault("two_opt", [])
     results.setdefault("nneighbour", [])
-    results.setdefault("greedy", [])
+    results.setdefault("shortest_edge", [])
 
     for _ in tqdm.tqdm(range(amount)):
         domain = TSPDomain(number_of_nodes=number_of_nodes)
         instance = domain.generate_instances(n=1)
         problem = domain.generate_problems_from_instances(instance)[0]
         two_fitness = two_opt(problem)[0].fitness
-        nn_fitness = nneighbour(problem)[0].fitness
-        greedy_fitness = greedy(problem)[0].fitness
+        nn_fitness = nearest_neighbour(problem)[0].fitness
+        greedy_fitness = shortest_edge(problem)[0].fitness
 
         results["two_opt"].append(two_fitness)
         results["nneighbour"].append(nn_fitness)
-        results["greedy"].append(greedy_fitness)
+        results["shortest_edge"].append(greedy_fitness)
 
     df = pl.from_dict(results)
     blank = " " * 80

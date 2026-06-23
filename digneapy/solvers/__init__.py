@@ -10,23 +10,23 @@
 @Desc    :   None
 """
 
-from ._c_tsp_solvers import ctwo_opt as two_opt
 from ._kp import default_kp, map_kp, miw_kp, mpw_kp
 from .bpp import best_fit, first_fit, next_fit, worst_fit
 from .evolutionary import EA
-from .tsp import greedy, nneighbour
+from .tsp import nearest_neighbour, shortest_edge, two_opt
 from .utils import shuffle_and_run_for_knapsack
 
-__all__ = [
-    "EA",
-    "ctwo_opt",
-    "greedynneighbour",
-    "default_kp",
-    "map_kp",
-    "miw_kp",
-    "mpw_kp",
-    "best_fit",
-    "first_fit",
-    "next_fit",
-    "worst_fit",
-]
+# __all__ = [
+#     "EA",
+#     "two_opt",
+#     "shortest_edge",
+#     "nearest_neighbour",
+#     "default_kp",
+#     "map_kp",
+#     "miw_kp",
+#     "mpw_kp",
+#     "best_fit",
+#     "first_fit",
+#     "next_fit",
+#     "worst_fit",
+# ]

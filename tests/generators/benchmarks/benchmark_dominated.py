@@ -25,12 +25,12 @@ from digneapy.solvers import (
     best_fit,
     default_kp,
     first_fit,
-    greedy,
     map_kp,
     miw_kp,
     mpw_kp,
+    nearest_neighbour,
     next_fit,
-    nneighbour,
+    shortest_edge,
     worst_fit,
 )
 
@@ -126,7 +126,7 @@ def benchmark_dominated_generator_tsp(descriptor, cx_cls, benchmark):
         mutation = UMut()
         crossover = cx_cls()
         descriptor_pipeline = DescriptorPipeline(descriptor)
-        portfolio = [nneighbour, greedy]
+        portfolio = [nearest_neighbour, shortest_edge]
         deig = Dominated(
             pop_size=pop_size,
             generations=generations,

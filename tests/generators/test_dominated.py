@@ -29,12 +29,12 @@ from digneapy.solvers import (
     best_fit,
     default_kp,
     first_fit,
-    greedy,
     map_kp,
     miw_kp,
     mpw_kp,
+    nearest_neighbour,
     next_fit,
-    nneighbour,
+    shortest_edge,
     worst_fit,
 )
 
@@ -43,7 +43,7 @@ from .conftest import generate_random_population
 DOMAIN_CONTEXT = [
     (KnapsackDomain, [default_kp, map_kp, miw_kp, mpw_kp], 8),
     (BPPDomain, [best_fit, first_fit, worst_fit, next_fit], 10),
-    (TSPDomain, [nneighbour, greedy], 11),
+    (TSPDomain, [nearest_neighbour, shortest_edge], 11),
 ]
 
 

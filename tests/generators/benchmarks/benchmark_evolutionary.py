@@ -29,12 +29,12 @@ from digneapy.solvers import (
     best_fit,
     default_kp,
     first_fit,
-    greedy,
     map_kp,
     miw_kp,
     mpw_kp,
+    nearest_neighbour,
     next_fit,
-    nneighbour,
+    shortest_edge,
     worst_fit,
 )
 
@@ -94,7 +94,7 @@ def benchmark_evolutionary_generator_for_tsp(descriptor, benchmark):
         mutation = UMut()
         descriptor_pipeline = DescriptorPipeline(descriptor)
         domain = TSPDomain(number_of_nodes=number_of_nodes)
-        portfolio = [nneighbour, greedy]
+        portfolio = [nearest_neighbour, shortest_edge]
         generator = Evolutionary(
             pop_size=population_size,
             domain=domain,

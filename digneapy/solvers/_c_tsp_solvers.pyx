@@ -10,7 +10,6 @@
 @Desc    :   None
 """
 
-__all__ = ["ctwo_opt"]
 
 
 cimport cython
@@ -24,43 +23,58 @@ from digneapy.core import Solution
 ctypedef long int li
 ctypedef unsigned short ushort
 
-cpdef ctwo_opt(object problem):
+
+
+
+
+@cython.boundscheck(False)  # Deactivate bounds checking
+cpdef list ctwo_opt(object initial_solution, object problem):
+    """2-Opt Heuristic for the Travelling Salesman Problem
+
+    Args:
+        problem (TSP): problem to solve
+
+    Raises:
+        ValueError: If problem is None
+
+    Returns:
+        list[Solution]: Collection of solutions
+    """
     if problem is None:
-        raise RuntimeError("Cannot solve TSP in 2-Opt because problem is None.")
+        raise ValueError("No problem found in two_opt heuristic")
 
-    cdef int number_of_nodes = problem.dimension
-    cdef cnp.ndarray[cnp.uint32_t, ndim=1] tour = np.arange(problem.dimension + 1, dtype=np.uint32)
-    tour[number_of_nodes] = 0
-
-    cdef double[:,:] distances = problem._distances
-    cdef bool improved = True
-    cdef double min_change, change
-    cdef int i, j, min_i, min_j
-    min_change = 0.0
-    while improved:
-        improved = False
-        min_change = 0.0
-
-        # Find the best move
-        for i in range(number_of_nodes - 2):
-            for j in range(i + 2, number_of_nodes - 1):
-                change = distances[i, j] + distances[i + 1, j + 1]
-                change -= distances[i, i + 1] - distances[j, j + 1]
-                if change < min_change:
-                    min_change = change
-                    min_i, min_j = i, j
-                    improved = True
-        # Update tour with best move
-        if min_change < 0:
-            tour[min_i + 1 : min_j + 1] = tour[min_i + 1 : min_j + 1][::-1]
-
-    fitness, cycled, duplicated = problem.evaluate(tour)
-    return [
-            Solution(
-                variables=tour,
-                objectives=(fitness,),
-                fitness=fitness,
-                constraints=(cycled, duplicated),
-            )
-    ]
+    cdef cnp.uint16_t N = problem.dimension
+    cdef cnp.ndarray[cnp.float64_t, ndim=2] distances = problem._distances
+    cdef list tour = initial_solution.variables.tolist()
+    cdef bint improve = True
+    cdef cnp.uint16_t i, j
+    cdef cnp.float64_t length, delta, old_edges, new_edges
+    cdef cnp.float64_t cycled, duplicated  # adjust dtype if evaluate returns ints
+    cdef int a, b, c, d
+    # Initial solution is the solution to beat
+    length = 1.0 / initial_solution.fitness
+    # Initial solution is the solution to beat
+    while improve:
+        improve = False
+        for i in range(N - 1):
+            a, b = tour[i], tour[i + 1]
+            for j in range(i + 2, N):
+                c, d = tour[j - 1], tour[j]
+                # Closing edge: wrap d around to tour[0] when j == N
+                d = tour[0] if j == N else tour[j]
+                # Edges removed by the swap: (a,b) and (c,d)
+                # Edges added by the swap:   (a,c) and (b,d)
+                old_edges = distances[a][b] + distances[c][d]
+                new_edges = distances[a][c] + distances[b][d]
+                delta = old_edges - new_edges
+                if delta > 0:
+                    tour[i + 1 : j] = tour[i + 1 : j][::-1]
+                    length -= delta
+                    improve = True
+                    b = tour[i+1]
+    fitness = 1.0 / length 
+    return [Solution(variables=tour, 
+                objectives=(fitness,), 
+                fitness=fitness, 
+                constraints=(0,))]
 

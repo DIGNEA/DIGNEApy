@@ -480,7 +480,7 @@ def test_instance_to_dict_custom_names():
         portfolio_scores=tuple(range(portfolio_dim)),
     )
     descriptor_names = ("x0", "x1", "dx0", "dx1")
-    solvers_names = ("default", "greedy", "vlns", "sa")
+    solvers_names = ("default", "shortest_edge", "vlns", "sa")
     variables_names = list(f"x{i}" for i in range(dimension))
 
     expected_keys = (
@@ -566,7 +566,7 @@ def test_instance_to_df_with_custom_names():
         portfolio_scores=tuple(range(portfolio_dim)),
     )
     descriptor_names = ("x0", "x1", "dx0", "dx1")
-    solvers_names = ("default", "greedy", "vlns", "sa")
+    solvers_names = ("default", "shortest_edge", "vlns", "sa")
     variables_names = list(f"x{i}" for i in range(dimension))
 
     expected_keys = (

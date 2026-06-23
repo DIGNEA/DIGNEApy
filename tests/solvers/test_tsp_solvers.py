@@ -16,7 +16,7 @@ from numpy.testing import assert_equal
 
 from digneapy.core import Solution
 from digneapy.domains.tsp import TSP
-from digneapy.solvers import greedy, nneighbour, two_opt
+from digneapy.solvers import nearest_neighbour, shortest_edge, two_opt
 
 
 @pytest.fixture
@@ -36,8 +36,8 @@ def test_two_opt_solves_sample(sample_tsp_problem):
     solutions = two_opt(sample_tsp_problem)
     assert len(solutions) == 1
     solution: Solution = solutions[0]
-    assert len(solution) == len(sample_tsp_problem) + 1
-    assert_equal(solution.constraints, (0, 0))
+    assert len(solution) == len(sample_tsp_problem)
+    assert_equal(solution.constraints, (0,))
     assert solution.fitness >= 0.0
 
 
@@ -46,54 +46,57 @@ def test_two_opt_raises_sample():
         two_opt(problem=None)
 
 
-def test_two_opt_is_deterministic(sample_tsp_problem):
+def test_two_opt_is_deterministic_if_nearest_init(sample_tsp_problem):
     n_repetition = 10
-    solutions = [two_opt(sample_tsp_problem)[0] for _ in range(n_repetition)]
+    solutions = [
+        two_opt(problem=sample_tsp_problem, init="nearest_neighbour")[0]
+        for _ in range(n_repetition)
+    ]
     assert len(solutions) == n_repetition
     expected_solution = solutions[0]
     assert all(x == expected_solution for x in solutions[1:])
 
 
 def test_nneighbour_solves_sample(sample_tsp_problem):
-    solutions = nneighbour(sample_tsp_problem)
+    solutions = nearest_neighbour(sample_tsp_problem)
     assert len(solutions) == 1
     solution: Solution = solutions[0]
-    assert len(solution) == len(sample_tsp_problem) + 1
-    assert_equal(solution.constraints, (0, 0))
+    assert len(solution) == len(sample_tsp_problem)
+    assert_equal(solution.constraints, (0,))
     assert solution.fitness >= 0.0
 
 
 def test_nneighbour_raises_sample():
     with pytest.raises(RuntimeError):
-        nneighbour(None)
+        nearest_neighbour(None)
 
 
 def test_nneighbour_is_deterministic(sample_tsp_problem):
     n_repetition = 10
-    solutions = [nneighbour(sample_tsp_problem)[0] for _ in range(n_repetition)]
+    solutions = [nearest_neighbour(sample_tsp_problem)[0] for _ in range(n_repetition)]
 
     assert len(solutions) == n_repetition
     expected_solution = solutions[0]
     assert all(x == expected_solution for x in solutions[1:])
 
 
-def test_greedy_solves_sample(sample_tsp_problem):
-    solutions = greedy(sample_tsp_problem)
+def test_shortest_edge_solves_sample(sample_tsp_problem):
+    solutions = shortest_edge(sample_tsp_problem)
     assert len(solutions) == 1
     solution: Solution = solutions[0]
-    assert len(solution) == len(sample_tsp_problem) + 1
-    assert_equal(solution.constraints, (0, 0))
+    assert len(solution) == len(sample_tsp_problem)
+    assert_equal(solution.constraints, (0,))
     assert solution.fitness >= 0.0
 
 
-def test_greedy_raises_sample():
+def test_shortest_edge_raises_sample():
     with pytest.raises(RuntimeError):
-        greedy(None)
+        shortest_edge(None)
 
 
-def test_greedy_is_deterministic(sample_tsp_problem):
+def test_shortest_edge_is_deterministic(sample_tsp_problem):
     n_repetition = 10
-    solutions = [greedy(sample_tsp_problem)[0] for _ in range(n_repetition)]
+    solutions = [shortest_edge(sample_tsp_problem)[0] for _ in range(n_repetition)]
     assert len(solutions) == n_repetition
     expected_solution = solutions[0]
     assert all(x == expected_solution for x in solutions[1:])

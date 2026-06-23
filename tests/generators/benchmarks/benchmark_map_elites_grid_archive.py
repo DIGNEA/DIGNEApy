@@ -22,12 +22,12 @@ from digneapy.solvers import (
     best_fit,
     default_kp,
     first_fit,
-    greedy,
     map_kp,
     miw_kp,
     mpw_kp,
+    nearest_neighbour,
     next_fit,
-    nneighbour,
+    shortest_edge,
     worst_fit,
 )
 
@@ -71,7 +71,7 @@ def benchmark_map_elites_with_grid_archive_for_tsp(descriptor, benchmark):
         descriptor_pipeline = DescriptorPipeline(descriptor)
         number_of_nodes = 50
         generations = 100
-        portfolio = [nneighbour, greedy]
+        portfolio = [nearest_neighbour, shortest_edge]
 
         desc_dimension = 11 if descriptor == "features" else len(portfolio)
         archive = GridArchive(

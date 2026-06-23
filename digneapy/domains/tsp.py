@@ -170,30 +170,6 @@ class TSP(Problem):
         else:
             return self._distances
 
-    def _evaluate_constraints(
-        self, individual: Sequence | Solution | np.ndarray
-    ) -> Tuple[int, int]:
-        """Check that a candidate tour satisfies the hard feasibility constraints.
-
-        A tour is considered feasible if and only if:
-            1. Every city index from 1 to N-1 appears exactly once in the sequence.
-            2. The tour starts at city 0 (``individual[0] == 0``).
-            3. The tour ends at city 0 (``individual[-1] == 0``).
-
-        Args:
-            individual (Sequence | Solution): The candidate tour to validate.
-
-        Returns:
-            Tuple[int, int]: Where the first component says if the tour is cycled or not,
-                and the second component tells how many duplicated
-                cities are in the inner tour [1:-1].
-        """
-        cycle_violation: int = 0 if individual[0] == individual[-1] == 0 else 1
-        inner_tour = individual[1:-1]
-        inner_cities = set(inner_tour)
-        duplicated_count = len(inner_tour) - len(inner_cities)
-        return (cycle_violation, duplicated_count)
-
     def evaluate(
         self, individual: Sequence | Solution | np.ndarray
     ) -> Tuple[float, ...]:
@@ -204,42 +180,39 @@ class TSP(Problem):
         problem into a maximisation problem, which is consistent with the Digneapy
         framework's convention. Fitness, always to maximise.
 
-        Infeasible tours—those that repeat cities or do not begin and end
-        at city 0— are assigned a penalty fitness of ``2.938736e-39``
-        (approximately ``1.0 / float_max``) and a constraint
-        value of ``np.finfo(np.float64).max``.
+        Infeasible tours—those that repeat cities are assigned a penalty
+        proportional to the number of repetitions.
 
         If the supplied ``individual`` is a ``Solution`` object, its ``fitness``,
         ``objectives``, and ``constraints`` attributes are updated in-place.
 
         Args:
             individual (Sequence | Solution | np.ndarray): The candidate tour to
-                evaluate. Must have length ``N + 1``, where ``N`` is the number of
-                cities, with ``individual[0] == individual[-1] == 0``.
+                evaluate. Must have length ``N``, where ``N`` is the number of
+                cities or nodes.
 
         Raises:
-            ValueError: If the length of ``individual`` does not equal ``N + 1``.
+            ValueError: If the length of ``individual`` does not equal ``N ``.
 
         Returns:
-            Tuple[float, float, float]: A three-element tuple containing the objective value,
-                cyclic violation counter (0 if everything is okay, 1 otherwise),
-                and the number of duplicated nodes in the inner tour. This third value
+            Tuple[float, float]: A two-element tuple containing the objective value
+                and the number of duplicated nodes in the inner tour. This second value
                 should be zero for a feasible solution, meaning that all nodes are only
                 visited once.
         """
-        if len(individual) != self.dimension + 1:
+        if len(individual) != self.dimension:
             raise ValueError(
                 f"Mismatch between individual variables ({len(individual)})"
                 f" and instance variables ({self.dimension}) in TSP. "
-                f"A solution for the TSP must be a sequence of len {self.dimension + 1} items. "
+                f"A solution for the TSP must be a sequence of len {self.dimension} items. "
                 f"Instead got {len(individual)}."
             )
 
-        cycle_violation, duplicate_count = self._evaluate_constraints(individual)
-        total_violations = cycle_violation + duplicate_count
+        duplicated_count = len(individual) - len(set(individual))
 
-        from_node = np.asarray(individual[:-1])
-        to_node = np.asarray(individual[1:])
+        # to_node shifts left by 1 to wrap the last node with the first one
+        from_node = np.asarray(individual)
+        to_node = np.roll(np.asarray(individual), -1)
 
         if self._too_large_to_fit:
             from_coords = self._coordinates[from_node]
@@ -258,8 +231,8 @@ class TSP(Problem):
             else:
                 distance = np.sum(self._distances[from_node, to_node], dtype=np.float64)
 
-        if total_violations != 0:
-            penalty = np.float64(total_violations) * distance * self._penalty_factor
+        if duplicated_count != 0:
+            penalty = np.float64(duplicated_count) * distance * self._penalty_factor
             fitness = 1.0 / (distance + penalty)
         else:
             fitness = 1.0 / distance
@@ -269,14 +242,11 @@ class TSP(Problem):
             # and in that case we can update its attributes
             individual.fitness = fitness
             individual.objectives = (fitness,)
-            individual.constraints = (
-                cycle_violation,
-                duplicate_count,
-            )
+            individual.constraints = (duplicated_count,)
         except Exception:
             pass
 
-        return (fitness, cycle_violation, duplicate_count)
+        return (fitness, duplicated_count)
 
     def __call__(
         self, individual: Sequence | Solution | np.ndarray
@@ -289,12 +259,11 @@ class TSP(Problem):
 
         Args:
             individual (Sequence | Solution | np.ndarray): The candidate tour to
-                evaluate. Must have length ``N + 1``.
+                evaluate. Must have length ``N``.
 
         Returns:
-            Tuple[float, float, float]: A three-element tuple containing the objective value,
-                cyclic violation counter (0 if everything is okay, 1 otherwise),
-                and the number of duplicated nodes in the inner tour. This third value
+            Tuple[float, float]: A two-element tuple containing the objective value
+                and the number of duplicated nodes in the inner tour. This second value
                 should be zero for a feasible solution, meaning that all nodes are only
                 visited once.
         """
@@ -324,23 +293,37 @@ class TSP(Problem):
         """
         return np.asarray(self._coordinates, dtype=dtype, copy=copy)
 
-    def create_solution(self) -> Solution:
+    def create_solution(self, random: bool = False, start_node: int = 0) -> Solution:
         """Create a trivial initial solution for the TSP.
 
         The solution visits cities in natural order: 0 → 1 → 2 → … → N-1 → 0.
         This is a feasible but almost certainly non-optimal tour that can be used
         as a starting point for local search or population initialisation.
 
+        Args:
+            random(bool): If True, generate a random permutation of nodes
+                instead of the natural-order tour. Defaults to False.
+            start_node(int): Starting and endind node of the cyclic tour.
+                Defaults to standard initial node (0).
         Returns:
             Solution: A ``Solution`` object whose ``variables`` encode the tour,
                 with zeroed ``objectives`` and ``constraints`` arrays.
         """
-        items = np.zeros(self.dimension + 1, dtype=np.uint32)
-        items[1:-1] = np.arange(1, self.dimension, dtype=np.uint32)
+        items = np.zeros(self.dimension, dtype=np.uint32)
+        items[0] = start_node
+        remaining_nodes = np.array(
+            [c for c in range(self.dimension) if c != start_node], dtype=np.uint32
+        )
+        if random:
+            self._rng.shuffle(remaining_nodes)
+
+        items[1:] = remaining_nodes
+        fitness, duplicated = self.evaluate(items)
         return Solution(
             variables=items,
-            objectives=np.zeros(1),
-            constraints=np.zeros(2),
+            objectives=(fitness,),
+            constraints=(duplicated,),
+            fitness=fitness,
         )
 
     def to_file(self, filename: str | Path = "instance.tsp"):
@@ -527,7 +510,7 @@ class TSPDomain(Domain):
             seed=seed,
         )
 
-    def generate_instances(self, n: np.uint32 = np.uint32(1)) -> List[Instance]:
+    def generate_instances(self, n: np.uint32 | int = np.uint32(1)) -> List[Instance]:
         """Generate a batch of TSP instances by sampling city coordinates at random.
 
         City x-coordinates are drawn uniformly from ``x_range`` and y-coordinates

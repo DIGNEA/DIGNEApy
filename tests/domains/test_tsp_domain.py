@@ -191,12 +191,9 @@ def test_tsp_problem_can_create_solution():
     )
     tsp = TSP(number_of_nodes=number_of_nodes, coords=coordinates)
     sample_solution = tsp.create_solution()
-    # TSP creates solutions with dimension N + 1
-    # because it creates a cyclic solution that returns to zero (start point)
-    assert len(sample_solution) == number_of_nodes + 1
-    assert sample_solution[0] == sample_solution[-1] == 0
-    assert_equal(sample_solution[1:-1], np.arange(1, number_of_nodes))
-    assert len(sample_solution.constraints) == 2
+    assert len(sample_solution) == number_of_nodes
+    assert_equal(sample_solution, np.arange(number_of_nodes))
+    assert len(sample_solution.constraints) == 1
     assert len(sample_solution.objectives) == 1
 
 
@@ -263,12 +260,12 @@ def test_tsp_problem_evaluates_correct_solution():
     )
     tsp = TSP(number_of_nodes=number_of_nodes, coords=coordinates)
     solution = tsp.create_solution()
-    fitness, cycled, duplicated = tsp.evaluate(solution)
+    fitness, duplicated = tsp.evaluate(solution)
     assert_equal(solution.fitness, fitness)
     assert fitness >= 0.0
     # No constraints should be violated with the sample solution
-    assert_equal((cycled, duplicated), (0, 0))
-    assert_equal(solution.constraints, (0, 0))
+    assert_equal((duplicated), 0)
+    assert_equal(solution.constraints, (0,))
 
 
 def test_tsp_problem_evaluates_correct_solution_with_1d_matrix():
@@ -282,12 +279,12 @@ def test_tsp_problem_evaluates_correct_solution_with_1d_matrix():
         number_of_nodes=number_of_nodes, coords=coordinates, save_distances_as_1d=True
     )
     solution = tsp.create_solution()
-    fitness, cycled, duplicated = tsp.evaluate(solution)
+    fitness, duplicated = tsp.evaluate(solution)
     assert_equal(solution.fitness, fitness)
     assert fitness >= 0.0
     # No constraints should be violated with the sample solution
-    assert_equal((cycled, duplicated), (0, 0))
-    assert_equal(solution.constraints, (0, 0))
+    assert_equal((duplicated), 0)
+    assert_equal(solution.constraints, (0,))
 
 
 def test_tsp_problem_evaluates_correct_solution_saved_as_1d_or_2d():
@@ -301,19 +298,19 @@ def test_tsp_problem_evaluates_correct_solution_saved_as_1d_or_2d():
         number_of_nodes=number_of_nodes, coords=coordinates, save_distances_as_1d=True
     )
     solution = tsp_1d.create_solution()
-    fitness, cycled, duplicated = tsp_1d.evaluate(solution)
+    fitness, duplicated = tsp_1d.evaluate(solution)
 
     tsp_2d = TSP(
         number_of_nodes=number_of_nodes, coords=coordinates, save_distances_as_1d=False
     )
     solution_2d = tsp_2d.create_solution()
-    fitness_2d, cycled_2d, duplicated_2d = tsp_1d.evaluate(solution)
+    fitness_2d, duplicated_2d = tsp_1d.evaluate(solution)
 
     assert_equal(solution, solution_2d)
     assert_equal(fitness, fitness_2d)
     # No constraints should be violated with the sample solution
-    assert_equal((cycled, duplicated), (0, 0))
-    assert_equal((cycled_2d, duplicated_2d), (0, 0))
+    assert_equal((duplicated), (0))
+    assert_equal((duplicated_2d), (0))
 
 
 @pytest.mark.skipif(
@@ -328,12 +325,12 @@ def test_tsp_problem_evaluates_correct_solution_large_to_fit():
     )
     tsp = TSP(number_of_nodes=number_of_nodes, coords=coordinates)
     solution = tsp.create_solution()
-    fitness, cycled, duplicated = tsp.evaluate(solution)
+    fitness, duplicated = tsp.evaluate(solution)
     assert_equal(solution.fitness, fitness)
     assert fitness >= 0.0
     # No constraints should be violated with the sample solution
-    assert_equal((cycled, duplicated), (0, 0))
-    assert_equal(solution.constraints, (0, 0))
+    assert_equal(duplicated, 0)
+    assert_equal(solution.constraints, (0,))
 
 
 def test_tsp_problem_evaluates_raises_if_len_mismatch():
@@ -351,25 +348,7 @@ def test_tsp_problem_evaluates_raises_if_len_mismatch():
         _ = tsp.evaluate(solution)
 
 
-def test_tsp_problem_evaluates_no_cylic_solution():
-    number_of_nodes = 100
-    low = 0.0
-    high = 1000.0
-    coordinates = np.random.default_rng().uniform(
-        low=low, high=high, size=(number_of_nodes, 2)
-    )
-    tsp = TSP(number_of_nodes=number_of_nodes, coords=coordinates)
-    solution = tsp.create_solution()
-    solution[-1] = number_of_nodes - 1
-    fitness, cycled, duplicated = tsp.evaluate(solution)
-    assert_equal(solution.fitness, fitness)
-    assert fitness >= 0.0
-    # First constraint should violated with this updated sample solution
-    assert_equal((cycled, duplicated), (1, 0))
-    assert_equal(solution.constraints, (1, 0))
-
-
-def test_tsp_problem_evaluates_no_duplicated_nodes_solution():
+def test_tsp_problem_evaluates_duplicated_nodes_solution():
     number_of_nodes = 100
     low = 0.0
     high = 1000.0
@@ -380,12 +359,12 @@ def test_tsp_problem_evaluates_no_duplicated_nodes_solution():
     solution = tsp.create_solution()
     # Node 1 is visited more than once
     solution[2] = 1
-    fitness, cycled, duplicated = tsp.evaluate(solution)
+    fitness, duplicated = tsp.evaluate(solution)
     assert_equal(solution.fitness, fitness)
     assert fitness >= 0.0
     # First constraint should violated with this updated sample solution
-    assert_equal((cycled, duplicated), (0, 1))
-    assert_equal(solution.constraints, (0, 1))
+    assert_equal(duplicated, 1)
+    assert_equal(solution.constraints, (1,))
 
 
 def test_tsp_problem_call_evaluates_correct_solution():
@@ -397,12 +376,12 @@ def test_tsp_problem_call_evaluates_correct_solution():
     )
     tsp = TSP(number_of_nodes=number_of_nodes, coords=coordinates)
     solution = tsp.create_solution()
-    fitness, cycled, duplicated = tsp(solution)
+    fitness, duplicated = tsp(solution)
     assert_equal(solution.fitness, fitness)
     assert fitness >= 0.0
     # No constraints should be violated with the sample solution
-    assert_equal((cycled, duplicated), (0, 0))
-    assert_equal(solution.constraints, (0, 0))
+    assert_equal(duplicated, 0)
+    assert_equal(solution.constraints, (0,))
 
 
 def test_tsp_problem_evaluates_with_sequence():
@@ -414,10 +393,10 @@ def test_tsp_problem_evaluates_with_sequence():
     )
     tsp = TSP(number_of_nodes=number_of_nodes, coords=coordinates)
     solution = tsp.create_solution().variables
-    fitness, cycled, duplicated = tsp.evaluate(solution)
+    fitness, duplicated = tsp.evaluate(solution)
 
     assert fitness >= 0.0
-    assert_equal((cycled, duplicated), (0, 0))
+    assert_equal(duplicated, 0)
 
 
 ################ TSP Domain tests

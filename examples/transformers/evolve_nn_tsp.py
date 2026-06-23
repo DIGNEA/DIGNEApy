@@ -20,7 +20,7 @@ from digneapy.archives import Archive
 from digneapy.domains import TSPDomain
 from digneapy.generators import Evolutionary
 from digneapy.operators import generational_replacement
-from digneapy.solvers import greedy, nneighbour, two_opt
+from digneapy.solvers import nearest_neighbour, shortest_edge, two_opt
 from digneapy.transformers.neural import NNEncoder
 from digneapy.transformers.tuner import Tuner
 
@@ -90,9 +90,9 @@ def main():
         transformer=nn,
         domain=TSPDomain(number_of_nodes=50),
         portfolios=[
-            [greedy, nneighbour, two_opt],
-            [nneighbour, greedy, two_opt],
-            [two_opt, greedy, nneighbour],
+            [shortest_edge, nearest_neighbour, two_opt],
+            [nearest_neighbour, shortest_edge, two_opt],
+            [two_opt, shortest_edge, nearest_neighbour],
         ],
     )
     cma_es = Tuner(

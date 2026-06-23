@@ -23,10 +23,6 @@ from digneapy.core import Solution
 ctypedef long int li
 ctypedef unsigned short ushort
 
-
-
-
-
 @cython.boundscheck(False)  # Deactivate bounds checking
 cpdef list ctwo_opt(object initial_solution, object problem):
     """2-Opt Heuristic for the Travelling Salesman Problem

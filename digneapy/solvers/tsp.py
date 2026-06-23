@@ -10,7 +10,6 @@
 @Desc    :   None
 """
 
-__all__ = ["two_opt", "nearest_neighbour", "shortest_edge"]
 from typing import List, LiteralString
 
 import numpy as np

@@ -29,13 +29,24 @@ class SelectionFn(Protocol):
 
 
 class Selection(ABC):
-    def __init__(self, seed: Optional[int | np.random.SeedSequence] = None):
+    def __init__(
+        self,
+        name: str = "Selection",
+        seed: Optional[int | np.random.SeedSequence] = None,
+    ):
         self._seed = (
             seed
             if isinstance(seed, (int | np.random.SeedSequence))
             else np.random.SeedSequence()
         )
         self._rng = np.random.default_rng(seed)
+        self._name = name
+
+    def __str__(self) -> str:
+        return f"{self._name}(seed: {self._seed.entropy})"
+
+    def __repr__(self):
+        return f"{self._name}(seed: {self._seed.entropy})"
 
     def __call__(
         self,

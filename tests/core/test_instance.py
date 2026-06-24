@@ -552,6 +552,41 @@ def test_instance_to_df():
         assert key in df.columns
 
 
+def test_instance_to_lazyframe():
+    dimension = 10
+    descriptor_dim = 4
+    portfolio_dim = 4
+
+    instance = Instance(
+        variables=list(range(dimension)),
+        fitness=100.0,
+        performance_bias=1.0,
+        novelty=1.0,
+        descriptor=tuple(range(descriptor_dim)),
+        portfolio_scores=tuple(range(portfolio_dim)),
+    )
+    lf = instance.to_df(lazy=True)
+    assert isinstance(lf, pl.LazyFrame)
+    df = lf.collect()
+    assert isinstance(df, pl.DataFrame)
+    expected_keys = (
+        "target",
+        "fitness",
+        "novelty",
+        "performance_bias",
+        # variables is flattened",
+        *(f"v{i}" for i in range(dimension)),
+        # Portfolio_scores is flattened "portfolio_scores",
+        *(f"alg{i}" for i in range(portfolio_dim)),
+        *(f"d{i}" for i in range(descriptor_dim)),
+    )
+    # I prefer the loop rather than all
+    # to check which key is failing is so
+    # assert all(key in data.keys() for key in expected_keys)
+    for key in expected_keys:
+        assert key in df.columns
+
+
 def test_instance_to_df_with_custom_names():
     dimension = 10
     descriptor_dim = 4

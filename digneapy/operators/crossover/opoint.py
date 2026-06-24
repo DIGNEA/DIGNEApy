@@ -23,7 +23,7 @@ class OnePointCrossover(Crossover):
     def __init__(
         self, cxpb: float = 0.5, seed: Optional[int | np.random.SeedSequence] = None
     ):
-        super().__init__(cxpb, seed)
+        super().__init__(name="One Point", cxpb=cxpb, seed=seed)
 
     def __call__(self, individual: IndType, other: IndType) -> IndType:
         """One point crossover

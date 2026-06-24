@@ -181,6 +181,9 @@ class Knapsack(Problem):
 
         return f"KP(n={self._dimension},C={self.capacity})"
 
+    def __repr__(self) -> str:
+        return self.__str__()
+
     def __len__(self):
         """Return the number of items defined by the problem."""
 
@@ -386,6 +389,20 @@ class KnapsackDomain(Domain):
             features_names=_features_names,
             seed=seed,
         )
+
+    def __str__(self):
+        return (
+            "KnapsackDomain:\n"
+            f"\t- n_items: {self._number_of_items}\n"
+            f"\t- weight ranges: ({self._minimum_weight}, {self._maximum_weight})\n"
+            f"\t- profit ranges: ({self._minimum_profit}, {self._maximum_profit})\n"
+            f"\t- maximum capacity allowed: {self._maximum_capacity}\n"
+            f"\t- capacity generation method: {self.capacity_approach}, ratio: {self.capacity_ratio}\n"
+            f"\t- features: {','.join(self.features_names)}"
+        )
+
+    def __repr__(self):
+        return self.__str__()
 
     @property
     def capacity_approach(self):

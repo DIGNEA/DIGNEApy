@@ -23,7 +23,7 @@ class UniformCrossover(Crossover):
     def __init__(
         self, cxpb: float = 0.5, seed: Optional[int | np.random.SeedSequence] = None
     ):
-        super().__init__(cxpb, seed)
+        super().__init__(name="Uniform", cxpb=cxpb, seed=seed)
 
     def __call__(self, individual: IndType, other: IndType) -> IndType:
         """Uniform Crossover Operator for Instances and Solutions

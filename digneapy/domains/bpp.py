@@ -10,12 +10,9 @@
 @Desc    :   None
 """
 
-from pathlib import Path
-
-__all__ = ["BPP", "BPPDomain"]
-
 import warnings
 from collections.abc import Iterable, Sequence
+from pathlib import Path
 from typing import Dict, List, Literal, Optional, Self, Tuple
 
 import numpy as np
@@ -348,6 +345,23 @@ class BPPDomain(Domain):
             features_names=features_names,
             seed=seed,
         )
+
+    def __str__(self):
+        if self._capacity_approach != "evolved":
+            capacity_str = f"\n    method: {self.capacity_approach}\n    ratio: {self.capacity_ratio}\n"
+        else:
+            capacity_str = "evolved\n"
+        return (
+            "Bin Packing Domain:\n"
+            f"  number of items: {self._number_of_items}\n"
+            f"  weight ranges: ({self._minimum_weight}, {self._maximum_weight})\n"
+            f"  maximum capacity allowed: {self._maximum_capacity}\n"
+            f"  capacity generation: {capacity_str}"
+            f"  features: {','.join(self.features_names)}"
+        )
+
+    def __repr__(self):
+        return self.__str__()
 
     @property
     def capacity_approach(self):

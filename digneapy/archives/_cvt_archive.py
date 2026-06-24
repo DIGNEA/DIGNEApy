@@ -146,8 +146,13 @@ class CVTArchive(Archive):
         super().__init__(initial_instances=None)
         from sklearn.neighbors import KDTree
 
-        self._seed = seed
-        self._rng = np.random.default_rng(seed)
+        self.seed = (
+            seed
+            if isinstance(seed, np.random.SeedSequence)
+            else np.random.SeedSequence(seed)
+        )
+
+        self._rng = np.random.default_rng(self.seed)
 
         ranges = list(zip(*ranges))
         self._lower_bounds = np.asarray(ranges[0], dtype=np.float64)
@@ -264,10 +269,11 @@ class CVTArchive(Archive):
         """
         return iter(self._storage[Keys.instances].values())
 
-    def __str__(self):
-        return (
-            f"CVTArchive(dim={self._dimensions},centroids=|{self._centroids.shape[0]}|)"
-        )
+    def __str__(self) -> str:
+        return f"CVTArchive(dimensions: {self._dimensions}, n_centroids: {self._centroids.shape[0]}, seed: {self.seed.entropy})"
+
+    def __repr__(self) -> str:
+        return str(self)
 
     def __len__(self) -> int:
         """Length of the CVTArchive

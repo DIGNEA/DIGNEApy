@@ -77,8 +77,11 @@ class UnstructuredArchive(Archive):
         """
         return self._novelty_threshold
 
-    def __str__(self):
-        return f"UnstructuredArchive(k={self._k},threshold={self._novelty_threshold},data=(|{len(self)}|))"
+    def __str__(self) -> str:
+        return f"UnstructuredArchive(k:{self._k}, threshold: {self._novelty_threshold})"
+
+    def __repr__(self) -> str:
+        return str(self)
 
     def __call__(self, descriptors: np.ndarray) -> np.ndarray:
         """Computes the Novelty Search of the instances

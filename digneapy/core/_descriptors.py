@@ -87,8 +87,8 @@ class DescriptorPipeline:
             transformers_names = "None"
         return (
             "Descriptor Pipeline: \n"
-            f"\t- Key: {self._key}\n"
-            f"\t- Transformers: {transformers_names}\n"
+            f"  key: {self._key}\n"
+            f"  Transformers: {transformers_names}\n"
         )
 
     def __repr__(self):
@@ -98,8 +98,8 @@ class DescriptorPipeline:
             transformers_names = ""
         return (
             "Descriptor Pipeline: \n"
-            f"\t- Key: {self._key}\n"
-            f"\t- Transformers: {transformers_names}\n"
+            f"  key: {self._key}\n"
+            f"  Transformers: {transformers_names}\n"
         )
 
     def __call__(

@@ -171,7 +171,13 @@ class BaseGenerator(ABC):
         self._generations = _generations
         self._repetitions = _repetitions
         self._logbook = Logbook()
-        self._seed = seed
+        self.seed = (
+            seed
+            if isinstance(seed, np.random.SeedSequence)
+            else np.random.SeedSequence(seed)
+        )
+
+        self._rng = np.random.default_rng(self.seed)
 
     @property
     def log(self) -> Logbook:

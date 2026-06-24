@@ -233,7 +233,10 @@ class GridArchive(Archive):
         return iter(self._storage[Keys.instances].values())
 
     def __str__(self) -> str:
-        return f"GridArchive(dim={self._dimensions},cells={self._cells:,},bounds={self._boundaries})"
+        return f"GridArchive(dimensions: {self._dimensions}, cells={self._cells:,})"
+
+    def __repr__(self) -> str:
+        return str(self)
 
     def __len__(self) -> int:
         """Length of the GridArchive

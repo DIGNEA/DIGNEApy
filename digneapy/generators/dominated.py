@@ -252,9 +252,9 @@ class Dominated(Evolutionary):
         """
         solvers_names = tuple(extract_solvers_name(self._portfolio))
         return (
-            "Dominated Novelty Search Generator\n"
+            "Dominated Novelty Search Generator:\n"
             f"- Domain {self._domain}\n"
-            f"- Portfolio: {solvers_names!r}\n"
+            f"- Portfolio: {solvers_names}\n"
             f"- Population Size: {self._pop_size}\n"
             f"- Nearest Neighbours (k): {self._k}\n"
             f"- Generations: {self._generations:,}\n"
@@ -280,7 +280,7 @@ class Dominated(Evolutionary):
         """
         solvers_names = tuple(extract_solvers_name(self._portfolio))
         return (
-            "Dominated Novelty Search Generator\n"
+            "Dominated Novelty Search Generator:\n"
             f"- Domain {self._domain}\n"
             f"- Portfolio: {solvers_names!r}\n"
             f"- Population Size: {self._pop_size}\n"

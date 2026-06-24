@@ -1,0 +1,848 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <link rel="shortcut icon" href="../../../img/favicon.ico" />
+    <title> metrics - DIGNEApy</title>
+    <link rel="stylesheet" href="../../../css/theme.css" />
+    <link rel="stylesheet" href="../../../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+        <link href="../../../assets/_mkdocstrings.css" rel="stylesheet" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = " metrics";
+        var mkdocs_page_input_path = "reference/core/_metrics.md";
+        var mkdocs_page_url = null;
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="../../../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href="../../.." class="icon icon-home"> DIGNEApy
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../..">Home</a>
+                </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Getting Started</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../installation/">Installation</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../tutorial/0_getting_started/">Overview</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../tutorial/01_eig_example/">Run an experiment</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../tutorial/02_create_domain/">Create a domain</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../tutorial/03_create_algorithm/">Create an algorithm</a>
+                  </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../../CONTRIBUTING/">Contributing</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../../authors/">Credits</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../../license/">License</a>
+                </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Reference</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../SUMMARY/">Overview</a>
+                  </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../..">DIGNEApy</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../../.." class="icon icon-home" aria-label="Docs"></a></li>
+      <li class="breadcrumb-item active"> metrics</li>
+    <li class="wy-breadcrumbs-aside">
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <div class="doc doc-object doc-module">
+
+
+
+<a id="core._metrics"></a>
+    <div class="doc doc-contents first">
+
+        <p>@File    :   _metrics.py
+@Time    :   2025/02/05 14:40:24
+@Author  :   Alejandro Marrero
+@Version :   1.0
+@Contact :   amarrerd@ull.edu.es
+@License :   (C)Copyright 2025, Alejandro Marrero
+@Desc    :   None</p>
+
+
+
+
+
+
+
+
+
+
+<div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-class">
+
+
+
+<h2 id="core._metrics.Logbook" class="doc doc-heading">
+            <code>Logbook</code>
+
+
+</h2>
+
+
+    <div class="doc doc-contents ">
+            <p class="doc doc-class-bases">
+              Bases: <code><span title="deap.tools.Logbook">Logbook</span></code></p>
+
+
+
+        <p>Extends Deap.tools.Logbook to include additionaly features such as to_df.</p>
+
+
+
+
+
+
+
+              <details class="quote">
+                <summary>Source code in <code>digneapy/core/_metrics.py</code></summary>
+                <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">103</span>
+<span class="normal">104</span>
+<span class="normal">105</span>
+<span class="normal">106</span>
+<span class="normal">107</span>
+<span class="normal">108</span>
+<span class="normal">109</span>
+<span class="normal">110</span>
+<span class="normal">111</span>
+<span class="normal">112</span>
+<span class="normal">113</span>
+<span class="normal">114</span>
+<span class="normal">115</span>
+<span class="normal">116</span>
+<span class="normal">117</span>
+<span class="normal">118</span>
+<span class="normal">119</span>
+<span class="normal">120</span>
+<span class="normal">121</span>
+<span class="normal">122</span>
+<span class="normal">123</span>
+<span class="normal">124</span>
+<span class="normal">125</span>
+<span class="normal">126</span>
+<span class="normal">127</span>
+<span class="normal">128</span>
+<span class="normal">129</span>
+<span class="normal">130</span>
+<span class="normal">131</span>
+<span class="normal">132</span>
+<span class="normal">133</span>
+<span class="normal">134</span>
+<span class="normal">135</span>
+<span class="normal">136</span>
+<span class="normal">137</span>
+<span class="normal">138</span>
+<span class="normal">139</span>
+<span class="normal">140</span>
+<span class="normal">141</span>
+<span class="normal">142</span>
+<span class="normal">143</span>
+<span class="normal">144</span>
+<span class="normal">145</span>
+<span class="normal">146</span>
+<span class="normal">147</span>
+<span class="normal">148</span>
+<span class="normal">149</span>
+<span class="normal">150</span>
+<span class="normal">151</span>
+<span class="normal">152</span>
+<span class="normal">153</span>
+<span class="normal">154</span>
+<span class="normal">155</span>
+<span class="normal">156</span>
+<span class="normal">157</span>
+<span class="normal">158</span>
+<span class="normal">159</span>
+<span class="normal">160</span>
+<span class="normal">161</span>
+<span class="normal">162</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">Logbook</span><span class="p">(</span><span class="n">tools</span><span class="o">.</span><span class="n">Logbook</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Extends Deap.tools.Logbook to include additionaly features such as to_df.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_statistics</span> <span class="o">=</span> <span class="n">Statistics</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">header</span> <span class="o">=</span> <span class="s2">&quot;generation&quot;</span><span class="p">,</span> <span class="s2">&quot;novelty&quot;</span><span class="p">,</span> <span class="s2">&quot;performance bias&quot;</span><span class="p">,</span> <span class="s2">&quot;fitness&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_chapters_headers</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="s2">&quot;min&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;mean&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;std&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;max&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;qd_score&quot;</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">chapters</span><span class="p">[</span><span class="s2">&quot;novelty&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">header</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_chapters_headers</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">chapters</span><span class="p">[</span><span class="s2">&quot;performance_bias&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">header</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_chapters_headers</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">chapters</span><span class="p">[</span><span class="s2">&quot;fitness&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">header</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_chapters_headers</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">update</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">generation</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="n">instances</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">Instance</span><span class="p">],</span>
+        <span class="n">feedback</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="p">):</span>
+        <span class="k">if</span> <span class="n">generation</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;generation value </span><span class="si">{</span><span class="n">generation</span><span class="si">}</span><span class="s2"> must be greater than zero in Logbook update.&quot;</span>
+            <span class="p">)</span>
+        <span class="c1"># Checks for None, empty and not isinstance() delegated to Statistics</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">record</span><span class="p">(</span><span class="n">generation</span><span class="o">=</span><span class="n">generation</span><span class="p">,</span> <span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">_statistics</span><span class="p">(</span><span class="n">instances</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">feedback</span><span class="p">:</span>  <span class="c1"># pragma: no cover</span>
+            <span class="nb">print</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">stream</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">to_df</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pl</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+        <span class="n">fitness</span> <span class="o">=</span> <span class="n">pl</span><span class="o">.</span><span class="n">from_dicts</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">chapters</span><span class="p">[</span><span class="s2">&quot;fitness&quot;</span><span class="p">],</span> <span class="n">schema</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_chapters_headers</span><span class="p">)</span>
+        <span class="n">novelty</span> <span class="o">=</span> <span class="n">pl</span><span class="o">.</span><span class="n">from_dicts</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">chapters</span><span class="p">[</span><span class="s2">&quot;novelty&quot;</span><span class="p">],</span> <span class="n">schema</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_chapters_headers</span><span class="p">)</span>
+        <span class="n">performance</span> <span class="o">=</span> <span class="n">pl</span><span class="o">.</span><span class="n">from_dicts</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">chapters</span><span class="p">[</span><span class="s2">&quot;performance_bias&quot;</span><span class="p">],</span> <span class="n">schema</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_chapters_headers</span>
+        <span class="p">)</span>
+        <span class="n">generations</span> <span class="o">=</span> <span class="n">pl</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="s2">&quot;generation&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">select</span><span class="p">(</span><span class="s2">&quot;generation&quot;</span><span class="p">))</span>
+
+        <span class="n">df</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">fitness</span>
+            <span class="o">.</span><span class="n">rename</span><span class="p">({</span><span class="n">h</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">h</span><span class="si">}</span><span class="s2">_fitness&quot;</span> <span class="k">for</span> <span class="n">h</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_chapters_headers</span><span class="p">})</span>
+            <span class="o">.</span><span class="n">with_columns</span><span class="p">(</span><span class="n">generations</span><span class="p">)</span>
+            <span class="o">.</span><span class="n">join</span><span class="p">(</span>
+                <span class="n">novelty</span><span class="o">.</span><span class="n">rename</span><span class="p">({</span>
+                    <span class="n">h</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">h</span><span class="si">}</span><span class="s2">_novelty&quot;</span> <span class="k">for</span> <span class="n">h</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_chapters_headers</span>
+                <span class="p">})</span><span class="o">.</span><span class="n">with_columns</span><span class="p">(</span><span class="n">generations</span><span class="p">),</span>
+                <span class="n">on</span><span class="o">=</span><span class="s2">&quot;generation&quot;</span><span class="p">,</span>
+            <span class="p">)</span>
+            <span class="o">.</span><span class="n">join</span><span class="p">(</span>
+                <span class="n">performance</span><span class="o">.</span><span class="n">rename</span><span class="p">({</span>
+                    <span class="n">h</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">h</span><span class="si">}</span><span class="s2">_performance_bias&quot;</span> <span class="k">for</span> <span class="n">h</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_chapters_headers</span>
+                <span class="p">})</span><span class="o">.</span><span class="n">with_columns</span><span class="p">(</span><span class="n">generations</span><span class="p">),</span>
+                <span class="n">on</span><span class="o">=</span><span class="s2">&quot;generation&quot;</span><span class="p">,</span>
+            <span class="p">)</span>
+        <span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">df</span><span class="o">.</span><span class="n">select</span><span class="p">([</span><span class="s2">&quot;generation&quot;</span><span class="p">,</span> <span class="o">*</span><span class="p">[</span><span class="n">c</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">df</span><span class="o">.</span><span class="n">columns</span> <span class="k">if</span> <span class="n">c</span> <span class="o">!=</span> <span class="s2">&quot;generation&quot;</span><span class="p">]])</span>
+</code></pre></div></td></tr></table></div>
+              </details>
+
+
+
+<div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+
+
+  </div>
+
+    </div>
+
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
+<h2 id="core._metrics.Statistics" class="doc doc-heading">
+            <code>Statistics</code>
+
+
+</h2>
+
+
+    <div class="doc doc-contents ">
+
+
+
+
+
+
+
+
+
+              <details class="quote">
+                <summary>Source code in <code>digneapy/core/_metrics.py</code></summary>
+                <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 58</span>
+<span class="normal"> 59</span>
+<span class="normal"> 60</span>
+<span class="normal"> 61</span>
+<span class="normal"> 62</span>
+<span class="normal"> 63</span>
+<span class="normal"> 64</span>
+<span class="normal"> 65</span>
+<span class="normal"> 66</span>
+<span class="normal"> 67</span>
+<span class="normal"> 68</span>
+<span class="normal"> 69</span>
+<span class="normal"> 70</span>
+<span class="normal"> 71</span>
+<span class="normal"> 72</span>
+<span class="normal"> 73</span>
+<span class="normal"> 74</span>
+<span class="normal"> 75</span>
+<span class="normal"> 76</span>
+<span class="normal"> 77</span>
+<span class="normal"> 78</span>
+<span class="normal"> 79</span>
+<span class="normal"> 80</span>
+<span class="normal"> 81</span>
+<span class="normal"> 82</span>
+<span class="normal"> 83</span>
+<span class="normal"> 84</span>
+<span class="normal"> 85</span>
+<span class="normal"> 86</span>
+<span class="normal"> 87</span>
+<span class="normal"> 88</span>
+<span class="normal"> 89</span>
+<span class="normal"> 90</span>
+<span class="normal"> 91</span>
+<span class="normal"> 92</span>
+<span class="normal"> 93</span>
+<span class="normal"> 94</span>
+<span class="normal"> 95</span>
+<span class="normal"> 96</span>
+<span class="normal"> 97</span>
+<span class="normal"> 98</span>
+<span class="normal"> 99</span>
+<span class="normal">100</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">Statistics</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_stats_novelty</span> <span class="o">=</span> <span class="n">tools</span><span class="o">.</span><span class="n">Statistics</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="n">attrgetter</span><span class="p">(</span><span class="s2">&quot;novelty&quot;</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_stats_perf_bias</span> <span class="o">=</span> <span class="n">tools</span><span class="o">.</span><span class="n">Statistics</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="n">attrgetter</span><span class="p">(</span><span class="s2">&quot;performance_bias&quot;</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_stats_fitness</span> <span class="o">=</span> <span class="n">tools</span><span class="o">.</span><span class="n">Statistics</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="n">attrgetter</span><span class="p">(</span><span class="s2">&quot;fitness&quot;</span><span class="p">))</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_stats</span> <span class="o">=</span> <span class="n">tools</span><span class="o">.</span><span class="n">MultiStatistics</span><span class="p">(</span>
+            <span class="n">novelty</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_stats_novelty</span><span class="p">,</span>
+            <span class="n">performance_bias</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_stats_perf_bias</span><span class="p">,</span>
+            <span class="n">fitness</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_stats_fitness</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_stats</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="s2">&quot;mean&quot;</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_stats</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="s2">&quot;std&quot;</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">std</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_stats</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="s2">&quot;min&quot;</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_stats</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="s2">&quot;max&quot;</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_stats</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="s2">&quot;qd_score&quot;</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">instances</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">Instance</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Mapping</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Compiles the statistics of the population or Archive.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            instances (Sequence[Instance] | Archive): Instances to extract metrics.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            ValueError: If instances or archive are empty.</span>
+<span class="sd">            TypeError: If any object in instances/archive are not an Instance or subclass of Instance.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Mapping: Dict with the metrics of the instances</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">instances</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;instances is empty in Statistics.&quot;</span><span class="p">)</span>
+
+            <span class="c1"># ignore np.inf values which can occur in early steps</span>
+            <span class="k">with</span> <span class="n">np</span><span class="o">.</span><span class="n">errstate</span><span class="p">(</span><span class="n">invalid</span><span class="o">=</span><span class="s2">&quot;ignore&quot;</span><span class="p">):</span>
+                <span class="n">record</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_stats</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="n">instances</span><span class="p">)</span>
+                <span class="k">return</span> <span class="n">record</span>
+
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Unexpected error in Statistics: </span><span class="si">{</span><span class="n">exc</span><span class="si">}</span><span class="s2"> </span><span class="se">\n</span><span class="s2">for instances = </span><span class="si">{</span><span class="n">instances</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="nn">exc</span>
+</code></pre></div></td></tr></table></div>
+              </details>
+
+
+
+<div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="core._metrics.Statistics.__call__" class="doc doc-heading">
+            <code class="highlight language-python"><span class="fm">__call__</span><span class="p">(</span><span class="n">instances</span><span class="p">)</span></code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Compiles the statistics of the population or Archive.</p>
+
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Parameters:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+              <b><code>instances</code></b>
+                  (<code><span title="typing.Sequence">Sequence</span>[<a class="autorefs autorefs-internal" title="Instance (core._instance.Instance)" href="../_instance/#core._instance.Instance">Instance</a>] | <span title="Archive">Archive</span></code>)
+              –
+              <div class="doc-md-description">
+                <p>Instances to extract metrics.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Raises:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+                  <code><span title="ValueError">ValueError</span></code>
+              –
+              <div class="doc-md-description">
+                <p>If instances or archive are empty.</p>
+              </div>
+            </li>
+            <li>
+                  <code><span title="TypeError">TypeError</span></code>
+              –
+              <div class="doc-md-description">
+                <p>If any object in instances/archive are not an Instance or subclass of Instance.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Returns:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+<b><code>Mapping</code></b>(                  <code><span title="typing.Mapping">Mapping</span></code>
+)              –
+              <div class="doc-md-description">
+                <p>Dict with the metrics of the instances</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+            <details class="mkdocstrings-source">
+              <summary>Source code in <code>digneapy/core/_metrics.py</code></summary>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 75</span>
+<span class="normal"> 76</span>
+<span class="normal"> 77</span>
+<span class="normal"> 78</span>
+<span class="normal"> 79</span>
+<span class="normal"> 80</span>
+<span class="normal"> 81</span>
+<span class="normal"> 82</span>
+<span class="normal"> 83</span>
+<span class="normal"> 84</span>
+<span class="normal"> 85</span>
+<span class="normal"> 86</span>
+<span class="normal"> 87</span>
+<span class="normal"> 88</span>
+<span class="normal"> 89</span>
+<span class="normal"> 90</span>
+<span class="normal"> 91</span>
+<span class="normal"> 92</span>
+<span class="normal"> 93</span>
+<span class="normal"> 94</span>
+<span class="normal"> 95</span>
+<span class="normal"> 96</span>
+<span class="normal"> 97</span>
+<span class="normal"> 98</span>
+<span class="normal"> 99</span>
+<span class="normal">100</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">instances</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">Instance</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Mapping</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Compiles the statistics of the population or Archive.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        instances (Sequence[Instance] | Archive): Instances to extract metrics.</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">        ValueError: If instances or archive are empty.</span>
+<span class="sd">        TypeError: If any object in instances/archive are not an Instance or subclass of Instance.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Mapping: Dict with the metrics of the instances</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">instances</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;instances is empty in Statistics.&quot;</span><span class="p">)</span>
+
+        <span class="c1"># ignore np.inf values which can occur in early steps</span>
+        <span class="k">with</span> <span class="n">np</span><span class="o">.</span><span class="n">errstate</span><span class="p">(</span><span class="n">invalid</span><span class="o">=</span><span class="s2">&quot;ignore&quot;</span><span class="p">):</span>
+            <span class="n">record</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_stats</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="n">instances</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">record</span>
+
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;Unexpected error in Statistics: </span><span class="si">{</span><span class="n">exc</span><span class="si">}</span><span class="s2"> </span><span class="se">\n</span><span class="s2">for instances = </span><span class="si">{</span><span class="n">instances</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="nn">exc</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
+
+
+
+  </div>
+
+    </div>
+
+
+</div>
+
+
+<div class="doc doc-object doc-function">
+
+
+<h2 id="core._metrics.qd_score" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">qd_score</span><span class="p">(</span><span class="n">instances_fitness</span><span class="p">)</span></code>
+
+</h2>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Calculates the Quality Diversity score of a set of instances fitness.</p>
+
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Parameters:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+              <b><code>instances</code></b>
+                  (<code><span title="typing.Sequence">Sequence</span>[<span title="float">float</span>]</code>)
+              –
+              <div class="doc-md-description">
+                <p>List with the fitness of several instances to calculate the QD score.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Returns:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+<b><code>float</code></b>(                  <code><span title="numpy.float64">float64</span></code>
+)              –
+              <div class="doc-md-description">
+                <p>Sum of the fitness of all instances.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+            <details class="mkdocstrings-source">
+              <summary>Source code in <code>digneapy/core/_metrics.py</code></summary>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">23</span>
+<span class="normal">24</span>
+<span class="normal">25</span>
+<span class="normal">26</span>
+<span class="normal">27</span>
+<span class="normal">28</span>
+<span class="normal">29</span>
+<span class="normal">30</span>
+<span class="normal">31</span>
+<span class="normal">32</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">qd_score</span><span class="p">(</span><span class="n">instances_fitness</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Calculates the Quality Diversity score of a set of instances fitness.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        instances (Sequence[float]): List with the fitness of several instances to calculate the QD score.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        float: Sum of the fitness of all instances.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">instances_fitness</span><span class="p">)</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h2 id="core._metrics.qd_score_auc" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">qd_score_auc</span><span class="p">(</span><span class="n">qd_scores</span><span class="p">,</span> <span class="n">batch_size</span><span class="p">)</span></code>
+
+</h2>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Calculates the Quantifying Efficiency in Quality Diversity Optimization.</p>
+<p>In quality diversity (QD) optimization, the QD score is a holistic
+metric which sums the objective values of all cells in the archive.</p>
+<p>Since the QD score only measures the performance of a QD algorithm
+at a single point in time, it fails to reflect algorithm efficiency.
+Two algorithms may have the same QD score even though one algorithm
+achieved that score with fewer evaluations.
+We propose a metric called “QD score AUC” which quantifies this efficiency.</p>
+
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Parameters:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+              <b><code>qd_scores</code></b>
+                  (<code><span title="typing.Sequence">Sequence</span>[<span title="float">float</span>]</code>)
+              –
+              <div class="doc-md-description">
+                <p>Sequence of QD scores.</p>
+              </div>
+            </li>
+            <li>
+              <b><code>batch_size</code></b>
+                  (<code><span title="int">int</span></code>)
+              –
+              <div class="doc-md-description">
+                <p>Number of instances evaluated in each generation.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Returns:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+                  <code><span title="numpy.float64">float64</span></code>
+              –
+              <div class="doc-md-description">
+                <p>np.float64: QD score AUC metric.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+            <details class="mkdocstrings-source">
+              <summary>Source code in <code>digneapy/core/_metrics.py</code></summary>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">35</span>
+<span class="normal">36</span>
+<span class="normal">37</span>
+<span class="normal">38</span>
+<span class="normal">39</span>
+<span class="normal">40</span>
+<span class="normal">41</span>
+<span class="normal">42</span>
+<span class="normal">43</span>
+<span class="normal">44</span>
+<span class="normal">45</span>
+<span class="normal">46</span>
+<span class="normal">47</span>
+<span class="normal">48</span>
+<span class="normal">49</span>
+<span class="normal">50</span>
+<span class="normal">51</span>
+<span class="normal">52</span>
+<span class="normal">53</span>
+<span class="normal">54</span>
+<span class="normal">55</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">qd_score_auc</span><span class="p">(</span><span class="n">qd_scores</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">batch_size</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Calculates the Quantifying Efficiency in Quality Diversity Optimization.</span>
+
+
+<span class="sd">    In quality diversity (QD) optimization, the QD score is a holistic</span>
+<span class="sd">    metric which sums the objective values of all cells in the archive.</span>
+
+<span class="sd">    Since the QD score only measures the performance of a QD algorithm</span>
+<span class="sd">    at a single point in time, it fails to reflect algorithm efficiency.</span>
+<span class="sd">    Two algorithms may have the same QD score even though one algorithm</span>
+<span class="sd">    achieved that score with fewer evaluations.</span>
+<span class="sd">    We propose a metric called “QD score AUC” which quantifies this efficiency.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        qd_scores (Sequence[float]): Sequence of QD scores.</span>
+<span class="sd">        batch_size (int): Number of instances evaluated in each generation.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        np.float64: QD score AUC metric.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">qd_scores</span><span class="p">)</span> <span class="o">*</span> <span class="n">batch_size</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
+
+
+
+  </div>
+
+    </div>
+
+</div>
+              
+            </div>
+          </div><footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+    
+    
+  </span>
+</div>
+    <script src="../../../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "../../..";</script>
+    <script src="../../../js/theme_extra.js"></script>
+    <script src="../../../js/theme.js"></script>
+      <script src="../../../search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>

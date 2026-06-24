@@ -152,21 +152,23 @@ class Instance:
         return self._dtype
 
     def clone(self) -> Self:
-        """Create a clone of the current instance. More efficient than using copy.deepcopy.
+        """Create a clone of the current instance.
+
+        This avoids Python-level list/tuple conversions by copying the underlying
+        NumPy arrays directly.
 
         Returns:
             Self: Instance object
         """
-        return type(self)(
-            variables=list(self._variables),
-            fitness=self._fitness,
-            performance_bias=self._performance_bias,
-            novelty=self._novelty,
-            descriptor=tuple(self._descriptor) if len(self._descriptor) > 0 else None,
-            portfolio_scores=tuple(self._portfolio_scores)
-            if len(self._portfolio_scores) > 0
-            else None,
-        )
+        new_instance = object.__new__(type(self))
+        new_instance._dtype = self._dtype
+        new_instance._fitness = self._fitness
+        new_instance._performance_bias = self._performance_bias
+        new_instance._novelty = self._novelty
+        new_instance._variables = self._variables.copy()
+        new_instance._descriptor = self._descriptor.copy()
+        new_instance._portfolio_scores = self._portfolio_scores.copy()
+        return new_instance
 
     def clone_with(self, **overrides):
         """Clones an Instance with overriden attributes

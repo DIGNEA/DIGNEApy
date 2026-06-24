@@ -191,6 +191,16 @@ class CVTArchive(Archive):
             self.extend(instances)
 
     @property
+    def descriptors(self) -> np.ndarray:
+        """Descriptors of the instances
+
+        Returns:
+            np.ndarray: Returns a np.ndarray with the descriptors of
+                the instances stored in the archive
+        """
+        return np.asarray(list(self._storage[Keys.descriptors].values()))
+
+    @property
     def dimensions(self) -> int:
         """Dimensions of the measure space used
 

@@ -77,16 +77,6 @@ class UnstructuredArchive(Archive):
         """
         return self._novelty_threshold
 
-    @property
-    def descriptors(self) -> np.ndarray:
-        """Descriptors of the instances
-
-        Returns:
-            np.ndarray: Returns a np.ndarray with the descriptors of
-                the instances stored in the archive
-        """
-        return np.asarray(list(self._storage[Keys.descriptors].values()))
-
     def __str__(self):
         return f"UnstructuredArchive(k={self._k},threshold={self._novelty_threshold},data=(|{len(self)}|))"
 

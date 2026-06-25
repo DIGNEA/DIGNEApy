@@ -43,10 +43,10 @@ class Selection(ABC):
         self._name = name
 
     def __str__(self) -> str:
-        return f"{self._name}(seed: {self._seed.entropy})"
+        return f"{self._name}(seed: {self._seed})"
 
     def __repr__(self):
-        return f"{self._name}(seed: {self._seed.entropy})"
+        return f"{self._name}(seed: {self._seed})"
 
     def __call__(
         self,

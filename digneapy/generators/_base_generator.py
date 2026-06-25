@@ -65,7 +65,7 @@ class GenerationResult:
     solvers: Sequence[str]
     instances: Archive | Sequence[Instance]
     history: Logbook
-    metrics: pl.DataFrame = field(default_factory=pl.DataFrame)
+    metrics: pl.DataFrame | pl.Series | None = field(default_factory=pl.DataFrame)
 
     def __post_init__(self):
         """Compute descriptive statistics for the generated instances.
@@ -79,9 +79,11 @@ class GenerationResult:
         """
         if len(self.instances) != 0:
             _metrics = Statistics()(instances=self.instances)
-            self.metrics = pl.DataFrame(_metrics)
+            self.metrics = pl.DataFrame([
+                {"metric": k, **v} for k, v in _metrics.items()
+            ])
         else:
-            self._metrics = pl.Series()
+            self.metrics = None
 
 
 class BaseGenerator(ABC):

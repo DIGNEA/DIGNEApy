@@ -399,7 +399,8 @@ class KnapsackDomain(Domain):
             f"  profit ranges: ({self._minimum_profit}, {self._maximum_profit})\n"
             f"  maximum capacity allowed: {self._maximum_capacity}\n"
             f"  capacity generation: {capacity_str}"
-            f"  features: {','.join(self.features_names)}"
+            f"  features: {','.join(self.features_names)}\n"
+            f"  seed: {self._seed}\n"
         )
 
     def __repr__(self):

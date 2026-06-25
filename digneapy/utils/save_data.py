@@ -12,38 +12,43 @@
 
 import warnings
 from collections.abc import Callable, Mapping, Sequence
+from pathlib import Path
 from typing import Literal, Optional
 
 import polars as pl
 
 from digneapy.generators import GenerationResult
 
-type SavingFn = Callable[[pl.DataFrame | pl.LazyFrame, str, bool, ...], None]
+type SavingFn = Callable[[pl.DataFrame | pl.LazyFrame, Path, str, bool, ...], None]
 
 
 def __save_as_csv(
-    frames: pl.DataFrame | pl.LazyFrame, filename_pattern: str, lazily: bool
+    frames: pl.DataFrame | pl.LazyFrame,
+    base_dir: Path,
+    filename_pattern: str,
+    lazily: bool,
 ):
     if lazily:
-        frames.sink_csv(f"instances_{filename_pattern}.csv")
+        frames.sink_csv(base_dir / f"instances_{filename_pattern}.csv")
     elif not lazily and frames.height > 0:
         frames.write_csv(
-            f"instances_{filename_pattern}.csv",
+            base_dir / f"instances_{filename_pattern}.csv",
         )
 
 
 def __save_as_parquet(
     frames: pl.DataFrame | pl.LazyFrame,
+    base_dir: Path,
     filename_pattern: str,
     lazily: bool,
 ):
     if lazily:
         frames.sink_parquet(
-            f"instances_{filename_pattern}.parquet", compression_level=22
+            base_dir / f"instances_{filename_pattern}.parquet", compression_level=22
         )
     elif not lazily and frames.height > 0:
         frames.write_parquet(
-            f"instances_{filename_pattern}.parquet", compression_level=22
+            base_dir / f"instances_{filename_pattern}.parquet", compression_level=22
         )
 
 
@@ -53,7 +58,9 @@ __saving_methods: Mapping[str, SavingFn] = {
 }
 
 
+# Todo: Update the documentation of this function
 def save_results_to_files(
+    base_dir: Path,
     filename_pattern: str,
     result: GenerationResult,
     variables_names: Optional[Sequence[str]] = None,
@@ -94,12 +101,21 @@ def save_results_to_files(
             ],
             how="vertical_relaxed",
         )
-        _saving_fn(frames=frames, filename_pattern=filename_pattern, lazily=lazily)
+        _saving_fn(
+            frames=frames,
+            base_dir=base_dir,
+            filename_pattern=filename_pattern,
+            lazily=lazily,
+        )
 
         if not only_instances:
-            result.history.to_df().write_csv(f"{filename_pattern}_history.csv")
+            result.history.to_df().write_csv(
+                base_dir / f"{filename_pattern}_history.csv"
+            )
             if result.metrics is not None:
-                result.metrics.write_csv(f"{filename_pattern}_archive_metrics.csv")
+                result.metrics.write_csv(
+                    base_dir / f"{filename_pattern}_archive_metrics.csv"
+                )
     else:
         warnings.warn(
             "Archive in Generation result is empty. Nothing to do in save_results_to_files.",

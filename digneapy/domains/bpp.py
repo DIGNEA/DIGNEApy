@@ -357,7 +357,8 @@ class BPPDomain(Domain):
             f"  weight ranges: ({self._minimum_weight}, {self._maximum_weight})\n"
             f"  maximum capacity allowed: {self._maximum_capacity}\n"
             f"  capacity generation: {capacity_str}"
-            f"  features: {','.join(self.features_names)}"
+            f"  features: {','.join(self.features_names)}\n"
+            f"  seed: {self._seed}\n"
         )
 
     def __repr__(self):

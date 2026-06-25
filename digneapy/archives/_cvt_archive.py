@@ -270,7 +270,7 @@ class CVTArchive(Archive):
         return iter(self._storage[Keys.instances].values())
 
     def __str__(self) -> str:
-        return f"CVTArchive(dimensions: {self._dimensions}, n_centroids: {self._centroids.shape[0]}, seed: {self.seed.entropy})"
+        return f"CVTArchive(dimensions: {self._dimensions}, n_centroids: {self._centroids.shape[0]}, seed: {self.seed})"
 
     def __repr__(self) -> str:
         return str(self)

@@ -129,7 +129,7 @@ class MapElites(BaseGenerator):
             f"- Repetitions: {self._repetitions}\n"
             f"- {self._descriptor_pipe}\n"
             f"- Performance Function: {self._performance_fn.__name__}\n"
-            f"- Seed (entropy): {self.seed.entropy}\n"
+            f"- Seed: {self.seed}\n"
         )
 
     def __repr__(self) -> str:
@@ -153,7 +153,7 @@ class MapElites(BaseGenerator):
             f"- Repetitions: {self._repetitions}\n"
             f"- {self._descriptor_pipe}\n"
             f"- Performance Function: {self._performance_fn.__name__}\n"
-            f"- Seed (entropy): {self.seed.entropy}\n"
+            f"- Seed: {self.seed}\n"
         )
 
     @property

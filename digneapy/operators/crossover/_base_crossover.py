@@ -46,10 +46,10 @@ class Crossover(ABC):
         self._rng = np.random.default_rng(seed)
 
     def __str__(self) -> str:
-        return f"{self._name}(cxpb: {self._cxpb}, seed: {self._seed.entropy})"
+        return f"{self._name}(cxpb: {self._cxpb}, seed: {self._seed})"
 
     def __repr__(self):
-        return f"{self._name}(cxpb: {self._cxpb}, seed: {self._seed.entropy})"
+        return f"{self._name}(cxpb: {self._cxpb}, seed: {self._seed})"
 
     @abstractmethod
     def __call__(self, individual: IndType, other: IndType, *args, **kwargs) -> IndType:

@@ -516,7 +516,8 @@ class TSPDomain(Domain):
             f"  number of nodes: {self._dimension // 2}\n"
             f"  X-coords ranges: ({self._x_range})\n"
             f"  X-coords ranges: ({self._y_range})\n"
-            f"  features: {','.join(self.features_names)}"
+            f"  features: {','.join(self.features_names)}\n"
+            f"  seed: {self._seed}\n"
         )
 
     def __repr__(self):

@@ -35,9 +35,9 @@ class Solution:
 
     def __init__(
         self,
-        variables: Optional[Iterable] = [],
-        objectives: Optional[Iterable] = [],
-        constraints: Optional[Iterable] = [],
+        variables: Optional[Iterable] = None,
+        objectives: Optional[Iterable] = None,
+        constraints: Optional[Iterable] = None,
         fitness: float | np.float64 = 0.0,
         dtype=np.uint32,
         otype=np.float64,
@@ -57,9 +57,21 @@ class Solution:
 
         self._otype = otype
         self._dtype = dtype
-        self._variables = np.asarray(variables, dtype=self.dtype)
-        self._objectives = np.asarray(objectives, dtype=self._otype)
-        self._constraints = np.asarray(constraints, dtype=self._otype)
+        self._variables = np.asarray(
+            variables if variables is not None else [],
+            dtype=self._dtype,
+            copy=True,
+        )
+        self._objectives = np.asarray(
+            objectives if objectives is not None else [],
+            dtype=self._otype,
+            copy=True,
+        )
+        self._constraints = np.asarray(
+            constraints if constraints is not None else [],
+            dtype=self._otype,
+            copy=True,
+        )
         try:
             if fitness is None:
                 self._fitness = np.float64(0)
@@ -138,10 +150,11 @@ class Solution:
             Self: Solution object
         """
         return type(self)(
-            variables=list(self._variables),
-            objectives=list(self._objectives),
-            constraints=list(self._constraints),
+            variables=self._variables,
+            objectives=self._objectives,
+            constraints=self._constraints,
             fitness=self._fitness,
+            dtype=self._dtype,
             otype=self._otype,
         )
 

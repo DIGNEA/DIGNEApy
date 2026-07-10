@@ -22,7 +22,7 @@ from ._base_replacement import Replacement
 
 class GreedyReplacement(Replacement):
     def __init__(self, seed: Optional[int | np.random.SeedSequence] = None):
-        super().__init__(seed)
+        super().__init__(name="Greedy", seed=seed)
 
     def __call__(
         self,

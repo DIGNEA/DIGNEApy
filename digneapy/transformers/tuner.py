@@ -37,10 +37,10 @@ class Tuner:
         if any(param < 0 for param in (dimension, lambda_, evaluations, workers)):
             raise ValueError(
                 f"These parameters cannot be negative:\n"
-                f"\t- dimension. Got {dimension}"
-                f"\t- lambda_ (Pop size). Got {lambda_}"
-                f"\t- evaluations. Got {evaluations}"
-                f"\t- workers. Got {workers}"
+                f"\t dimension. Got {dimension}"
+                f"\t lambda_ (Pop size). Got {lambda_}"
+                f"\t evaluations. Got {evaluations}"
+                f"\t workers. Got {workers}"
             )
         self._seed = seed
         self._rng = np.random.default_rng(seed)

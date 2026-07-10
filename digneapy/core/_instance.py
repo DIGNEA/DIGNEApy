@@ -108,7 +108,7 @@ class Instance:
             exception.add_note(f"performance_bias: {performance_bias}")
             exception.add_note(f"novelty: {novelty}")
             raise TypeError("Wrong parameters for Instance.") from exception
-        # Todo: Consider fix the dimensions of the descriptor and portfolio
+        # TODO: Consider fix the dimensions of the descriptor and portfolio
         # if type(descriptor_dim) is not int or descriptor_dim <= 0:
         #     raise ValueError(
         #         f"descriptor_dim must be a positive integer. Got {descriptor_dim}."
@@ -462,7 +462,7 @@ class Instance:
         """
         import json
 
-        # Todo: Need to change dtypes because np is not JSON serializable
+        # TODO: Need to change dtypes because np is not JSON serializable
         return json.dumps(self.to_dict(), sort_keys=False, indent=2)
 
     def to_df(
@@ -470,13 +470,16 @@ class Instance:
         variables_names: Optional[Sequence[str]] = None,
         descriptor_names: Optional[Sequence[str]] = None,
         portfolio_names: Optional[Sequence[str]] = None,
-    ) -> pl.DataFrame:
+        lazy: bool = False,
+    ) -> pl.DataFrame | pl.LazyFrame:
         """Creates a Polars DataFrame from the instance.
 
         Args:
             variables_names (Optional[Sequence[str]], optional): Names of the variables in the dictionary, otherwise v_i. Defaults to None.
-            descriptor_names: (Optional[Sequence[str]], optional): Names of the components of the descriptor, otherwisde di. Default to None.
+            descriptor_names (Optional[Sequence[str]], optional): Names of the components of the descriptor, otherwisde di. Default to None.
             portfolio_names (Optional[Sequence[str]], optional): Name of the solvers, otherwise solver_i. Defaults to None.
+            lazy (bool, optional): Whether to create a LazyFrame or a DataFrame. When True, the method returns a LazyFrame that must
+                be collected at some point. Otherwise, it collects and load the data into a DataFrame. Defaults ot False.
 
         Returns:
             DataFrame: Polars DataFrame with the attributes of the instance as keys and the values of the attributes as values.
@@ -492,4 +495,7 @@ class Instance:
                     _flatten_data[sub_key] = sub_value
             else:
                 _flatten_data[key] = value
-        return pl.DataFrame(_flatten_data)
+        if lazy:
+            return pl.LazyFrame(_flatten_data)
+        else:
+            return pl.DataFrame(_flatten_data)

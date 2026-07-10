@@ -510,6 +510,19 @@ class TSPDomain(Domain):
             seed=seed,
         )
 
+    def __str__(self):
+        return (
+            "Travelling Salesman Problem Domain:\n"
+            f"  number of nodes: {self._dimension // 2}\n"
+            f"  X-coords ranges: ({self._x_range})\n"
+            f"  X-coords ranges: ({self._y_range})\n"
+            f"  features: {','.join(self.features_names)}\n"
+            f"  seed: {self._seed}\n"
+        )
+
+    def __repr__(self):
+        return self.__str__()
+
     def generate_instances(self, n: np.uint32 | int = np.uint32(1)) -> List[Instance]:
         """Generate a batch of TSP instances by sampling city coordinates at random.
 

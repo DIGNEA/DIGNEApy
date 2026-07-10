@@ -25,7 +25,7 @@ class BinarySelection(Selection):
     def __init__(
         self, attr: str = "fitness", seed: Optional[int | np.random.SeedSequence] = None
     ):
-        super().__init__(seed)
+        super().__init__(name="Binary Selection", seed=seed)
         self._attr = attr
 
     def __call__(

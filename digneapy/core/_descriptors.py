@@ -80,6 +80,28 @@ class DescriptorPipeline:
         self._key = key
         self._transformers = tuple(transformers)
 
+    def __str__(self) -> str:
+        if len(self._transformers) != 0:
+            transformers_names = ",".join(t.__name__ for t in self._transformers)
+        else:
+            transformers_names = "None"
+        return (
+            "Descriptor Pipeline: \n"
+            f"  key: {self._key}\n"
+            f"  Transformers: {transformers_names}\n"
+        )
+
+    def __repr__(self):
+        if len(self._transformers) != 0:
+            transformers_names = ",".join(t.__name__ for t in self._transformers)
+        else:
+            transformers_names = ""
+        return (
+            "Descriptor Pipeline: \n"
+            f"  key: {self._key}\n"
+            f"  Transformers: {transformers_names}\n"
+        )
+
     def __call__(
         self,
         population: np.ndarray | Sequence[Instance],

@@ -241,6 +241,62 @@ class Dominated(Evolutionary):
         self._k = k
         del self._archive
 
+    def __str__(self):
+        """Return a human-readable summary of the generator's configuration.
+
+        Includes the population size, number of generations, domain name, and
+        the names of the solvers in the portfolio.
+
+        Returns:
+            str: A formatted string describing the generator instance.
+        """
+        solvers_names = tuple(extract_solvers_name(self._portfolio))
+        return (
+            "Dominated Novelty Search Generator:\n"
+            f"- Domain {self._domain}\n"
+            f"- Portfolio: {solvers_names}\n"
+            f"- Population Size: {self._pop_size}\n"
+            f"- Nearest Neighbours (k): {self._k}\n"
+            f"- Generations: {self._generations:,}\n"
+            f"- Crossover rate: {self.cxrate}\n"
+            f"- Crossover: {self.crossover}\n"
+            f"- Mutation rate: {self.mutrate}\n"
+            f"- Mutation: {self.mutation}\n"
+            f"- Selection: {self.selection}\n"
+            f"- Repetitions: {self._repetitions}\n"
+            f"- {self._descriptor_pipe}\n"
+            f"- Performance Function: {self._performance_fn.__name__}\n"
+            f"- Seed: {self.seed}\n"
+        )
+
+    def __repr__(self) -> str:
+        """Return a developer-friendly representation of the generator.
+
+        Reuses :meth:`__str__` but swaps the surrounding parentheses for angle
+        brackets, following the convention used elsewhere in the framework.
+
+        Returns:
+            str: A compact representation suitable for debugging/logging.
+        """
+        solvers_names = tuple(extract_solvers_name(self._portfolio))
+        return (
+            "Dominated Novelty Search Generator:\n"
+            f"- Domain {self._domain}\n"
+            f"- Portfolio: {solvers_names!r}\n"
+            f"- Population Size: {self._pop_size}\n"
+            f"- Nearest Neighbours (k): {self._k}\n"
+            f"- Generations: {self._generations:,}\n"
+            f"- Crossover rate: {self.cxrate}\n"
+            f"- Crossover: {self.crossover}\n"
+            f"- Mutation rate: {self.mutrate}\n"
+            f"- Mutation: {self.mutation}\n"
+            f"- Selection: {self.selection}\n"
+            f"- Repetitions: {self._repetitions}\n"
+            f"- {self._descriptor_pipe}\n"
+            f"- Performance Function: {self._performance_fn.__name__}\n"
+            f"- Seed: {self.seed}"
+        )
+
     def __call__(self, verbose: bool = False) -> GenerationResult:
         """Run the Dominated Novelty Search evolutionary process.
 

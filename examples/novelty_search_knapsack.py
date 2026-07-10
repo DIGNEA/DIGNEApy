@@ -180,11 +180,12 @@ if __name__ == "__main__":
                 target = futures[fut]
                 result = fut.result()
                 save_results_to_files(
-                    f"novelty_search_{descriptor}_N_{number_of_items}_target_{target}_seed_{master_seed.entropy}",
+                    filename_pattern=f"novelty_search_{descriptor}_N_{number_of_items}_target_{target}_seed_{master_seed.entropy}",
                     result=result,
                     variables_names=vars_names,
                     descriptor_names=features_names,
                     only_instances=True,
+                    lazily=True,
                 )
             except Exception as e:
                 print(e)

@@ -1,0 +1,24 @@
+exclude: LICENSE
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+      # See https://pre-commit.com/hooks.html
+      - id: check-added-large-files
+      - id: check-symlinks
+      - id: check-yaml
+      - id: debug-statements
+      - id: end-of-file-fixer
+      - id: mixed-line-ending
+      - id: trailing-whitespace
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.15.21
+    hooks:
+      # Lint (without fixing).
+      - id: ruff-check
+      # Sort imports.
+      - id: ruff-check
+        args: [--select, I, --fix]
+      # Run formatter.
+      - id: ruff-format
+  

@@ -29,13 +29,22 @@ class MutationFn(Protocol):
 
 
 class Mutation(ABC):
-    def __init__(self, seed: Optional[int | np.random.SeedSequence] = None):
+    def __init__(
+        self, name: str = "Mut", seed: Optional[int | np.random.SeedSequence] = None
+    ):
         self._seed = (
             seed
             if isinstance(seed, (int | np.random.SeedSequence))
             else np.random.SeedSequence()
         )
         self._rng = np.random.default_rng(seed)
+        self._name = name
+
+    def __str__(self) -> str:
+        return f"{self._name}(seed: {self._seed})"
+
+    def __repr__(self):
+        return f"{self._name}(seed: {self._seed})"
 
     @abstractmethod
     def __call__(

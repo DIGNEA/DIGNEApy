@@ -27,12 +27,16 @@ class CrossoverFn(Protocol):
 
 class Crossover(ABC):
     def __init__(
-        self, cxpb: float = 0.5, seed: Optional[int | np.random.SeedSequence] = None
+        self,
+        name: str = "CX",
+        cxpb: float = 0.5,
+        seed: Optional[int | np.random.SeedSequence] = None,
     ):
         if cxpb < 0.0 or cxpb > 1.0:
             raise ValueError(
                 f"Crossover expects cxpb in the range [0.0, 1.0]. Got {cxpb}"
             )
+        self._name = name
         self._cxpb = np.float64(cxpb)
         self._seed = (
             seed
@@ -40,6 +44,12 @@ class Crossover(ABC):
             else np.random.SeedSequence()
         )
         self._rng = np.random.default_rng(seed)
+
+    def __str__(self) -> str:
+        return f"{self._name}(cxpb: {self._cxpb}, seed: {self._seed})"
+
+    def __repr__(self):
+        return f"{self._name}(cxpb: {self._cxpb}, seed: {self._seed})"
 
     @abstractmethod
     def __call__(self, individual: IndType, other: IndType, *args, **kwargs) -> IndType:

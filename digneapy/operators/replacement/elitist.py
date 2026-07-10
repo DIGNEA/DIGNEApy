@@ -29,7 +29,7 @@ class Elitist(Replacement):
         attr: str = "fitness",
         seed: Optional[int | np.random.SeedSequence] = None,
     ):
-        super().__init__(seed)
+        super().__init__(name="Elitist", seed=seed)
         self._hof = hall_of_fame
         self._attr = attr
 

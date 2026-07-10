@@ -10,13 +10,10 @@
 @Desc    :   None
 """
 
-import warnings
-from pathlib import Path
-
-__all__ = ["Knapsack", "KnapsackDomain"]
-
 import itertools
+import warnings
 from collections.abc import Sequence
+from pathlib import Path
 from typing import Dict, List, Literal, Optional, Self, Tuple
 
 import numpy as np
@@ -180,6 +177,9 @@ class Knapsack(Problem):
         """Return a compact string representation of the problem instance."""
 
         return f"KP(n={self._dimension},C={self.capacity})"
+
+    def __repr__(self) -> str:
+        return self.__str__()
 
     def __len__(self):
         """Return the number of items defined by the problem."""
@@ -386,6 +386,25 @@ class KnapsackDomain(Domain):
             features_names=_features_names,
             seed=seed,
         )
+
+    def __str__(self):
+        if self._capacity_approach != "evolved":
+            capacity_str = f"\n    method: {self.capacity_approach}\n    ratio: {self.capacity_ratio}\n"
+        else:
+            capacity_str = "evolved\n"
+        return (
+            "Knapsack Domain:\n"
+            f"  number of items: {self._number_of_items}\n"
+            f"  weight ranges: ({self._minimum_weight}, {self._maximum_weight})\n"
+            f"  profit ranges: ({self._minimum_profit}, {self._maximum_profit})\n"
+            f"  maximum capacity allowed: {self._maximum_capacity}\n"
+            f"  capacity generation: {capacity_str}"
+            f"  features: {','.join(self.features_names)}\n"
+            f"  seed: {self._seed}\n"
+        )
+
+    def __repr__(self):
+        return self.__str__()
 
     @property
     def capacity_approach(self):

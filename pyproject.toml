@@ -110,6 +110,7 @@ dev = [
     "sphinx-codeautolink>=0.18.1",
     "myst-parser>=5.0.0",
     "pytest-benchmark>=5.2.3",
+    "pre-commit>=4.6.0",
 ]
 
 [tool.cibuildwheel]
@@ -235,6 +236,7 @@ omit = [
     "digneapy/transformers/*",
     "digneapy/utils/*",
     "digneapy/visualize/_archive_plotter.py",
+    "digneapy/lab/*",
 ]
 
 [tool.coverage.report]

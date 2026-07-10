@@ -22,7 +22,7 @@ from ._base_replacement import Replacement
 
 class Generational(Replacement):
     def __init__(self, seed: Optional[int | np.random.SeedSequence] = None):
-        super().__init__(seed)
+        super().__init__(name="Generational", seed=seed)
 
     def __call__(
         self, population: Sequence[IndType], offspring: Sequence[IndType]

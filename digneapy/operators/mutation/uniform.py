@@ -21,7 +21,7 @@ from ._base_mutation import Mutation
 
 class UniformMutation(Mutation):
     def __init__(self, seed: Optional[int | np.random.SeedSequence] = None):
-        super().__init__(seed)
+        super().__init__(name="Uniform One", seed=seed)
 
     def __call__(self, individual: IndType, lb: np.ndarray, ub: np.ndarray) -> IndType:
         """Performs Uniform One Mutation on Instances and Solution objects.
@@ -50,7 +50,7 @@ class UniformMutation(Mutation):
 
 class BatchUniformMutation(Mutation):
     def __init__(self, seed: Optional[int | np.random.SeedSequence] = None):
-        super().__init__(seed)
+        super().__init__(name="Uniform One (Batch version)", seed=seed)
 
     def __call__(
         self, population: np.ndarray, lb: np.ndarray, ub: np.ndarray

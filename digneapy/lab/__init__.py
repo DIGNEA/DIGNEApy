@@ -11,4 +11,4 @@
 """
 
 from ._experiment import GenerationExperiment
-from ._run import Run
+from ._run import RunConfig

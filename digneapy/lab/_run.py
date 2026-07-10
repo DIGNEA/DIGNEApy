@@ -10,27 +10,43 @@
 @Desc    :   None
 """
 
+from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Callable
+from typing import Any, Callable, Mapping, Optional
 
-from digneapy.generators import BaseGenerator, GenerationResult
+from digneapy.generators import GenerationResult
 from digneapy.utils import save_results_to_files
 
-type RunFn = Callable[[BaseGenerator, ...], GenerationResult]
+type RunFn = Callable[..., GenerationResult]
 
 
-class Run:
-    def __init__(self, generator: BaseGenerator, run_name: str, base_dir: Path):
-        self._name = run_name
-        self._generator = generator
-        self._base_dir = base_dir
+@dataclass(slots=True)
+class RunConfig:
+    """Configuration for a single experiment run.
 
-    def __call__(self) -> GenerationResult:
-        result = self._generator()
-        save_results_to_files(
-            filename_pattern=self._name,
-            base_dir=self._base_dir,
-            result=result,
-            only_instances=True,
-        )
+    A run config bundles the callable to execute, the name used for output,
+    optional arguments and keyword arguments, and persistence settings for
+    saving generated results to disk.
+    """
+
+    call_fn: RunFn
+    name: str
+    args: tuple[Any, ...] = field(default_factory=tuple)
+    kwargs: Mapping[str, Any] = field(default_factory=dict)
+    save_kwargs: Mapping[str, Any] = field(default_factory=dict)
+
+    def __call__(self, result_directory: Optional[Path] = None) -> GenerationResult:
+        """Execute the configured callable and optionally persist the result.
+
+        Returns:
+            The generation result produced by the wrapped callable.
+        """
+        result: GenerationResult = self.call_fn(*self.args, **self.kwargs)
+        if result_directory is not None:
+            save_results_to_files(
+                filename_pattern=self.name,
+                base_dir=result_directory,
+                result=result,
+                **self.save_kwargs,
+            )
         return result

@@ -236,6 +236,7 @@ omit = [
     "digneapy/transformers/*",
     "digneapy/utils/*",
     "digneapy/visualize/_archive_plotter.py",
+    "digneapy/lab/*",
 ]
 
 [tool.coverage.report]

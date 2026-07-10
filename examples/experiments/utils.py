@@ -18,12 +18,12 @@ from numpy.random import SeedSequence
 
 
 def make_seed_sequences(
-    master_seed: int | Sequence[int] | SeedSequence, n_repetitions: int, n_solvers: int
+    root_seed: int | Sequence[int] | SeedSequence, n_repetitions: int, n_solvers: int
 ) -> Mapping[Tuple[int, int], SeedSequence]:
     """Generates n_repetitions * n_solvers seeds from a master seed
 
     Args:
-        master_seed (int | Sequence[int]): Master seed to spawn the rest. It
+        root_seed (int | Sequence[int]): Root seed to spawn the rest. It
             must be an integer or a sequence of integers.
         n_repetitions (int): Number of repetitions the experiment will perform.
         n_solvers (int): Number of solvers in the portfolio.
@@ -33,10 +33,10 @@ def make_seed_sequences(
             The keys of the dictionary are tuples of (rep, solver) and the values
             are the seeds for that combination.
     """
-    if not isinstance(master_seed, SeedSequence):
-        root = np.random.SeedSequence(entropy=master_seed)
+    if not isinstance(root_seed, SeedSequence):
+        root_seed = np.random.SeedSequence(entropy=root_seed)
 
-    children_seeds = root.spawn(n_repetitions * n_solvers)
+    children_seeds = root_seed.spawn(n_repetitions * n_solvers)
     return {
         (rep, solv): children_seeds[rep * n_solvers + solv]
         for rep in range(n_repetitions)

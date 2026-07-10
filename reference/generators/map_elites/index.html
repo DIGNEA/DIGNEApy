@@ -1,0 +1,2245 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <link rel="shortcut icon" href="../../../img/favicon.ico" />
+    <title>Map elites - DIGNEApy</title>
+    <link rel="stylesheet" href="../../../css/theme.css" />
+    <link rel="stylesheet" href="../../../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+        <link href="../../../assets/_mkdocstrings.css" rel="stylesheet" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "Map elites";
+        var mkdocs_page_input_path = "reference/generators/map_elites.md";
+        var mkdocs_page_url = null;
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="../../../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href="../../.." class="icon icon-home"> DIGNEApy
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../..">Home</a>
+                </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Getting Started</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../installation/">Installation</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../tutorial/0_getting_started/">Overview</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../tutorial/01_eig_example/">Run an experiment</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../tutorial/02_create_domain/">Create a domain</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../tutorial/03_create_algorithm/">Create an algorithm</a>
+                  </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../../CONTRIBUTING/">Contributing</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../../authors/">Credits</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../../license/">License</a>
+                </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Reference</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../SUMMARY/">Overview</a>
+                  </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../..">DIGNEApy</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../../.." class="icon icon-home" aria-label="Docs"></a></li>
+      <li class="breadcrumb-item active">Map elites</li>
+    <li class="wy-breadcrumbs-aside">
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <div class="doc doc-object doc-module">
+
+
+
+<a id="generators.map_elites"></a>
+    <div class="doc doc-contents first">
+
+        <p>@File    :   map_elites.py
+@Time    :   2026/03/25 12:21:11
+@Author  :   Alejandro Marrero (amarrerd@ull.edu.es)
+@Version :   1.0
+@Contact :   amarrerd@ull.edu.es
+@License :   (C)Copyright 2026, Alejandro Marrero
+@Desc    :   None</p>
+
+
+
+
+
+
+
+
+
+
+<div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-class">
+
+
+
+<h2 id="generators.map_elites.MapElites" class="doc doc-heading">
+            <code>MapElites</code>
+
+
+</h2>
+
+
+    <div class="doc doc-contents ">
+            <p class="doc doc-class-bases">
+              Bases: <code><a class="autorefs autorefs-internal" title="BaseGenerator (generators._base_generator.BaseGenerator)" href="../_base_generator/#generators._base_generator.BaseGenerator">BaseGenerator</a></code></p>
+
+
+
+        <p>Quality-Diversity instance generator based on the MAP-Elites algorithm.</p>
+<p>MAP-Elites maintains a discretised archive (either a <code>GridArchive</code> or a
+<code>CVTArchive</code>) where each occupied cell holds the single best instance
+found so far for that region of descriptor space. At every generation, a
+batch of parents is sampled uniformly from the currently filled cells,
+mutated to produce offspring, evaluated against the solver portfolio, and
+inserted back into the archive — each offspring either claims an empty
+cell, replaces the current occupant of its cell if it scores higher, or
+is discarded if it does not improve on the existing elite.</p>
+<p>Unlike :class:<code>Evolutionary</code>, fitness in MAP-Elites is simply the
+performance bias of the instance (there is no separate novelty term),
+since diversity is enforced structurally by the archive's discretisation
+rather than by a blended fitness score.</p>
+
+
+
+
+
+
+
+              <details class="quote">
+                <summary>Source code in <code>digneapy/generators/map_elites.py</code></summary>
+                <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 38</span>
+<span class="normal"> 39</span>
+<span class="normal"> 40</span>
+<span class="normal"> 41</span>
+<span class="normal"> 42</span>
+<span class="normal"> 43</span>
+<span class="normal"> 44</span>
+<span class="normal"> 45</span>
+<span class="normal"> 46</span>
+<span class="normal"> 47</span>
+<span class="normal"> 48</span>
+<span class="normal"> 49</span>
+<span class="normal"> 50</span>
+<span class="normal"> 51</span>
+<span class="normal"> 52</span>
+<span class="normal"> 53</span>
+<span class="normal"> 54</span>
+<span class="normal"> 55</span>
+<span class="normal"> 56</span>
+<span class="normal"> 57</span>
+<span class="normal"> 58</span>
+<span class="normal"> 59</span>
+<span class="normal"> 60</span>
+<span class="normal"> 61</span>
+<span class="normal"> 62</span>
+<span class="normal"> 63</span>
+<span class="normal"> 64</span>
+<span class="normal"> 65</span>
+<span class="normal"> 66</span>
+<span class="normal"> 67</span>
+<span class="normal"> 68</span>
+<span class="normal"> 69</span>
+<span class="normal"> 70</span>
+<span class="normal"> 71</span>
+<span class="normal"> 72</span>
+<span class="normal"> 73</span>
+<span class="normal"> 74</span>
+<span class="normal"> 75</span>
+<span class="normal"> 76</span>
+<span class="normal"> 77</span>
+<span class="normal"> 78</span>
+<span class="normal"> 79</span>
+<span class="normal"> 80</span>
+<span class="normal"> 81</span>
+<span class="normal"> 82</span>
+<span class="normal"> 83</span>
+<span class="normal"> 84</span>
+<span class="normal"> 85</span>
+<span class="normal"> 86</span>
+<span class="normal"> 87</span>
+<span class="normal"> 88</span>
+<span class="normal"> 89</span>
+<span class="normal"> 90</span>
+<span class="normal"> 91</span>
+<span class="normal"> 92</span>
+<span class="normal"> 93</span>
+<span class="normal"> 94</span>
+<span class="normal"> 95</span>
+<span class="normal"> 96</span>
+<span class="normal"> 97</span>
+<span class="normal"> 98</span>
+<span class="normal"> 99</span>
+<span class="normal">100</span>
+<span class="normal">101</span>
+<span class="normal">102</span>
+<span class="normal">103</span>
+<span class="normal">104</span>
+<span class="normal">105</span>
+<span class="normal">106</span>
+<span class="normal">107</span>
+<span class="normal">108</span>
+<span class="normal">109</span>
+<span class="normal">110</span>
+<span class="normal">111</span>
+<span class="normal">112</span>
+<span class="normal">113</span>
+<span class="normal">114</span>
+<span class="normal">115</span>
+<span class="normal">116</span>
+<span class="normal">117</span>
+<span class="normal">118</span>
+<span class="normal">119</span>
+<span class="normal">120</span>
+<span class="normal">121</span>
+<span class="normal">122</span>
+<span class="normal">123</span>
+<span class="normal">124</span>
+<span class="normal">125</span>
+<span class="normal">126</span>
+<span class="normal">127</span>
+<span class="normal">128</span>
+<span class="normal">129</span>
+<span class="normal">130</span>
+<span class="normal">131</span>
+<span class="normal">132</span>
+<span class="normal">133</span>
+<span class="normal">134</span>
+<span class="normal">135</span>
+<span class="normal">136</span>
+<span class="normal">137</span>
+<span class="normal">138</span>
+<span class="normal">139</span>
+<span class="normal">140</span>
+<span class="normal">141</span>
+<span class="normal">142</span>
+<span class="normal">143</span>
+<span class="normal">144</span>
+<span class="normal">145</span>
+<span class="normal">146</span>
+<span class="normal">147</span>
+<span class="normal">148</span>
+<span class="normal">149</span>
+<span class="normal">150</span>
+<span class="normal">151</span>
+<span class="normal">152</span>
+<span class="normal">153</span>
+<span class="normal">154</span>
+<span class="normal">155</span>
+<span class="normal">156</span>
+<span class="normal">157</span>
+<span class="normal">158</span>
+<span class="normal">159</span>
+<span class="normal">160</span>
+<span class="normal">161</span>
+<span class="normal">162</span>
+<span class="normal">163</span>
+<span class="normal">164</span>
+<span class="normal">165</span>
+<span class="normal">166</span>
+<span class="normal">167</span>
+<span class="normal">168</span>
+<span class="normal">169</span>
+<span class="normal">170</span>
+<span class="normal">171</span>
+<span class="normal">172</span>
+<span class="normal">173</span>
+<span class="normal">174</span>
+<span class="normal">175</span>
+<span class="normal">176</span>
+<span class="normal">177</span>
+<span class="normal">178</span>
+<span class="normal">179</span>
+<span class="normal">180</span>
+<span class="normal">181</span>
+<span class="normal">182</span>
+<span class="normal">183</span>
+<span class="normal">184</span>
+<span class="normal">185</span>
+<span class="normal">186</span>
+<span class="normal">187</span>
+<span class="normal">188</span>
+<span class="normal">189</span>
+<span class="normal">190</span>
+<span class="normal">191</span>
+<span class="normal">192</span>
+<span class="normal">193</span>
+<span class="normal">194</span>
+<span class="normal">195</span>
+<span class="normal">196</span>
+<span class="normal">197</span>
+<span class="normal">198</span>
+<span class="normal">199</span>
+<span class="normal">200</span>
+<span class="normal">201</span>
+<span class="normal">202</span>
+<span class="normal">203</span>
+<span class="normal">204</span>
+<span class="normal">205</span>
+<span class="normal">206</span>
+<span class="normal">207</span>
+<span class="normal">208</span>
+<span class="normal">209</span>
+<span class="normal">210</span>
+<span class="normal">211</span>
+<span class="normal">212</span>
+<span class="normal">213</span>
+<span class="normal">214</span>
+<span class="normal">215</span>
+<span class="normal">216</span>
+<span class="normal">217</span>
+<span class="normal">218</span>
+<span class="normal">219</span>
+<span class="normal">220</span>
+<span class="normal">221</span>
+<span class="normal">222</span>
+<span class="normal">223</span>
+<span class="normal">224</span>
+<span class="normal">225</span>
+<span class="normal">226</span>
+<span class="normal">227</span>
+<span class="normal">228</span>
+<span class="normal">229</span>
+<span class="normal">230</span>
+<span class="normal">231</span>
+<span class="normal">232</span>
+<span class="normal">233</span>
+<span class="normal">234</span>
+<span class="normal">235</span>
+<span class="normal">236</span>
+<span class="normal">237</span>
+<span class="normal">238</span>
+<span class="normal">239</span>
+<span class="normal">240</span>
+<span class="normal">241</span>
+<span class="normal">242</span>
+<span class="normal">243</span>
+<span class="normal">244</span>
+<span class="normal">245</span>
+<span class="normal">246</span>
+<span class="normal">247</span>
+<span class="normal">248</span>
+<span class="normal">249</span>
+<span class="normal">250</span>
+<span class="normal">251</span>
+<span class="normal">252</span>
+<span class="normal">253</span>
+<span class="normal">254</span>
+<span class="normal">255</span>
+<span class="normal">256</span>
+<span class="normal">257</span>
+<span class="normal">258</span>
+<span class="normal">259</span>
+<span class="normal">260</span>
+<span class="normal">261</span>
+<span class="normal">262</span>
+<span class="normal">263</span>
+<span class="normal">264</span>
+<span class="normal">265</span>
+<span class="normal">266</span>
+<span class="normal">267</span>
+<span class="normal">268</span>
+<span class="normal">269</span>
+<span class="normal">270</span>
+<span class="normal">271</span>
+<span class="normal">272</span>
+<span class="normal">273</span>
+<span class="normal">274</span>
+<span class="normal">275</span>
+<span class="normal">276</span>
+<span class="normal">277</span>
+<span class="normal">278</span>
+<span class="normal">279</span>
+<span class="normal">280</span>
+<span class="normal">281</span>
+<span class="normal">282</span>
+<span class="normal">283</span>
+<span class="normal">284</span>
+<span class="normal">285</span>
+<span class="normal">286</span>
+<span class="normal">287</span>
+<span class="normal">288</span>
+<span class="normal">289</span>
+<span class="normal">290</span>
+<span class="normal">291</span>
+<span class="normal">292</span>
+<span class="normal">293</span>
+<span class="normal">294</span>
+<span class="normal">295</span>
+<span class="normal">296</span>
+<span class="normal">297</span>
+<span class="normal">298</span>
+<span class="normal">299</span>
+<span class="normal">300</span>
+<span class="normal">301</span>
+<span class="normal">302</span>
+<span class="normal">303</span>
+<span class="normal">304</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">MapElites</span><span class="p">(</span><span class="n">BaseGenerator</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Quality-Diversity instance generator based on the MAP-Elites algorithm.</span>
+
+<span class="sd">    MAP-Elites maintains a discretised archive (either a ``GridArchive`` or a</span>
+<span class="sd">    ``CVTArchive``) where each occupied cell holds the single best instance</span>
+<span class="sd">    found so far for that region of descriptor space. At every generation, a</span>
+<span class="sd">    batch of parents is sampled uniformly from the currently filled cells,</span>
+<span class="sd">    mutated to produce offspring, evaluated against the solver portfolio, and</span>
+<span class="sd">    inserted back into the archive — each offspring either claims an empty</span>
+<span class="sd">    cell, replaces the current occupant of its cell if it scores higher, or</span>
+<span class="sd">    is discarded if it does not improve on the existing elite.</span>
+
+<span class="sd">    Unlike :class:`Evolutionary`, fitness in MAP-Elites is simply the</span>
+<span class="sd">    performance bias of the instance (there is no separate novelty term),</span>
+<span class="sd">    since diversity is enforced structurally by the archive&#39;s discretisation</span>
+<span class="sd">    rather than by a blended fitness score.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">domain</span><span class="p">:</span> <span class="n">Domain</span><span class="p">,</span>
+        <span class="n">portfolio</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">Solver</span><span class="p">],</span>
+        <span class="n">pop_size</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">uint32</span> <span class="o">|</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="n">archive</span><span class="p">:</span> <span class="n">GridArchive</span> <span class="o">|</span> <span class="n">CVTArchive</span><span class="p">,</span>
+        <span class="n">mutation</span><span class="p">:</span> <span class="n">Mutation</span> <span class="o">=</span> <span class="n">BatchUMut</span><span class="p">(</span><span class="n">seed</span><span class="o">=</span><span class="kc">None</span><span class="p">),</span>
+        <span class="n">repetitions</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">uint16</span> <span class="o">|</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">uint16</span><span class="p">(</span><span class="mi">1</span><span class="p">),</span>
+        <span class="n">descriptor_pipe</span><span class="p">:</span> <span class="n">DescriptorPipeline</span> <span class="o">=</span> <span class="n">DescriptorPipeline</span><span class="p">(</span><span class="s2">&quot;features&quot;</span><span class="p">),</span>
+        <span class="n">performance_function</span><span class="p">:</span> <span class="n">PerformanceFn</span> <span class="o">=</span> <span class="n">maximise_perf_gap_easy</span><span class="p">,</span>
+        <span class="n">generations</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">uint32</span> <span class="o">|</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">uint32</span><span class="p">(</span><span class="mi">1_000</span><span class="p">),</span>
+        <span class="n">seed</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span> <span class="o">|</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">SeedSequence</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Creates a MAP-Elites instance generator.</span>
+<span class="sd">        The generator uses a set of solvers to evaluate the instances and MAP-Elites</span>
+<span class="sd">        to guide the evolution of the instances.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            domain (Domain): Domain for which the instances are generated for.</span>
+<span class="sd">            portfolio (Sequence[Solver]): Sequence item of callable objects that can evaluate a instance.</span>
+<span class="sd">            pop_size (int): Number of instances in the population to evolve. Defaults to 100.</span>
+<span class="sd">            archive (GridArchive | CVTArchive): Archive to store the instances. It can be a GridArchive or a CVTArchive.</span>
+<span class="sd">            mutation (Mutation): Mutation operator</span>
+<span class="sd">            repetitions (int):  Number times a solver in the portfolio must be run over the same instance. Defaults to 1.</span>
+<span class="sd">            descriptor_pipe (str): Descriptor used to calculate the diversity. The options available are defined in the dictionary digneapy.qd.descriptor_strategies.</span>
+<span class="sd">            performance_function (PerformanceFn, optional): Performance function to calculate the performance score. Defaults to max_gap_target.</span>
+<span class="sd">            generations (int): Number of generations to perform. Defaults to 1000.</span>
+<span class="sd">            seed (int, optional): Seed for the RNG protocol. Defaults to 42.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            ValueError: If the archive is not a GridArchive or CVTArchive</span>
+
+<span class="sd">        Note:</span>
+<span class="sd">            Despite the docstring above, the actual implementation raises a</span>
+<span class="sd">            ``TypeError`` (not a ``ValueError``) when ``archive`` is not a</span>
+<span class="sd">            ``GridArchive`` or ``CVTArchive`` instance.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+            <span class="n">domain</span><span class="p">,</span>
+            <span class="n">portfolio</span><span class="p">,</span>
+            <span class="n">pop_size</span><span class="p">,</span>
+            <span class="n">performance_function</span><span class="p">,</span>
+            <span class="n">descriptor_pipe</span><span class="o">=</span><span class="n">descriptor_pipe</span><span class="p">,</span>
+            <span class="n">generations</span><span class="o">=</span><span class="n">generations</span><span class="p">,</span>
+            <span class="n">repetitions</span><span class="o">=</span><span class="n">repetitions</span><span class="p">,</span>
+            <span class="n">seed</span><span class="o">=</span><span class="n">seed</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">archive</span><span class="p">,</span> <span class="p">(</span><span class="n">GridArchive</span><span class="p">,</span> <span class="n">CVTArchive</span><span class="p">)):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;MapElites expects an archive of class GridArchive or CVTArchive and got </span><span class="si">{</span><span class="n">archive</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_archive</span> <span class="o">=</span> <span class="n">archive</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_mutation</span> <span class="o">=</span> <span class="n">mutation</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return a human-readable summary of the generator&#39;s configuration.</span>
+
+<span class="sd">        Includes the population size, number of generations, domain name, and</span>
+<span class="sd">        the names of the solvers in the portfolio.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            str: A formatted string describing the generator instance.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">solvers_names</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">extract_solvers_name</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_portfolio</span><span class="p">))</span>
+        <span class="k">return</span> <span class="p">(</span>
+            <span class="s2">&quot;Map-Elites Generator:</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;- Domain </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_domain</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;- Portfolio: </span><span class="si">{</span><span class="n">solvers_names</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;- </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_archive</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;- Population Size: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_pop_size</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;- Generations: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_generations</span><span class="si">:</span><span class="s2">,</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;- Mutation: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_mutation</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;- Repetitions: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_repetitions</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;- </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_descriptor_pipe</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;- Performance Function: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_performance_fn</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;- Seed: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">seed</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
+        <span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return a developer-friendly representation of the generator.</span>
+
+<span class="sd">        Reuses :meth:`__str__` but swaps the surrounding parentheses for angle</span>
+<span class="sd">        brackets, following the convention used elsewhere in the framework.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            str: A compact representation suitable for debugging/logging.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">solvers_names</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">extract_solvers_name</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_portfolio</span><span class="p">))</span>
+        <span class="k">return</span> <span class="p">(</span>
+            <span class="s2">&quot;Map-Elites Generator:</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;- Domain </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_domain</span><span class="si">!r}</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;- Portfolio: </span><span class="si">{</span><span class="n">solvers_names</span><span class="si">!r}</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;- </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_archive</span><span class="si">!r}</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;- Population Size: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_pop_size</span><span class="si">!r}</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;- Generations: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_generations</span><span class="si">:</span><span class="s2">,</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;- Mutation: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_mutation</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;- Repetitions: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_repetitions</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;- </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_descriptor_pipe</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;- Performance Function: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_performance_fn</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;- Seed: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">seed</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
+        <span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">archive</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return the archive backing this generator.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            GridArchive | CVTArchive: The discretised archive that stores the</span>
+<span class="sd">                current MAP-Elites population, one elite per occupied cell.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_archive</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_run_generation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">generation</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">verbose</span><span class="p">:</span> <span class="nb">bool</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Perform one MAP-Elites generation: sample, mutate, evaluate, insert.</span>
+
+<span class="sd">        A batch of ``pop_size`` parent indices is sampled uniformly (with</span>
+<span class="sd">        replacement) from the archive&#39;s currently filled cells. The</span>
+<span class="sd">        corresponding parent genotypes are mutated in a single batched call</span>
+<span class="sd">        via ``self._mutation``, respecting the domain&#39;s lower/upper bounds.</span>
+<span class="sd">        The resulting offspring are evaluated against the solver portfolio</span>
+<span class="sd">        and their descriptors are computed, then wrapped into ``Instance``</span>
+<span class="sd">        objects — note that for MAP-Elites, ``fitness`` is set equal to the</span>
+<span class="sd">        performance bias ``p``, since there is no separate novelty</span>
+<span class="sd">        component. Finally, the offspring are inserted into the archive,</span>
+<span class="sd">        where each one may replace its cell&#39;s current occupant, fill an</span>
+<span class="sd">        empty cell, or be rejected, depending on the archive&#39;s insertion</span>
+<span class="sd">        rules. Progress for this generation is recorded in ``self._logbook``.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            generation (int): Index of the generation about to be recorded</span>
+<span class="sd">                (the logbook is updated with ``generation + 1``, since</span>
+<span class="sd">                generation 0 is reserved for the initial grid).</span>
+<span class="sd">            verbose (bool): Whether to forward progress feedback to</span>
+<span class="sd">                ``self._logbook.update``.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">filled_cells_indices</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_rng</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span>
+            <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_archive</span><span class="o">.</span><span class="n">filled_cells</span><span class="p">),</span> <span class="n">size</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_pop_size</span>
+        <span class="p">)</span>
+        <span class="n">parents_genotypes</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_archive</span><span class="o">.</span><span class="n">retrieve_filled_cells</span><span class="p">(</span><span class="n">filled_cells_indices</span><span class="p">)</span>
+        <span class="p">)</span>
+        <span class="n">offs_genotypes</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_mutation</span><span class="p">(</span>
+            <span class="n">population</span><span class="o">=</span><span class="n">parents_genotypes</span><span class="p">,</span>
+            <span class="n">lb</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_domain</span><span class="o">.</span><span class="n">_lbs</span><span class="p">,</span>
+            <span class="n">ub</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_domain</span><span class="o">.</span><span class="n">_ubs</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="n">offs_perf_biases</span><span class="p">,</span> <span class="n">offs_portfolio_scores</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_evaluate_population</span><span class="p">(</span>
+            <span class="n">offs_genotypes</span>
+        <span class="p">)</span>
+        <span class="n">offs_descriptors</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_descriptor_pipe</span><span class="p">(</span>
+            <span class="n">offs_genotypes</span><span class="p">,</span> <span class="n">offs_portfolio_scores</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_domain</span>
+        <span class="p">)</span>
+
+        <span class="n">offspring</span> <span class="o">=</span> <span class="n">build_instances_from_attributes</span><span class="p">(</span>
+            <span class="n">genotypes</span><span class="o">=</span><span class="n">offs_genotypes</span><span class="p">,</span>
+            <span class="n">descriptors</span><span class="o">=</span><span class="n">offs_descriptors</span><span class="p">,</span>
+            <span class="n">fitness</span><span class="o">=</span><span class="n">offs_perf_biases</span><span class="p">,</span>
+            <span class="n">portfolio_scores</span><span class="o">=</span><span class="n">offs_portfolio_scores</span><span class="p">,</span>
+            <span class="n">diversity_scores</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">offs_perf_biases</span><span class="p">),</span>
+            <span class="n">bias_score</span><span class="o">=</span><span class="n">offs_perf_biases</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_archive</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span>
+            <span class="n">instances</span><span class="o">=</span><span class="n">offspring</span><span class="p">,</span>
+            <span class="n">descriptors</span><span class="o">=</span><span class="n">offs_descriptors</span><span class="p">,</span>
+            <span class="n">objectives</span><span class="o">=</span><span class="n">offs_perf_biases</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="c1"># Record the stats and update the performed gens</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_logbook</span><span class="o">.</span><span class="n">update</span><span class="p">(</span>
+            <span class="n">generation</span><span class="o">=</span><span class="n">generation</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span>
+            <span class="n">instances</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_archive</span><span class="p">,</span>
+            <span class="n">feedback</span><span class="o">=</span><span class="n">verbose</span><span class="p">,</span>
+        <span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_initialise_grid</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">verbose</span><span class="p">:</span> <span class="nb">bool</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Seed the archive with an initial batch of randomly generated instances.</span>
+
+<span class="sd">        Samples ``pop_size`` fresh instances directly from the domain (rather</span>
+<span class="sd">        than mutating existing archive members, since the archive starts</span>
+<span class="sd">        empty), evaluates them against the solver portfolio, computes their</span>
+<span class="sd">        descriptors, and inserts all of them into the archive unconditionally</span>
+<span class="sd">        — including infeasible ones, which are expected to be purged later</span>
+<span class="sd">        via ``self._archive.purge_unfeasible()``. Records generation 0 in</span>
+<span class="sd">        ``self._logbook``.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            verbose (bool): Whether to forward progress feedback to</span>
+<span class="sd">                ``self._logbook.update``.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">genotypes</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_domain</span><span class="o">.</span><span class="n">generate_instances</span><span class="p">(</span><span class="n">n</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_pop_size</span><span class="p">))</span>
+        <span class="n">perf_biases</span><span class="p">,</span> <span class="n">portfolio_scores</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_evaluate_population</span><span class="p">(</span><span class="n">genotypes</span><span class="p">)</span>
+        <span class="n">descriptors</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_descriptor_pipe</span><span class="p">(</span><span class="n">genotypes</span><span class="p">,</span> <span class="n">portfolio_scores</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_domain</span><span class="p">)</span>
+
+        <span class="n">initial_instances</span> <span class="o">=</span> <span class="n">build_instances_from_attributes</span><span class="p">(</span>
+            <span class="n">genotypes</span><span class="o">=</span><span class="n">genotypes</span><span class="p">,</span>
+            <span class="n">descriptors</span><span class="o">=</span><span class="n">descriptors</span><span class="p">,</span>
+            <span class="n">fitness</span><span class="o">=</span><span class="n">perf_biases</span><span class="p">,</span>
+            <span class="n">portfolio_scores</span><span class="o">=</span><span class="n">portfolio_scores</span><span class="p">,</span>
+            <span class="n">diversity_scores</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">perf_biases</span><span class="p">),</span>
+            <span class="n">bias_score</span><span class="o">=</span><span class="n">perf_biases</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_archive</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">instances</span><span class="o">=</span><span class="n">initial_instances</span><span class="p">,</span> <span class="n">descriptors</span><span class="o">=</span><span class="n">descriptors</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_logbook</span><span class="o">.</span><span class="n">update</span><span class="p">(</span>
+            <span class="n">generation</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">instances</span><span class="o">=</span><span class="n">initial_instances</span><span class="p">,</span> <span class="n">feedback</span><span class="o">=</span><span class="n">verbose</span>
+        <span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">verbose</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">GenerationResult</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Run the full MAP-Elites process and return the generated instances.</span>
+
+<span class="sd">        The algorithm proceeds as follows:</span>
+<span class="sd">        1. The archive is seeded with an initial batch of instances via</span>
+<span class="sd">           :meth:`_initialise_grid` (recorded as generation 0).</span>
+<span class="sd">        2. For each of the ``self._generations`` subsequent generations,</span>
+<span class="sd">           :meth:`_run_generation` samples parents from the filled archive</span>
+<span class="sd">           cells, mutates them, evaluates the offspring, and updates the</span>
+<span class="sd">           archive in place.</span>
+<span class="sd">        3. After all generations, any infeasible instances that slipped into</span>
+<span class="sd">           the archive during initialisation or evolution are removed via</span>
+<span class="sd">           ``self._archive.purge_unfeasible()``.</span>
+<span class="sd">        4. The final archive contents are packaged into a</span>
+<span class="sd">           :class:`GenerationResult` together with the solver names and the</span>
+<span class="sd">           recorded evolutionary history.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            verbose (bool, optional): Whether to print/log progress during the</span>
+<span class="sd">                run (forwarded to ``self._logbook.update`` at every</span>
+<span class="sd">                generation). Defaults to False.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            GenerationResult: The final feasible archive contents together</span>
+<span class="sd">                with solver names and the recorded evolutionary history.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_initialise_grid</span><span class="p">(</span><span class="n">verbose</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">generation</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_generations</span><span class="p">):</span>
+            <span class="c1"># Refactored to use plotted version</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_run_generation</span><span class="p">(</span><span class="n">generation</span><span class="p">,</span> <span class="n">verbose</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>  <span class="c1"># pragma: no cover</span>
+                <span class="c1"># Clear the terminal</span>
+                <span class="n">blank</span> <span class="o">=</span> <span class="s2">&quot; &quot;</span> <span class="o">*</span> <span class="mi">80</span>
+                <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="se">\r</span><span class="si">{</span><span class="n">blank</span><span class="si">}</span><span class="se">\r</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">end</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">GenerationResult</span><span class="p">(</span>
+            <span class="n">solvers</span><span class="o">=</span><span class="nb">tuple</span><span class="p">(</span><span class="n">extract_solvers_name</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_portfolio</span><span class="p">)),</span>
+            <span class="n">instances</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_archive</span><span class="p">,</span>
+            <span class="n">history</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_logbook</span><span class="p">,</span>
+        <span class="p">)</span>
+</code></pre></div></td></tr></table></div>
+              </details>
+
+
+
+<div class="doc doc-children">
+
+
+
+
+
+
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h3 id="generators.map_elites.MapElites.archive" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">archive</span></code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-property"><code>property</code></small>
+  </span>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Return the archive backing this generator.</p>
+
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Returns:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+              –
+              <div class="doc-md-description">
+                <p>GridArchive | CVTArchive: The discretised archive that stores the
+current MAP-Elites population, one elite per occupied cell.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+    </div>
+
+</div>
+
+
+
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="generators.map_elites.MapElites.__call__" class="doc doc-heading">
+            <code class="highlight language-python"><span class="fm">__call__</span><span class="p">(</span><span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span></code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Run the full MAP-Elites process and return the generated instances.</p>
+<p>The algorithm proceeds as follows:
+1. The archive is seeded with an initial batch of instances via
+   :meth:<code>_initialise_grid</code> (recorded as generation 0).
+2. For each of the <code>self._generations</code> subsequent generations,
+   :meth:<code>_run_generation</code> samples parents from the filled archive
+   cells, mutates them, evaluates the offspring, and updates the
+   archive in place.
+3. After all generations, any infeasible instances that slipped into
+   the archive during initialisation or evolution are removed via
+   <code>self._archive.purge_unfeasible()</code>.
+4. The final archive contents are packaged into a
+   :class:<code>GenerationResult</code> together with the solver names and the
+   recorded evolutionary history.</p>
+
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Parameters:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+              <b><code>verbose</code></b>
+                  (<code><span title="bool">bool</span></code>, default:
+                      <code>False</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>Whether to print/log progress during the
+run (forwarded to <code>self._logbook.update</code> at every
+generation). Defaults to False.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Returns:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+<b><code>GenerationResult</code></b>(                  <code><a class="autorefs autorefs-internal" title="GenerationResult
+
+
+  
+      dataclass
+   (generators._base_generator.GenerationResult)" href="../_base_generator/#generators._base_generator.GenerationResult">GenerationResult</a></code>
+)              –
+              <div class="doc-md-description">
+                <p>The final feasible archive contents together
+with solver names and the recorded evolutionary history.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+            <details class="mkdocstrings-source">
+              <summary>Source code in <code>digneapy/generators/map_elites.py</code></summary>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">263</span>
+<span class="normal">264</span>
+<span class="normal">265</span>
+<span class="normal">266</span>
+<span class="normal">267</span>
+<span class="normal">268</span>
+<span class="normal">269</span>
+<span class="normal">270</span>
+<span class="normal">271</span>
+<span class="normal">272</span>
+<span class="normal">273</span>
+<span class="normal">274</span>
+<span class="normal">275</span>
+<span class="normal">276</span>
+<span class="normal">277</span>
+<span class="normal">278</span>
+<span class="normal">279</span>
+<span class="normal">280</span>
+<span class="normal">281</span>
+<span class="normal">282</span>
+<span class="normal">283</span>
+<span class="normal">284</span>
+<span class="normal">285</span>
+<span class="normal">286</span>
+<span class="normal">287</span>
+<span class="normal">288</span>
+<span class="normal">289</span>
+<span class="normal">290</span>
+<span class="normal">291</span>
+<span class="normal">292</span>
+<span class="normal">293</span>
+<span class="normal">294</span>
+<span class="normal">295</span>
+<span class="normal">296</span>
+<span class="normal">297</span>
+<span class="normal">298</span>
+<span class="normal">299</span>
+<span class="normal">300</span>
+<span class="normal">301</span>
+<span class="normal">302</span>
+<span class="normal">303</span>
+<span class="normal">304</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">verbose</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">GenerationResult</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Run the full MAP-Elites process and return the generated instances.</span>
+
+<span class="sd">    The algorithm proceeds as follows:</span>
+<span class="sd">    1. The archive is seeded with an initial batch of instances via</span>
+<span class="sd">       :meth:`_initialise_grid` (recorded as generation 0).</span>
+<span class="sd">    2. For each of the ``self._generations`` subsequent generations,</span>
+<span class="sd">       :meth:`_run_generation` samples parents from the filled archive</span>
+<span class="sd">       cells, mutates them, evaluates the offspring, and updates the</span>
+<span class="sd">       archive in place.</span>
+<span class="sd">    3. After all generations, any infeasible instances that slipped into</span>
+<span class="sd">       the archive during initialisation or evolution are removed via</span>
+<span class="sd">       ``self._archive.purge_unfeasible()``.</span>
+<span class="sd">    4. The final archive contents are packaged into a</span>
+<span class="sd">       :class:`GenerationResult` together with the solver names and the</span>
+<span class="sd">       recorded evolutionary history.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        verbose (bool, optional): Whether to print/log progress during the</span>
+<span class="sd">            run (forwarded to ``self._logbook.update`` at every</span>
+<span class="sd">            generation). Defaults to False.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        GenerationResult: The final feasible archive contents together</span>
+<span class="sd">            with solver names and the recorded evolutionary history.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="bp">self</span><span class="o">.</span><span class="n">_initialise_grid</span><span class="p">(</span><span class="n">verbose</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">generation</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_generations</span><span class="p">):</span>
+        <span class="c1"># Refactored to use plotted version</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_run_generation</span><span class="p">(</span><span class="n">generation</span><span class="p">,</span> <span class="n">verbose</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>  <span class="c1"># pragma: no cover</span>
+            <span class="c1"># Clear the terminal</span>
+            <span class="n">blank</span> <span class="o">=</span> <span class="s2">&quot; &quot;</span> <span class="o">*</span> <span class="mi">80</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="se">\r</span><span class="si">{</span><span class="n">blank</span><span class="si">}</span><span class="se">\r</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">end</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">GenerationResult</span><span class="p">(</span>
+        <span class="n">solvers</span><span class="o">=</span><span class="nb">tuple</span><span class="p">(</span><span class="n">extract_solvers_name</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_portfolio</span><span class="p">)),</span>
+        <span class="n">instances</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_archive</span><span class="p">,</span>
+        <span class="n">history</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_logbook</span><span class="p">,</span>
+    <span class="p">)</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="generators.map_elites.MapElites.__init__" class="doc doc-heading">
+            <code class="highlight language-python"><span class="fm">__init__</span><span class="p">(</span><span class="n">domain</span><span class="p">,</span> <span class="n">portfolio</span><span class="p">,</span> <span class="n">pop_size</span><span class="p">,</span> <span class="n">archive</span><span class="p">,</span> <span class="n">mutation</span><span class="o">=</span><span class="n">BatchUMut</span><span class="p">(</span><span class="n">seed</span><span class="o">=</span><span class="kc">None</span><span class="p">),</span> <span class="n">repetitions</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">uint16</span><span class="p">(</span><span class="mi">1</span><span class="p">),</span> <span class="n">descriptor_pipe</span><span class="o">=</span><span class="n">DescriptorPipeline</span><span class="p">(</span><span class="s1">&#39;features&#39;</span><span class="p">),</span> <span class="n">performance_function</span><span class="o">=</span><span class="n">maximise_perf_gap_easy</span><span class="p">,</span> <span class="n">generations</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">uint32</span><span class="p">(</span><span class="mi">1000</span><span class="p">),</span> <span class="n">seed</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Creates a MAP-Elites instance generator.
+The generator uses a set of solvers to evaluate the instances and MAP-Elites
+to guide the evolution of the instances.</p>
+
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Parameters:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+              <b><code>domain</code></b>
+                  (<code><a class="autorefs autorefs-internal" title="Domain (digneapy.core.Domain)" href="../../core/#core.Domain">Domain</a></code>)
+              –
+              <div class="doc-md-description">
+                <p>Domain for which the instances are generated for.</p>
+              </div>
+            </li>
+            <li>
+              <b><code>portfolio</code></b>
+                  (<code><span title="typing.Sequence">Sequence</span>[<a class="autorefs autorefs-internal" title="Solver (digneapy.core.Solver)" href="../../core/#core.Solver">Solver</a>]</code>)
+              –
+              <div class="doc-md-description">
+                <p>Sequence item of callable objects that can evaluate a instance.</p>
+              </div>
+            </li>
+            <li>
+              <b><code>pop_size</code></b>
+                  (<code><span title="int">int</span></code>)
+              –
+              <div class="doc-md-description">
+                <p>Number of instances in the population to evolve. Defaults to 100.</p>
+              </div>
+            </li>
+            <li>
+              <b><code>archive</code></b>
+                  (<code><span title="generators.archives.GridArchive">GridArchive</span> | <span title="generators.archives.CVTArchive">CVTArchive</span></code>)
+              –
+              <div class="doc-md-description">
+                <p>Archive to store the instances. It can be a GridArchive or a CVTArchive.</p>
+              </div>
+            </li>
+            <li>
+              <b><code>mutation</code></b>
+                  (<code><span title="generators.operators.Mutation">Mutation</span></code>, default:
+                      <code><span title="generators.operators.BatchUMut">BatchUMut</span>(seed=None)</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>Mutation operator</p>
+              </div>
+            </li>
+            <li>
+              <b><code>repetitions</code></b>
+                  (<code><span title="int">int</span></code>, default:
+                      <code><span title="numpy.uint16">uint16</span>(1)</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>Number times a solver in the portfolio must be run over the same instance. Defaults to 1.</p>
+              </div>
+            </li>
+            <li>
+              <b><code>descriptor_pipe</code></b>
+                  (<code><span title="str">str</span></code>, default:
+                      <code><a class="autorefs autorefs-internal" title="DescriptorPipeline (digneapy.core.DescriptorPipeline)" href="../../core/#core.DescriptorPipeline">DescriptorPipeline</a>(&#39;features&#39;)</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>Descriptor used to calculate the diversity. The options available are defined in the dictionary digneapy.qd.descriptor_strategies.</p>
+              </div>
+            </li>
+            <li>
+              <b><code>performance_function</code></b>
+                  (<code><span title="digneapy.typing.PerformanceFn">PerformanceFn</span></code>, default:
+                      <code><span title="digneapy.core.maximise_perf_gap_easy">maximise_perf_gap_easy</span></code>
+)
+              –
+              <div class="doc-md-description">
+                <p>Performance function to calculate the performance score. Defaults to max_gap_target.</p>
+              </div>
+            </li>
+            <li>
+              <b><code>generations</code></b>
+                  (<code><span title="int">int</span></code>, default:
+                      <code><span title="numpy.uint32">uint32</span>(1000)</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>Number of generations to perform. Defaults to 1000.</p>
+              </div>
+            </li>
+            <li>
+              <b><code>seed</code></b>
+                  (<code><span title="int">int</span></code>, default:
+                      <code>None</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>Seed for the RNG protocol. Defaults to 42.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Raises:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+                  <code><span title="ValueError">ValueError</span></code>
+              –
+              <div class="doc-md-description">
+                <p>If the archive is not a GridArchive or CVTArchive</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+<details class="note" open>
+  <summary>Note</summary>
+  <p>Despite the docstring above, the actual implementation raises a
+<code>TypeError</code> (not a <code>ValueError</code>) when <code>archive</code> is not a
+<code>GridArchive</code> or <code>CVTArchive</code> instance.</p>
+</details>
+
+            <details class="mkdocstrings-source">
+              <summary>Source code in <code>digneapy/generators/map_elites.py</code></summary>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 56</span>
+<span class="normal"> 57</span>
+<span class="normal"> 58</span>
+<span class="normal"> 59</span>
+<span class="normal"> 60</span>
+<span class="normal"> 61</span>
+<span class="normal"> 62</span>
+<span class="normal"> 63</span>
+<span class="normal"> 64</span>
+<span class="normal"> 65</span>
+<span class="normal"> 66</span>
+<span class="normal"> 67</span>
+<span class="normal"> 68</span>
+<span class="normal"> 69</span>
+<span class="normal"> 70</span>
+<span class="normal"> 71</span>
+<span class="normal"> 72</span>
+<span class="normal"> 73</span>
+<span class="normal"> 74</span>
+<span class="normal"> 75</span>
+<span class="normal"> 76</span>
+<span class="normal"> 77</span>
+<span class="normal"> 78</span>
+<span class="normal"> 79</span>
+<span class="normal"> 80</span>
+<span class="normal"> 81</span>
+<span class="normal"> 82</span>
+<span class="normal"> 83</span>
+<span class="normal"> 84</span>
+<span class="normal"> 85</span>
+<span class="normal"> 86</span>
+<span class="normal"> 87</span>
+<span class="normal"> 88</span>
+<span class="normal"> 89</span>
+<span class="normal"> 90</span>
+<span class="normal"> 91</span>
+<span class="normal"> 92</span>
+<span class="normal"> 93</span>
+<span class="normal"> 94</span>
+<span class="normal"> 95</span>
+<span class="normal"> 96</span>
+<span class="normal"> 97</span>
+<span class="normal"> 98</span>
+<span class="normal"> 99</span>
+<span class="normal">100</span>
+<span class="normal">101</span>
+<span class="normal">102</span>
+<span class="normal">103</span>
+<span class="normal">104</span>
+<span class="normal">105</span>
+<span class="normal">106</span>
+<span class="normal">107</span>
+<span class="normal">108</span>
+<span class="normal">109</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+    <span class="bp">self</span><span class="p">,</span>
+    <span class="n">domain</span><span class="p">:</span> <span class="n">Domain</span><span class="p">,</span>
+    <span class="n">portfolio</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">Solver</span><span class="p">],</span>
+    <span class="n">pop_size</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">uint32</span> <span class="o">|</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="n">archive</span><span class="p">:</span> <span class="n">GridArchive</span> <span class="o">|</span> <span class="n">CVTArchive</span><span class="p">,</span>
+    <span class="n">mutation</span><span class="p">:</span> <span class="n">Mutation</span> <span class="o">=</span> <span class="n">BatchUMut</span><span class="p">(</span><span class="n">seed</span><span class="o">=</span><span class="kc">None</span><span class="p">),</span>
+    <span class="n">repetitions</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">uint16</span> <span class="o">|</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">uint16</span><span class="p">(</span><span class="mi">1</span><span class="p">),</span>
+    <span class="n">descriptor_pipe</span><span class="p">:</span> <span class="n">DescriptorPipeline</span> <span class="o">=</span> <span class="n">DescriptorPipeline</span><span class="p">(</span><span class="s2">&quot;features&quot;</span><span class="p">),</span>
+    <span class="n">performance_function</span><span class="p">:</span> <span class="n">PerformanceFn</span> <span class="o">=</span> <span class="n">maximise_perf_gap_easy</span><span class="p">,</span>
+    <span class="n">generations</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">uint32</span> <span class="o">|</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">uint32</span><span class="p">(</span><span class="mi">1_000</span><span class="p">),</span>
+    <span class="n">seed</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span> <span class="o">|</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">SeedSequence</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Creates a MAP-Elites instance generator.</span>
+<span class="sd">    The generator uses a set of solvers to evaluate the instances and MAP-Elites</span>
+<span class="sd">    to guide the evolution of the instances.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        domain (Domain): Domain for which the instances are generated for.</span>
+<span class="sd">        portfolio (Sequence[Solver]): Sequence item of callable objects that can evaluate a instance.</span>
+<span class="sd">        pop_size (int): Number of instances in the population to evolve. Defaults to 100.</span>
+<span class="sd">        archive (GridArchive | CVTArchive): Archive to store the instances. It can be a GridArchive or a CVTArchive.</span>
+<span class="sd">        mutation (Mutation): Mutation operator</span>
+<span class="sd">        repetitions (int):  Number times a solver in the portfolio must be run over the same instance. Defaults to 1.</span>
+<span class="sd">        descriptor_pipe (str): Descriptor used to calculate the diversity. The options available are defined in the dictionary digneapy.qd.descriptor_strategies.</span>
+<span class="sd">        performance_function (PerformanceFn, optional): Performance function to calculate the performance score. Defaults to max_gap_target.</span>
+<span class="sd">        generations (int): Number of generations to perform. Defaults to 1000.</span>
+<span class="sd">        seed (int, optional): Seed for the RNG protocol. Defaults to 42.</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">        ValueError: If the archive is not a GridArchive or CVTArchive</span>
+
+<span class="sd">    Note:</span>
+<span class="sd">        Despite the docstring above, the actual implementation raises a</span>
+<span class="sd">        ``TypeError`` (not a ``ValueError``) when ``archive`` is not a</span>
+<span class="sd">        ``GridArchive`` or ``CVTArchive`` instance.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+        <span class="n">domain</span><span class="p">,</span>
+        <span class="n">portfolio</span><span class="p">,</span>
+        <span class="n">pop_size</span><span class="p">,</span>
+        <span class="n">performance_function</span><span class="p">,</span>
+        <span class="n">descriptor_pipe</span><span class="o">=</span><span class="n">descriptor_pipe</span><span class="p">,</span>
+        <span class="n">generations</span><span class="o">=</span><span class="n">generations</span><span class="p">,</span>
+        <span class="n">repetitions</span><span class="o">=</span><span class="n">repetitions</span><span class="p">,</span>
+        <span class="n">seed</span><span class="o">=</span><span class="n">seed</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">archive</span><span class="p">,</span> <span class="p">(</span><span class="n">GridArchive</span><span class="p">,</span> <span class="n">CVTArchive</span><span class="p">)):</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;MapElites expects an archive of class GridArchive or CVTArchive and got </span><span class="si">{</span><span class="n">archive</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="p">)</span>
+
+    <span class="bp">self</span><span class="o">.</span><span class="n">_archive</span> <span class="o">=</span> <span class="n">archive</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_mutation</span> <span class="o">=</span> <span class="n">mutation</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="generators.map_elites.MapElites.__repr__" class="doc doc-heading">
+            <code class="highlight language-python"><span class="fm">__repr__</span><span class="p">()</span></code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Return a developer-friendly representation of the generator.</p>
+<p>Reuses :meth:<code>__str__</code> but swaps the surrounding parentheses for angle
+brackets, following the convention used elsewhere in the framework.</p>
+
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Returns:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+<b><code>str</code></b>(                  <code><span title="str">str</span></code>
+)              –
+              <div class="doc-md-description">
+                <p>A compact representation suitable for debugging/logging.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+            <details class="mkdocstrings-source">
+              <summary>Source code in <code>digneapy/generators/map_elites.py</code></summary>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">135</span>
+<span class="normal">136</span>
+<span class="normal">137</span>
+<span class="normal">138</span>
+<span class="normal">139</span>
+<span class="normal">140</span>
+<span class="normal">141</span>
+<span class="normal">142</span>
+<span class="normal">143</span>
+<span class="normal">144</span>
+<span class="normal">145</span>
+<span class="normal">146</span>
+<span class="normal">147</span>
+<span class="normal">148</span>
+<span class="normal">149</span>
+<span class="normal">150</span>
+<span class="normal">151</span>
+<span class="normal">152</span>
+<span class="normal">153</span>
+<span class="normal">154</span>
+<span class="normal">155</span>
+<span class="normal">156</span>
+<span class="normal">157</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Return a developer-friendly representation of the generator.</span>
+
+<span class="sd">    Reuses :meth:`__str__` but swaps the surrounding parentheses for angle</span>
+<span class="sd">    brackets, following the convention used elsewhere in the framework.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        str: A compact representation suitable for debugging/logging.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">solvers_names</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">extract_solvers_name</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_portfolio</span><span class="p">))</span>
+    <span class="k">return</span> <span class="p">(</span>
+        <span class="s2">&quot;Map-Elites Generator:</span><span class="se">\n</span><span class="s2">&quot;</span>
+        <span class="sa">f</span><span class="s2">&quot;- Domain </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_domain</span><span class="si">!r}</span><span class="se">\n</span><span class="s2">&quot;</span>
+        <span class="sa">f</span><span class="s2">&quot;- Portfolio: </span><span class="si">{</span><span class="n">solvers_names</span><span class="si">!r}</span><span class="se">\n</span><span class="s2">&quot;</span>
+        <span class="sa">f</span><span class="s2">&quot;- </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_archive</span><span class="si">!r}</span><span class="se">\n</span><span class="s2">&quot;</span>
+        <span class="sa">f</span><span class="s2">&quot;- Population Size: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_pop_size</span><span class="si">!r}</span><span class="se">\n</span><span class="s2">&quot;</span>
+        <span class="sa">f</span><span class="s2">&quot;- Generations: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_generations</span><span class="si">:</span><span class="s2">,</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
+        <span class="sa">f</span><span class="s2">&quot;- Mutation: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_mutation</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
+        <span class="sa">f</span><span class="s2">&quot;- Repetitions: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_repetitions</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
+        <span class="sa">f</span><span class="s2">&quot;- </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_descriptor_pipe</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
+        <span class="sa">f</span><span class="s2">&quot;- Performance Function: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_performance_fn</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
+        <span class="sa">f</span><span class="s2">&quot;- Seed: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">seed</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
+    <span class="p">)</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="generators.map_elites.MapElites.__str__" class="doc doc-heading">
+            <code class="highlight language-python"><span class="fm">__str__</span><span class="p">()</span></code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Return a human-readable summary of the generator's configuration.</p>
+<p>Includes the population size, number of generations, domain name, and
+the names of the solvers in the portfolio.</p>
+
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Returns:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+<b><code>str</code></b>              –
+              <div class="doc-md-description">
+                <p>A formatted string describing the generator instance.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+            <details class="mkdocstrings-source">
+              <summary>Source code in <code>digneapy/generators/map_elites.py</code></summary>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">111</span>
+<span class="normal">112</span>
+<span class="normal">113</span>
+<span class="normal">114</span>
+<span class="normal">115</span>
+<span class="normal">116</span>
+<span class="normal">117</span>
+<span class="normal">118</span>
+<span class="normal">119</span>
+<span class="normal">120</span>
+<span class="normal">121</span>
+<span class="normal">122</span>
+<span class="normal">123</span>
+<span class="normal">124</span>
+<span class="normal">125</span>
+<span class="normal">126</span>
+<span class="normal">127</span>
+<span class="normal">128</span>
+<span class="normal">129</span>
+<span class="normal">130</span>
+<span class="normal">131</span>
+<span class="normal">132</span>
+<span class="normal">133</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Return a human-readable summary of the generator&#39;s configuration.</span>
+
+<span class="sd">    Includes the population size, number of generations, domain name, and</span>
+<span class="sd">    the names of the solvers in the portfolio.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        str: A formatted string describing the generator instance.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">solvers_names</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">extract_solvers_name</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_portfolio</span><span class="p">))</span>
+    <span class="k">return</span> <span class="p">(</span>
+        <span class="s2">&quot;Map-Elites Generator:</span><span class="se">\n</span><span class="s2">&quot;</span>
+        <span class="sa">f</span><span class="s2">&quot;- Domain </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_domain</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
+        <span class="sa">f</span><span class="s2">&quot;- Portfolio: </span><span class="si">{</span><span class="n">solvers_names</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
+        <span class="sa">f</span><span class="s2">&quot;- </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_archive</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
+        <span class="sa">f</span><span class="s2">&quot;- Population Size: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_pop_size</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
+        <span class="sa">f</span><span class="s2">&quot;- Generations: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_generations</span><span class="si">:</span><span class="s2">,</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
+        <span class="sa">f</span><span class="s2">&quot;- Mutation: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_mutation</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
+        <span class="sa">f</span><span class="s2">&quot;- Repetitions: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_repetitions</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
+        <span class="sa">f</span><span class="s2">&quot;- </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_descriptor_pipe</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
+        <span class="sa">f</span><span class="s2">&quot;- Performance Function: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_performance_fn</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
+        <span class="sa">f</span><span class="s2">&quot;- Seed: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">seed</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
+    <span class="p">)</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
+
+
+
+  </div>
+
+    </div>
+
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
+<h2 id="generators.map_elites.PlottedMapElites" class="doc doc-heading">
+            <code>PlottedMapElites</code>
+
+
+</h2>
+
+
+    <div class="doc doc-contents ">
+
+
+
+        <p>Wraps a MapElites generator and injects live plotting after each generation.</p>
+<p>It replaces the generator's internal loop with an equivalent one that calls
+<code>plotter.update()</code> every <em>refresh_every</em> generations.  Because it accesses
+the generator's internals (all prefixed <code>_</code>), pin your digneapy version.</p>
+<p>This class does not subclass <code>BaseGenerator</code>: it is a thin orchestration
+wrapper that drives an already-constructed (but not yet called)
+<code>MapElites</code> instance through the same initialisation and generation
+steps it would normally run on its own, interleaving calls to an
+<code>ArchivePlotter</code> so that progress can be visualised as a live heatmap
+while the search is running.</p>
+
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Parameters:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+              <b><code>generator</code></b>
+              –
+              <div class="doc-md-description">
+                <p>A <code>MapElites</code> instance (not yet called).</p>
+              </div>
+            </li>
+            <li>
+              <b><code>feat_names</code></b>
+                  (<code><span title="typing.Optional">Optional</span>[<span title="typing.Sequence">Sequence</span>[<span title="str">str</span>]]</code>, default:
+                      <code>None</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>Labels for the two archive axes.</p>
+              </div>
+            </li>
+            <li>
+              <b><code>attr</code></b>
+                  (<code><span title="str">str</span></code>, default:
+                      <code>&#39;p&#39;</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>Instance attribute to plot. Default <code>"p"</code>.</p>
+              </div>
+            </li>
+            <li>
+              <b><code>cmap</code></b>
+                  (<code><span title="str">str</span></code>, default:
+                      <code>&#39;viridis&#39;</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>Matplotlib colourmap. Default <code>"viridis"</code>.</p>
+              </div>
+            </li>
+            <li>
+              <b><code>vmin / vmax</code></b>
+              –
+              <div class="doc-md-description">
+                <p>Fixed colour limits (<code>None</code> = auto).</p>
+              </div>
+            </li>
+            <li>
+              <b><code>refresh_every</code></b>
+                  (<code><span title="int">int</span></code>, default:
+                      <code>1</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>Redraw every N generations. Default 1.</p>
+              </div>
+            </li>
+            <li>
+              <b><code>save_final</code></b>
+                  (<code><span title="typing.Optional">Optional</span>[<span title="str">str</span>]</code>, default:
+                      <code>None</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>If not <code>None</code>, saves the final frame to this path.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+
+
+
+
+
+              <details class="quote">
+                <summary>Source code in <code>digneapy/generators/map_elites.py</code></summary>
+                <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">307</span>
+<span class="normal">308</span>
+<span class="normal">309</span>
+<span class="normal">310</span>
+<span class="normal">311</span>
+<span class="normal">312</span>
+<span class="normal">313</span>
+<span class="normal">314</span>
+<span class="normal">315</span>
+<span class="normal">316</span>
+<span class="normal">317</span>
+<span class="normal">318</span>
+<span class="normal">319</span>
+<span class="normal">320</span>
+<span class="normal">321</span>
+<span class="normal">322</span>
+<span class="normal">323</span>
+<span class="normal">324</span>
+<span class="normal">325</span>
+<span class="normal">326</span>
+<span class="normal">327</span>
+<span class="normal">328</span>
+<span class="normal">329</span>
+<span class="normal">330</span>
+<span class="normal">331</span>
+<span class="normal">332</span>
+<span class="normal">333</span>
+<span class="normal">334</span>
+<span class="normal">335</span>
+<span class="normal">336</span>
+<span class="normal">337</span>
+<span class="normal">338</span>
+<span class="normal">339</span>
+<span class="normal">340</span>
+<span class="normal">341</span>
+<span class="normal">342</span>
+<span class="normal">343</span>
+<span class="normal">344</span>
+<span class="normal">345</span>
+<span class="normal">346</span>
+<span class="normal">347</span>
+<span class="normal">348</span>
+<span class="normal">349</span>
+<span class="normal">350</span>
+<span class="normal">351</span>
+<span class="normal">352</span>
+<span class="normal">353</span>
+<span class="normal">354</span>
+<span class="normal">355</span>
+<span class="normal">356</span>
+<span class="normal">357</span>
+<span class="normal">358</span>
+<span class="normal">359</span>
+<span class="normal">360</span>
+<span class="normal">361</span>
+<span class="normal">362</span>
+<span class="normal">363</span>
+<span class="normal">364</span>
+<span class="normal">365</span>
+<span class="normal">366</span>
+<span class="normal">367</span>
+<span class="normal">368</span>
+<span class="normal">369</span>
+<span class="normal">370</span>
+<span class="normal">371</span>
+<span class="normal">372</span>
+<span class="normal">373</span>
+<span class="normal">374</span>
+<span class="normal">375</span>
+<span class="normal">376</span>
+<span class="normal">377</span>
+<span class="normal">378</span>
+<span class="normal">379</span>
+<span class="normal">380</span>
+<span class="normal">381</span>
+<span class="normal">382</span>
+<span class="normal">383</span>
+<span class="normal">384</span>
+<span class="normal">385</span>
+<span class="normal">386</span>
+<span class="normal">387</span>
+<span class="normal">388</span>
+<span class="normal">389</span>
+<span class="normal">390</span>
+<span class="normal">391</span>
+<span class="normal">392</span>
+<span class="normal">393</span>
+<span class="normal">394</span>
+<span class="normal">395</span>
+<span class="normal">396</span>
+<span class="normal">397</span>
+<span class="normal">398</span>
+<span class="normal">399</span>
+<span class="normal">400</span>
+<span class="normal">401</span>
+<span class="normal">402</span>
+<span class="normal">403</span>
+<span class="normal">404</span>
+<span class="normal">405</span>
+<span class="normal">406</span>
+<span class="normal">407</span>
+<span class="normal">408</span>
+<span class="normal">409</span>
+<span class="normal">410</span>
+<span class="normal">411</span>
+<span class="normal">412</span>
+<span class="normal">413</span>
+<span class="normal">414</span>
+<span class="normal">415</span>
+<span class="normal">416</span>
+<span class="normal">417</span>
+<span class="normal">418</span>
+<span class="normal">419</span>
+<span class="normal">420</span>
+<span class="normal">421</span>
+<span class="normal">422</span>
+<span class="normal">423</span>
+<span class="normal">424</span>
+<span class="normal">425</span>
+<span class="normal">426</span>
+<span class="normal">427</span>
+<span class="normal">428</span>
+<span class="normal">429</span>
+<span class="normal">430</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">PlottedMapElites</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Wraps a MapElites generator and injects live plotting after each generation.</span>
+
+<span class="sd">    It replaces the generator&#39;s internal loop with an equivalent one that calls</span>
+<span class="sd">    ``plotter.update()`` every *refresh_every* generations.  Because it accesses</span>
+<span class="sd">    the generator&#39;s internals (all prefixed ``_``), pin your digneapy version.</span>
+
+<span class="sd">    This class does not subclass ``BaseGenerator``: it is a thin orchestration</span>
+<span class="sd">    wrapper that drives an already-constructed (but not yet called)</span>
+<span class="sd">    ``MapElites`` instance through the same initialisation and generation</span>
+<span class="sd">    steps it would normally run on its own, interleaving calls to an</span>
+<span class="sd">    ``ArchivePlotter`` so that progress can be visualised as a live heatmap</span>
+<span class="sd">    while the search is running.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        generator:       A ``MapElites`` instance (not yet called).</span>
+<span class="sd">        feat_names:      Labels for the two archive axes.</span>
+<span class="sd">        attr:            Instance attribute to plot. Default ``&quot;p&quot;``.</span>
+<span class="sd">        cmap:            Matplotlib colourmap. Default ``&quot;viridis&quot;``.</span>
+<span class="sd">        vmin / vmax:     Fixed colour limits (``None`` = auto).</span>
+<span class="sd">        refresh_every:   Redraw every N generations. Default 1.</span>
+<span class="sd">        save_final:      If not ``None``, saves the final frame to this path.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">generator</span><span class="p">,</span>
+        <span class="n">feat_names</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Sequence</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">attr</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;p&quot;</span><span class="p">,</span>
+        <span class="n">cmap</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;viridis&quot;</span><span class="p">,</span>
+        <span class="n">vmin</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">vmax</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">refresh_every</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
+        <span class="n">save_final</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Store the wrapped generator and the plotting configuration.</span>
+
+<span class="sd">        No plotting or generation work happens here; everything is deferred</span>
+<span class="sd">        to :meth:`__call__`. ``refresh_every`` is clamped to a minimum of 1</span>
+<span class="sd">        to avoid division/modulo issues during the generation loop.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            generator: A ``MapElites`` instance that has not yet been called.</span>
+<span class="sd">            feat_names (Optional[Sequence[str]], optional): Labels for the two</span>
+<span class="sd">                archive axes shown on the plot. Defaults to None (axes left</span>
+<span class="sd">                unlabelled or auto-labelled by ``ArchivePlotter``).</span>
+<span class="sd">            attr (str, optional): Name of the ``Instance`` attribute used to</span>
+<span class="sd">                colour each cell of the heatmap. Defaults to ``&quot;p&quot;``</span>
+<span class="sd">                (performance bias).</span>
+<span class="sd">            cmap (str, optional): Matplotlib colormap name used for the</span>
+<span class="sd">                heatmap. Defaults to ``&quot;viridis&quot;``.</span>
+<span class="sd">            vmin (Optional[float], optional): Fixed lower bound for the</span>
+<span class="sd">                colour scale. ``None`` lets the plotter infer it</span>
+<span class="sd">                automatically. Defaults to None.</span>
+<span class="sd">            vmax (Optional[float], optional): Fixed upper bound for the</span>
+<span class="sd">                colour scale. ``None`` lets the plotter infer it</span>
+<span class="sd">                automatically. Defaults to None.</span>
+<span class="sd">            refresh_every (int, optional): Redraw the plot every this many</span>
+<span class="sd">                generations. Clamped to at least 1. Defaults to 1.</span>
+<span class="sd">            save_final (Optional[str], optional): If provided, the final</span>
+<span class="sd">                plotted frame is saved to this path. Defaults to None.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_gen</span> <span class="o">=</span> <span class="n">generator</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_feat_names</span> <span class="o">=</span> <span class="n">feat_names</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_attr</span> <span class="o">=</span> <span class="n">attr</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_cmap</span> <span class="o">=</span> <span class="n">cmap</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_vmin</span> <span class="o">=</span> <span class="n">vmin</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_vmax</span> <span class="o">=</span> <span class="n">vmax</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_refresh_every</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">refresh_every</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_save_final</span> <span class="o">=</span> <span class="n">save_final</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">verbose</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Runs the full MAP-Elites loop and shows the live heatmap.</span>
+
+<span class="sd">        Mirrors the generation sequence performed by ``MapElites.__call__``</span>
+<span class="sd">        (initial grid seeding followed by the configured number of</span>
+<span class="sd">        generations), but additionally creates an ``ArchivePlotter`` bound to</span>
+<span class="sd">        the wrapped generator&#39;s archive and refreshes it: once immediately</span>
+<span class="sd">        after initialisation, every ``refresh_every`` generations during the</span>
+<span class="sd">        loop, and once more after the final generation. After the loop</span>
+<span class="sd">        completes, infeasible instances are purged from the archive (as in</span>
+<span class="sd">        the plain ``MapElites``), the final frame is optionally saved to</span>
+<span class="sd">        ``save_final``, and the plot window is shown interactively.</span>
+
+<span class="sd">        Returns the same ``GenResult`` the underlying generator would return.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            verbose (bool, optional): Whether to print/log progress during the</span>
+<span class="sd">                run (forwarded to the wrapped generator&#39;s internal logbook</span>
+<span class="sd">                updates). Defaults to False.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            GenerationResult: The final feasible archive contents from the</span>
+<span class="sd">                wrapped generator, together with solver names and the</span>
+<span class="sd">                recorded evolutionary history.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_gen</span><span class="o">.</span><span class="n">_initialise_grid</span><span class="p">(</span><span class="n">verbose</span><span class="p">)</span>
+        <span class="n">plotter</span> <span class="o">=</span> <span class="n">ArchivePlotter</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_gen</span><span class="o">.</span><span class="n">_archive</span><span class="p">,</span>
+            <span class="n">attr</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_attr</span><span class="p">,</span>
+            <span class="n">feat_names</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_feat_names</span><span class="p">,</span>
+            <span class="n">cmap</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_cmap</span><span class="p">,</span>
+            <span class="n">vmin</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_vmin</span><span class="p">,</span>
+            <span class="n">vmax</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_vmax</span><span class="p">,</span>
+            <span class="n">title</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;MAP-Elites — </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_gen</span><span class="o">.</span><span class="n">_domain</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="n">plotter</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">generation</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">generation</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_gen</span><span class="o">.</span><span class="n">_generations</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_gen</span><span class="o">.</span><span class="n">_run_generation</span><span class="p">(</span><span class="n">generation</span><span class="p">,</span> <span class="n">verbose</span><span class="p">)</span>
+            <span class="k">if</span> <span class="p">(</span><span class="n">generation</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">_refresh_every</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">plotter</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">generation</span><span class="o">=</span><span class="n">generation</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+
+        <span class="n">plotter</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">generation</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_gen</span><span class="o">.</span><span class="n">_generations</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_gen</span><span class="o">.</span><span class="n">_archive</span><span class="o">.</span><span class="n">purge_unfeasible</span><span class="p">()</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_save_final</span><span class="p">:</span>
+            <span class="n">plotter</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_save_final</span><span class="p">)</span>
+
+        <span class="n">plotter</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">GenerationResult</span><span class="p">(</span>
+            <span class="n">solvers</span><span class="o">=</span><span class="nb">tuple</span><span class="p">(</span><span class="n">extract_solvers_name</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_gen</span><span class="o">.</span><span class="n">_portfolio</span><span class="p">)),</span>
+            <span class="n">instances</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_gen</span><span class="o">.</span><span class="n">_archive</span><span class="p">,</span>
+            <span class="n">history</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_gen</span><span class="o">.</span><span class="n">_logbook</span><span class="p">,</span>
+        <span class="p">)</span>
+</code></pre></div></td></tr></table></div>
+              </details>
+
+
+
+<div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="generators.map_elites.PlottedMapElites.__call__" class="doc doc-heading">
+            <code class="highlight language-python"><span class="fm">__call__</span><span class="p">(</span><span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span></code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Runs the full MAP-Elites loop and shows the live heatmap.</p>
+<p>Mirrors the generation sequence performed by <code>MapElites.__call__</code>
+(initial grid seeding followed by the configured number of
+generations), but additionally creates an <code>ArchivePlotter</code> bound to
+the wrapped generator's archive and refreshes it: once immediately
+after initialisation, every <code>refresh_every</code> generations during the
+loop, and once more after the final generation. After the loop
+completes, infeasible instances are purged from the archive (as in
+the plain <code>MapElites</code>), the final frame is optionally saved to
+<code>save_final</code>, and the plot window is shown interactively.</p>
+<p>Returns the same <code>GenResult</code> the underlying generator would return.</p>
+
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Parameters:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+              <b><code>verbose</code></b>
+                  (<code><span title="bool">bool</span></code>, default:
+                      <code>False</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>Whether to print/log progress during the
+run (forwarded to the wrapped generator's internal logbook
+updates). Defaults to False.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Returns:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+<b><code>GenerationResult</code></b>              –
+              <div class="doc-md-description">
+                <p>The final feasible archive contents from the
+wrapped generator, together with solver names and the
+recorded evolutionary history.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+            <details class="mkdocstrings-source">
+              <summary>Source code in <code>digneapy/generators/map_elites.py</code></summary>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">378</span>
+<span class="normal">379</span>
+<span class="normal">380</span>
+<span class="normal">381</span>
+<span class="normal">382</span>
+<span class="normal">383</span>
+<span class="normal">384</span>
+<span class="normal">385</span>
+<span class="normal">386</span>
+<span class="normal">387</span>
+<span class="normal">388</span>
+<span class="normal">389</span>
+<span class="normal">390</span>
+<span class="normal">391</span>
+<span class="normal">392</span>
+<span class="normal">393</span>
+<span class="normal">394</span>
+<span class="normal">395</span>
+<span class="normal">396</span>
+<span class="normal">397</span>
+<span class="normal">398</span>
+<span class="normal">399</span>
+<span class="normal">400</span>
+<span class="normal">401</span>
+<span class="normal">402</span>
+<span class="normal">403</span>
+<span class="normal">404</span>
+<span class="normal">405</span>
+<span class="normal">406</span>
+<span class="normal">407</span>
+<span class="normal">408</span>
+<span class="normal">409</span>
+<span class="normal">410</span>
+<span class="normal">411</span>
+<span class="normal">412</span>
+<span class="normal">413</span>
+<span class="normal">414</span>
+<span class="normal">415</span>
+<span class="normal">416</span>
+<span class="normal">417</span>
+<span class="normal">418</span>
+<span class="normal">419</span>
+<span class="normal">420</span>
+<span class="normal">421</span>
+<span class="normal">422</span>
+<span class="normal">423</span>
+<span class="normal">424</span>
+<span class="normal">425</span>
+<span class="normal">426</span>
+<span class="normal">427</span>
+<span class="normal">428</span>
+<span class="normal">429</span>
+<span class="normal">430</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">verbose</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Runs the full MAP-Elites loop and shows the live heatmap.</span>
+
+<span class="sd">    Mirrors the generation sequence performed by ``MapElites.__call__``</span>
+<span class="sd">    (initial grid seeding followed by the configured number of</span>
+<span class="sd">    generations), but additionally creates an ``ArchivePlotter`` bound to</span>
+<span class="sd">    the wrapped generator&#39;s archive and refreshes it: once immediately</span>
+<span class="sd">    after initialisation, every ``refresh_every`` generations during the</span>
+<span class="sd">    loop, and once more after the final generation. After the loop</span>
+<span class="sd">    completes, infeasible instances are purged from the archive (as in</span>
+<span class="sd">    the plain ``MapElites``), the final frame is optionally saved to</span>
+<span class="sd">    ``save_final``, and the plot window is shown interactively.</span>
+
+<span class="sd">    Returns the same ``GenResult`` the underlying generator would return.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        verbose (bool, optional): Whether to print/log progress during the</span>
+<span class="sd">            run (forwarded to the wrapped generator&#39;s internal logbook</span>
+<span class="sd">            updates). Defaults to False.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        GenerationResult: The final feasible archive contents from the</span>
+<span class="sd">            wrapped generator, together with solver names and the</span>
+<span class="sd">            recorded evolutionary history.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_gen</span><span class="o">.</span><span class="n">_initialise_grid</span><span class="p">(</span><span class="n">verbose</span><span class="p">)</span>
+    <span class="n">plotter</span> <span class="o">=</span> <span class="n">ArchivePlotter</span><span class="p">(</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_gen</span><span class="o">.</span><span class="n">_archive</span><span class="p">,</span>
+        <span class="n">attr</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_attr</span><span class="p">,</span>
+        <span class="n">feat_names</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_feat_names</span><span class="p">,</span>
+        <span class="n">cmap</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_cmap</span><span class="p">,</span>
+        <span class="n">vmin</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_vmin</span><span class="p">,</span>
+        <span class="n">vmax</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_vmax</span><span class="p">,</span>
+        <span class="n">title</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;MAP-Elites — </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_gen</span><span class="o">.</span><span class="n">_domain</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">plotter</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">generation</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">generation</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_gen</span><span class="o">.</span><span class="n">_generations</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_gen</span><span class="o">.</span><span class="n">_run_generation</span><span class="p">(</span><span class="n">generation</span><span class="p">,</span> <span class="n">verbose</span><span class="p">)</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">generation</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">_refresh_every</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">plotter</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">generation</span><span class="o">=</span><span class="n">generation</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+
+    <span class="n">plotter</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">generation</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_gen</span><span class="o">.</span><span class="n">_generations</span><span class="p">)</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_gen</span><span class="o">.</span><span class="n">_archive</span><span class="o">.</span><span class="n">purge_unfeasible</span><span class="p">()</span>
+    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_save_final</span><span class="p">:</span>
+        <span class="n">plotter</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_save_final</span><span class="p">)</span>
+
+    <span class="n">plotter</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">GenerationResult</span><span class="p">(</span>
+        <span class="n">solvers</span><span class="o">=</span><span class="nb">tuple</span><span class="p">(</span><span class="n">extract_solvers_name</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_gen</span><span class="o">.</span><span class="n">_portfolio</span><span class="p">)),</span>
+        <span class="n">instances</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_gen</span><span class="o">.</span><span class="n">_archive</span><span class="p">,</span>
+        <span class="n">history</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_gen</span><span class="o">.</span><span class="n">_logbook</span><span class="p">,</span>
+    <span class="p">)</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="generators.map_elites.PlottedMapElites.__init__" class="doc doc-heading">
+            <code class="highlight language-python"><span class="fm">__init__</span><span class="p">(</span><span class="n">generator</span><span class="p">,</span> <span class="n">feat_names</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">attr</span><span class="o">=</span><span class="s1">&#39;p&#39;</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="s1">&#39;viridis&#39;</span><span class="p">,</span> <span class="n">vmin</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">vmax</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">refresh_every</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">save_final</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Store the wrapped generator and the plotting configuration.</p>
+<p>No plotting or generation work happens here; everything is deferred
+to :meth:<code>__call__</code>. <code>refresh_every</code> is clamped to a minimum of 1
+to avoid division/modulo issues during the generation loop.</p>
+
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Parameters:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+              <b><code>generator</code></b>
+              –
+              <div class="doc-md-description">
+                <p>A <code>MapElites</code> instance that has not yet been called.</p>
+              </div>
+            </li>
+            <li>
+              <b><code>feat_names</code></b>
+                  (<code><span title="typing.Optional">Optional</span>[<span title="typing.Sequence">Sequence</span>[<span title="str">str</span>]]</code>, default:
+                      <code>None</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>Labels for the two
+archive axes shown on the plot. Defaults to None (axes left
+unlabelled or auto-labelled by <code>ArchivePlotter</code>).</p>
+              </div>
+            </li>
+            <li>
+              <b><code>attr</code></b>
+                  (<code><span title="str">str</span></code>, default:
+                      <code>&#39;p&#39;</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>Name of the <code>Instance</code> attribute used to
+colour each cell of the heatmap. Defaults to <code>"p"</code>
+(performance bias).</p>
+              </div>
+            </li>
+            <li>
+              <b><code>cmap</code></b>
+                  (<code><span title="str">str</span></code>, default:
+                      <code>&#39;viridis&#39;</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>Matplotlib colormap name used for the
+heatmap. Defaults to <code>"viridis"</code>.</p>
+              </div>
+            </li>
+            <li>
+              <b><code>vmin</code></b>
+                  (<code><span title="typing.Optional">Optional</span>[<span title="float">float</span>]</code>, default:
+                      <code>None</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>Fixed lower bound for the
+colour scale. <code>None</code> lets the plotter infer it
+automatically. Defaults to None.</p>
+              </div>
+            </li>
+            <li>
+              <b><code>vmax</code></b>
+                  (<code><span title="typing.Optional">Optional</span>[<span title="float">float</span>]</code>, default:
+                      <code>None</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>Fixed upper bound for the
+colour scale. <code>None</code> lets the plotter infer it
+automatically. Defaults to None.</p>
+              </div>
+            </li>
+            <li>
+              <b><code>refresh_every</code></b>
+                  (<code><span title="int">int</span></code>, default:
+                      <code>1</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>Redraw the plot every this many
+generations. Clamped to at least 1. Defaults to 1.</p>
+              </div>
+            </li>
+            <li>
+              <b><code>save_final</code></b>
+                  (<code><span title="typing.Optional">Optional</span>[<span title="str">str</span>]</code>, default:
+                      <code>None</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>If provided, the final
+plotted frame is saved to this path. Defaults to None.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+            <details class="mkdocstrings-source">
+              <summary>Source code in <code>digneapy/generators/map_elites.py</code></summary>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">331</span>
+<span class="normal">332</span>
+<span class="normal">333</span>
+<span class="normal">334</span>
+<span class="normal">335</span>
+<span class="normal">336</span>
+<span class="normal">337</span>
+<span class="normal">338</span>
+<span class="normal">339</span>
+<span class="normal">340</span>
+<span class="normal">341</span>
+<span class="normal">342</span>
+<span class="normal">343</span>
+<span class="normal">344</span>
+<span class="normal">345</span>
+<span class="normal">346</span>
+<span class="normal">347</span>
+<span class="normal">348</span>
+<span class="normal">349</span>
+<span class="normal">350</span>
+<span class="normal">351</span>
+<span class="normal">352</span>
+<span class="normal">353</span>
+<span class="normal">354</span>
+<span class="normal">355</span>
+<span class="normal">356</span>
+<span class="normal">357</span>
+<span class="normal">358</span>
+<span class="normal">359</span>
+<span class="normal">360</span>
+<span class="normal">361</span>
+<span class="normal">362</span>
+<span class="normal">363</span>
+<span class="normal">364</span>
+<span class="normal">365</span>
+<span class="normal">366</span>
+<span class="normal">367</span>
+<span class="normal">368</span>
+<span class="normal">369</span>
+<span class="normal">370</span>
+<span class="normal">371</span>
+<span class="normal">372</span>
+<span class="normal">373</span>
+<span class="normal">374</span>
+<span class="normal">375</span>
+<span class="normal">376</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+    <span class="bp">self</span><span class="p">,</span>
+    <span class="n">generator</span><span class="p">,</span>
+    <span class="n">feat_names</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Sequence</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">attr</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;p&quot;</span><span class="p">,</span>
+    <span class="n">cmap</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;viridis&quot;</span><span class="p">,</span>
+    <span class="n">vmin</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">vmax</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">refresh_every</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
+    <span class="n">save_final</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Store the wrapped generator and the plotting configuration.</span>
+
+<span class="sd">    No plotting or generation work happens here; everything is deferred</span>
+<span class="sd">    to :meth:`__call__`. ``refresh_every`` is clamped to a minimum of 1</span>
+<span class="sd">    to avoid division/modulo issues during the generation loop.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        generator: A ``MapElites`` instance that has not yet been called.</span>
+<span class="sd">        feat_names (Optional[Sequence[str]], optional): Labels for the two</span>
+<span class="sd">            archive axes shown on the plot. Defaults to None (axes left</span>
+<span class="sd">            unlabelled or auto-labelled by ``ArchivePlotter``).</span>
+<span class="sd">        attr (str, optional): Name of the ``Instance`` attribute used to</span>
+<span class="sd">            colour each cell of the heatmap. Defaults to ``&quot;p&quot;``</span>
+<span class="sd">            (performance bias).</span>
+<span class="sd">        cmap (str, optional): Matplotlib colormap name used for the</span>
+<span class="sd">            heatmap. Defaults to ``&quot;viridis&quot;``.</span>
+<span class="sd">        vmin (Optional[float], optional): Fixed lower bound for the</span>
+<span class="sd">            colour scale. ``None`` lets the plotter infer it</span>
+<span class="sd">            automatically. Defaults to None.</span>
+<span class="sd">        vmax (Optional[float], optional): Fixed upper bound for the</span>
+<span class="sd">            colour scale. ``None`` lets the plotter infer it</span>
+<span class="sd">            automatically. Defaults to None.</span>
+<span class="sd">        refresh_every (int, optional): Redraw the plot every this many</span>
+<span class="sd">            generations. Clamped to at least 1. Defaults to 1.</span>
+<span class="sd">        save_final (Optional[str], optional): If provided, the final</span>
+<span class="sd">            plotted frame is saved to this path. Defaults to None.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_gen</span> <span class="o">=</span> <span class="n">generator</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_feat_names</span> <span class="o">=</span> <span class="n">feat_names</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_attr</span> <span class="o">=</span> <span class="n">attr</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_cmap</span> <span class="o">=</span> <span class="n">cmap</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_vmin</span> <span class="o">=</span> <span class="n">vmin</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_vmax</span> <span class="o">=</span> <span class="n">vmax</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_refresh_every</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">refresh_every</span><span class="p">)</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_save_final</span> <span class="o">=</span> <span class="n">save_final</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
+
+
+
+  </div>
+
+    </div>
+
+
+</div>
+
+
+
+
+  </div>
+
+    </div>
+
+</div>
+              
+            </div>
+          </div><footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+    
+    
+  </span>
+</div>
+    <script src="../../../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "../../..";</script>
+    <script src="../../../js/theme_extra.js"></script>
+    <script src="../../../js/theme.js"></script>
+      <script src="../../../search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>
